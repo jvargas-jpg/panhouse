@@ -1,0 +1,1 @@
+ALTER TABLE "ficha_diseno_propuestas" DROP COLUMN "fecha";

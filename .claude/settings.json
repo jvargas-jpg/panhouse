@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker info *)",
+      "Bash(NUEVA_CONTRASENA=password123 npm run db:create-user -- jefatura.demo@panhouse.test \"Jefatura Demo\" jefe_area)",
+      "Bash(node -e \"const {chromium} = require\\('playwright'\\); console.log\\('playwright module ok'\\)\")",
+      "Bash(curl -s -o /dev/null -w \"backend:%{http_code}\\\\n\" http://localhost:3000/health)",
+      "Bash(curl -s -o /dev/null -w \"frontend:%{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(curl -s -b /tmp/esp.jar http://localhost:3000/api/proyectos/b4ce0518-f0ad-47d2-b337-8fa486dd2286/riesgo)",
+      "Bash(curl -s -b /tmp/esp.jar http://localhost:3000/api/fichas-trazabilidad/b4ce0518-f0ad-47d2-b337-8fa486dd2286)",
+      "Bash(curl -s -b /tmp/esp.jar http://localhost:3000/api/capitulos/b4ce0518-f0ad-47d2-b337-8fa486dd2286)",
+      "Bash(curl -s -b /tmp/esp.jar http://localhost:3000/api/pausas/b4ce0518-f0ad-47d2-b337-8fa486dd2286)",
+      "Bash(node -e \"require\\('playwright'\\); console.log\\('ok'\\)\")",
+      "Bash(NUEVA_CONTRASENA=password123 npm run db:create-user -- rrpp.demo@panhouse.test \"RRPP Demo\" rrpp)",
+      "Bash(NUEVA_CONTRASENA=password123 npm run db:create-user -- editor.demo@panhouse.test \"Editor Demo\" editor)",
+      "Bash(NUEVA_CONTRASENA=password123 npm run db:create-user -- soportedigital.demo@panhouse.test \"Soporte Digital Demo\" soporte_digital)",
+      "Bash(NUEVA_CONTRASENA=password123 npm run db:create-user -- disenador.demo@panhouse.test \"Diseñador Demo\" disenador)",
+      "Bash(NUEVA_CONTRASENA=password123 npm run db:create-user -- soporteeditorial.demo@panhouse.test \"Soporte Editorial Demo\" soporte_editorial)"
+    ]
+  }
+}

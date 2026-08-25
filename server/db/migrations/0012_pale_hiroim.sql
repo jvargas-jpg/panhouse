@@ -1,0 +1,1 @@
+ALTER TABLE "fichas_trazabilidad" ADD COLUMN "nivel_satisfaccion" text;

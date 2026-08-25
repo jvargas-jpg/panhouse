@@ -1,0 +1,14 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Oculta la barra de scroll horizontal de las píldoras del stepper sin
+   quitar la posibilidad de scrollear (ProyectoDetallePage.tsx). */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

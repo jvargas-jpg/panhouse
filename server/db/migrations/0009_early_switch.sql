@@ -1,0 +1,1 @@
+DROP TABLE "ficha_correccion_indicadores" CASCADE;
