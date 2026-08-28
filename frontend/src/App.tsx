@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from './auth/LoginPage';
 import { RequireAuth } from './auth/RequireAuth';
+import { RegistrarPagoPage } from './comercial/RegistrarPagoPage';
 import { HomePage } from './HomePage';
 import { AppLayout } from './layout/AppLayout';
 import { ProyectoDetallePage } from './proyectos/ProyectoDetallePage';
@@ -14,6 +15,7 @@ export function App() {
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/proyectos/:id" element={<ProyectoDetallePage />} />
+          <Route path="/comercial/pagos" element={<RegistrarPagoPage />} />
         </Route>
       </Route>
 

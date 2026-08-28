@@ -113,6 +113,97 @@
       "when": 1787668484361,
       "tag": "0015_volatile_hiroim",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1787669373315,
+      "tag": "0016_slippery_tyrannus",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787838912629,
+      "tag": "0017_great_psylocke",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1787839726485,
+      "tag": "0018_closed_mikhail_rasputin",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787921850366,
+      "tag": "0019_petite_nick_fury",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787922667486,
+      "tag": "0020_secret_metal_master",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787924431652,
+      "tag": "0021_curious_ricochet",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1787925442326,
+      "tag": "0022_tough_quasimodo",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1787926050085,
+      "tag": "0023_white_swarm",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1787926994026,
+      "tag": "0024_exotic_prima",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1787927582680,
+      "tag": "0025_perfect_wasp",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1787928288789,
+      "tag": "0026_large_spitfire",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1787929731420,
+      "tag": "0027_curly_scream",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1787931155456,
+      "tag": "0028_fuzzy_wither",
+      "breakpoints": true
     }
   ]
 }

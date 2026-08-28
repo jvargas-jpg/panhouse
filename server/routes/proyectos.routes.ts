@@ -3,17 +3,20 @@ import { z } from 'zod';
 import { CATEGORIAS_STAND_BY, ESTADOS_PROYECTO } from '../db/schema/index.js';
 import { listarRiesgoProyectosActivos, obtenerProyectoConRiesgo } from '../helpers/alertas.js';
 import {
+  actualizarEquipoProyecto,
   actualizarProyecto,
   actualizarTituloProyecto,
   asignarDisenador,
   asignarEditor,
   asignarEspecialista,
   crearProyecto,
+  listarProyectosActivosResumen,
   listarProyectosEditor,
   listarProyectosEspecialista,
   listarProyectosSinEditor,
   listarTodosLosProyectos,
   obtenerProyecto,
+  reasignarProyecto,
   validarCambioEstadoProyecto,
   verificarAccesoAProyecto,
 } from '../helpers/proyectos.js';
@@ -32,6 +35,40 @@ const crearProyectoSchema = z.object({
   fechaRealInicio: z.string().optional(),
   fechaDeseadaAutor: z.string().optional(),
 });
+
+// Reasignar autor y/o servicio de un proyecto ya creado — capacidad
+// propia de comercial (corregir un dato mal cargado al crear), separada
+// de PATCH /:id (especificaciones operativas, a cargo de especialista)
+// por el mismo motivo que asignarEspecialista/asignarEditor/asignarDisenador
+// viven en rutas propias: un dueño claro por ruta, en vez de una sola
+// ruta general con permisos mezclados.
+const reasignarProyectoSchema = z
+  .object({
+    autorId: z.string().uuid().optional(),
+    servicioId: z.string().uuid().optional(),
+  })
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: 'No se recibió ningún campo válido para actualizar',
+  });
+
+// "Escuadrón de Producción" — panel único de jefe_area para las cinco
+// columnas de asignación a la vez (ver DatosEquipoProyecto en
+// server/helpers/proyectos.ts). nullable: también debe poder dejar un
+// rol sin asignar de nuevo.
+const equipoProyectoSchema = z
+  .object({
+    especialistaId: z.string().uuid().nullable().optional(),
+    editorId: z.string().uuid().nullable().optional(),
+    correctorId: z.string().uuid().nullable().optional(),
+    disenadorId: z.string().uuid().nullable().optional(),
+    calidadId: z.string().uuid().nullable().optional(),
+    digitalId: z.string().uuid().nullable().optional(),
+    lanzamientoId: z.string().uuid().nullable().optional(),
+    distribucionId: z.string().uuid().nullable().optional(),
+  })
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: 'No se recibió ningún campo válido para actualizar',
+  });
 
 const asignarEspecialistaSchema = z.object({
   especialistaId: z.string().uuid(),
@@ -72,12 +109,47 @@ export async function proyectosRoutes(app: FastifyInstance) {
     const proyectos = await listarTodosLosProyectos();
     return reply.send({ proyectos });
   });
-  app.post('/', { preHandler: [requireAuth, requireRole('jefe_area')] }, async (request, reply) => {
+
+  // Selector de proyectos del módulo de pagos (RegistrarPagoPage.tsx):
+  // deliberadamente una ruta nueva y angosta, no un ensanchamiento de la
+  // de arriba (esa sigue "Solo accesible para jefatura y dirección").
+  app.get(
+    '/activos',
+    { preHandler: [requireAuth, requireRole('comercial', 'rrpp', 'cobranzas', 'jefe_area')] },
+    async (_request, reply) => {
+      const proyectos = await listarProyectosActivosResumen();
+      return reply.send({ proyectos });
+    },
+  );
+  // comercial también puede crear proyectos desde su propio CRM (modal
+  // "Nuevo Proyecto" en AutoresPage.tsx) — mismo endpoint y validación
+  // que jefe_area, ningún campo nuevo.
+  app.post('/', { preHandler: [requireAuth, requireRole('jefe_area', 'comercial')] }, async (request, reply) => {
     const body = parseOrReply(crearProyectoSchema, request.body, reply);
     if (!body) return;
 
     const proyecto = await crearProyecto(body);
     return reply.code(201).send({ proyecto });
+  });
+
+  app.patch('/:id/reasignar', { preHandler: [requireAuth, requireRole('comercial', 'jefe_area')] }, async (request, reply) => {
+    const params = parseOrReply(idParamSchema, request.params, reply);
+    if (!params) return;
+    const body = parseOrReply(reasignarProyectoSchema, request.body, reply);
+    if (!body) return;
+
+    const proyecto = await reasignarProyecto(params.id, body);
+    return reply.send({ proyecto });
+  });
+
+  app.patch('/:id/equipo', { preHandler: [requireAuth, requireRole('jefe_area')] }, async (request, reply) => {
+    const params = parseOrReply(idParamSchema, request.params, reply);
+    if (!params) return;
+    const body = parseOrReply(equipoProyectoSchema, request.body, reply);
+    if (!body) return;
+
+    const proyecto = await actualizarEquipoProyecto(params.id, body);
+    return reply.send({ proyecto });
   });
 
   // "Mis proyectos": lista para la pantalla del especialista o del

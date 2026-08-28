@@ -68,6 +68,33 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   ingresoCondicionesEspeciales: text('ingreso_condiciones_especiales'),
   ingresoObservacionesEquipo: text('ingreso_observaciones_equipo'),
 
+  // Sección 1 (parte 5) — Datos de ingreso, Equipo Editorial: quién
+  // queda asignado a cada rol al momento del ingreso (distinto de las
+  // asignaciones operativas reales — especialistaId/editorId/disenadorId
+  // en `proyectos` — que se hacen después, vía sus propias rutas).
+  ingresoCoordinador: text('ingreso_coordinador'),
+  ingresoJefeDepartamento: text('ingreso_jefe_departamento'),
+  ingresoEditor: text('ingreso_editor'),
+  ingresoCorrector: text('ingreso_corrector'),
+  ingresoDisenador: text('ingreso_disenador'),
+  ingresoCalidad: text('ingreso_calidad'),
+
+  // Sección 2 — Edición de estilo. Estatus/fechas agregados de la
+  // sección completa (a cargo del especialista, mismo dueño que
+  // Corrección) — coexiste con `capitulos` (fechaEnvioAutor/
+  // fechaPautadaFeedback/fechaRespuestaReal), que sigue siendo el
+  // detalle por capítulo individual; esto es la vista de conjunto,
+  // mismo criterio que disenoBriefCreativo conviviendo con
+  // fichaDisenoPropuestas más abajo. estatus queda como texto libre a
+  // propósito, mismo motivo que el resto del archivo: el conjunto
+  // cerrado de valores todavía no está confirmado como enum.
+  edicionEstatus: text('edicion_estatus'),
+  edicionFechaEnvioEditor: date('edicion_fecha_envio_editor'),
+  edicionFechaRecepcionEditor: date('edicion_fecha_recepcion_editor'),
+  edicionFechaEnvioAutor: date('edicion_fecha_envio_autor'),
+  edicionFechaAprobacionAutor: date('edicion_fecha_aprobacion_autor'),
+  edicionObservaciones: text('edicion_observaciones'),
+
   // Sección 3 — Corrección. El texto libre queda tal cual (los 30-40
   // criterios individuales del documento real no se modelan — el
   // corrector es freelance y nunca los llena él mismo en el sistema).
@@ -84,6 +111,19 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   correccionCubiertaExtendidaFechaEntrega: date('correccion_cubierta_extendida_fecha_entrega'),
   correccionCubiertaExtendidaAprobado: boolean('correccion_cubierta_extendida_aprobado'),
 
+  // Sección 3 (parte 2) — Corrección, estatus agregado que conecta con
+  // la matriz de tiempos de jefatura (seguimiento_fases.ts): mismo
+  // criterio que edicionEstatus/etc. en Sección 2 — convive con
+  // tripa/preliminares/cubierta de arriba (ese detalle de aprobación
+  // por categoría no cambia), esto es la vista de conjunto de la fase.
+  correccionEstatus: text('correccion_estatus'),
+  correccionTipoAsignacion: text('correccion_tipo_asignacion'),
+  correccionFechaEnvio: date('correccion_fecha_envio'),
+  correccionFechaInicio: date('correccion_fecha_inicio'),
+  correccionFechaEntrega: date('correccion_fecha_entrega'),
+  correccionTotalDias: numeric('correccion_total_dias', { precision: 6, scale: 2 }),
+  correccionObservaciones: text('correccion_observaciones'),
+
   // Sección 4 — Diseño (solo el brief; las propuestas de portada están
   // en fichaDisenoPropuestas más abajo, una fila por propuesta). Campos
   // confirmados contra la matriz real de Dirección Creativa.
@@ -96,21 +136,94 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   disenoFechaEntregaBrief: date('diseno_fecha_entrega_brief'),
   disenoBriefAprobadoFecha: date('diseno_brief_aprobado_fecha'),
 
+  // Sección 4 (parte 2) — Diseño, estatus agregado (macro) que conecta
+  // con la matriz de tiempos de jefatura — mismo criterio que
+  // edicionEstatus/correccionEstatus. Convive con el brief de arriba y
+  // con fichaDisenoPropuestas (más abajo, una fila por propuesta): esto
+  // es la vista de conjunto de la fase, no reemplaza ninguna de las dos.
+  disenoEstatus: text('diseno_estatus'),
+  disenoFechaInicio: date('diseno_fecha_inicio'),
+  disenoFechaEntrega: date('diseno_fecha_entrega'),
+  disenoTotalDias: numeric('diseno_total_dias', { precision: 6, scale: 2 }),
+  disenoObservaciones: text('diseno_observaciones'),
+
+  // Sección 5 (parte 2) — Calidad, estatus agregado (macro) que conecta
+  // con la matriz de tiempos de jefatura — mismo criterio que
+  // edicionEstatus/correccionEstatus/disenoEstatus. Convive con
+  // fichaCalidadFases (más abajo, una fila por fase de validación): esto
+  // es la vista de conjunto de la fase, no la reemplaza.
+  calidadEstatus: text('calidad_estatus'),
+  calidadFechaInicio: date('calidad_fecha_inicio'),
+  calidadFechaEntrega: date('calidad_fecha_entrega'),
+  calidadTotalDias: numeric('calidad_total_dias', { precision: 6, scale: 2 }),
+  calidadObservaciones: text('calidad_observaciones'),
+
   // Sección 6 — Soporte digital.
   soporteDigitalCuentaAmazon: text('soporte_digital_cuenta_amazon'),
   soporteDigitalFechaEnvioFormulario: date('soporte_digital_fecha_envio_formulario'),
   soporteDigitalFechaActivacion: date('soporte_digital_fecha_activacion'),
+
+  // Sección 6 (parte 2) — Soporte digital, estatus agregado (macro) que
+  // conecta con la matriz de tiempos de jefatura — mismo criterio que
+  // edicionEstatus/correccionEstatus/disenoEstatus/calidadEstatus.
+  // Convive con cuentaAmazon/fechaEnvioFormulario/fechaActivacion de
+  // arriba: esto es la vista de conjunto de la fase, no la reemplaza.
+  digitalEstatus: text('digital_estatus'),
+  digitalFechaInicio: date('digital_fecha_inicio'),
+  digitalFechaEntrega: date('digital_fecha_entrega'),
+  digitalTotalDias: numeric('digital_total_dias', { precision: 6, scale: 2 }),
+  digitalObservaciones: text('digital_observaciones'),
 
   // Sección 7 — Lanzamiento y promoción (parte general; las reuniones
   // están en fichaLanzamientoReuniones más abajo).
   // TODO (Regla de negocio no confirmada): Tipo de dato exacto. Temporalmente texto libre para evitar bloqueos.
   nivelSatisfaccion: text('nivel_satisfaccion'),
 
+  // Sección 7 (parte 2) — Lanzamiento, estatus agregado (macro) que
+  // conecta con la matriz de tiempos de jefatura — mismo criterio que
+  // edicionEstatus/correccionEstatus/disenoEstatus/calidadEstatus/
+  // digitalEstatus. Convive con nivelSatisfaccion y las reuniones de
+  // arriba: esto es la vista de conjunto de la fase, no las reemplaza.
+  lanzamientoEstatus: text('lanzamiento_estatus'),
+  lanzamientoFechaInicio: date('lanzamiento_fecha_inicio'),
+  lanzamientoFechaEntrega: date('lanzamiento_fecha_entrega'),
+  lanzamientoTotalDias: numeric('lanzamiento_total_dias', { precision: 6, scale: 2 }),
+  lanzamientoObservaciones: text('lanzamiento_observaciones'),
+
   // Sección 8 — Impresión.
   impresionDeseaCotizacion: boolean('impresion_desea_cotizacion'),
   impresionResponsable: text('impresion_responsable'),
   impresionEstadoCotizacion: estadoCotizacionImpresionEnum('impresion_estado_cotizacion'),
   impresionNotas: text('impresion_notas'),
+
+  // Sección 8 (parte 2) — Impresión, estatus agregado (macro) que
+  // conecta con la matriz de tiempos de jefatura — mismo criterio que
+  // edicionEstatus/correccionEstatus/etc. Convive con
+  // deseaCotizacion/responsable/estadoCotizacion/notas de arriba: esto
+  // es la vista de conjunto de la fase, no la reemplaza. Sin dueño
+  // individual (no existe impresionId en proyectos — a diferencia de
+  // calidadId/digitalId/lanzamientoId/distribucionId): el acceso sigue
+  // siendo por rol (rrpp, jefe_area), mismo alcance que ya tenía el
+  // resto de esta sección — no hace falta un helper aislado.
+  impresionEstatus: text('impresion_estatus'),
+  impresionFechaInicio: date('impresion_fecha_inicio'),
+  impresionFechaEntrega: date('impresion_fecha_entrega'),
+  impresionTotalDias: numeric('impresion_total_dias', { precision: 6, scale: 2 }),
+  impresionObservaciones: text('impresion_observaciones'),
+
+  // Sección 9 (parte 2) — Distribución, estatus agregado (macro) que
+  // conecta con la matriz de tiempos de jefatura — mismo criterio que
+  // edicionEstatus/correccionEstatus/disenoEstatus/calidadEstatus/
+  // digitalEstatus/lanzamientoEstatus. Convive con fichaDistribucionPaises
+  // (más abajo, una fila por país): esto es la vista de conjunto de la
+  // fase, no la reemplaza. "8. Distribución" en el stepper del frontend
+  // — la numeración "Sección 9" es interna del schema (Impresión, arriba,
+  // no tiene paso propio en el stepper todavía).
+  distribucionEstatus: text('distribucion_estatus'),
+  distribucionFechaInicio: date('distribucion_fecha_inicio'),
+  distribucionFechaEntrega: date('distribucion_fecha_entrega'),
+  distribucionTotalDias: numeric('distribucion_total_dias', { precision: 6, scale: 2 }),
+  distribucionObservaciones: text('distribucion_observaciones'),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })

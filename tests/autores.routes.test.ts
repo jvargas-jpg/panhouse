@@ -65,3 +65,93 @@ describe('GET /api/autores/sin-proyecto', () => {
     await app.close();
   });
 });
+
+describe('PATCH /api/autores/:id', () => {
+  beforeEach(async () => {
+    await limpiarBaseDeDatos();
+  });
+
+  it('permite a comercial corregir los datos de un autor', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const autor = await crearAutor();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server)
+      .patch(`/api/autores/${autor.id}`)
+      .set('Cookie', cookie)
+      .send({ email: 'corregido@ejemplo.test' });
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.autor.email).toBe('corregido@ejemplo.test');
+
+    await app.close();
+  });
+
+  it('permite borrar un campo enviando null', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const autor = await crearAutor();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).patch(`/api/autores/${autor.id}`).set('Cookie', cookie).send({ telefono: null });
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.autor.telefono).toBeNull();
+
+    await app.close();
+  });
+
+  it('rechaza un body vacío', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const autor = await crearAutor();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).patch(`/api/autores/${autor.id}`).set('Cookie', cookie).send({});
+
+    expect(respuesta.status).toBe(400);
+
+    await app.close();
+  });
+
+  it('devuelve 404 si el autor no existe', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server)
+      .patch('/api/autores/00000000-0000-0000-0000-000000000000')
+      .set('Cookie', cookie)
+      .send({ nombre: 'Nuevo nombre' });
+
+    expect(respuesta.status).toBe(404);
+
+    await app.close();
+  });
+
+  it('rechaza sin sesión', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const autor = await crearAutor();
+
+    const respuesta = await request(app.server).patch(`/api/autores/${autor.id}`).send({ nombre: 'Otro nombre' });
+
+    expect(respuesta.status).toBe(401);
+
+    await app.close();
+  });
+
+  it('rechaza a un rol sin permiso de escritura (ej. rrpp)', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const autor = await crearAutor();
+    const cookie = await registrarYLoguear(app, 'rrpp');
+
+    const respuesta = await request(app.server).patch(`/api/autores/${autor.id}`).set('Cookie', cookie).send({ nombre: 'Otro nombre' });
+
+    expect(respuesta.status).toBe(403);
+
+    await app.close();
+  });
+});

@@ -33,6 +33,14 @@ async function crearProyectoConFicha() {
 // que el disenador esté asignado en la columna disenadorId (mismo
 // patrón que especialistaId/editorId) — crearProyectoConFicha() a
 // propósito no asigna a nadie.
+// Para PATCH /:proyectoId/diseno-control, que además del disenador
+// también autoriza al especialista dueño del proyecto.
+async function crearProyectoConFichaYEspecialista(especialistaId: string) {
+  const proyecto = await crearProyectoDePrueba({ especialistaId });
+  await crearFichaTrazabilidad(proyecto.id);
+  return proyecto;
+}
+
 async function crearProyectoConFichaYDisenador(disenadorId: string) {
   const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
   const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
@@ -42,6 +50,82 @@ async function crearProyectoConFichaYDisenador(disenadorId: string) {
     unidadId: unidad.id,
     presupuestoId: presupuesto.id,
     disenadorId,
+    fechaProgramadaInicio: '2026-01-01',
+  });
+  await crearFichaTrazabilidad(proyecto.id);
+  return proyecto;
+}
+
+// Para PATCH /:proyectoId/calidad-control, que autoriza al analista de
+// calidad asignado en calidadId (verificarAccesoControlCalidad, no el
+// verificarAccesoAProyecto compartido — soporte_editorial mantiene
+// acceso de grupo en el resto de la Sección 5).
+async function crearProyectoConFichaYCalidad(calidadId: string) {
+  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+  const servicio = await crearServicio({ codigo: 'EF2', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+  const proyecto = await crearProyecto({
+    autorId: autor.id,
+    servicioId: servicio.id,
+    unidadId: unidad.id,
+    presupuestoId: presupuesto.id,
+    calidadId,
+    fechaProgramadaInicio: '2026-01-01',
+  });
+  await crearFichaTrazabilidad(proyecto.id);
+  return proyecto;
+}
+
+// Para PATCH /:proyectoId/digital-control, que autoriza al encargado
+// digital asignado en digitalId (verificarAccesoControlDigital, no el
+// verificarAccesoAProyecto compartido — soporte_digital mantiene acceso
+// de grupo en el resto de la Sección 6).
+async function crearProyectoConFichaYDigital(digitalId: string) {
+  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+  const servicio = await crearServicio({ codigo: 'EF3', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+  const proyecto = await crearProyecto({
+    autorId: autor.id,
+    servicioId: servicio.id,
+    unidadId: unidad.id,
+    presupuestoId: presupuesto.id,
+    digitalId,
+    fechaProgramadaInicio: '2026-01-01',
+  });
+  await crearFichaTrazabilidad(proyecto.id);
+  return proyecto;
+}
+
+// Para PATCH /:proyectoId/lanzamiento-control, que autoriza al
+// responsable de lanzamiento asignado en lanzamientoId
+// (verificarAccesoControlLanzamiento, no el verificarAccesoAProyecto
+// compartido — rrpp mantiene acceso de grupo en el resto de la Sección 7).
+async function crearProyectoConFichaYLanzamiento(lanzamientoId: string) {
+  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+  const servicio = await crearServicio({ codigo: 'EF4', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+  const proyecto = await crearProyecto({
+    autorId: autor.id,
+    servicioId: servicio.id,
+    unidadId: unidad.id,
+    presupuestoId: presupuesto.id,
+    lanzamientoId,
+    fechaProgramadaInicio: '2026-01-01',
+  });
+  await crearFichaTrazabilidad(proyecto.id);
+  return proyecto;
+}
+
+// Para PATCH /:proyectoId/distribucion-control, que autoriza al
+// responsable logístico asignado en distribucionId
+// (verificarAccesoControlDistribucion, no el verificarAccesoAProyecto
+// compartido — rrpp mantiene acceso de grupo en el resto de la Sección 9).
+async function crearProyectoConFichaYDistribucion(distribucionId: string) {
+  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+  const servicio = await crearServicio({ codigo: 'EF5', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+  const proyecto = await crearProyecto({
+    autorId: autor.id,
+    servicioId: servicio.id,
+    unidadId: unidad.id,
+    presupuestoId: presupuesto.id,
+    distribucionId,
     fechaProgramadaInicio: '2026-01-01',
   });
   await crearFichaTrazabilidad(proyecto.id);
@@ -145,6 +229,77 @@ describe('rutas de la ficha de trazabilidad', () => {
     });
   });
 
+  describe('PATCH /api/fichas-trazabilidad/:proyectoId/edicion', () => {
+    it('permite a un especialista editar la sección de Edición', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/edicion`)
+        .set('Cookie', cookie)
+        .send({
+          edicionEstatus: 'En revisión por editor',
+          edicionFechaEnvioEditor: '2026-03-01',
+          edicionFechaRecepcionEditor: '2026-03-05',
+          edicionFechaEnvioAutor: '2026-03-06',
+          edicionFechaAprobacionAutor: null,
+          edicionObservaciones: 'A la espera del autor.',
+        });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.edicionEstatus).toBe('En revisión por editor');
+      expect(respuesta.body.ficha.edicionFechaEnvioEditor).toBe('2026-03-01');
+      expect(respuesta.body.ficha.edicionObservaciones).toBe('A la espera del autor.');
+      await app.close();
+    });
+
+    it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/edicion`)
+        .set('Cookie', cookie)
+        .send({ campoQueNoExiste: 'x' });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error).toBe('Datos inválidos');
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/edicion`)
+        .send({ edicionEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(401);
+      await app.close();
+    });
+
+    it('rechaza a un rol distinto de especialista (ej. comercial)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/edicion`)
+        .set('Cookie', cookie)
+        .send({ edicionEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+  });
+
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/correccion', () => {
     it('permite a un especialista editar la sección de Corrección', async () => {
       const app = crearAppDePrueba();
@@ -175,6 +330,32 @@ describe('rutas de la ficha de trazabilidad', () => {
 
       expect(respuesta.status).toBe(400);
       expect(respuesta.body.error).toBe('Datos inválidos');
+      await app.close();
+    });
+
+    it('permite guardar el estatus agregado que conecta con la matriz de tiempos de jefatura', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)
+        .set('Cookie', cookie)
+        .send({
+          correccionEstatus: 'En proceso',
+          correccionTipoAsignacion: 'Tripa Completa',
+          correccionFechaEnvio: '2026-03-01',
+          correccionFechaInicio: '2026-03-02',
+          correccionFechaEntrega: '2026-03-06',
+          correccionTotalDias: '4.00',
+          correccionObservaciones: 'Sin novedad.',
+        });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.correccionEstatus).toBe('En proceso');
+      expect(respuesta.body.ficha.correccionTipoAsignacion).toBe('Tripa Completa');
+      expect(respuesta.body.ficha.correccionTotalDias).toBe('4.00');
       await app.close();
     });
 
@@ -229,6 +410,118 @@ describe('rutas de la ficha de trazabilidad', () => {
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)
         .set('Cookie', cookie)
         .send({ correccionTripaCompleta: 'Aprobado' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+  });
+
+  describe('PATCH /api/fichas-trazabilidad/:proyectoId/diseno-control', () => {
+    it('permite al especialista dueño del proyecto editar el control de diseño', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/diseno-control`)
+        .set('Cookie', cookie)
+        .send({ disenoEstatus: 'Creando bocetos', disenoTotalDias: '2.50' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.disenoEstatus).toBe('Creando bocetos');
+      expect(respuesta.body.ficha.disenoTotalDias).toBe('2.50');
+      await app.close();
+    });
+
+    it('permite al disenador asignado editar el control de diseño', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'disenador');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYDisenador(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/diseno-control`)
+        .set('Cookie', cookie)
+        .send({ disenoEstatus: 'En revisión por autor' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.disenoEstatus).toBe('En revisión por autor');
+      await app.close();
+    });
+
+    it('rechaza a un especialista que no es dueño del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin especialista asignado
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/diseno-control`)
+        .set('Cookie', cookie)
+        .send({ disenoEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('rechaza a un disenador que no es el asignado del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin disenador asignado
+      const cookie = await registrarYLoguear(app, 'disenador');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/diseno-control`)
+        .set('Cookie', cookie)
+        .send({ disenoEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/diseno-control`)
+        .set('Cookie', cookie)
+        .send({ campoQueNoExiste: 'x' });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error).toBe('Datos inválidos');
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/diseno-control`)
+        .send({ disenoEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(401);
+      await app.close();
+    });
+
+    it('rechaza a un rol sin relación con esta sección (ej. rrpp)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/diseno-control`)
+        .set('Cookie', cookie)
+        .send({ disenoEstatus: 'Pendiente' });
 
       expect(respuesta.status).toBe(403);
       await app.close();
@@ -622,6 +915,118 @@ describe('rutas de la ficha de trazabilidad', () => {
     });
   });
 
+  describe('PATCH /api/fichas-trazabilidad/:proyectoId/calidad-control', () => {
+    it('permite al especialista dueño del proyecto editar el control de calidad', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
+        .set('Cookie', cookie)
+        .send({ calidadEstatus: 'En revisión', calidadTotalDias: '3.00' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.calidadEstatus).toBe('En revisión');
+      expect(respuesta.body.ficha.calidadTotalDias).toBe('3.00');
+      await app.close();
+    });
+
+    it('permite al analista de calidad asignado editar el control de calidad', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYCalidad(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
+        .set('Cookie', cookie)
+        .send({ calidadEstatus: 'Aprobado' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.calidadEstatus).toBe('Aprobado');
+      await app.close();
+    });
+
+    it('rechaza a un especialista que no es dueño del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin especialista asignado
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
+        .set('Cookie', cookie)
+        .send({ calidadEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('rechaza a un analista de calidad que no es el asignado del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin calidadId asignado
+      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
+        .set('Cookie', cookie)
+        .send({ calidadEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
+        .set('Cookie', cookie)
+        .send({ campoQueNoExiste: 'x' });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error).toBe('Datos inválidos');
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
+        .send({ calidadEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(401);
+      await app.close();
+    });
+
+    it('rechaza a un rol sin relación con esta sección (ej. rrpp)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
+        .set('Cookie', cookie)
+        .send({ calidadEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+  });
+
   describe('POST /api/fichas-trazabilidad/:proyectoId/calidad/fases', () => {
     it('permite a soporte_editorial registrar una fase de calidad', async () => {
       const app = crearAppDePrueba();
@@ -813,6 +1218,118 @@ describe('rutas de la ficha de trazabilidad', () => {
     });
   });
 
+  describe('PATCH /api/fichas-trazabilidad/:proyectoId/digital-control', () => {
+    it('permite al especialista dueño del proyecto editar el control digital', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
+        .set('Cookie', cookie)
+        .send({ digitalEstatus: 'Maquetando ePub', digitalTotalDias: '2.00' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.digitalEstatus).toBe('Maquetando ePub');
+      expect(respuesta.body.ficha.digitalTotalDias).toBe('2.00');
+      await app.close();
+    });
+
+    it('permite al encargado digital asignado editar el control digital', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'soporte_digital');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYDigital(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
+        .set('Cookie', cookie)
+        .send({ digitalEstatus: 'Completado' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.digitalEstatus).toBe('Completado');
+      await app.close();
+    });
+
+    it('rechaza a un especialista que no es dueño del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin especialista asignado
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
+        .set('Cookie', cookie)
+        .send({ digitalEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('rechaza a un encargado digital que no es el asignado del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin digitalId asignado
+      const cookie = await registrarYLoguear(app, 'soporte_digital');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
+        .set('Cookie', cookie)
+        .send({ digitalEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
+        .set('Cookie', cookie)
+        .send({ campoQueNoExiste: 'x' });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error).toBe('Datos inválidos');
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
+        .send({ digitalEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(401);
+      await app.close();
+    });
+
+    it('rechaza a un rol sin relación con esta sección (ej. rrpp)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
+        .set('Cookie', cookie)
+        .send({ digitalEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+  });
+
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/soporte-digital', () => {
     it('permite a soporte_digital editar la sección', async () => {
       const app = crearAppDePrueba();
@@ -853,6 +1370,118 @@ describe('rutas de la ficha de trazabilidad', () => {
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/soporte-digital`)
         .set('Cookie', cookie)
         .send({ soporteDigitalCuentaAmazon: 'cuenta@panhouse.test' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+  });
+
+  describe('PATCH /api/fichas-trazabilidad/:proyectoId/lanzamiento-control', () => {
+    it('permite al especialista dueño del proyecto editar el control de lanzamiento', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
+        .set('Cookie', cookie)
+        .send({ lanzamientoEstatus: 'Tramitando ISBN', lanzamientoTotalDias: '1.50' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.lanzamientoEstatus).toBe('Tramitando ISBN');
+      expect(respuesta.body.ficha.lanzamientoTotalDias).toBe('1.50');
+      await app.close();
+    });
+
+    it('permite al responsable de lanzamiento asignado editar el control de lanzamiento', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYLanzamiento(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
+        .set('Cookie', cookie)
+        .send({ lanzamientoEstatus: 'Publicado' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.lanzamientoEstatus).toBe('Publicado');
+      await app.close();
+    });
+
+    it('rechaza a un especialista que no es dueño del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin especialista asignado
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
+        .set('Cookie', cookie)
+        .send({ lanzamientoEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('rechaza a un responsable de lanzamiento que no es el asignado del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin lanzamientoId asignado
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
+        .set('Cookie', cookie)
+        .send({ lanzamientoEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
+        .set('Cookie', cookie)
+        .send({ campoQueNoExiste: 'x' });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error).toBe('Datos inválidos');
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
+        .send({ lanzamientoEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(401);
+      await app.close();
+    });
+
+    it('rechaza a un rol sin relación con esta sección (ej. soporte_digital)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'soporte_digital');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
+        .set('Cookie', cookie)
+        .send({ lanzamientoEstatus: 'Pendiente' });
 
       expect(respuesta.status).toBe(403);
       await app.close();
@@ -1043,6 +1672,198 @@ describe('rutas de la ficha de trazabilidad', () => {
       const respuesta = await request(app.server)
         .delete(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento/reuniones/${reunion.id}`)
         .set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+  });
+
+  describe('PATCH /api/fichas-trazabilidad/:proyectoId/impresion', () => {
+    it('permite a rrpp editar el control agregado (macro) junto a los campos existentes', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/impresion`)
+        .set('Cookie', cookie)
+        .send({ impresionEstatus: 'En imprenta', impresionTotalDias: '5.00', impresionResponsable: 'Imprenta Central' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.impresionEstatus).toBe('En imprenta');
+      expect(respuesta.body.ficha.impresionTotalDias).toBe('5.00');
+      expect(respuesta.body.ficha.impresionResponsable).toBe('Imprenta Central');
+      await app.close();
+    });
+
+    it('permite a jefe_area editar el control de impresión (mismo alcance amplio que el resto de la ficha)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/impresion`)
+        .set('Cookie', cookie)
+        .send({ impresionEstatus: 'Completado' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.impresionEstatus).toBe('Completado');
+      await app.close();
+    });
+
+    it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/impresion`)
+        .set('Cookie', cookie)
+        .send({ campoQueNoExiste: 'x' });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error).toBe('Datos inválidos');
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/impresion`)
+        .send({ impresionEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(401);
+      await app.close();
+    });
+
+    it('rechaza a un rol sin relación con esta sección (ej. soporte_digital)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'soporte_digital');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/impresion`)
+        .set('Cookie', cookie)
+        .send({ impresionEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+  });
+
+  describe('PATCH /api/fichas-trazabilidad/:proyectoId/distribucion-control', () => {
+    it('permite al especialista dueño del proyecto editar el control de distribución', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
+        .set('Cookie', cookie)
+        .send({ distribucionEstatus: 'En tránsito', distribucionTotalDias: '4.00' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.distribucionEstatus).toBe('En tránsito');
+      expect(respuesta.body.ficha.distribucionTotalDias).toBe('4.00');
+      await app.close();
+    });
+
+    it('permite al responsable logístico asignado editar el control de distribución', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYDistribucion(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
+        .set('Cookie', cookie)
+        .send({ distribucionEstatus: 'Completado' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.distribucionEstatus).toBe('Completado');
+      await app.close();
+    });
+
+    it('rechaza a un especialista que no es dueño del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin especialista asignado
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
+        .set('Cookie', cookie)
+        .send({ distribucionEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('rechaza a un responsable logístico que no es el asignado del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin distribucionId asignado
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
+        .set('Cookie', cookie)
+        .send({ distribucionEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
+        .set('Cookie', cookie)
+        .send({ campoQueNoExiste: 'x' });
+
+      expect(respuesta.status).toBe(400);
+      expect(respuesta.body.error).toBe('Datos inválidos');
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
+        .send({ distribucionEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(401);
+      await app.close();
+    });
+
+    it('rechaza a un rol sin relación con esta sección (ej. soporte_digital)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'soporte_digital');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
+        .set('Cookie', cookie)
+        .send({ distribucionEstatus: 'Pendiente' });
 
       expect(respuesta.status).toBe(403);
       await app.close();

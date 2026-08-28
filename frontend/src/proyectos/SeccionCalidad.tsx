@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 import type { FichaCalidadFase, FichaCompleta } from '../types/api';
 import { SinCompletar } from './campos';
 import { actualizarFaseCalidad, agregarFaseCalidad, eliminarFaseCalidad } from './proyectoDetalleApi';
+import { SeccionCalidadControl } from './SeccionCalidadControl';
 
 type AprobadoOpcion = 'pendiente' | 'aprobada' | 'rechazada';
 
@@ -145,8 +146,10 @@ function FaseRow({ proyectoId, fase, puedeEditar }: { proyectoId: string; fase: 
   );
 }
 
-// Sección 5, dueño soporte_editorial.
-export function SeccionCalidad({
+// Sección 5, dueño soporte_editorial. Renombrado a componente privado:
+// ver el wrapper SeccionCalidad al final del archivo, que monta esto
+// como vista "Micro" debajo del panel de control agregado (Macro).
+function ContenidoCalidadMicro({
   proyectoId,
   ficha,
   puedeEditar,
@@ -276,6 +279,32 @@ export function SeccionCalidad({
           </div>
         </form>
       )}
+    </div>
+  );
+}
+
+// Sección 5 completa: panel "Macro" (estatus agregado, dueño doble —
+// especialista dueño del proyecto o analista de calidad asignado)
+// arriba, vista "Micro" (fases de validación puntuales, código previo
+// sin cambios) debajo. puedeEditarControl llega resuelto desde
+// ProyectoDetallePage.tsx porque para decidirlo hace falta el id del
+// usuario logueado, no solo su rol (a diferencia de puedeEditar, que
+// sigue siendo solo por rol).
+export function SeccionCalidad({
+  proyectoId,
+  ficha,
+  puedeEditar,
+  puedeEditarControl,
+}: {
+  proyectoId: string;
+  ficha: FichaCompleta;
+  puedeEditar: boolean;
+  puedeEditarControl: boolean;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <SeccionCalidadControl proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditarControl} />
+      <ContenidoCalidadMicro proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditar} />
     </div>
   );
 }

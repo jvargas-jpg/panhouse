@@ -75,6 +75,108 @@ export async function verificarAccesoAProyecto(
   return { ok: true };
 }
 
+// Chequeo de dueño doble específico de PATCH /:proyectoId/calidad-control
+// (especialista dueño del proyecto o el analista de calidad asignado en
+// calidadId). Deliberadamente NO se agregó una rama soporte_editorial a
+// verificarAccesoAProyecto de arriba: ese helper también protege GET
+// /:proyectoId (ficha completa) y las rutas de /calidad/fases, donde
+// soporte_editorial hoy tiene acceso de grupo (cualquier analista puede
+// tomar cualquier proyecto pendiente — ver listarProyectosPendientesCalidad,
+// que no filtra por calidadId). Agregar esa rama ahí habría bloqueado a
+// un analista de ver/trabajar un proyecto que todavía no le asignaron en
+// calidadId, rompiendo ese flujo existente. Este control queda aislado a
+// la única ruta nueva que sí necesita el dueño individual.
+export async function verificarAccesoControlCalidad(
+  proyectoId: string,
+  usuario: { id: string; rol: Rol },
+): Promise<AccesoProyecto> {
+  const proyecto = await obtenerProyecto(proyectoId);
+  if (!proyecto) {
+    return { ok: false, status: 404, error: 'Proyecto no encontrado' };
+  }
+  if (usuario.rol === 'especialista' && proyecto.especialistaId !== usuario.id) {
+    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
+  }
+  if (usuario.rol === 'soporte_editorial' && proyecto.calidadId !== usuario.id) {
+    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
+  }
+  return { ok: true };
+}
+
+// Chequeo de dueño doble específico de PATCH /:proyectoId/digital-control
+// (especialista dueño del proyecto o el encargado digital asignado en
+// digitalId). Mismo motivo que verificarAccesoControlCalidad arriba, no
+// se agregó una rama soporte_digital a verificarAccesoAProyecto: ese
+// helper también protege GET /:proyectoId y las rutas de
+// /soporte-digital, donde soporte_digital hoy tiene acceso de grupo (sin
+// chequeo de dueño individual, mismo criterio que soporte_editorial
+// tenía con /calidad/fases antes de este cambio).
+export async function verificarAccesoControlDigital(
+  proyectoId: string,
+  usuario: { id: string; rol: Rol },
+): Promise<AccesoProyecto> {
+  const proyecto = await obtenerProyecto(proyectoId);
+  if (!proyecto) {
+    return { ok: false, status: 404, error: 'Proyecto no encontrado' };
+  }
+  if (usuario.rol === 'especialista' && proyecto.especialistaId !== usuario.id) {
+    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
+  }
+  if (usuario.rol === 'soporte_digital' && proyecto.digitalId !== usuario.id) {
+    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
+  }
+  return { ok: true };
+}
+
+// Chequeo de dueño doble específico de PATCH /:proyectoId/lanzamiento-control
+// (especialista dueño del proyecto o el responsable de lanzamiento
+// asignado en lanzamientoId). Mismo motivo que verificarAccesoControlCalidad/
+// verificarAccesoControlDigital arriba: no se agregó una rama rrpp a
+// verificarAccesoAProyecto porque ese helper también protege GET
+// /:proyectoId y el resto de las rutas de la Sección 7 (reuniones,
+// general), donde rrpp hoy tiene acceso de grupo (sin chequeo de dueño
+// individual).
+export async function verificarAccesoControlLanzamiento(
+  proyectoId: string,
+  usuario: { id: string; rol: Rol },
+): Promise<AccesoProyecto> {
+  const proyecto = await obtenerProyecto(proyectoId);
+  if (!proyecto) {
+    return { ok: false, status: 404, error: 'Proyecto no encontrado' };
+  }
+  if (usuario.rol === 'especialista' && proyecto.especialistaId !== usuario.id) {
+    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
+  }
+  if (usuario.rol === 'rrpp' && proyecto.lanzamientoId !== usuario.id) {
+    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
+  }
+  return { ok: true };
+}
+
+// Chequeo de dueño doble específico de PATCH /:proyectoId/distribucion-control
+// (especialista dueño del proyecto o el responsable logístico asignado
+// en distribucionId). Mismo motivo que los helpers aislados anteriores
+// (Calidad/Digital/Lanzamiento): no se agregó una rama rrpp a
+// verificarAccesoAProyecto porque ese helper también protege GET
+// /:proyectoId y el resto de las rutas de la Sección 9 (países de
+// distribución), donde rrpp hoy tiene acceso de grupo.
+export async function verificarAccesoControlDistribucion(
+  proyectoId: string,
+  usuario: { id: string; rol: Rol },
+): Promise<AccesoProyecto> {
+  const proyecto = await obtenerProyecto(proyectoId);
+  if (!proyecto) {
+    return { ok: false, status: 404, error: 'Proyecto no encontrado' };
+  }
+  if (usuario.rol === 'especialista' && proyecto.especialistaId !== usuario.id) {
+    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
+  }
+  if (usuario.rol === 'rrpp' && proyecto.distribucionId !== usuario.id) {
+    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
+  }
+  return { ok: true };
+}
+
 export interface DatosActualizarProyecto {
   estado?: EstadoProyecto;
   categoriaStandBy?: CategoriaStandBy | null;
@@ -106,6 +208,49 @@ export function validarCambioEstadoProyecto(estado?: EstadoProyecto): void {
 export async function actualizarProyecto(proyectoId: string, datos: DatosActualizarProyecto) {
   validarCambioEstadoProyecto(datos.estado);
 
+  const [fila] = await db.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
+  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+  return fila;
+}
+
+export interface DatosReasignarProyecto {
+  autorId?: string;
+  servicioId?: string;
+}
+
+// Corregir a qué autor está asociado un proyecto, o su tipo de
+// servicio, después de creado — capacidad propia de comercial (ver
+// PATCH /:id/reasignar). Deliberadamente separada de actualizarProyecto
+// (especificaciones operativas, a cargo de especialista): mismo criterio
+// de "un dueño claro por función" que ya usa el resto de este archivo.
+export async function reasignarProyecto(proyectoId: string, datos: DatosReasignarProyecto) {
+  const [fila] = await db.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
+  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+  return fila;
+}
+
+export interface DatosEquipoProyecto {
+  especialistaId?: string | null;
+  editorId?: string | null;
+  correctorId?: string | null;
+  disenadorId?: string | null;
+  calidadId?: string | null;
+  digitalId?: string | null;
+  lanzamientoId?: string | null;
+  distribucionId?: string | null;
+}
+
+// "Escuadrón de Producción" (SeccionEquipo.tsx): panel único de
+// jefe_area para ver y reasignar las cinco columnas de asignación de un
+// proyecto en un solo lugar. No reemplaza las rutas puntuales que ya
+// existían (asignarEspecialista, asignarEditor, asignarDisenador) —
+// esas siguen siendo el camino de cada flujo propio (jefe_area asigna
+// especialista al recibir el proyecto, jefe_edicion asigna editor,
+// el especialista dueño asigna disenador); esta es la vista consolidada
+// para corregir cualquiera de las cinco después, sin salir del detalle
+// del proyecto. nullable: jefe_area también debe poder dejar un rol sin
+// asignar de nuevo, no solo reemplazarlo.
+export async function actualizarEquipoProyecto(proyectoId: string, datos: DatosEquipoProyecto) {
   const [fila] = await db.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
   if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
   return fila;
@@ -185,18 +330,20 @@ export async function listarProyectosSinEditor(): Promise<ProyectoSinEditor[]> {
 }
 export interface ProyectoResumen {
   id: string;
+  titulo: string | null;
   estado: EstadoProyecto;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
 }
 
-// TODO (Regla de negocio no confirmada): Si el volumen de proyectos crece 
-// mucho a lo largo de los años, esta consulta podría necesitar paginación. 
+// TODO (Regla de negocio no confirmada): Si el volumen de proyectos crece
+// mucho a lo largo de los años, esta consulta podría necesitar paginación.
 // Por ahora trae todos los proyectos ordenados por fecha de creación.
 export async function listarTodosLosProyectos(): Promise<ProyectoResumen[]> {
   const filas = await db
     .select({
       id: proyectos.id,
+      titulo: proyectos.titulo,
       estado: proyectos.estado,
       autorId: autores.id,
       autorNombre: autores.nombre,
@@ -211,6 +358,41 @@ export async function listarTodosLosProyectos(): Promise<ProyectoResumen[]> {
 
   return filas.map((fila) => ({
     id: fila.id,
+    titulo: fila.titulo,
+    estado: fila.estado,
+    autor: { id: fila.autorId, nombre: fila.autorNombre },
+    servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
+  }));
+}
+
+// Selector de proyectos para el módulo de pagos (RegistrarPagoPage.tsx):
+// mismo shape que listarTodosLosProyectos, pero deliberadamente un
+// endpoint nuevo y angosto en vez de ensanchar GET /api/proyectos —
+// ese queda restringido a jefatura/dirección a propósito (ver su
+// comentario en proyectos.routes.ts), así que comercial/rrpp/cobranzas
+// necesitan su propia puerta, filtrada además a solo estados activos
+// (no tiene sentido registrar un pago sobre un proyecto retirado).
+export async function listarProyectosActivosResumen(): Promise<ProyectoResumen[]> {
+  const filas = await db
+    .select({
+      id: proyectos.id,
+      titulo: proyectos.titulo,
+      estado: proyectos.estado,
+      autorId: autores.id,
+      autorNombre: autores.nombre,
+      servicioId: servicios.id,
+      servicioCodigo: servicios.codigo,
+      servicioNombre: servicios.nombre,
+    })
+    .from(proyectos)
+    .innerJoin(autores, eq(proyectos.autorId, autores.id))
+    .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
+    .where(inArray(proyectos.estado, ESTADOS_ACTIVOS))
+    .orderBy(proyectos.createdAt);
+
+  return filas.map((fila) => ({
+    id: fila.id,
+    titulo: fila.titulo,
     estado: fila.estado,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },

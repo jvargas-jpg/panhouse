@@ -78,6 +78,13 @@ export function SeccionProyectoPerfil({
   const [ingresoCondicionesEspeciales, setIngresoCondicionesEspeciales] = useState(ficha.ingresoCondicionesEspeciales ?? '');
   const [ingresoObservacionesEquipo, setIngresoObservacionesEquipo] = useState(ficha.ingresoObservacionesEquipo ?? '');
 
+  const [ingresoCoordinador, setIngresoCoordinador] = useState(ficha.ingresoCoordinador ?? '');
+  const [ingresoJefeDepartamento, setIngresoJefeDepartamento] = useState(ficha.ingresoJefeDepartamento ?? '');
+  const [ingresoEditor, setIngresoEditor] = useState(ficha.ingresoEditor ?? '');
+  const [ingresoCorrector, setIngresoCorrector] = useState(ficha.ingresoCorrector ?? '');
+  const [ingresoDisenador, setIngresoDisenador] = useState(ficha.ingresoDisenador ?? '');
+  const [ingresoCalidad, setIngresoCalidad] = useState(ficha.ingresoCalidad ?? '');
+
   const queryClient = useQueryClient();
 
   const mutacionTitulo = useMutation({
@@ -121,6 +128,12 @@ export function SeccionProyectoPerfil({
         ingresoCriterioExtra: ingresoCriterioExtra || null,
         ingresoCondicionesEspeciales: ingresoCondicionesEspeciales || null,
         ingresoObservacionesEquipo: ingresoObservacionesEquipo || null,
+        ingresoCoordinador: ingresoCoordinador || null,
+        ingresoJefeDepartamento: ingresoJefeDepartamento || null,
+        ingresoEditor: ingresoEditor || null,
+        ingresoCorrector: ingresoCorrector || null,
+        ingresoDisenador: ingresoDisenador || null,
+        ingresoCalidad: ingresoCalidad || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
@@ -164,6 +177,12 @@ export function SeccionProyectoPerfil({
       { etiqueta: 'Criterios extra (diagramación/capítulos)', valor: ficha.ingresoCriterioExtra },
       { etiqueta: 'Condiciones especiales', valor: ficha.ingresoCondicionesEspeciales },
       { etiqueta: 'Observaciones sobre el equipo', valor: ficha.ingresoObservacionesEquipo },
+      { etiqueta: 'Coordinador editorial', valor: ficha.ingresoCoordinador },
+      { etiqueta: 'Jefe del departamento', valor: ficha.ingresoJefeDepartamento },
+      { etiqueta: 'Editor', valor: ficha.ingresoEditor },
+      { etiqueta: 'Corrector', valor: ficha.ingresoCorrector },
+      { etiqueta: 'Diseñador', valor: ficha.ingresoDisenador },
+      { etiqueta: 'Calidad editorial', valor: ficha.ingresoCalidad },
       { etiqueta: 'Perfil del autor', valor: ficha.perfilAutor },
       { etiqueta: 'Público objetivo', valor: ficha.publicoObjetivo },
       { etiqueta: 'Objetivos comerciales', valor: ficha.objetivosComerciales },
@@ -678,6 +697,104 @@ export function SeccionProyectoPerfil({
               value={ingresoObservacionesEquipo}
               onChange={(event) => {
                 setIngresoObservacionesEquipo(event.target.value);
+                mutacion.reset();
+              }}
+              className={INPUT_CLASS}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className={BLOQUE_CLASS}>
+        <h3 className={BLOQUE_TITULO_CLASS}>
+          <span className="h-1.5 w-1.5 rounded-full bg-dorado" /> Equipo Editorial (Ingreso)
+        </h3>
+        <div className={GRID_CLASS}>
+          <div className="md:col-span-4">
+            <label htmlFor="ingreso-coordinador" className={LABEL_CLASS}>
+              Coordinador editorial
+            </label>
+            <input
+              id="ingreso-coordinador"
+              type="text"
+              value={ingresoCoordinador}
+              onChange={(event) => {
+                setIngresoCoordinador(event.target.value);
+                mutacion.reset();
+              }}
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div className="md:col-span-4">
+            <label htmlFor="ingreso-jefe-departamento" className={LABEL_CLASS}>
+              Jefe del departamento
+            </label>
+            <input
+              id="ingreso-jefe-departamento"
+              type="text"
+              value={ingresoJefeDepartamento}
+              onChange={(event) => {
+                setIngresoJefeDepartamento(event.target.value);
+                mutacion.reset();
+              }}
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div className="md:col-span-4">
+            <label htmlFor="ingreso-editor" className={LABEL_CLASS}>
+              Editor
+            </label>
+            <input
+              id="ingreso-editor"
+              type="text"
+              value={ingresoEditor}
+              onChange={(event) => {
+                setIngresoEditor(event.target.value);
+                mutacion.reset();
+              }}
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div className="md:col-span-4">
+            <label htmlFor="ingreso-corrector" className={LABEL_CLASS}>
+              Corrector
+            </label>
+            <input
+              id="ingreso-corrector"
+              type="text"
+              value={ingresoCorrector}
+              onChange={(event) => {
+                setIngresoCorrector(event.target.value);
+                mutacion.reset();
+              }}
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div className="md:col-span-4">
+            <label htmlFor="ingreso-disenador" className={LABEL_CLASS}>
+              Diseñador
+            </label>
+            <input
+              id="ingreso-disenador"
+              type="text"
+              value={ingresoDisenador}
+              onChange={(event) => {
+                setIngresoDisenador(event.target.value);
+                mutacion.reset();
+              }}
+              className={INPUT_CLASS}
+            />
+          </div>
+          <div className="md:col-span-4">
+            <label htmlFor="ingreso-calidad" className={LABEL_CLASS}>
+              Calidad editorial
+            </label>
+            <input
+              id="ingreso-calidad"
+              type="text"
+              value={ingresoCalidad}
+              onChange={(event) => {
+                setIngresoCalidad(event.target.value);
                 mutacion.reset();
               }}
               className={INPUT_CLASS}

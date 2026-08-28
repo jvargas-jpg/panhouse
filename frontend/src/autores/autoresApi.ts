@@ -23,3 +23,21 @@ export function crearAutor(datos: DatosNuevoAutor) {
     body: JSON.stringify(datos),
   });
 }
+
+// A diferencia de crearAutorSchema, editarAutorSchema (backend) acepta
+// null en los campos opcionales — corregir un dato mal escrito incluye
+// poder borrarlo, no solo omitirlo.
+export interface DatosEditarAutor {
+  nombre?: string;
+  email?: string | null;
+  telefono?: string | null;
+  pais?: string | null;
+  relevancia?: number | null;
+}
+
+export function editarAutor(id: string, datos: DatosEditarAutor) {
+  return apiFetch<{ autor: Autor }>(`/autores/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}

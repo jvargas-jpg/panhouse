@@ -1,0 +1,1 @@
+ALTER TABLE "pagos" ADD COLUMN "motivo_rechazo" text;

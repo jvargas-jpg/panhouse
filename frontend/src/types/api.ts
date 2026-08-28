@@ -35,6 +35,38 @@ export interface Usuario {
   rol: Rol;
 }
 
+// GET /api/usuarios — personal interno para los selectores de
+// SeccionEquipo.tsx. Subconjunto de Usuario (sin email): esta lista no
+// necesita ese dato, y evitarlo reduce lo que expone un endpoint
+// legible por cualquier jefe_area.
+export interface UsuarioEquipo {
+  id: string;
+  nombre: string;
+  rol: Rol;
+}
+
+// GET /api/seguimiento — "Control de Tiempos", matriz de rendimiento de
+// jefe_area (server/helpers/seguimiento.ts). totalDias/totalHoras
+// llegan como string: son columnas numeric de Postgres, node-postgres
+// las devuelve como texto para no perder precisión.
+export interface RegistroSeguimiento {
+  id: string;
+  proyecto: { id: string; autorNombre: string };
+  analista: { id: string; nombre: string } | null;
+  asignacionTipo: string | null;
+  paginas: number | null;
+  fechaAsignada: string | null;
+  horaRecibida: string | null;
+  fechaInicio: string | null;
+  horaInicio: string | null;
+  fechaEntrega: string | null;
+  horaEntrega: string | null;
+  estatus: string | null;
+  totalDias: string | null;
+  totalHoras: string | null;
+  observaciones: string | null;
+}
+
 export interface RiesgoProyecto {
   diasEfectivosTranscurridos: number;
   diasPlazo: number;
@@ -54,6 +86,13 @@ export interface ProyectoConRiesgo {
   fechaRealInicio: string | null;
   fechaDeseadaAutor: string | null;
   disenadorId: string | null;
+  especialistaId: string | null;
+  editorId: string | null;
+  correctorId: string | null;
+  calidadId: string | null;
+  digitalId: string | null;
+  lanzamientoId: string | null;
+  distribucionId: string | null;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
   riesgo: RiesgoProyecto;
@@ -181,6 +220,20 @@ export interface FichaCompleta {
   ingresoCriterioExtra: string | null;
   ingresoCondicionesEspeciales: string | null;
   ingresoObservacionesEquipo: string | null;
+  // sección 1 (parte 5) — Datos de ingreso, Equipo Editorial
+  ingresoCoordinador: string | null;
+  ingresoJefeDepartamento: string | null;
+  ingresoEditor: string | null;
+  ingresoCorrector: string | null;
+  ingresoDisenador: string | null;
+  ingresoCalidad: string | null;
+  // sección 2
+  edicionEstatus: string | null;
+  edicionFechaEnvioEditor: string | null;
+  edicionFechaRecepcionEditor: string | null;
+  edicionFechaEnvioAutor: string | null;
+  edicionFechaAprobacionAutor: string | null;
+  edicionObservaciones: string | null;
   // sección 3
   correccionTripaCompleta: string | null;
   correccionTripaCompletaFechaEntrega: string | null;
@@ -191,26 +244,63 @@ export interface FichaCompleta {
   correccionCubiertaExtendida: string | null;
   correccionCubiertaExtendidaFechaEntrega: string | null;
   correccionCubiertaExtendidaAprobado: boolean | null;
+  correccionEstatus: string | null;
+  correccionTipoAsignacion: string | null;
+  correccionFechaEnvio: string | null;
+  correccionFechaInicio: string | null;
+  correccionFechaEntrega: string | null;
+  correccionTotalDias: string | null;
+  correccionObservaciones: string | null;
   disenoBriefCreativo: string | null;
   disenoTipoPortada: TipoPortada | null;
   disenoFechaReunionCreativa: string | null;
   disenoFechaEntregaBrief: string | null;
   disenoBriefAprobadoFecha: string | null;
+  disenoEstatus: string | null;
+  disenoFechaInicio: string | null;
+  disenoFechaEntrega: string | null;
+  disenoTotalDias: string | null;
+  disenoObservaciones: string | null;
   disenoPropuestas: FichaDisenoPropuesta[];
+  calidadEstatus: string | null;
+  calidadFechaInicio: string | null;
+  calidadFechaEntrega: string | null;
+  calidadTotalDias: string | null;
+  calidadObservaciones: string | null;
   calidadFases: FichaCalidadFase[];
   soporteDigitalCuentaAmazon: string | null;
   soporteDigitalFechaEnvioFormulario: string | null;
   soporteDigitalFechaActivacion: string | null;
+  digitalEstatus: string | null;
+  digitalFechaInicio: string | null;
+  digitalFechaEntrega: string | null;
+  digitalTotalDias: string | null;
+  digitalObservaciones: string | null;
   // sección 7 — nivelSatisfaccion queda como texto libre a propósito,
   // el tipo de dato exacto todavía no está confirmado (ver
   // server/db/schema/trazabilidad.ts).
   nivelSatisfaccion: string | null;
+  lanzamientoEstatus: string | null;
+  lanzamientoFechaInicio: string | null;
+  lanzamientoFechaEntrega: string | null;
+  lanzamientoTotalDias: string | null;
+  lanzamientoObservaciones: string | null;
   lanzamientoReuniones: FichaLanzamientoReunion[];
   // sección 8
   impresionDeseaCotizacion: boolean | null;
   impresionResponsable: string | null;
   impresionEstadoCotizacion: EstadoCotizacionImpresion | null;
   impresionNotas: string | null;
+  impresionEstatus: string | null;
+  impresionFechaInicio: string | null;
+  impresionFechaEntrega: string | null;
+  impresionTotalDias: string | null;
+  impresionObservaciones: string | null;
+  distribucionEstatus: string | null;
+  distribucionFechaInicio: string | null;
+  distribucionFechaEntrega: string | null;
+  distribucionTotalDias: string | null;
+  distribucionObservaciones: string | null;
   distribucionPaises: FichaDistribucionPais[];
 }
 // GET/POST /api/autores — fila completa de server/db/schema/autores.ts.
@@ -264,6 +354,10 @@ export interface Proyecto {
   editorId: string | null;
   correctorId: string | null;
   disenadorId: string | null;
+  calidadId: string | null;
+  digitalId: string | null;
+  lanzamientoId: string | null;
+  distribucionId: string | null;
   estado: EstadoProyecto;
   fechaProgramadaInicio: string;
   fechaRealInicio: string | null;
@@ -288,3 +382,36 @@ export interface Proyecto {
 
 // GET /api/proyectos/sin-editor — misma forma que ProyectoPendienteSeccion1
 // (id, autor, servicio, sin riesgo), se reutiliza el tipo tal cual.
+
+// GET /api/proyectos/activos — selector del módulo de pagos
+// (RegistrarPagoPage.tsx). Mismo shape que server/helpers/proyectos.ts:ProyectoResumen.
+export interface ProyectoResumen {
+  id: string;
+  titulo: string | null;
+  estado: EstadoProyecto;
+  autor: { id: string; nombre: string };
+  servicio: { id: string; codigo: string; nombre: string };
+}
+
+// POST/GET /api/pagos — módulo financiero de Comercial. Sin relación
+// con proyectos.pagoCuota1..6 de arriba (checklist de seis cuotas fijas
+// sin ruta propia) ni con el portal SSO de /api/portal/pagos/enlace:
+// esto es el historial real de pagos recibidos por proyecto.
+export interface Pago {
+  id: string;
+  proyectoId: string;
+  monto: string;
+  moneda: string;
+  fechaPago: string;
+  metodoPago: string;
+  referencia: string | null;
+  comprobanteUrl: string | null;
+  estatus: string;
+  motivoRechazo: string | null;
+  proyecto: {
+    id: string;
+    titulo: string | null;
+    autorNombre: string;
+    servicioCodigo: string;
+  };
+}

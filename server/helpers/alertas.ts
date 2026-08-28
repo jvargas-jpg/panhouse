@@ -88,6 +88,13 @@ export interface ProyectoConRiesgo {
   fechaRealInicio: string | null;
   fechaDeseadaAutor: string | null;
   disenadorId: string | null;
+  especialistaId: string | null;
+  editorId: string | null;
+  correctorId: string | null;
+  calidadId: string | null;
+  digitalId: string | null;
+  lanzamientoId: string | null;
+  distribucionId: string | null;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
   riesgo: RiesgoProyecto;
@@ -95,9 +102,12 @@ export interface ProyectoConRiesgo {
 
 // Columnas compartidas por las tres funciones de abajo: listar (mías /
 // todas las activas) y obtener una sola por id. Solo cambia el WHERE.
-// disenadorId viaja acá (y no solo en la fila cruda de proyectos) para
-// que ProyectoDetallePage.tsx pueda decidir si mostrar el mini-form de
-// asignación sin pedir el proyecto dos veces.
+// Las columnas de asignación viajan acá (y no solo en la fila cruda de
+// proyectos) para que el frontend pueda decidir sin un segundo fetch:
+// ProyectoDetallePage.tsx usa disenadorId para el mini-form de
+// asignación de Diseño y las cinco juntas para SeccionEquipo.tsx
+// ("Escuadrón de Producción"); PanelJefaturaPage.tsx usa especialistaId
+// para partir la bandeja de jefatura en "nuevos por asignar" vs. "en curso".
 const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   id: proyectos.id,
   titulo: proyectos.titulo,
@@ -106,6 +116,13 @@ const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   fechaRealInicio: proyectos.fechaRealInicio,
   fechaDeseadaAutor: proyectos.fechaDeseadaAutor,
   disenadorId: proyectos.disenadorId,
+  especialistaId: proyectos.especialistaId,
+  editorId: proyectos.editorId,
+  correctorId: proyectos.correctorId,
+  calidadId: proyectos.calidadId,
+  digitalId: proyectos.digitalId,
+  lanzamientoId: proyectos.lanzamientoId,
+  distribucionId: proyectos.distribucionId,
   autorId: autores.id,
   autorNombre: autores.nombre,
   servicioId: servicios.id,
@@ -121,6 +138,13 @@ type FilaProyectoConAutorYServicio = {
   fechaRealInicio: string | null;
   fechaDeseadaAutor: string | null;
   disenadorId: string | null;
+  especialistaId: string | null;
+  editorId: string | null;
+  correctorId: string | null;
+  calidadId: string | null;
+  digitalId: string | null;
+  lanzamientoId: string | null;
+  distribucionId: string | null;
   autorId: string;
   autorNombre: string;
   servicioId: string;
@@ -137,6 +161,13 @@ async function mapearFilaConRiesgo(fila: FilaProyectoConAutorYServicio): Promise
     fechaRealInicio: fila.fechaRealInicio,
     fechaDeseadaAutor: fila.fechaDeseadaAutor,
     disenadorId: fila.disenadorId,
+    especialistaId: fila.especialistaId,
+    editorId: fila.editorId,
+    correctorId: fila.correctorId,
+    calidadId: fila.calidadId,
+    digitalId: fila.digitalId,
+    lanzamientoId: fila.lanzamientoId,
+    distribucionId: fila.distribucionId,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
     riesgo: await evaluarRiesgoProyecto(fila.id),

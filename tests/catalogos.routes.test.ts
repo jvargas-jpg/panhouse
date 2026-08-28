@@ -31,6 +31,24 @@ describe('GET /api/catalogos', () => {
     await app.close();
   });
 
+  it('permite a comercial listar servicios, unidades y presupuestos activos', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+
+    await Promise.all([
+      crearUnidad(),
+      crearPresupuesto(),
+      crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 }),
+    ]);
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).get('/api/catalogos').set('Cookie', cookie);
+
+    expect(respuesta.status).toBe(200);
+
+    await app.close();
+  });
+
   it('rechaza sin sesión', async () => {
     const app = crearAppDePrueba();
     await app.ready();

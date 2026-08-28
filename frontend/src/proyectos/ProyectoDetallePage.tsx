@@ -11,8 +11,12 @@ import { RegistrarPausaForm } from './RegistrarPausaForm';
 import { RiesgoBadge } from './RiesgoBadge';
 import { SeccionCalidad } from './SeccionCalidad';
 import { SeccionCorreccion } from './SeccionCorreccion';
+import { SeccionCorreccionControl } from './SeccionCorreccionControl';
 import { SeccionDiseno } from './SeccionDiseno';
 import { SeccionDistribucion } from './SeccionDistribucion';
+import { SeccionEdicion } from './SeccionEdicion';
+import { SeccionEquipo } from './SeccionEquipo';
+import { SeccionImpresion } from './SeccionImpresion';
 import { SeccionLanzamiento } from './SeccionLanzamiento';
 import { SeccionProyectoContrato } from './SeccionProyectoContrato';
 import { SeccionProyectoPerfil } from './SeccionProyectoPerfil';
@@ -31,7 +35,8 @@ const FASES = [
   { id: 5, label: 'Calidad' },
   { id: 6, label: 'Digital' },
   { id: 7, label: 'Lanzamiento' },
-  { id: 8, label: 'Distribución' },
+  { id: 8, label: 'Impresión' },
+  { id: 9, label: 'Distribución' },
 ];
 
 // AppLayout.tsx envuelve toda la app en <main className="mx-auto max-w-4xl px-4 ...">
@@ -146,6 +151,13 @@ export function ProyectoDetallePage() {
         </div>
       )}
 
+      {/* Escuadrón de Producción — visible para todo el equipo interno, nunca para comercial */}
+      {proyectoQuery.data && puedeVerFicha && rol !== 'comercial' && (
+        <div className="mx-auto w-full max-w-7xl px-6 pt-12 md:px-16">
+          <SeccionEquipo proyectoId={id} proyecto={proyectoQuery.data.proyecto} puedeEditar={rol === 'jefe_area'} />
+        </div>
+      )}
+
       {/* Lienzo de contenido — limpio, sin cajas redundantes */}
       {puedeVerFicha && (
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-6 py-12 md:px-16">
@@ -184,6 +196,8 @@ export function ProyectoDetallePage() {
 
               {pasoActivo === 2 && (
                 <div className="w-full">
+                  <SeccionEdicion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
+
                   <h3 className="mb-4 text-lg font-bold text-tinta">2. Edición</h3>
                   {capitulosQuery.data ? (
                     <p className="text-sm text-tinta">
@@ -196,7 +210,12 @@ export function ProyectoDetallePage() {
                 </div>
               )}
 
-              {pasoActivo === 3 && <SeccionCorreccion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />}
+              {pasoActivo === 3 && (
+                <div className="flex w-full flex-col">
+                  <SeccionCorreccionControl proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
+                  <SeccionCorreccion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
+                </div>
+              )}
 
               {pasoActivo === 4 && (
                 <SeccionDiseno
@@ -204,19 +223,65 @@ export function ProyectoDetallePage() {
                   proyecto={proyectoQuery.data.proyecto}
                   ficha={fichaQuery.data.ficha}
                   puedeEditar={rol === 'disenador' || rol === 'lider_creativo'}
+                  puedeEditarControl={
+                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
+                    (rol === 'disenador' && proyectoQuery.data.proyecto.disenadorId === usuario?.id)
+                  }
                   rolUsuario={rol}
                 />
               )}
 
-              {pasoActivo === 5 && <SeccionCalidad proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'soporte_editorial'} />}
-
-              {pasoActivo === 6 && (
-                <SeccionSoporteDigital proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'soporte_digital'} />
+              {pasoActivo === 5 && (
+                <SeccionCalidad
+                  proyectoId={id}
+                  ficha={fichaQuery.data.ficha}
+                  puedeEditar={rol === 'soporte_editorial'}
+                  puedeEditarControl={
+                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
+                    (rol === 'soporte_editorial' && proyectoQuery.data.proyecto.calidadId === usuario?.id)
+                  }
+                />
               )}
 
-              {pasoActivo === 7 && <SeccionLanzamiento proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'rrpp'} />}
+              {pasoActivo === 6 && (
+                <SeccionSoporteDigital
+                  proyectoId={id}
+                  ficha={fichaQuery.data.ficha}
+                  puedeEditar={rol === 'soporte_digital'}
+                  puedeEditarControl={
+                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
+                    (rol === 'soporte_digital' && proyectoQuery.data.proyecto.digitalId === usuario?.id)
+                  }
+                />
+              )}
 
-              {pasoActivo === 8 && <SeccionDistribucion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'rrpp'} />}
+              {pasoActivo === 7 && (
+                <SeccionLanzamiento
+                  proyectoId={id}
+                  ficha={fichaQuery.data.ficha}
+                  puedeEditar={rol === 'rrpp'}
+                  puedeEditarControl={
+                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
+                    (rol === 'rrpp' && proyectoQuery.data.proyecto.lanzamientoId === usuario?.id)
+                  }
+                />
+              )}
+
+              {pasoActivo === 8 && (
+                <SeccionImpresion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'rrpp' || rol === 'jefe_area'} />
+              )}
+
+              {pasoActivo === 9 && (
+                <SeccionDistribucion
+                  proyectoId={id}
+                  ficha={fichaQuery.data.ficha}
+                  puedeEditar={rol === 'rrpp'}
+                  puedeEditarControl={
+                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
+                    (rol === 'rrpp' && proyectoQuery.data.proyecto.distribucionId === usuario?.id)
+                  }
+                />
+              )}
             </div>
           )}
         </div>

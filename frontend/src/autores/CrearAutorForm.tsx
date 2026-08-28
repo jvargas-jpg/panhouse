@@ -1,11 +1,27 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
-import { crearAutor } from './autoresApi';
+import { useEffect, useState, type FormEvent } from 'react';
+import type { Autor } from '../types/api';
+import { crearAutor, editarAutor } from './autoresApi';
 
-// Único formulario de esta pantalla: alta de autor. comercial y
-// dirección son los únicos roles con permiso de escritura (ver
-// ROLES_ESCRITURA_AUTORES en server/routes/autores.routes.ts).
-export function CrearAutorForm() {
+// Alta y edición de autor. comercial y dirección son los únicos roles
+// con permiso de escritura (ver ROLES_ESCRITURA_AUTORES en
+// server/routes/autores.routes.ts). Vive dentro del modal "Registrar/
+// Editar Autor" de AutoresPage.tsx — el título y la tarjeta ya los pone
+// <Modal/>, este componente solo devuelve el <form>.
+//
+// autorEnEdicion === null → crear (POST); autorEnEdicion !== null →
+// editar (PATCH /autores/:id) precargado con sus datos actuales.
+// AutoresPage.tsx remonta este modal cada vez que se abre (no cambia
+// autorEnEdicion en caliente con el modal ya abierto), pero el useEffect
+// deja el pre-llenado explícito igual, en vez de depender solo del
+// useState inicial.
+export function CrearAutorForm({
+  autorEnEdicion,
+  onGuardado,
+}: {
+  autorEnEdicion: Autor | null;
+  onGuardado: (mensaje: string) => void;
+}) {
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
@@ -13,7 +29,23 @@ export function CrearAutorForm() {
   const [relevancia, setRelevancia] = useState('');
   const queryClient = useQueryClient();
 
-  const mutacion = useMutation({
+  useEffect(() => {
+    setNombre(autorEnEdicion?.nombre ?? '');
+    setEmail(autorEnEdicion?.email ?? '');
+    setTelefono(autorEnEdicion?.telefono ?? '');
+    setPais(autorEnEdicion?.pais ?? '');
+    setRelevancia(autorEnEdicion?.relevancia ? String(autorEnEdicion.relevancia) : '');
+  }, [autorEnEdicion]);
+
+  function limpiarFormulario() {
+    setNombre('');
+    setEmail('');
+    setTelefono('');
+    setPais('');
+    setRelevancia('');
+  }
+
+  const mutacionCrear = useMutation({
     mutationFn: () =>
       crearAutor({
         nombre,
@@ -24,13 +56,27 @@ export function CrearAutorForm() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['autores'] });
-      setNombre('');
-      setEmail('');
-      setTelefono('');
-      setPais('');
-      setRelevancia('');
+      limpiarFormulario();
+      onGuardado('Autor creado exitosamente');
     },
   });
+
+  const mutacionEditar = useMutation({
+    mutationFn: () =>
+      editarAutor(autorEnEdicion!.id, {
+        nombre,
+        email: email || null,
+        telefono: telefono || null,
+        pais: pais || null,
+        relevancia: relevancia ? Number(relevancia) : null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['autores'] });
+      onGuardado('Autor editado exitosamente');
+    },
+  });
+
+  const mutacion = autorEnEdicion ? mutacionEditar : mutacionCrear;
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -38,8 +84,7 @@ export function CrearAutorForm() {
   }
 
   return (
-    <div className="sticky top-10 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl shadow-gray-200/50 sm:p-8">
-      <h3 className="mb-6 border-b border-gray-100 pb-4 text-lg font-semibold text-gray-900">Registrar Nuevo Autor</h3>
+    <>
       <form onSubmit={handleSubmit}>
         <div>
           <label htmlFor="autor-nombre" className="mb-1.5 mt-4 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
@@ -133,15 +178,14 @@ export function CrearAutorForm() {
           disabled={mutacion.isPending}
           className="mt-8 w-full rounded-lg bg-tinta py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-gray-800 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100"
         >
-          {mutacion.isPending ? 'Guardando…' : 'Crear Autor'}
+          {mutacion.isPending ? 'Guardando…' : autorEnEdicion ? 'Guardar Cambios' : 'Crear Autor'}
         </button>
-        {mutacion.isSuccess && <p className="mt-3 text-sm text-green-600">Guardado ✓</p>}
         {mutacion.isError && (
           <p role="alert" className="mt-3 text-sm text-red-600">
             No se pudo guardar{mutacion.error instanceof Error ? `: ${mutacion.error.message}` : ''}.
           </p>
         )}
       </form>
-    </div>
+    </>
   );
 }

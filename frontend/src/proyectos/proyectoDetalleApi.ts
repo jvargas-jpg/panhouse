@@ -13,6 +13,7 @@ import type {
   Proyecto,
   ProyectoConRiesgo,
   TipoPortada,
+  UsuarioEquipo,
 } from '../types/api';
 // Misma forma que "mis proyectos" / "proyectos en riesgo" (ProyectoConRiesgo),
 // solo que para un proyecto puntual y sin filtrar por estado activo.
@@ -80,6 +81,12 @@ export interface DatosSeccionProyectoPerfil {
   ingresoCriterioExtra?: string | null;
   ingresoCondicionesEspeciales?: string | null;
   ingresoObservacionesEquipo?: string | null;
+  ingresoCoordinador?: string | null;
+  ingresoJefeDepartamento?: string | null;
+  ingresoEditor?: string | null;
+  ingresoCorrector?: string | null;
+  ingresoDisenador?: string | null;
+  ingresoCalidad?: string | null;
 }
 
 export function actualizarSeccionProyectoPerfil(proyectoId: string, datos: DatosSeccionProyectoPerfil) {
@@ -132,6 +139,25 @@ export function actualizarCapituloAutor(proyectoId: string, numero: number, dato
   });
 }
 
+// Sección 2, dueño especialista (mismo dueño que Corrección) — vista de
+// conjunto de la sección, coexiste con el detalle por capítulo en
+// capitulos.ts.
+export interface DatosSeccionEdicion {
+  edicionEstatus?: string | null;
+  edicionFechaEnvioEditor?: string | null;
+  edicionFechaRecepcionEditor?: string | null;
+  edicionFechaEnvioAutor?: string | null;
+  edicionFechaAprobacionAutor?: string | null;
+  edicionObservaciones?: string | null;
+}
+
+export function actualizarSeccionEdicion(proyectoId: string, datos: DatosSeccionEdicion) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/edicion`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
 // Sección 3, dueño especialista.
 export interface DatosSeccionCorreccion {
   correccionTripaCompleta?: string | null;
@@ -143,6 +169,13 @@ export interface DatosSeccionCorreccion {
   correccionCubiertaExtendida?: string | null;
   correccionCubiertaExtendidaFechaEntrega?: string | null;
   correccionCubiertaExtendidaAprobado?: boolean | null;
+  correccionEstatus?: string | null;
+  correccionTipoAsignacion?: string | null;
+  correccionFechaEnvio?: string | null;
+  correccionFechaInicio?: string | null;
+  correccionFechaEntrega?: string | null;
+  correccionTotalDias?: string | null;
+  correccionObservaciones?: string | null;
 }
 
 export function actualizarSeccionCorreccion(proyectoId: string, datos: DatosSeccionCorreccion) {
@@ -166,6 +199,25 @@ export interface DatosSeccionDisenoBrief {
 
 export function actualizarBriefDiseno(proyectoId: string, datos: DatosSeccionDisenoBrief) {
   return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/diseno/brief`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
+// Sección 4 (parte 2), dueño doble: el especialista dueño del proyecto
+// o el disenador asignado (ver PATCH /:proyectoId/diseno-control) — a
+// diferencia del brief/propuestas de arriba, que son solo de
+// disenador/lider_creativo.
+export interface DatosSeccionDisenoControl {
+  disenoEstatus?: string | null;
+  disenoFechaInicio?: string | null;
+  disenoFechaEntrega?: string | null;
+  disenoTotalDias?: string | null;
+  disenoObservaciones?: string | null;
+}
+
+export function actualizarSeccionDisenoControl(proyectoId: string, datos: DatosSeccionDisenoControl) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/diseno-control`, {
     method: 'PATCH',
     body: JSON.stringify(datos),
   });
@@ -199,6 +251,25 @@ export function actualizarPropuestaDiseno(proyectoId: string, propuestaId: strin
 export function eliminarPropuestaDiseno(proyectoId: string, propuestaId: string) {
   return apiFetch<{ ok: true }>(`/fichas-trazabilidad/${proyectoId}/diseno/propuestas/${propuestaId}`, {
     method: 'DELETE',
+  });
+}
+
+// Sección 5 (parte 2), dueño doble: el especialista dueño del proyecto
+// o el analista de calidad asignado (ver PATCH /:proyectoId/calidad-control)
+// — a diferencia de las fases de abajo, que son de soporte_editorial
+// como grupo (sin chequeo de dueño individual).
+export interface DatosSeccionCalidadControl {
+  calidadEstatus?: string | null;
+  calidadFechaInicio?: string | null;
+  calidadFechaEntrega?: string | null;
+  calidadTotalDias?: string | null;
+  calidadObservaciones?: string | null;
+}
+
+export function actualizarSeccionCalidadControl(proyectoId: string, datos: DatosSeccionCalidadControl) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/calidad-control`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
   });
 }
 
@@ -245,6 +316,26 @@ export function actualizarSeccionSoporteDigital(proyectoId: string, datos: Datos
   });
 }
 
+// Sección 6 (parte 2), dueño doble: el especialista dueño del proyecto
+// o el encargado digital asignado (ver PATCH /:proyectoId/digital-control)
+// — a diferencia de cuentaAmazon/fechaEnvioFormulario/fechaActivacion de
+// arriba, que son de soporte_digital como grupo (sin chequeo de dueño
+// individual).
+export interface DatosSeccionDigitalControl {
+  digitalEstatus?: string | null;
+  digitalFechaInicio?: string | null;
+  digitalFechaEntrega?: string | null;
+  digitalTotalDias?: string | null;
+  digitalObservaciones?: string | null;
+}
+
+export function actualizarSeccionDigitalControl(proyectoId: string, datos: DatosSeccionDigitalControl) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/digital-control`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
 // Sección 7 (parte general), dueño rrpp — a diferencia de las
 // reuniones (varias filas), es un único valor por proyecto.
 export interface DatosSeccionLanzamientoGeneral {
@@ -253,6 +344,26 @@ export interface DatosSeccionLanzamientoGeneral {
 
 export function actualizarSeccionLanzamientoGeneral(proyectoId: string, datos: DatosSeccionLanzamientoGeneral) {
   return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/lanzamiento/general`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
+// Sección 7 (parte 3), dueño doble: el especialista dueño del proyecto
+// o el responsable de lanzamiento asignado (ver PATCH
+// /:proyectoId/lanzamiento-control) — a diferencia de nivelSatisfaccion/
+// reuniones de arriba, que son de rrpp como grupo (sin chequeo de dueño
+// individual).
+export interface DatosSeccionLanzamientoControl {
+  lanzamientoEstatus?: string | null;
+  lanzamientoFechaInicio?: string | null;
+  lanzamientoFechaEntrega?: string | null;
+  lanzamientoTotalDias?: string | null;
+  lanzamientoObservaciones?: string | null;
+}
+
+export function actualizarSeccionLanzamientoControl(proyectoId: string, datos: DatosSeccionLanzamientoControl) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/lanzamiento-control`, {
     method: 'PATCH',
     body: JSON.stringify(datos),
   });
@@ -291,10 +402,36 @@ export interface DatosSeccionImpresion {
   impresionResponsable?: string | null;
   impresionEstadoCotizacion?: EstadoCotizacionImpresion | null;
   impresionNotas?: string | null;
+  // Sección 8 (parte 2) — estatus agregado (macro), mismo dueño (rrpp/
+  // jefe_area) que el resto de esta sección — sin dueño individual.
+  impresionEstatus?: string | null;
+  impresionFechaInicio?: string | null;
+  impresionFechaEntrega?: string | null;
+  impresionTotalDias?: string | null;
+  impresionObservaciones?: string | null;
 }
 
 export function actualizarSeccionImpresion(proyectoId: string, datos: DatosSeccionImpresion) {
   return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/impresion`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
+// Sección 9 (parte 2), dueño doble: el especialista dueño del proyecto
+// o el responsable logístico asignado (ver PATCH
+// /:proyectoId/distribucion-control) — a diferencia de los países de
+// abajo, que son de rrpp como grupo (sin chequeo de dueño individual).
+export interface DatosSeccionDistribucionControl {
+  distribucionEstatus?: string | null;
+  distribucionFechaInicio?: string | null;
+  distribucionFechaEntrega?: string | null;
+  distribucionTotalDias?: string | null;
+  distribucionObservaciones?: string | null;
+}
+
+export function actualizarSeccionDistribucionControl(proyectoId: string, datos: DatosSeccionDistribucionControl) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/distribucion-control`, {
     method: 'PATCH',
     body: JSON.stringify(datos),
   });
@@ -333,6 +470,33 @@ export function actualizarTituloProyecto(proyectoId: string, titulo: string | nu
   return apiFetch<{ proyecto: Proyecto }>(`/proyectos/${proyectoId}/titulo`, {
     method: 'PATCH',
     body: JSON.stringify({ titulo }),
+  });
+}
+
+// Personal de la editorial para los selectores de SeccionEquipo.tsx —
+// restringido a jefe_area en el backend (server/routes/usuarios.routes.ts).
+export function fetchPersonalEquipo() {
+  return apiFetch<{ usuarios: UsuarioEquipo[] }>('/usuarios');
+}
+
+// "Escuadrón de Producción" — las cinco columnas de asignación de un
+// proyecto en un solo PATCH, dueño jefe_area (ver DatosEquipoProyecto
+// en server/helpers/proyectos.ts). null limpia una asignación existente.
+export interface DatosEquipoProyecto {
+  especialistaId?: string | null;
+  editorId?: string | null;
+  correctorId?: string | null;
+  disenadorId?: string | null;
+  calidadId?: string | null;
+  digitalId?: string | null;
+  lanzamientoId?: string | null;
+  distribucionId?: string | null;
+}
+
+export function actualizarEquipoProyecto(proyectoId: string, datos: DatosEquipoProyecto) {
+  return apiFetch<{ proyecto: Proyecto }>(`/proyectos/${proyectoId}/equipo`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
   });
 }
 

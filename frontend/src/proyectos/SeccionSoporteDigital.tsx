@@ -3,9 +3,12 @@ import { useState, type FormEvent } from 'react';
 import type { FichaCompleta } from '../types/api';
 import { CamposReadOnly, formatearFechaONull } from './campos';
 import { actualizarSeccionSoporteDigital } from './proyectoDetalleApi';
+import { SeccionDigitalControl } from './SeccionDigitalControl';
 
-// Sección 6, dueño soporte_digital.
-export function SeccionSoporteDigital({
+// Sección 6, dueño soporte_digital. Renombrado a componente privado:
+// ver el wrapper SeccionSoporteDigital al final del archivo, que monta
+// esto como vista "Micro" debajo del panel de control agregado (Macro).
+function ContenidoDigitalMicro({
   proyectoId,
   ficha,
   puedeEditar,
@@ -122,5 +125,31 @@ export function SeccionSoporteDigital({
         </div>
       </div>
     </form>
+  );
+}
+
+// Sección 6 completa: panel "Macro" (estatus agregado, dueño doble —
+// especialista dueño del proyecto o encargado digital asignado) arriba,
+// vista "Micro" (cuenta Amazon/formulario/activación, código previo sin
+// cambios) debajo. puedeEditarControl llega resuelto desde
+// ProyectoDetallePage.tsx porque para decidirlo hace falta el id del
+// usuario logueado, no solo su rol (a diferencia de puedeEditar, que
+// sigue siendo solo por rol).
+export function SeccionSoporteDigital({
+  proyectoId,
+  ficha,
+  puedeEditar,
+  puedeEditarControl,
+}: {
+  proyectoId: string;
+  ficha: FichaCompleta;
+  puedeEditar: boolean;
+  puedeEditarControl: boolean;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <SeccionDigitalControl proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditarControl} />
+      <ContenidoDigitalMicro proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditar} />
+    </div>
   );
 }

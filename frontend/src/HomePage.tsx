@@ -1,5 +1,6 @@
 import { AutoresPage } from './autores/AutoresPage';
 import { useMe } from './auth/useAuth';
+import { AuditoriaPagosPage } from './cobranzas/AuditoriaPagosPage';
 import { DisenadorHomePage } from './disenador/DisenadorHomePage';
 import { EditorHomePage } from './editor/EditorHomePage';
 import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
@@ -50,6 +51,10 @@ export function HomePage() {
 
   if (user?.rol === 'soporte_digital') {
     return <SoporteDigitalHomePage />;
+  }
+
+  if (user?.rol === 'cobranzas') {
+    return <AuditoriaPagosPage />;
   }
 
   return (

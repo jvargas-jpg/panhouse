@@ -8,6 +8,7 @@ import {
   agregarReunionLanzamiento,
   eliminarReunionLanzamiento,
 } from './proyectoDetalleApi';
+import { SeccionLanzamientoControl } from './SeccionLanzamientoControl';
 
 const NIVEL_SATISFACCION_LABEL: Record<string, string> = {
   '1': '1 - Muy insatisfecho',
@@ -217,8 +218,10 @@ function ReunionRow({
   );
 }
 
-// Sección 7, dueño rrpp.
-export function SeccionLanzamiento({
+// Sección 7, dueño rrpp. Renombrado a componente privado: ver el
+// wrapper SeccionLanzamiento al final del archivo, que monta esto como
+// vista "Micro" debajo del panel de control agregado (Macro).
+function ContenidoLanzamientoMicro({
   proyectoId,
   ficha,
   puedeEditar,
@@ -326,6 +329,32 @@ export function SeccionLanzamiento({
           </div>
         </form>
       )}
+    </div>
+  );
+}
+
+// Sección 7 completa: panel "Macro" (estatus agregado, dueño doble —
+// especialista dueño del proyecto o responsable de lanzamiento
+// asignado) arriba, vista "Micro" (nivel de satisfacción y reuniones,
+// código previo sin cambios) debajo. puedeEditarControl llega resuelto
+// desde ProyectoDetallePage.tsx porque para decidirlo hace falta el id
+// del usuario logueado, no solo su rol (a diferencia de puedeEditar,
+// que sigue siendo solo por rol).
+export function SeccionLanzamiento({
+  proyectoId,
+  ficha,
+  puedeEditar,
+  puedeEditarControl,
+}: {
+  proyectoId: string;
+  ficha: FichaCompleta;
+  puedeEditar: boolean;
+  puedeEditarControl: boolean;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <SeccionLanzamientoControl proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditarControl} />
+      <ContenidoLanzamientoMicro proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditar} />
     </div>
   );
 }

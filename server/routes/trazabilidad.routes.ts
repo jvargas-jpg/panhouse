@@ -1,15 +1,27 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ESTADOS_COTIZACION_IMPRESION, TIPOS_PORTADA } from '../db/schema/index.js';
-import { verificarAccesoAProyecto } from '../helpers/proyectos.js';
+import {
+  verificarAccesoAProyecto,
+  verificarAccesoControlCalidad,
+  verificarAccesoControlDigital,
+  verificarAccesoControlDistribucion,
+  verificarAccesoControlLanzamiento,
+} from '../helpers/proyectos.js';
 import {
   actualizarBriefDiseno,
   actualizarFaseCalidad,
   actualizarPaisDistribucion,
   actualizarPropuestaDiseno,
   actualizarReunionLanzamiento,
+  actualizarSeccionCalidadControl,
   actualizarSeccionCorreccion,
+  actualizarSeccionDigitalControl,
+  actualizarSeccionDisenoControl,
+  actualizarSeccionDistribucionControl,
+  actualizarSeccionEdicion,
   actualizarSeccionImpresion,
+  actualizarSeccionLanzamientoControl,
   actualizarSeccionLanzamientoGeneral,
   actualizarSeccionProyectoContrato,
   actualizarSeccionProyectoPerfil,
@@ -75,6 +87,12 @@ const seccionProyectoPerfilSchema = z
     ingresoCriterioExtra: z.string().nullable().optional(),
     ingresoCondicionesEspeciales: z.string().nullable().optional(),
     ingresoObservacionesEquipo: z.string().nullable().optional(),
+    ingresoCoordinador: z.string().nullable().optional(),
+    ingresoJefeDepartamento: z.string().nullable().optional(),
+    ingresoEditor: z.string().nullable().optional(),
+    ingresoCorrector: z.string().nullable().optional(),
+    ingresoDisenador: z.string().nullable().optional(),
+    ingresoCalidad: z.string().nullable().optional(),
   })
   .refine((datos) => Object.keys(datos).length > 0, {
     message: 'No se recibió ningún campo válido para actualizar',
@@ -84,6 +102,20 @@ const seccionProyectoContratoSchema = z.object({
   capitulosPactados: z.number().int().nonnegative().nullable().optional(),
   paginasPactadas: z.number().int().nonnegative().nullable().optional(),
 });
+
+// Sección 2 — Edición de estilo.
+const seccionEdicionSchema = z
+  .object({
+    edicionEstatus: z.string().nullable().optional(),
+    edicionFechaEnvioEditor: z.string().nullable().optional(),
+    edicionFechaRecepcionEditor: z.string().nullable().optional(),
+    edicionFechaEnvioAutor: z.string().nullable().optional(),
+    edicionFechaAprobacionAutor: z.string().nullable().optional(),
+    edicionObservaciones: z.string().nullable().optional(),
+  })
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: 'No se recibió ningún campo válido para actualizar',
+  });
 
 // Sección 3 — Corrección.
 const seccionCorreccionSchema = z
@@ -97,6 +129,13 @@ const seccionCorreccionSchema = z
     correccionCubiertaExtendida: z.string().nullable().optional(),
     correccionCubiertaExtendidaFechaEntrega: z.string().nullable().optional(),
     correccionCubiertaExtendidaAprobado: z.boolean().nullable().optional(),
+    correccionEstatus: z.string().nullable().optional(),
+    correccionTipoAsignacion: z.string().nullable().optional(),
+    correccionFechaEnvio: z.string().nullable().optional(),
+    correccionFechaInicio: z.string().nullable().optional(),
+    correccionFechaEntrega: z.string().nullable().optional(),
+    correccionTotalDias: z.string().nullable().optional(),
+    correccionObservaciones: z.string().nullable().optional(),
   })
   // Cualquier campo desconocido llega vacío tras el parseo de Zod. Sin
   // este refine, un body así llega vacío al helper y hace truncar el
@@ -122,6 +161,20 @@ const disenoBriefSchema = z
     message: 'No se recibió ningún campo válido para actualizar',
   });
 
+// Sección 4 (parte 2) — Diseño, estatus agregado (macro). Dueño doble
+// (especialista o disenador asignado) — ver PATCH /:proyectoId/diseno-control.
+const disenoControlSchema = z
+  .object({
+    disenoEstatus: z.string().nullable().optional(),
+    disenoFechaInicio: z.string().nullable().optional(),
+    disenoFechaEntrega: z.string().nullable().optional(),
+    disenoTotalDias: z.string().nullable().optional(),
+    disenoObservaciones: z.string().nullable().optional(),
+  })
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: 'No se recibió ningún campo válido para actualizar',
+  });
+
 // estado queda como texto libre a propósito — el conjunto completo de
 // valores posibles todavía no está confirmado, no forzar un enum
 // cerrado antes de tiempo (ver server/db/schema/trazabilidad.ts).
@@ -133,6 +186,21 @@ const disenoPropuestaSchema = z.object({
   descripcion: z.string().nullable().optional(),
   enlace: z.string().nullable().optional(),
 });
+
+// Sección 5 (parte 2) — Calidad, estatus agregado (macro). Dueño doble
+// (especialista o analista de calidad asignado) — ver PATCH
+// /:proyectoId/calidad-control.
+const calidadControlSchema = z
+  .object({
+    calidadEstatus: z.string().nullable().optional(),
+    calidadFechaInicio: z.string().nullable().optional(),
+    calidadFechaEntrega: z.string().nullable().optional(),
+    calidadTotalDias: z.string().nullable().optional(),
+    calidadObservaciones: z.string().nullable().optional(),
+  })
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: 'No se recibió ningún campo válido para actualizar',
+  });
 
 // Sección 5 — Calidad.
 const calidadFaseSchema = z.object({
@@ -149,6 +217,21 @@ const soporteDigitalSchema = z.object({
   soporteDigitalFechaEnvioFormulario: z.string().nullable().optional(),
   soporteDigitalFechaActivacion: z.string().nullable().optional(),
 });
+
+// Sección 6 (parte 2) — Soporte digital, estatus agregado (macro). Dueño
+// doble (especialista o encargado digital asignado) — ver PATCH
+// /:proyectoId/digital-control.
+const digitalControlSchema = z
+  .object({
+    digitalEstatus: z.string().nullable().optional(),
+    digitalFechaInicio: z.string().nullable().optional(),
+    digitalFechaEntrega: z.string().nullable().optional(),
+    digitalTotalDias: z.string().nullable().optional(),
+    digitalObservaciones: z.string().nullable().optional(),
+  })
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: 'No se recibió ningún campo válido para actualizar',
+  });
 
 // Sección 7 — Lanzamiento y promoción. nivelSatisfaccion queda como
 // texto libre a propósito — el tipo de dato exacto todavía no está
@@ -167,19 +250,57 @@ const lanzamientoReunionSchema = z.object({
   acuerdos: z.string().nullable().optional(),
 });
 
+// Sección 7 (parte 3) — Lanzamiento, estatus agregado (macro). Dueño
+// doble (especialista o responsable de lanzamiento asignado) — ver
+// PATCH /:proyectoId/lanzamiento-control.
+const lanzamientoControlSchema = z
+  .object({
+    lanzamientoEstatus: z.string().nullable().optional(),
+    lanzamientoFechaInicio: z.string().nullable().optional(),
+    lanzamientoFechaEntrega: z.string().nullable().optional(),
+    lanzamientoTotalDias: z.string().nullable().optional(),
+    lanzamientoObservaciones: z.string().nullable().optional(),
+  })
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: 'No se recibió ningún campo válido para actualizar',
+  });
+
 // Sección 9 — Distribución.
 const distribucionPaisSchema = z.object({
   pais: z.string().min(1),
   porcentajeRegalias: z.string().nullable().optional(),
 });
 
-// Sección 8 — Impresión.
+// Sección 9 (parte 2) — Distribución, estatus agregado (macro). Dueño
+// doble (especialista o responsable logístico asignado) — ver PATCH
+// /:proyectoId/distribucion-control.
+const distribucionControlSchema = z
+  .object({
+    distribucionEstatus: z.string().nullable().optional(),
+    distribucionFechaInicio: z.string().nullable().optional(),
+    distribucionFechaEntrega: z.string().nullable().optional(),
+    distribucionTotalDias: z.string().nullable().optional(),
+    distribucionObservaciones: z.string().nullable().optional(),
+  })
+  .refine((datos) => Object.keys(datos).length > 0, {
+    message: 'No se recibió ningún campo válido para actualizar',
+  });
+
+// Sección 8 — Impresión. Incluye el estatus agregado (macro, parte 2):
+// sin dueño individual (no existe impresionId en proyectos), sigue
+// usando verificarAccesoAProyecto compartido — mismo alcance de rol
+// (rrpp/jefe_area) para ambas partes de la sección.
 const seccionImpresionSchema = z
   .object({
     impresionDeseaCotizacion: z.boolean().nullable().optional(),
     impresionResponsable: z.string().nullable().optional(),
     impresionEstadoCotizacion: z.enum(ESTADOS_COTIZACION_IMPRESION).nullable().optional(),
     impresionNotas: z.string().nullable().optional(),
+    impresionEstatus: z.string().nullable().optional(),
+    impresionFechaInicio: z.string().nullable().optional(),
+    impresionFechaEntrega: z.string().nullable().optional(),
+    impresionTotalDias: z.string().nullable().optional(),
+    impresionObservaciones: z.string().nullable().optional(),
   })
   .refine((datos) => Object.keys(datos).length > 0, {
     message: 'No se recibió ningún campo válido para actualizar',
@@ -300,6 +421,20 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
   );
 
   app.patch(
+    '/:proyectoId/edicion',
+    { preHandler: [requireAuth, requireRole('especialista')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+      const body = parseOrReply(seccionEdicionSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionEdicion(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
+  app.patch(
     '/:proyectoId/correccion',
     { preHandler: [requireAuth, requireRole('especialista')] },
     async (request, reply) => {
@@ -309,6 +444,33 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       if (!body) return;
 
       const ficha = await actualizarSeccionCorreccion(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
+  // Dueño doble (a diferencia del resto de la Sección 4): el
+  // especialista dueño del proyecto O el disenador asignado —
+  // verificarAccesoAProyecto ya resuelve las dos ramas, así que alcanza
+  // con darle acceso a ambos roles y dejar que la función decida.
+  app.patch(
+    '/:proyectoId/diseno-control',
+    { preHandler: [requireAuth, requireRole('especialista', 'disenador')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      const acceso = await verificarAccesoAProyecto(params.proyectoId, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      const body = parseOrReply(disenoControlSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionDisenoControl(params.proyectoId, body);
       return reply.send({ ficha });
     },
   );
@@ -408,6 +570,35 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Dueño doble (a diferencia del resto de la Sección 5): el
+  // especialista dueño del proyecto O el analista de calidad asignado —
+  // usa verificarAccesoControlCalidad (no el verificarAccesoAProyecto
+  // compartido, ver el comentario en helpers/proyectos.ts) porque
+  // soporte_editorial mantiene acceso de grupo en el resto de esta
+  // sección.
+  app.patch(
+    '/:proyectoId/calidad-control',
+    { preHandler: [requireAuth, requireRole('especialista', 'soporte_editorial')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      const acceso = await verificarAccesoControlCalidad(params.proyectoId, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      const body = parseOrReply(calidadControlSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionCalidadControl(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
   app.post(
     '/:proyectoId/calidad/fases',
     { preHandler: [requireAuth, requireRole('soporte_editorial')] },
@@ -454,6 +645,34 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Dueño doble (a diferencia del resto de la Sección 6): el
+  // especialista dueño del proyecto O el encargado digital asignado —
+  // usa verificarAccesoControlDigital (no el verificarAccesoAProyecto
+  // compartido, ver el comentario en helpers/proyectos.ts) porque
+  // soporte_digital mantiene acceso de grupo en el resto de esta sección.
+  app.patch(
+    '/:proyectoId/digital-control',
+    { preHandler: [requireAuth, requireRole('especialista', 'soporte_digital')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      const acceso = await verificarAccesoControlDigital(params.proyectoId, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      const body = parseOrReply(digitalControlSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionDigitalControl(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
   app.patch(
     '/:proyectoId/soporte-digital',
     { preHandler: [requireAuth, requireRole('soporte_digital')] },
@@ -464,6 +683,35 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       if (!body) return;
 
       const ficha = await actualizarSeccionSoporteDigital(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
+  // Dueño doble (a diferencia del resto de la Sección 7): el
+  // especialista dueño del proyecto O el responsable de lanzamiento
+  // asignado — usa verificarAccesoControlLanzamiento (no el
+  // verificarAccesoAProyecto compartido, ver el comentario en
+  // helpers/proyectos.ts) porque rrpp mantiene acceso de grupo en el
+  // resto de esta sección.
+  app.patch(
+    '/:proyectoId/lanzamiento-control',
+    { preHandler: [requireAuth, requireRole('especialista', 'rrpp')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      const acceso = await verificarAccesoControlLanzamiento(params.proyectoId, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      const body = parseOrReply(lanzamientoControlSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionLanzamientoControl(params.proyectoId, body);
       return reply.send({ ficha });
     },
   );
@@ -556,6 +804,35 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       if (!body) return;
 
       const ficha = await actualizarSeccionImpresion(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
+  // Dueño doble (a diferencia del resto de la Sección 9): el
+  // especialista dueño del proyecto O el responsable logístico asignado
+  // — usa verificarAccesoControlDistribucion (no el
+  // verificarAccesoAProyecto compartido, ver el comentario en
+  // helpers/proyectos.ts) porque rrpp mantiene acceso de grupo en el
+  // resto de esta sección.
+  app.patch(
+    '/:proyectoId/distribucion-control',
+    { preHandler: [requireAuth, requireRole('especialista', 'rrpp')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      const acceso = await verificarAccesoControlDistribucion(params.proyectoId, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      const body = parseOrReply(distribucionControlSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionDistribucionControl(params.proyectoId, body);
       return reply.send({ ficha });
     },
   );

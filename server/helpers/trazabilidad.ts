@@ -196,6 +196,12 @@ export interface DatosSeccionProyectoPerfil {
   ingresoCriterioExtra?: string | null;
   ingresoCondicionesEspeciales?: string | null;
   ingresoObservacionesEquipo?: string | null;
+  ingresoCoordinador?: string | null;
+  ingresoJefeDepartamento?: string | null;
+  ingresoEditor?: string | null;
+  ingresoCorrector?: string | null;
+  ingresoDisenador?: string | null;
+  ingresoCalidad?: string | null;
 }
 
 export async function actualizarSeccionProyectoPerfil(proyectoId: string, datos: DatosSeccionProyectoPerfil) {
@@ -223,6 +229,28 @@ export async function actualizarSeccionProyectoContrato(proyectoId: string, dato
   return fila;
 }
 
+// Sección 2 — Edición de estilo. Mismo dueño que Corrección
+// (especialista); vista de conjunto, coexiste con el detalle por
+// capítulo en `capitulos`.
+export interface DatosSeccionEdicion {
+  edicionEstatus?: string | null;
+  edicionFechaEnvioEditor?: string | null;
+  edicionFechaRecepcionEditor?: string | null;
+  edicionFechaEnvioAutor?: string | null;
+  edicionFechaAprobacionAutor?: string | null;
+  edicionObservaciones?: string | null;
+}
+
+export async function actualizarSeccionEdicion(proyectoId: string, datos: DatosSeccionEdicion) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
 export interface DatosSeccionCorreccion {
   correccionTripaCompleta?: string | null;
   correccionTripaCompletaFechaEntrega?: string | null;
@@ -233,6 +261,13 @@ export interface DatosSeccionCorreccion {
   correccionCubiertaExtendida?: string | null;
   correccionCubiertaExtendidaFechaEntrega?: string | null;
   correccionCubiertaExtendidaAprobado?: boolean | null;
+  correccionEstatus?: string | null;
+  correccionTipoAsignacion?: string | null;
+  correccionFechaEnvio?: string | null;
+  correccionFechaInicio?: string | null;
+  correccionFechaEntrega?: string | null;
+  correccionTotalDias?: string | null;
+  correccionObservaciones?: string | null;
 }
 
 export async function actualizarSeccionCorreccion(proyectoId: string, datos: DatosSeccionCorreccion) {
@@ -257,6 +292,51 @@ export interface DatosSeccionDisenoBrief {
 }
 
 export async function actualizarBriefDiseno(proyectoId: string, datos: DatosSeccionDisenoBrief) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
+// Sección 4 (parte 2) — Diseño, estatus agregado (macro). Dueño doble:
+// el especialista dueño del proyecto o el disenador asignado (ver
+// verificarAccesoAProyecto en helpers/proyectos.ts, que ya resuelve
+// ambas ramas) — a diferencia del brief/propuestas de arriba, que son
+// solo de disenador/lider_creativo.
+export interface DatosSeccionDisenoControl {
+  disenoEstatus?: string | null;
+  disenoFechaInicio?: string | null;
+  disenoFechaEntrega?: string | null;
+  disenoTotalDias?: string | null;
+  disenoObservaciones?: string | null;
+}
+
+export async function actualizarSeccionDisenoControl(proyectoId: string, datos: DatosSeccionDisenoControl) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
+// Sección 5 (parte 2) — Calidad, estatus agregado (macro). Dueño doble:
+// el especialista dueño del proyecto o el analista de calidad asignado
+// (ver verificarAccesoControlCalidad en helpers/proyectos.ts, aislado
+// del verificarAccesoAProyecto compartido — ver el comentario ahí).
+export interface DatosSeccionCalidadControl {
+  calidadEstatus?: string | null;
+  calidadFechaInicio?: string | null;
+  calidadFechaEntrega?: string | null;
+  calidadTotalDias?: string | null;
+  calidadObservaciones?: string | null;
+}
+
+export async function actualizarSeccionCalidadControl(proyectoId: string, datos: DatosSeccionCalidadControl) {
   const [fila] = await db
     .update(fichasTrazabilidad)
     .set(datos)
@@ -362,6 +442,28 @@ export async function actualizarSeccionSoporteDigital(proyectoId: string, datos:
   return fila;
 }
 
+// Sección 6 (parte 2) — Soporte digital, estatus agregado (macro). Dueño
+// doble: el especialista dueño del proyecto o el encargado digital
+// asignado (ver verificarAccesoControlDigital en helpers/proyectos.ts,
+// aislado del verificarAccesoAProyecto compartido — ver el comentario ahí).
+export interface DatosSeccionDigitalControl {
+  digitalEstatus?: string | null;
+  digitalFechaInicio?: string | null;
+  digitalFechaEntrega?: string | null;
+  digitalTotalDias?: string | null;
+  digitalObservaciones?: string | null;
+}
+
+export async function actualizarSeccionDigitalControl(proyectoId: string, datos: DatosSeccionDigitalControl) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
 // Sección 7 (parte general) — a diferencia de las reuniones (varias
 // filas), es un único valor por proyecto, columna directa en
 // fichasTrazabilidad. TODO (Regla de negocio no confirmada): ver
@@ -371,6 +473,29 @@ export interface DatosSeccionLanzamientoGeneral {
 }
 
 export async function actualizarSeccionLanzamientoGeneral(proyectoId: string, datos: DatosSeccionLanzamientoGeneral) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
+// Sección 7 (parte 3) — Lanzamiento, estatus agregado (macro). Dueño
+// doble: el especialista dueño del proyecto o el responsable de
+// lanzamiento asignado (ver verificarAccesoControlLanzamiento en
+// helpers/proyectos.ts, aislado del verificarAccesoAProyecto compartido
+// — ver el comentario ahí).
+export interface DatosSeccionLanzamientoControl {
+  lanzamientoEstatus?: string | null;
+  lanzamientoFechaInicio?: string | null;
+  lanzamientoFechaEntrega?: string | null;
+  lanzamientoTotalDias?: string | null;
+  lanzamientoObservaciones?: string | null;
+}
+
+export async function actualizarSeccionLanzamientoControl(proyectoId: string, datos: DatosSeccionLanzamientoControl) {
   const [fila] = await db
     .update(fichasTrazabilidad)
     .set(datos)
@@ -422,9 +547,40 @@ export interface DatosSeccionImpresion {
   impresionResponsable?: string | null;
   impresionEstadoCotizacion?: EstadoCotizacionImpresion | null;
   impresionNotas?: string | null;
+  // Sección 8 (parte 2) — estatus agregado (macro), mismo dueño (rrpp/
+  // jefe_area) que el resto de esta sección — sin dueño individual, ver
+  // el comentario en server/db/schema/trazabilidad.ts.
+  impresionEstatus?: string | null;
+  impresionFechaInicio?: string | null;
+  impresionFechaEntrega?: string | null;
+  impresionTotalDias?: string | null;
+  impresionObservaciones?: string | null;
 }
 
 export async function actualizarSeccionImpresion(proyectoId: string, datos: DatosSeccionImpresion) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
+// Sección 9 (parte 2) — Distribución, estatus agregado (macro). Dueño
+// doble: el especialista dueño del proyecto o el responsable logístico
+// asignado (ver verificarAccesoControlDistribucion en
+// helpers/proyectos.ts, aislado del verificarAccesoAProyecto compartido
+// — ver el comentario ahí).
+export interface DatosSeccionDistribucionControl {
+  distribucionEstatus?: string | null;
+  distribucionFechaInicio?: string | null;
+  distribucionFechaEntrega?: string | null;
+  distribucionTotalDias?: string | null;
+  distribucionObservaciones?: string | null;
+}
+
+export async function actualizarSeccionDistribucionControl(proyectoId: string, datos: DatosSeccionDistribucionControl) {
   const [fila] = await db
     .update(fichasTrazabilidad)
     .set(datos)

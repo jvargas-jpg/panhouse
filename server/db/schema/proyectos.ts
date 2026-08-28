@@ -35,6 +35,27 @@ export const proyectos = pgTable('proyectos', {
   // --- NUEVOS ROLES (Alineados a Matriz IA) ---
   correctorId: uuid('corrector_id').references(() => users.id, { onDelete: 'set null' }),
   disenadorId: uuid('disenador_id').references(() => users.id, { onDelete: 'set null' }),
+  calidadId: uuid('calidad_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // Encargado digital asignado (soporte_digital) — mismo patrón que
+  // calidadId: no existía ninguna columna de dueño individual para esta
+  // sección hasta ahora (Sección 6 solo tenía puedeEditar por rol, sin
+  // ownership). Se agrega para que PATCH /:proyectoId/digital-control
+  // tenga contra qué comparar; se asigna desde el mismo panel
+  // "Escuadrón de Producción" que el resto de estos roles.
+  digitalId: uuid('digital_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // Responsable de lanzamiento asignado — mismo patrón que
+  // calidadId/digitalId (nombradas por sección, no por rol) en vez de
+  // "rrppId": rrpp es hoy el único rol dueño de la Sección 7, pero el
+  // nombre de la columna sigue el criterio más reciente de este bloque.
+  lanzamientoId: uuid('lanzamiento_id').references(() => users.id, { onDelete: 'set null' }),
+
+  // Responsable logístico asignado (Distribución) — mismo patrón que
+  // calidadId/digitalId/lanzamientoId. Última columna de este bloque:
+  // con esta, las ocho fases del stepper tienen su propio dueño
+  // individual disponible para el patrón Macro/Micro.
+  distribucionId: uuid('distribucion_id').references(() => users.id, { onDelete: 'set null' }),
 
   // Título del libro. Vive en proyectos (no en la ficha) porque
   // identifica al proyecto igual que autor/servicio — dueño rrpp, mismo

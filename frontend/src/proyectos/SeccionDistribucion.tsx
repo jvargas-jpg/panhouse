@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 import type { FichaCompleta, FichaDistribucionPais } from '../types/api';
 import { SinCompletar } from './campos';
 import { actualizarPaisDistribucion, agregarPaisDistribucion, eliminarPaisDistribucion } from './proyectoDetalleApi';
+import { SeccionDistribucionControl } from './SeccionDistribucionControl';
 
 function PaisRow({
   proyectoId,
@@ -116,8 +117,10 @@ function PaisRow({
   );
 }
 
-// Sección 9, dueño rrpp.
-export function SeccionDistribucion({
+// Sección 9, dueño rrpp. Renombrado a componente privado: ver el
+// wrapper SeccionDistribucion al final del archivo, que monta esto como
+// vista "Micro" debajo del panel de control agregado (Macro).
+function ContenidoDistribucionMicro({
   proyectoId,
   ficha,
   puedeEditar,
@@ -206,6 +209,32 @@ export function SeccionDistribucion({
           )}
         </form>
       )}
+    </div>
+  );
+}
+
+// Sección 9 completa (última fase del stepper, "8. Distribución"):
+// panel "Macro" (estatus agregado, dueño doble — especialista dueño del
+// proyecto o responsable logístico asignado) arriba, vista "Micro"
+// (países de distribución, código previo sin cambios) debajo.
+// puedeEditarControl llega resuelto desde ProyectoDetallePage.tsx
+// porque para decidirlo hace falta el id del usuario logueado, no solo
+// su rol (a diferencia de puedeEditar, que sigue siendo solo por rol).
+export function SeccionDistribucion({
+  proyectoId,
+  ficha,
+  puedeEditar,
+  puedeEditarControl,
+}: {
+  proyectoId: string;
+  ficha: FichaCompleta;
+  puedeEditar: boolean;
+  puedeEditarControl: boolean;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <SeccionDistribucionControl proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditarControl} />
+      <ContenidoDistribucionMicro proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditar} />
     </div>
   );
 }

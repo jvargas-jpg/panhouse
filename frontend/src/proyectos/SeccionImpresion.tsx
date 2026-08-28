@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 import type { EstadoCotizacionImpresion, FichaCompleta } from '../types/api';
 import { CamposReadOnly } from './campos';
 import { actualizarSeccionImpresion } from './proyectoDetalleApi';
+import { SeccionImpresionControl } from './SeccionImpresionControl';
 
 const ESTADO_COTIZACION_LABEL: Record<EstadoCotizacionImpresion, string> = {
   solicitada: 'Solicitada',
@@ -12,8 +13,11 @@ const ESTADO_COTIZACION_LABEL: Record<EstadoCotizacionImpresion, string> = {
 };
 
 // Sección 8, dueño rrpp (jefe_area también puede, mismo alcance amplio
-// que ya tiene sobre el resto de la ficha).
-export function SeccionImpresion({
+// que ya tiene sobre el resto de la ficha). Renombrado a componente
+// privado: ver el wrapper SeccionImpresion al final del archivo, que
+// monta esto como vista "Micro" debajo del panel de control agregado
+// (Macro).
+function ContenidoImpresionMicro({
   proyectoId,
   ficha,
   puedeEditar,
@@ -161,5 +165,28 @@ export function SeccionImpresion({
         )}
       </div>
     </form>
+  );
+}
+
+// Sección 8 completa: panel "Macro" (estatus agregado) arriba, vista
+// "Micro" (solicitud de cotización, código previo sin cambios) debajo.
+// A diferencia de Calidad/Digital/Lanzamiento/Distribución, un solo
+// puedeEditar alcanza para ambas partes: no hay dueño individual acá
+// (no existe impresionId en proyectos), así que no hace falta un
+// puedeEditarControl separado resuelto por id de usuario.
+export function SeccionImpresion({
+  proyectoId,
+  ficha,
+  puedeEditar,
+}: {
+  proyectoId: string;
+  ficha: FichaCompleta;
+  puedeEditar: boolean;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <SeccionImpresionControl proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditar} />
+      <ContenidoImpresionMicro proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditar} />
+    </div>
   );
 }

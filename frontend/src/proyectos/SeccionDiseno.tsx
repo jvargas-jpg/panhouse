@@ -10,6 +10,7 @@ import {
   eliminarPropuestaDiseno,
   fetchDisenadoresCarga,
 } from './proyectoDetalleApi';
+import { SeccionDisenoControl } from './SeccionDisenoControl';
 
 const TIPO_PORTADA_LABEL: Record<TipoPortada, string> = {
   tipografica: 'Tipográfica',
@@ -252,13 +253,16 @@ function PropuestaRow({
   );
 }
 
-// Sección 4, dueño disenador o lider_creativo — a diferencia de la
-// sección 1, no está partida por campo: los mismos dos roles escriben
-// tanto el brief como las propuestas. rolUsuario/proyecto solo hacen
-// falta para el caso especial de abajo (especialista sin disenador
-// asignado todavía) — el resto de la sección sigue guiándose por
-// puedeEditar, como las demás secciones de la ficha.
-export function SeccionDiseno({
+// Vista "Micro" de la Sección 4 (brief creativo + propuestas de
+// portada) — código previo, sin cambios, solo dejó de exportarse
+// directo: ahora SeccionDiseno (más abajo) la monta debajo del panel
+// "Macro" (SeccionDisenoControl). Dueño disenador o lider_creativo — a
+// diferencia de la sección 1, no está partida por campo: los mismos dos
+// roles escriben tanto el brief como las propuestas. rolUsuario/proyecto
+// solo hacen falta para el caso especial de abajo (especialista sin
+// disenador asignado todavía) — el resto de la sección sigue guiándose
+// por puedeEditar, como las demás secciones de la ficha.
+function ContenidoDisenoMicro({
   proyectoId,
   proyecto,
   ficha,
@@ -540,6 +544,35 @@ export function SeccionDiseno({
           )}
         </div>
       </form>
+    </div>
+  );
+}
+
+// Sección 4 completa: panel "Macro" (estatus agregado, dueño doble —
+// especialista dueño del proyecto o disenador asignado) arriba, vista
+// "Micro" (brief + propuestas, código previo sin cambios) debajo.
+// puedeEditarControl llega resuelto desde ProyectoDetallePage.tsx
+// porque para decidirlo hace falta el id del usuario logueado, no solo
+// su rol (a diferencia de puedeEditar, que sigue siendo solo por rol).
+export function SeccionDiseno({
+  proyectoId,
+  proyecto,
+  ficha,
+  puedeEditar,
+  puedeEditarControl,
+  rolUsuario,
+}: {
+  proyectoId: string;
+  proyecto: ProyectoConRiesgo;
+  ficha: FichaCompleta;
+  puedeEditar: boolean;
+  puedeEditarControl: boolean;
+  rolUsuario?: Rol;
+}) {
+  return (
+    <div className="flex w-full flex-col gap-6">
+      <SeccionDisenoControl proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditarControl} />
+      <ContenidoDisenoMicro proyectoId={proyectoId} proyecto={proyecto} ficha={ficha} puedeEditar={puedeEditar} rolUsuario={rolUsuario} />
     </div>
   );
 }
