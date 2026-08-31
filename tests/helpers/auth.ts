@@ -7,8 +7,8 @@ import { crearUsuario } from './fixtures.js';
 // server/routes/auth.routes.ts): crea el usuario directo en la base,
 // mismo patrón que cualquier otro fixture, y solo usa el endpoint
 // público de login para conseguir una cookie de sesión real.
-export async function registrarYLoguear(app: FastifyInstance, rol: Rol): Promise<string> {
-  const usuario = await crearUsuario(rol);
+export async function registrarYLoguear(app: FastifyInstance, rol: Rol, autorId?: string): Promise<string> {
+  const usuario = await crearUsuario(rol, autorId);
 
   const login = await request(app.server).post('/api/auth/login').send({
     email: usuario.email,

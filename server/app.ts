@@ -7,6 +7,7 @@ import { catalogosRoutes } from './routes/catalogos.routes.js';
 import { disenadoresRoutes } from './routes/disenadores.routes.js';
 import { editoresRoutes } from './routes/editores.routes.js';
 import { especialistasRoutes } from './routes/especialistas.routes.js';
+import { notificacionesRoutes } from './routes/notificaciones.routes.js';
 import { pagosRoutes } from './routes/pagos.routes.js';
 import { pausasRoutes } from './routes/pausas.routes.js';
 import { portalRoutes } from './routes/portal.routes.js';
@@ -36,6 +37,7 @@ export function buildApp() {
   app.register(usuariosRoutes, { prefix: '/api/usuarios' });
   app.register(seguimientoRoutes, { prefix: '/api/seguimiento' });
   app.register(pagosRoutes, { prefix: '/api/pagos' });
+  app.register(notificacionesRoutes, { prefix: '/api/notificaciones' });
 
   app.get('/health', async () => ({ status: 'ok' }));
 

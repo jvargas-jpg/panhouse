@@ -93,6 +93,11 @@ export interface ProyectoConRiesgo {
   digitalId: string | null;
   lanzamientoId: string | null;
   distribucionId: string | null;
+  // Botones "Notificar a RRPP" / "Notificar a Jefatura" de Fase 1
+  // (ProyectoDetallePage.tsx) — ver POST /:id/notificar-rrpp y
+  // POST /:id/notificar-jefatura, los dos pasos de la cascada.
+  notificadoRrpp: boolean;
+  notificadoJefatura: boolean;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
   riesgo: RiesgoProyecto;
@@ -100,11 +105,18 @@ export interface ProyectoConRiesgo {
 
 // GET /api/fichas-trazabilidad/pendientes/perfil y /pendientes/contrato
 // — mismo join autor/servicio que ProyectoConRiesgo pero sin riesgo
-// (no se calcula acá, no aplica a esta lista).
+// (no se calcula acá, no aplica a esta lista). unidadId/presupuestoId/
+// fechaProgramadaInicio opcionales a propósito: solo las listas
+// "pendientes/*" (server/helpers/trazabilidad.ts) los traen —
+// GET /proyectos/sin-editor reutiliza esta misma forma pero sale de una
+// consulta distinta (listarProyectosSinEditor) que no los incluye.
 export interface ProyectoPendienteSeccion1 {
   id: string;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
+  unidadId?: string;
+  presupuestoId?: string;
+  fechaProgramadaInicio?: string;
 }
 
 // GET /api/especialistas/carga y GET /api/editores/carga — misma forma
@@ -345,6 +357,7 @@ export interface Catalogos {
 export interface Proyecto {
   id: string;
   titulo: string | null;
+  manuscritoUrl: string | null;
   autorId: string;
   servicioId: string;
   unidadId: string;
@@ -372,6 +385,8 @@ export interface Proyecto {
   fechaTripaDiagramada: string | null;
   fechaAprobacionFinal: string | null;
   contratoFirmado: boolean;
+  notificadoRrpp: boolean;
+  notificadoJefatura: boolean;
   pagoCuota1: boolean;
   pagoCuota2: boolean;
   pagoCuota3: boolean;
@@ -414,4 +429,40 @@ export interface Pago {
     autorNombre: string;
     servicioCodigo: string;
   };
+}
+
+// GET /api/notificaciones, PATCH /api/notificaciones/:id/leer — sistema
+// global de alertas (hoy solo lo dispara la creación de un proyecto por
+// comercial, ver server/helpers/proyectos.ts). El backend ya filtra por
+// rolDestino === el rol de la sesión, así que lo que llega acá siempre
+// es "mío".
+export interface Notificacion {
+  id: string;
+  proyectoId: string | null;
+  rolDestino: string;
+  mensaje: string;
+  leido: boolean;
+  createdAt: string;
+}
+
+// GET /api/proyectos/mis-libros y PATCH /api/proyectos/:id/manuscrito —
+// Portal del Autor (server/helpers/portalAutor.ts:LibroAutor). Forma
+// deliberadamente angosta y separada de ProyectoConRiesgo: sin fechas/
+// días de fase (control de tiempos interno) ni ids de asignación
+// (escuadrón de producción), solo el estatus de texto de cada fase para
+// el badge "Fase Actual" (ver portalAutor/faseAutor.ts).
+export interface LibroAutor {
+  id: string;
+  titulo: string | null;
+  estado: string;
+  manuscritoUrl: string | null;
+  servicio: { codigo: string; nombre: string };
+  edicionEstatus: string | null;
+  correccionEstatus: string | null;
+  disenoEstatus: string | null;
+  calidadEstatus: string | null;
+  digitalEstatus: string | null;
+  lanzamientoEstatus: string | null;
+  impresionEstatus: string | null;
+  distribucionEstatus: string | null;
 }

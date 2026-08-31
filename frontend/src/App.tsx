@@ -4,6 +4,9 @@ import { RequireAuth } from './auth/RequireAuth';
 import { RegistrarPagoPage } from './comercial/RegistrarPagoPage';
 import { HomePage } from './HomePage';
 import { AppLayout } from './layout/AppLayout';
+import { AutorHomePage } from './portalAutor/AutorHomePage';
+import { AutorLayout } from './portalAutor/AutorLayout';
+import { LibroDetalleAutorPage } from './portalAutor/LibroDetalleAutorPage';
 import { ProyectoDetallePage } from './proyectos/ProyectoDetallePage';
 
 export function App() {
@@ -16,6 +19,13 @@ export function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/proyectos/:id" element={<ProyectoDetallePage />} />
           <Route path="/comercial/pagos" element={<RegistrarPagoPage />} />
+        </Route>
+
+        {/* Portal del Autor: layout propio (top bar clara), no AppLayout
+            (sidebar oscuro interno) — rama hermana bajo el mismo RequireAuth. */}
+        <Route element={<AutorLayout />}>
+          <Route path="/mis-libros" element={<AutorHomePage />} />
+          <Route path="/mis-libros/:id" element={<LibroDetalleAutorPage />} />
         </Route>
       </Route>
 

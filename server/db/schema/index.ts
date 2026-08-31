@@ -11,3 +11,4 @@ export * from './capitulos.js';
 export * from './trazabilidad.js';
 export * from './seguimiento.js';
 export * from './pagos.js';
+export * from './notificaciones.js';

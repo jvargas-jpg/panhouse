@@ -1,0 +1,1 @@
+ALTER TABLE "proyectos" DROP COLUMN "ficha_enviada";

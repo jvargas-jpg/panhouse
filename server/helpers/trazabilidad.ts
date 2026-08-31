@@ -54,6 +54,13 @@ export interface ProyectoPendienteSeccion1 {
   id: string;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
+  // Parámetros comerciales (unidad/presupuesto/fecha programada) — solo
+  // los ids, sin nombre resuelto: quien los consume (CrearProyectoModalForm.tsx
+  // en modo edición) ya tiene el catálogo completo vía GET /catalogos, así
+  // que alcanza con el id para preseleccionar el <select> correcto.
+  unidadId: string;
+  presupuestoId: string;
+  fechaProgramadaInicio: string;
 }
 
 // Base de las dos "notificaciones internas" (rrpp, comercial): mismo
@@ -74,6 +81,9 @@ async function listarProyectosPendientesSeccion1(condicionFicha: SQL | undefined
       servicioId: servicios.id,
       servicioCodigo: servicios.codigo,
       servicioNombre: servicios.nombre,
+      unidadId: proyectos.unidadId,
+      presupuestoId: proyectos.presupuestoId,
+      fechaProgramadaInicio: proyectos.fechaProgramadaInicio,
     })
     .from(proyectos)
     .innerJoin(fichasTrazabilidad, eq(fichasTrazabilidad.proyectoId, proyectos.id))
@@ -85,6 +95,9 @@ async function listarProyectosPendientesSeccion1(condicionFicha: SQL | undefined
     id: fila.id,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
+    unidadId: fila.unidadId,
+    presupuestoId: fila.presupuestoId,
+    fechaProgramadaInicio: fila.fechaProgramadaInicio,
   }));
 }
 

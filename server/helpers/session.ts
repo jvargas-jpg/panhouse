@@ -10,6 +10,11 @@ export interface AuthenticatedUser {
   email: string;
   nombre: string;
   rol: Rol;
+  // Solo tiene valor cuando rol = 'autor' (ver users.autorId en
+  // server/db/schema/users.ts) — resuelto acá, en la misma consulta de
+  // sesión, para que las rutas del Portal del Autor no necesiten una
+  // consulta aparte para saber "los libros de quién".
+  autorId: string | null;
 }
 
 function hashToken(token: string): string {
@@ -36,6 +41,7 @@ export async function validateSession(token: string): Promise<AuthenticatedUser 
       nombre: users.nombre,
       rol: users.rol,
       activo: users.activo,
+      autorId: users.autorId,
     })
     .from(sessions)
     .innerJoin(users, eq(sessions.userId, users.id))
@@ -49,7 +55,7 @@ export async function validateSession(token: string): Promise<AuthenticatedUser 
     return null;
   }
 
-  return { id: fila.userId, email: fila.email, nombre: fila.nombre, rol: fila.rol };
+  return { id: fila.userId, email: fila.email, nombre: fila.nombre, rol: fila.rol, autorId: fila.autorId };
 }
 
 export async function destroySession(token: string): Promise<void> {

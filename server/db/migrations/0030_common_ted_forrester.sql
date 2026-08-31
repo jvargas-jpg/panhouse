@@ -1,0 +1,1 @@
+ALTER TABLE "proyectos" ADD COLUMN "ficha_enviada" boolean DEFAULT false NOT NULL;

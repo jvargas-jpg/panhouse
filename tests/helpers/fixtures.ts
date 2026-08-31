@@ -1,6 +1,17 @@
 import { db } from '../../server/db/client.js';
 import type { CausaPausa, EstadoProyecto, Rol } from '../../server/db/schema/index.js';
-import { autores, pagos, pausas, presupuestos, proyectos, seguimientoFases, servicios, unidades, users } from '../../server/db/schema/index.js';
+import {
+  autores,
+  notificaciones,
+  pagos,
+  pausas,
+  presupuestos,
+  proyectos,
+  seguimientoFases,
+  servicios,
+  unidades,
+  users,
+} from '../../server/db/schema/index.js';
 import { hashPassword } from '../../server/helpers/password.js';
 
 let contador = 0;
@@ -53,10 +64,14 @@ export async function crearServicio(datos: {
   return unaFila(await db.insert(servicios).values(datos).returning());
 }
 
-export async function crearUsuario(rol: Rol = 'especialista') {
+// autorId opcional: solo tiene efecto real con rol 'autor' (ver
+// users.autorId en server/db/schema/users.ts) — los tests del Portal
+// del Autor lo necesitan para simular una cuenta de login ya vinculada
+// a una entidad autores.
+export async function crearUsuario(rol: Rol = 'especialista', autorId?: string) {
   const email = `${siguiente('usuario')}@panhouse.test`;
   const passwordHash = await hashPassword('password123');
-  return unaFila(await db.insert(users).values({ email, passwordHash, nombre: email, rol }).returning());
+  return unaFila(await db.insert(users).values({ email, passwordHash, nombre: email, rol, autorId }).returning());
 }
 
 export async function crearProyecto(datos: {
@@ -129,6 +144,24 @@ export async function crearPagoDePrueba(datos: { proyectoId: string; monto?: str
         monto: datos.monto ?? '100.00',
         metodoPago: datos.metodoPago ?? 'Zelle',
         fechaPago: datos.fechaPago ?? '2026-01-15',
+      })
+      .returning(),
+  );
+}
+
+// Inserta directo, sin pasar por crearProyecto (que solo dispara una
+// notificación real cuando el creador es comercial): los tests de
+// GET /api/notificaciones y PATCH /:id/leer (tests/notificaciones.routes.test.ts)
+// solo necesitan una fila ya existente, no probar de nuevo el disparador.
+export async function crearNotificacionDePrueba(datos: { proyectoId?: string; rolDestino?: string; mensaje?: string; leido?: boolean }) {
+  return unaFila(
+    await db
+      .insert(notificaciones)
+      .values({
+        proyectoId: datos.proyectoId,
+        rolDestino: datos.rolDestino ?? 'jefe_area',
+        mensaje: datos.mensaje ?? 'Notificación de prueba',
+        leido: datos.leido ?? false,
       })
       .returning(),
   );

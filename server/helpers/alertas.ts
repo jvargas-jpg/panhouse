@@ -95,6 +95,13 @@ export interface ProyectoConRiesgo {
   digitalId: string | null;
   lanzamientoId: string | null;
   distribucionId: string | null;
+  // Botones "Notificar a RRPP" / "Notificar a Jefatura" de Fase 1 -
+  // Inicio (ProyectoDetallePage.tsx): sin esto viajando acá, el
+  // frontend no tendría cómo saber cuál de los dos ya se disparó, y el
+  // botón correspondiente no podría quedar deshabilitado ("Notificado")
+  // tras recargar la página.
+  notificadoRrpp: boolean;
+  notificadoJefatura: boolean;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
   riesgo: RiesgoProyecto;
@@ -123,6 +130,8 @@ const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   digitalId: proyectos.digitalId,
   lanzamientoId: proyectos.lanzamientoId,
   distribucionId: proyectos.distribucionId,
+  notificadoRrpp: proyectos.notificadoRrpp,
+  notificadoJefatura: proyectos.notificadoJefatura,
   autorId: autores.id,
   autorNombre: autores.nombre,
   servicioId: servicios.id,
@@ -145,6 +154,8 @@ type FilaProyectoConAutorYServicio = {
   digitalId: string | null;
   lanzamientoId: string | null;
   distribucionId: string | null;
+  notificadoRrpp: boolean;
+  notificadoJefatura: boolean;
   autorId: string;
   autorNombre: string;
   servicioId: string;
@@ -168,6 +179,8 @@ async function mapearFilaConRiesgo(fila: FilaProyectoConAutorYServicio): Promise
     digitalId: fila.digitalId,
     lanzamientoId: fila.lanzamientoId,
     distribucionId: fila.distribucionId,
+    notificadoRrpp: fila.notificadoRrpp,
+    notificadoJefatura: fila.notificadoJefatura,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
     riesgo: await evaluarRiesgoProyecto(fila.id),

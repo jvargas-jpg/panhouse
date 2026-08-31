@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom';
 import type { ProyectoPendienteSeccion1 } from '../types/api';
 
 const LAPIZ_PATH = 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z';
-const ENGRANAJE_PATH =
-  'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z';
-const CIRCULO_PATH = 'M15 12a3 3 0 11-6 0 3 3 0 016 0z';
 
 function coincide(proyecto: ProyectoPendienteSeccion1, termino: string): boolean {
   const q = termino.trim().toLowerCase();
@@ -30,24 +27,24 @@ function coincide(proyecto: ProyectoPendienteSeccion1, termino: string): boolean
 // "Proyectos Pendientes" de esta sección — tenerlo acá también sería
 // un encabezado duplicado.
 //
-// Dos botones de edición distintos en la misma tarjeta: el lápiz edita
-// los datos de contacto del autor (Modal de Autor); el engranaje edita
-// el proyecto en sí — a qué autor está asociado y su tipo de servicio
-// (Modal de Proyecto). Dos entidades, dos modales, mismo lugar de
-// acceso rápido.
+// Un solo botón de edición a propósito (no dos, como antes): el lápiz
+// abre CrearProyectoModalForm.tsx en modo edición para que Ventas
+// pueda corregir el tipo de servicio de un proyecto ya creado — el
+// autor queda bloqueado ahí adentro (ver el comentario de ese
+// componente). Los datos de contacto del autor NO se editan desde esta
+// vista — eso sigue centralizado en la pestaña "Clientes"
+// (ClientesGrid.tsx), decisión explícita de una ronda anterior.
 export function ProyectosPendientesCrmList({
   queryKey,
   queryFn,
   mensajeVacio,
   searchTerm,
-  onEditarAutor,
   onEditarProyecto,
 }: {
   queryKey: QueryKey;
   queryFn: () => Promise<{ proyectos: ProyectoPendienteSeccion1[] }>;
   mensajeVacio: string;
   searchTerm: string;
-  onEditarAutor: (autorId: string) => void;
   onEditarProyecto: (proyecto: ProyectoPendienteSeccion1) => void;
 }) {
   const query = useQuery({ queryKey, queryFn });
@@ -76,7 +73,9 @@ export function ProyectosPendientesCrmList({
               {/* Franja superior decorativa sutil */}
               <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-gray-100 to-gray-200 transition-colors group-hover:from-dorado group-hover:to-yellow-500" />
 
-              {/* Cabecera Tarjeta: Avatar, Nombre y Botones de Edición */}
+              {/* Cabecera Tarjeta: Avatar, Nombre y el único botón de edición
+                  (servicio/título del proyecto, ver el comentario del
+                  componente arriba). */}
               <div className="mb-4 mt-2 flex items-start justify-between">
                 <div className="flex items-start gap-4">
                   <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-lg font-bold text-gray-700 shadow-inner">
@@ -90,38 +89,19 @@ export function ProyectosPendientesCrmList({
                   </div>
                 </div>
 
-                <div className="flex flex-shrink-0 items-center gap-1">
-                  {/* Editar el proyecto (autor asociado / tipo de servicio) */}
-                  <button
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onEditarProyecto(proyecto);
-                    }}
-                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-dorado/10 hover:text-dorado"
-                    title="Editar proyecto (autor / servicio)"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={ENGRANAJE_PATH} />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={CIRCULO_PATH} />
-                    </svg>
-                  </button>
-
-                  {/* Editar los datos de contacto del autor */}
-                  <button
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      onEditarAutor(proyecto.autor.id);
-                    }}
-                    className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-dorado/10 hover:text-dorado"
-                    title="Editar datos del autor"
-                  >
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={LAPIZ_PATH} />
-                    </svg>
-                  </button>
-                </div>
+                <button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onEditarProyecto(proyecto);
+                  }}
+                  className="flex-shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-dorado/10 hover:text-dorado"
+                  title="Editar proyecto (servicio)"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={LAPIZ_PATH} />
+                  </svg>
+                </button>
               </div>
 
               {/* Cuerpo Tarjeta: Badges */}

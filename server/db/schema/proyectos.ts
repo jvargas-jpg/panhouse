@@ -63,6 +63,15 @@ export const proyectos = pgTable('proyectos', {
   // ruta propia (PATCH /:id/titulo) porque esta tabla, no la ficha.
   titulo: text('titulo'),
 
+  // Enlace al manuscrito original (Google Docs, OneDrive, etc.) que el
+  // propio autor entrega desde el Portal del Autor — PATCH
+  // /:id/manuscrito, dueño autor (el autorId vinculado a la sesión, ver
+  // users.autorId). Mismo criterio que el resto de "enlaces" de este
+  // sistema (fichaDisenoPropuestas.enlace, pagos.comprobanteUrl): un
+  // link externo, no un archivo subido — no existe infraestructura de
+  // almacenamiento de archivos.
+  manuscritoUrl: text('manuscrito_url'),
+
   estado: estadoProyectoEnum('estado').notNull().default('en_proceso'),
   
   // Solo aplica cuando estado = 'stand_by'. El proyecto no se pausa
@@ -89,6 +98,18 @@ export const proyectos = pgTable('proyectos', {
 
   // --- CONTROL ADMINISTRATIVO (Alineados a Matriz IA) ---
   contratoFirmado: boolean('contrato_firmado').default(false),
+
+  // Cascada de Fase 1 (Inicio): comercial llena los datos de venta y
+  // notifica a rrpp (notificadoRrpp) → rrpp completa la ficha de
+  // trazabilidad y notifica a jefatura (notificadoJefatura). Dos
+  // banderas independientes, no una sola (reemplazan a la antigua
+  // fichaEnviada): son dos pasos separados, con dueños distintos, y cada
+  // uno necesita su propia idempotencia — sin esto, recargar la pantalla
+  // de Fase 1 perdería el estado "Notificado" de cada botón (React no
+  // persiste nada por sí solo) y nada impediría notificar dos veces el
+  // mismo paso.
+  notificadoRrpp: boolean('notificado_rrpp').notNull().default(false),
+  notificadoJefatura: boolean('notificado_jefatura').notNull().default(false),
   
   // TODO (Regla de negocio no confirmada): La Matriz IA tiene "Pago Cuota 1" al 6. 
   // Asumo temporalmente que es un booleano (pagado/no pagado). Si el negocio 

@@ -1,10 +1,10 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
 import { fetchProyectosPendientesContrato } from '../proyectos/proyectosPendientesApi';
 import type { Autor, ProyectoPendienteSeccion1 } from '../types/api';
-import { fetchAutores } from './autoresApi';
+import { eliminarAutor, fetchAutores } from './autoresApi';
 import { ClientesGrid } from './ClientesGrid';
 import { CrearAutorForm } from './CrearAutorForm';
 import { CrearProyectoModalForm } from './CrearProyectoModalForm';
@@ -43,6 +43,7 @@ export function AutoresPage() {
   const navigate = useNavigate();
 
   const autoresQuery = useQuery({ queryKey: ['autores'], queryFn: fetchAutores });
+  const queryClient = useQueryClient();
 
   const [vistaActiva, setVistaActiva] = useState<Vista>(esComercial ? 'proyectos' : 'clientes');
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,6 +55,11 @@ export function AutoresPage() {
   const [modalProyectoOpen, setModalProyectoOpen] = useState(false);
 
   const [toastMensaje, setToastMensaje] = useState<string | null>(null);
+  // Separado de toastMensaje (no reutilizado): ese lo dispara onGuardado
+  // de los modales de alta/edición, siempre "éxito". Este es solo para
+  // el error 400 de "Eliminar cliente" (autor con proyectos asociados)
+  // — mismo auto-cierre, ícono y color distintos (ver Toast.tsx).
+  const [toastError, setToastError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!toastMensaje) return;
@@ -61,19 +67,34 @@ export function AutoresPage() {
     return () => clearTimeout(id);
   }, [toastMensaje]);
 
+  useEffect(() => {
+    if (!toastError) return;
+    const id = setTimeout(() => setToastError(null), 3000);
+    return () => clearTimeout(id);
+  }, [toastError]);
+
+  const mutacionEliminarAutor = useMutation({
+    mutationFn: (autorId: string) => eliminarAutor(autorId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['autores'] });
+      setToastMensaje('Cliente eliminado exitosamente');
+    },
+    onError: (error) => {
+      // ApiError.message ya trae el texto del backend tal cual (ver
+      // eliminarAutor en autoresApi.ts) — "No se puede eliminar un
+      // autor con proyectos asociados" cuando responde 400.
+      setToastError(error instanceof Error ? error.message : 'No se pudo eliminar el cliente.');
+    },
+  });
+
+  function handleEliminarAutor(autor: Autor) {
+    if (!window.confirm(`¿Eliminar a ${autor.nombre}? Esta acción no se puede deshacer.`)) return;
+    mutacionEliminarAutor.mutate(autor.id);
+  }
+
   function cambiarVista(vista: Vista) {
     setVistaActiva(vista);
     setSearchTerm('');
-  }
-
-  // ProyectosPendientesCrmList solo conoce {id, nombre} del autor (ver
-  // ProyectoPendienteSeccion1) — el registro completo para precargar el
-  // form de edición sale de esta misma lista de autores ya cargada acá.
-  function abrirEdicionAutor(autorId: string) {
-    const autor = autoresQuery.data?.autores.find((a) => a.id === autorId);
-    if (!autor) return;
-    setAutorEnEdicion(autor);
-    setModalAutorOpen(true);
   }
 
   const tituloVista = vistaActiva === 'proyectos' ? 'Proyectos Pendientes' : 'Directorio de Clientes';
@@ -159,7 +180,6 @@ export function AutoresPage() {
               queryFn={fetchProyectosPendientesContrato}
               mensajeVacio="No hay proyectos pendientes de lo contractual ahora mismo."
               searchTerm={searchTerm}
-              onEditarAutor={abrirEdicionAutor}
               onEditarProyecto={(proyecto) => {
                 setProyectoEnEdicion(proyecto);
                 setModalProyectoOpen(true);
@@ -175,6 +195,7 @@ export function AutoresPage() {
                 setAutorEnEdicion(autor);
                 setModalAutorOpen(true);
               }}
+              onEliminar={handleEliminarAutor}
             />
           )}
         </div>
@@ -205,6 +226,7 @@ export function AutoresPage() {
       )}
 
       {toastMensaje && <Toast mensaje={toastMensaje} />}
+      {toastError && <Toast mensaje={toastError} variante="error" />}
     </div>
   );
 }

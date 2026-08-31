@@ -2,7 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
+import { notificarJefatura, notificarRrpp } from '../jefatura/jefaturaApi';
 import type { Pausa } from '../types/api';
+import { BotonNotificarTransicion } from './BotonNotificarTransicion';
 import { formatearFecha } from './campos';
 import { CapituloRow } from './CapituloRow';
 import { EstadoBadge } from './EstadoBadge';
@@ -170,6 +172,16 @@ export function ProyectoDetallePage() {
 
           {fichaQuery.data && proyectoQuery.data && rol === 'comercial' && (
             <div className="flex w-full flex-col gap-6">
+              <div className="flex justify-end">
+                <BotonNotificarTransicion
+                  proyectoId={id}
+                  notificadoInicial={proyectoQuery.data.proyecto.notificadoRrpp}
+                  etiqueta="Notificar a RRPP"
+                  mensajeConfirmacion="¿Notificar a RRPP que el proyecto base ya está registrado y listo para la Ficha de Trazabilidad?"
+                  mensajeToast="RRPP notificado exitosamente"
+                  mutationFn={notificarRrpp}
+                />
+              </div>
               <SeccionProyectoPerfil
                 proyectoId={id}
                 ficha={fichaQuery.data.ficha}
@@ -184,6 +196,18 @@ export function ProyectoDetallePage() {
             <div key={pasoActivo} className="w-full animate-fade-in">
               {pasoActivo === 1 && (
                 <div className="flex w-full flex-col gap-6">
+                  {rol === 'rrpp' && (
+                    <div className="flex justify-end">
+                      <BotonNotificarTransicion
+                        proyectoId={id}
+                        notificadoInicial={proyectoQuery.data.proyecto.notificadoJefatura}
+                        etiqueta="Notificar a Jefatura"
+                        mensajeConfirmacion="¿Notificar a Jefatura que la Fase 1 (Inicio) está completa y lista para revisión?"
+                        mensajeToast="Jefatura notificada exitosamente"
+                        mutationFn={notificarJefatura}
+                      />
+                    </div>
+                  )}
                   <SeccionProyectoPerfil
                     proyectoId={id}
                     ficha={fichaQuery.data.ficha}

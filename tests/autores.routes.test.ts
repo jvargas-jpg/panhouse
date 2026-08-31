@@ -155,3 +155,88 @@ describe('PATCH /api/autores/:id', () => {
     await app.close();
   });
 });
+
+describe('DELETE /api/autores/:id', () => {
+  beforeEach(async () => {
+    await limpiarBaseDeDatos();
+  });
+
+  it('permite a comercial eliminar un autor sin proyectos asociados', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const autor = await crearAutor();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).delete(`/api/autores/${autor.id}`).set('Cookie', cookie);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.ok).toBe(true);
+
+    const verificacion = await request(app.server).patch(`/api/autores/${autor.id}`).set('Cookie', cookie).send({ nombre: 'x' });
+    expect(verificacion.status).toBe(404);
+
+    await app.close();
+  });
+
+  it('devuelve 400 (no 500) si el autor tiene proyectos asociados, sin borrar nada', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+    const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+    await crearProyecto({
+      autorId: autor.id,
+      servicioId: servicio.id,
+      unidadId: unidad.id,
+      presupuestoId: presupuesto.id,
+      fechaProgramadaInicio: '2026-01-01',
+    });
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).delete(`/api/autores/${autor.id}`).set('Cookie', cookie);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error).toBe('No se puede eliminar un autor con proyectos asociados');
+
+    const verificacion = await request(app.server).patch(`/api/autores/${autor.id}`).set('Cookie', cookie).send({ nombre: 'x' });
+    expect(verificacion.status).toBe(200); // sigue existiendo
+
+    await app.close();
+  });
+
+  it('devuelve 404 si el autor no existe', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).delete('/api/autores/00000000-0000-0000-0000-000000000000').set('Cookie', cookie);
+
+    expect(respuesta.status).toBe(404);
+
+    await app.close();
+  });
+
+  it('rechaza sin sesión', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const autor = await crearAutor();
+
+    const respuesta = await request(app.server).delete(`/api/autores/${autor.id}`);
+
+    expect(respuesta.status).toBe(401);
+
+    await app.close();
+  });
+
+  it('rechaza a un rol sin permiso de escritura (ej. rrpp)', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const autor = await crearAutor();
+    const cookie = await registrarYLoguear(app, 'rrpp');
+
+    const respuesta = await request(app.server).delete(`/api/autores/${autor.id}`).set('Cookie', cookie);
+
+    expect(respuesta.status).toBe(403);
+
+    await app.close();
+  });
+});

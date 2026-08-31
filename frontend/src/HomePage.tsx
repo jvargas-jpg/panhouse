@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom';
 import { AutoresPage } from './autores/AutoresPage';
 import { useMe } from './auth/useAuth';
 import { AuditoriaPagosPage } from './cobranzas/AuditoriaPagosPage';
@@ -55,6 +56,13 @@ export function HomePage() {
 
   if (user?.rol === 'cobranzas') {
     return <AuditoriaPagosPage />;
+  }
+
+  // Portal del Autor vive bajo su propio layout (AutorLayout.tsx, no el
+  // sidebar interno de AppLayout.tsx) — redirige en vez de renderizar
+  // acá adentro.
+  if (user?.rol === 'autor') {
+    return <Navigate to="/mis-libros" replace />;
   }
 
   return (

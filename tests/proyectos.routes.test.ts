@@ -1,5 +1,7 @@
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { db } from '../server/db/client.js';
+import { fichasTrazabilidad } from '../server/db/schema/index.js';
 import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import {
@@ -12,6 +14,36 @@ import {
   crearUsuario,
 } from './helpers/fixtures.js';
 import { crearAppDePrueba } from './helpers/testApp.js';
+
+let contadorServicioAutor = 0;
+
+// Portal del Autor: crea autor + proyecto + cuenta de login con rol
+// 'autor' ya vinculada (users.autorId) — setup repetido por todos los
+// tests de /mis-libros y /:id/manuscrito. También inserta la ficha de
+// trazabilidad: en producción POST /api/proyectos siempre crea una en
+// la misma transacción (ver crearProyecto en server/helpers/proyectos.ts),
+// e innerJoin la da por garantizada — sin esto, listarMisLibros
+// (server/helpers/portalAutor.ts) no encontraría el proyecto.
+async function crearLibroYCuentaAutor(app: Awaited<ReturnType<typeof crearAppDePrueba>>) {
+  contadorServicioAutor += 1;
+  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+  const servicio = await crearServicio({
+    codigo: `EF-${contadorServicioAutor}`,
+    nombre: 'Escritura fantasma',
+    pesoComplejidad: 4,
+    plazoDias: 180,
+  });
+  const proyecto = await crearProyecto({
+    autorId: autor.id,
+    servicioId: servicio.id,
+    unidadId: unidad.id,
+    presupuestoId: presupuesto.id,
+    fechaProgramadaInicio: '2026-01-01',
+  });
+  await db.insert(fichasTrazabilidad).values({ proyectoId: proyecto.id });
+  const cookie = await registrarYLoguear(app, 'autor', autor.id);
+  return { autor, proyecto, servicio, cookie };
+}
 
 describe('rutas de proyectos', () => {
   beforeEach(async () => {
@@ -78,6 +110,41 @@ describe('rutas de proyectos', () => {
 
       expect(respuesta.status).toBe(201);
       expect(respuesta.body.proyecto.autorId).toBe(autor.id);
+
+      await app.close();
+    });
+
+    // Revertido a propósito (ronda anterior): un proyecto recién creado
+    // es solo un cascarón, sin contenido en la ficha todavía — alertar a
+    // jefe_area en este punto los mandaría a revisar algo vacío. Ver
+    // POST /:id/notificar-jefatura para el disparador real.
+    it('NO dispara ninguna notificación al crear un proyecto (ni para comercial ni para jefe_area)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+      const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+      const cookieComercial = await registrarYLoguear(app, 'comercial');
+
+      const respuestaCrear = await request(app.server)
+        .post('/api/proyectos')
+        .set('Cookie', cookieComercial)
+        .send({
+          autorId: autor.id,
+          servicioId: servicio.id,
+          unidadId: unidad.id,
+          presupuestoId: presupuesto.id,
+          fechaProgramadaInicio: '2026-01-01',
+        });
+      expect(respuestaCrear.status).toBe(201);
+      expect(respuestaCrear.body.proyecto.notificadoRrpp).toBe(false);
+      expect(respuestaCrear.body.proyecto.notificadoJefatura).toBe(false);
+
+      const cookieJefeArea = await registrarYLoguear(app, 'jefe_area');
+      const respuestaNotificaciones = await request(app.server).get('/api/notificaciones').set('Cookie', cookieJefeArea);
+
+      expect(respuestaNotificaciones.status).toBe(200);
+      expect(respuestaNotificaciones.body.notificaciones).toHaveLength(0);
 
       await app.close();
     });
@@ -162,6 +229,248 @@ describe('rutas de proyectos', () => {
     });
   });
 
+  describe('POST /api/proyectos/:id/notificar-rrpp', () => {
+    it('permite a comercial notificar a rrpp que el proyecto base está registrado', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+      const cookieComercial = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`).set('Cookie', cookieComercial);
+
+      expect(respuesta.status).toBe(201);
+      expect(respuesta.body.ok).toBe(true);
+
+      const cookieRrpp = await registrarYLoguear(app, 'rrpp');
+      const respuestaNotificaciones = await request(app.server).get('/api/notificaciones').set('Cookie', cookieRrpp);
+
+      expect(respuestaNotificaciones.body.notificaciones).toHaveLength(1);
+      expect(respuestaNotificaciones.body.notificaciones[0].proyectoId).toBe(proyecto.id);
+      expect(respuestaNotificaciones.body.notificaciones[0].mensaje).toContain(
+        'Nuevo proyecto base registrado, pendiente de Ficha de Trazabilidad',
+      );
+
+      await app.close();
+    });
+
+    it('devuelve 409 (no un duplicado silencioso) si ya se notificó antes — confirma que notificadoRrpp quedó persistido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const primera = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`).set('Cookie', cookie);
+      expect(primera.status).toBe(201);
+
+      const segunda = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`).set('Cookie', cookie);
+      expect(segunda.status).toBe(409);
+
+      const cookieRrpp = await registrarYLoguear(app, 'rrpp');
+      const respuestaNotificaciones = await request(app.server).get('/api/notificaciones').set('Cookie', cookieRrpp);
+      expect(respuestaNotificaciones.body.notificaciones).toHaveLength(1); // no dos
+
+      await app.close();
+    });
+
+    it('devuelve 404 si el proyecto no existe', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server)
+        .post('/api/proyectos/00000000-0000-0000-0000-000000000000/notificar-rrpp')
+        .set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(404);
+
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+
+      const respuesta = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`);
+
+      expect(respuesta.status).toBe(401);
+
+      await app.close();
+    });
+
+    it.each(['rrpp', 'jefe_area', 'especialista'] as const)('rechaza a un rol distinto de comercial (ej. %s)', async (rol) => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, rol);
+
+      const respuesta = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`).set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+  });
+
+  describe('POST /api/proyectos/:id/notificar-jefatura', () => {
+    it('permite a rrpp notificar a jefatura que la ficha de Fase 1 está completa', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+      const cookieRrpp = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-jefatura`).set('Cookie', cookieRrpp);
+
+      expect(respuesta.status).toBe(201);
+      expect(respuesta.body.ok).toBe(true);
+
+      const cookieJefeArea = await registrarYLoguear(app, 'jefe_area');
+      const respuestaNotificaciones = await request(app.server).get('/api/notificaciones').set('Cookie', cookieJefeArea);
+
+      expect(respuestaNotificaciones.body.notificaciones).toHaveLength(1);
+      expect(respuestaNotificaciones.body.notificaciones[0].proyectoId).toBe(proyecto.id);
+      expect(respuestaNotificaciones.body.notificaciones[0].mensaje).toContain(
+        'Ficha de trazabilidad completada por RRPP, lista para revisión',
+      );
+
+      await app.close();
+    });
+
+    it('devuelve 409 (no un duplicado silencioso) si ya se notificó antes — confirma que notificadoJefatura quedó persistido', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const primera = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-jefatura`).set('Cookie', cookie);
+      expect(primera.status).toBe(201);
+
+      const segunda = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-jefatura`).set('Cookie', cookie);
+      expect(segunda.status).toBe(409);
+
+      const cookieJefeArea = await registrarYLoguear(app, 'jefe_area');
+      const respuestaNotificaciones = await request(app.server).get('/api/notificaciones').set('Cookie', cookieJefeArea);
+      expect(respuestaNotificaciones.body.notificaciones).toHaveLength(1); // no dos
+
+      await app.close();
+    });
+
+    it('devuelve 404 si el proyecto no existe', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .post('/api/proyectos/00000000-0000-0000-0000-000000000000/notificar-jefatura')
+        .set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(404);
+
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+
+      const respuesta = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-jefatura`);
+
+      expect(respuesta.status).toBe(401);
+
+      await app.close();
+    });
+
+    // comercial y jefe_area ya no disparan este paso (antes compartían la
+    // ruta con rrpp cuando era un solo tramo) — ahora es exclusivo de
+    // rrpp, dueño real de este segundo tramo de la cascada.
+    it.each(['comercial', 'jefe_area', 'especialista'] as const)('rechaza a un rol distinto de rrpp (ej. %s)', async (rol) => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, rol);
+
+      const respuesta = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-jefatura`).set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+  });
+
+  describe('DELETE /api/proyectos/:id', () => {
+    it.each(['jefe_area', 'direccion', 'comercial'] as const)('permite a %s eliminar un proyecto', async (rol) => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, rol);
+
+      const respuesta = await request(app.server).delete(`/api/proyectos/${proyecto.id}`).set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ok).toBe(true);
+
+      await app.close();
+    });
+
+    it('elimina en cascada la ficha de trazabilidad asociada', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+
+      await request(app.server).delete(`/api/proyectos/${proyecto.id}`).set('Cookie', cookie);
+
+      // GET /fichas-trazabilidad/:proyectoId devuelve 404 si el proyecto
+      // ya no existe (verificarAccesoAProyecto lo resuelve así).
+      const verificacion = await request(app.server).get(`/api/fichas-trazabilidad/${proyecto.id}`).set('Cookie', cookie);
+      expect(verificacion.status).toBe(404);
+
+      await app.close();
+    });
+
+    it('devuelve 404 si el proyecto no existe', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+
+      const respuesta = await request(app.server)
+        .delete('/api/proyectos/00000000-0000-0000-0000-000000000000')
+        .set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(404);
+
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+
+      const respuesta = await request(app.server).delete(`/api/proyectos/${proyecto.id}`);
+
+      expect(respuesta.status).toBe(401);
+
+      await app.close();
+    });
+
+    it('rechaza a un rol sin permiso (ej. especialista)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server).delete(`/api/proyectos/${proyecto.id}`).set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+  });
+
   describe('PATCH /api/proyectos/:id/reasignar', () => {
     it('permite a comercial reasignar el autor de un proyecto', async () => {
       const app = crearAppDePrueba();
@@ -197,6 +506,27 @@ describe('rutas de proyectos', () => {
 
       expect(respuesta.status).toBe(200);
       expect(respuesta.body.proyecto.servicioId).toBe(nuevoServicio.id);
+
+      await app.close();
+    });
+
+    it('permite a comercial reasignar unidad, presupuesto y fecha programada (parámetros comerciales completos)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const [nuevaUnidad, nuevoPresupuesto] = await Promise.all([crearUnidad(), crearPresupuesto()]);
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/reasignar`)
+        .set('Cookie', cookie)
+        .send({ unidadId: nuevaUnidad.id, presupuestoId: nuevoPresupuesto.id, fechaProgramadaInicio: '2026-03-01' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.proyecto.unidadId).toBe(nuevaUnidad.id);
+      expect(respuesta.body.proyecto.presupuestoId).toBe(nuevoPresupuesto.id);
+      expect(respuesta.body.proyecto.fechaProgramadaInicio).toBe('2026-03-01');
 
       await app.close();
     });
@@ -1017,6 +1347,321 @@ describe('rutas de proyectos', () => {
       const cookie = await registrarYLoguear(app, 'jefe_area');
 
       const respuesta = await request(app.server).get('/api/proyectos/sin-editor').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+  });
+
+  describe('GET /api/proyectos/mis-libros', () => {
+    it('permite a autor listar sus propios libros', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto, servicio, cookie } = await crearLibroYCuentaAutor(app);
+
+      const respuesta = await request(app.server).get('/api/proyectos/mis-libros').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.proyectos).toHaveLength(1);
+      expect(respuesta.body.proyectos[0].id).toBe(proyecto.id);
+      expect(respuesta.body.proyectos[0].servicio.codigo).toBe(servicio.codigo);
+
+      await app.close();
+    });
+
+    // Filtro explícito por SELECT (COLUMNAS_LIBRO_AUTOR en
+    // server/helpers/portalAutor.ts): confirma que la respuesta no trae
+    // control de tiempos macro ni ids del escuadrón de producción.
+    it('no expone fechas/días de fase ni ids de asignación interna', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { cookie } = await crearLibroYCuentaAutor(app);
+
+      const respuesta = await request(app.server).get('/api/proyectos/mis-libros').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      const libro = respuesta.body.proyectos[0];
+      expect(libro.especialistaId).toBeUndefined();
+      expect(libro.editorId).toBeUndefined();
+      expect(libro.disenadorId).toBeUndefined();
+      expect(libro.fechaProgramadaInicio).toBeUndefined();
+      expect(libro.fechaRealInicio).toBeUndefined();
+      expect(libro.riesgo).toBeUndefined();
+
+      await app.close();
+    });
+
+    it('no mezcla los libros de un autor con los de otro', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      await crearLibroYCuentaAutor(app); // otro autor, otro libro
+      const { cookie } = await crearLibroYCuentaAutor(app);
+
+      const respuesta = await request(app.server).get('/api/proyectos/mis-libros').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.proyectos).toHaveLength(1);
+
+      await app.close();
+    });
+
+    it('rechaza (403) si la cuenta autor no está vinculada a ningún autor', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const cookie = await registrarYLoguear(app, 'autor');
+
+      const respuesta = await request(app.server).get('/api/proyectos/mis-libros').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const respuesta = await request(app.server).get('/api/proyectos/mis-libros');
+
+      expect(respuesta.status).toBe(401);
+
+      await app.close();
+    });
+
+    it('rechaza a un rol distinto de autor (ej. especialista)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server).get('/api/proyectos/mis-libros').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+  });
+
+  describe('PATCH /api/proyectos/:id/manuscrito', () => {
+    it('permite al autor guardar el enlace de su manuscrito', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto, cookie } = await crearLibroYCuentaAutor(app);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/abc123' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.proyecto.manuscritoUrl).toBe('https://docs.google.com/document/d/abc123');
+
+      await app.close();
+    });
+
+    it('permite borrar el enlace (null)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto, cookie } = await crearLibroYCuentaAutor(app);
+      await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/abc123' });
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: null });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.proyecto.manuscritoUrl).toBeNull();
+
+      await app.close();
+    });
+
+    it('dispara una notificación a especialista al entregar el enlace', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto, cookie } = await crearLibroYCuentaAutor(app);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/abc123' });
+      expect(respuesta.status).toBe(200);
+
+      const cookieEspecialista = await registrarYLoguear(app, 'especialista');
+      const notificaciones = await request(app.server).get('/api/notificaciones').set('Cookie', cookieEspecialista);
+
+      expect(notificaciones.body.notificaciones).toHaveLength(1);
+      expect(notificaciones.body.notificaciones[0].proyectoId).toBe(proyecto.id);
+      expect(notificaciones.body.notificaciones[0].mensaje).toBe('El autor ha entregado el enlace a su manuscrito original.');
+
+      await app.close();
+    });
+
+    it('no dispara ninguna notificación al borrar el enlace (null no es una entrega)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto, cookie } = await crearLibroYCuentaAutor(app);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: null });
+      expect(respuesta.status).toBe(200);
+
+      const cookieEspecialista = await registrarYLoguear(app, 'especialista');
+      const notificaciones = await request(app.server).get('/api/notificaciones').set('Cookie', cookieEspecialista);
+
+      expect(notificaciones.body.notificaciones).toHaveLength(0);
+
+      await app.close();
+    });
+
+    // Protección contra spam: si el autor corrige el enlace varias veces
+    // seguidas antes de que el especialista revise la primera alerta, no
+    // debe apilar una notificación por cada corrección.
+    it('no duplica la notificación si el autor corrige el enlace varias veces seguidas sin que se haya leído', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto, cookie } = await crearLibroYCuentaAutor(app);
+
+      await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/version-1' });
+      await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/version-2' });
+      const tercera = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/version-3' });
+      expect(tercera.status).toBe(200);
+
+      const cookieEspecialista = await registrarYLoguear(app, 'especialista');
+      const notificaciones = await request(app.server).get('/api/notificaciones').set('Cookie', cookieEspecialista);
+
+      expect(notificaciones.body.notificaciones).toHaveLength(1);
+
+      await app.close();
+    });
+
+    it('dispara una nueva notificación si la anterior ya fue marcada como leída', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto, cookie } = await crearLibroYCuentaAutor(app);
+
+      await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/version-1' });
+
+      const cookieEspecialista = await registrarYLoguear(app, 'especialista');
+      const primeraLista = await request(app.server).get('/api/notificaciones').set('Cookie', cookieEspecialista);
+      const idNotificacion = primeraLista.body.notificaciones[0].id;
+      await request(app.server).patch(`/api/notificaciones/${idNotificacion}/leer`).set('Cookie', cookieEspecialista);
+
+      await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/version-2' });
+
+      const segundaLista = await request(app.server).get('/api/notificaciones').set('Cookie', cookieEspecialista);
+      expect(segundaLista.body.notificaciones).toHaveLength(2);
+
+      await app.close();
+    });
+
+    it('rechaza (403) intentar actualizar el manuscrito de OTRO autor', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto } = await crearLibroYCuentaAutor(app); // dueño real
+      const otraCuenta = await crearLibroYCuentaAutor(app); // otro autor con su propio libro
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', otraCuenta.cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/intruso' });
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+
+    it('devuelve 404 si el proyecto no existe', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { cookie } = await crearLibroYCuentaAutor(app);
+
+      const respuesta = await request(app.server)
+        .patch('/api/proyectos/00000000-0000-0000-0000-000000000000/manuscrito')
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/abc123' });
+
+      expect(respuesta.status).toBe(404);
+
+      await app.close();
+    });
+
+    it('rechaza (403) si la cuenta autor no está vinculada a ningún autor', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto } = await crearLibroYCuentaAutor(app);
+      const cookieSinVincular = await registrarYLoguear(app, 'autor');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookieSinVincular)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/abc123' });
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+
+    it('rechaza sin sesión', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const { proyecto } = await crearLibroYCuentaAutor(app);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/abc123' });
+
+      expect(respuesta.status).toBe(401);
+
+      await app.close();
+    });
+
+    it('rechaza a un rol distinto de autor (ej. especialista)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/manuscrito`)
+        .set('Cookie', cookie)
+        .send({ manuscritoUrl: 'https://docs.google.com/document/d/abc123' });
 
       expect(respuesta.status).toBe(403);
 

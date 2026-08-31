@@ -1,7 +1,7 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { autores, fichasTrazabilidad, proyectos, servicios } from '../db/schema/index.js';
+import { autores, fichasTrazabilidad, notificaciones, proyectos, servicios } from '../db/schema/index.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
 
 // Reexportadas desde alertas.ts: comparten el join autor/servicio/riesgo
@@ -25,6 +25,13 @@ export interface DatosNuevoProyecto {
 // huérfana) si algo falla a mitad de camino. especialistaId no se
 // acepta aquí — se asigna aparte con asignarEspecialista, nunca se
 // autoasigna a quien crea el proyecto.
+//
+// NO dispara ninguna notificación (a propósito, revertido tras una
+// ronda anterior): un proyecto recién creado es solo un cascarón, la
+// ficha todavía está vacía — alertar a jefe_area acá los mandaría a
+// revisar algo sin contenido. Ver notificarJefaturaFichaCompletada más
+// abajo, el disparador correcto (acción explícita del usuario al
+// terminar de llenar Fase 1).
 export async function crearProyecto(datos: DatosNuevoProyecto) {
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.insert(proyectos).values(datos).returning();
@@ -33,6 +40,73 @@ export async function crearProyecto(datos: DatosNuevoProyecto) {
     await tx.insert(fichasTrazabilidad).values({ proyectoId: proyecto.id });
 
     return proyecto;
+  });
+}
+
+export type ResultadoTransicionFase1 =
+  | { ok: true }
+  | { ok: false; status: 404; error: string }
+  | { ok: false; status: 409; error: string };
+
+// Paso 1 de la cascada de Fase 1 (Inicio): comercial termina de cargar
+// los datos de venta y pasa el proyecto a rrpp para que llene la ficha
+// de trazabilidad. notificadoRrpp como guardia de idempotencia — mismo
+// criterio que notificarJefaturaFichaCompletada de abajo (el paso 2 de
+// esta misma cascada): sin ella, dos clics generarían dos alertas para
+// el mismo proyecto, y el botón no sabría que ya se envió al recargar.
+export async function notificarRrppProyectoBase(proyectoId: string): Promise<ResultadoTransicionFase1> {
+  return db.transaction(async (tx) => {
+    const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    if (!proyecto) {
+      return { ok: false, status: 404, error: 'Proyecto no encontrado' };
+    }
+    if (proyecto.notificadoRrpp) {
+      return { ok: false, status: 409, error: 'Este proyecto ya fue notificado a rrpp' };
+    }
+
+    // titulo casi siempre es null en este punto (rrpp lo completa
+    // después, ver actualizarTituloProyecto más abajo) — el mensaje cae
+    // al nombre del servicio contratado como respaldo legible.
+    const [servicio] = await tx.select({ nombre: servicios.nombre }).from(servicios).where(eq(servicios.id, proyecto.servicioId)).limit(1);
+
+    await tx.update(proyectos).set({ notificadoRrpp: true }).where(eq(proyectos.id, proyectoId));
+    await tx.insert(notificaciones).values({
+      proyectoId: proyecto.id,
+      rolDestino: 'rrpp',
+      mensaje: `Nuevo proyecto base registrado, pendiente de Ficha de Trazabilidad: ${proyecto.titulo ?? servicio?.nombre ?? 'servicio sin especificar'}`,
+    });
+
+    return { ok: true };
+  });
+}
+
+// Paso 2 de la misma cascada: rrpp termina de llenar la ficha de
+// trazabilidad y pasa el proyecto a jefe_area para revisión.
+// notificadoJefatura como guardia de idempotencia — mismo criterio que
+// notificarRrppProyectoBase de arriba.
+export async function notificarJefaturaFichaCompletada(proyectoId: string): Promise<ResultadoTransicionFase1> {
+  return db.transaction(async (tx) => {
+    const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    if (!proyecto) {
+      return { ok: false, status: 404, error: 'Proyecto no encontrado' };
+    }
+    if (proyecto.notificadoJefatura) {
+      return { ok: false, status: 409, error: 'La ficha de este proyecto ya fue notificada a jefatura' };
+    }
+
+    // titulo casi siempre es null en este punto (rrpp lo completa
+    // después, ver actualizarTituloProyecto más abajo) — el mensaje cae
+    // al nombre del servicio contratado como respaldo legible.
+    const [servicio] = await tx.select({ nombre: servicios.nombre }).from(servicios).where(eq(servicios.id, proyecto.servicioId)).limit(1);
+
+    await tx.update(proyectos).set({ notificadoJefatura: true }).where(eq(proyectos.id, proyectoId));
+    await tx.insert(notificaciones).values({
+      proyectoId: proyecto.id,
+      rolDestino: 'jefe_area',
+      mensaje: `Ficha de trazabilidad completada por RRPP, lista para revisión: ${proyecto.titulo ?? servicio?.nombre ?? 'servicio sin especificar'}`,
+    });
+
+    return { ok: true };
   });
 }
 
@@ -216,16 +290,35 @@ export async function actualizarProyecto(proyectoId: string, datos: DatosActuali
 export interface DatosReasignarProyecto {
   autorId?: string;
   servicioId?: string;
+  unidadId?: string;
+  presupuestoId?: string;
+  fechaProgramadaInicio?: string;
 }
 
-// Corregir a qué autor está asociado un proyecto, o su tipo de
-// servicio, después de creado — capacidad propia de comercial (ver
+// Corregir a qué autor está asociado un proyecto, su tipo de servicio,
+// o sus otros parámetros comerciales (unidad/presupuesto/fecha
+// programada), después de creado — capacidad propia de comercial (ver
 // PATCH /:id/reasignar). Deliberadamente separada de actualizarProyecto
-// (especificaciones operativas, a cargo de especialista): mismo criterio
-// de "un dueño claro por función" que ya usa el resto de este archivo.
+// (especificaciones operativas, a cargo de especialista) — ver la nota
+// de solapamiento en el schema de la ruta.
 export async function reasignarProyecto(proyectoId: string, datos: DatosReasignarProyecto) {
   const [fila] = await db.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
   if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+  return fila;
+}
+
+// Eliminación real (no soft-delete): destruye la fila de proyectos y,
+// por cascada de FK (ver server/db/schema/*.ts: fichas_trazabilidad,
+// capitulos, pausas, pagos, seguimiento_fases todos referencian
+// proyecto_id con onDelete: 'cascade'), TODO el historial operativo y
+// financiero asociado — la ficha completa de las 8 fases, capítulos,
+// pausas, pagos registrados, registros de seguimiento de jefatura. No
+// hay confirmación adicional de este lado (la UI la pide con
+// window.confirm) ni papelera de reciclaje: una vez llamado, no hay
+// vuelta atrás. undefined si el proyecto no existe (la ruta lo traduce
+// a 404).
+export async function eliminarProyecto(proyectoId: string) {
+  const [fila] = await db.delete(proyectos).where(eq(proyectos.id, proyectoId)).returning();
   return fila;
 }
 

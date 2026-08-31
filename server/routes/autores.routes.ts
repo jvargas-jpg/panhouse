@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
 import { autores } from '../db/schema/index.js';
-import { listarAutoresSinProyecto } from '../helpers/autores.js';
+import { eliminarAutor, listarAutoresSinProyecto } from '../helpers/autores.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 
@@ -89,6 +89,24 @@ export async function autoresRoutes(app: FastifyInstance) {
       if (!autor) return reply.code(404).send({ message: 'Autor no encontrado' });
 
       return reply.send({ autor });
+    },
+  );
+
+  // Validación crítica: un autor con proyectos asociados no se borra
+  // (400 legible), ni siquiera en cascada — mismos roles de escritura
+  // que crear/editar.
+  app.delete(
+    '/:id',
+    { preHandler: [requireAuth, requireRole(...ROLES_ESCRITURA_AUTORES)] },
+    async (request, reply) => {
+      const params = parseOrReply(autorIdParamSchema, request.params, reply);
+      if (!params) return;
+
+      const resultado = await eliminarAutor(params.id);
+      if (!resultado.ok) {
+        return reply.code(resultado.status).send({ error: resultado.error });
+      }
+      return reply.send({ ok: true });
     },
   );
 }

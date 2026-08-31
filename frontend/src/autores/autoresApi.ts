@@ -41,3 +41,12 @@ export function editarAutor(id: string, datos: DatosEditarAutor) {
     body: JSON.stringify(datos),
   });
 }
+
+// El backend responde 400 (no 500) si el autor tiene proyectos
+// asociados — ApiError.message ya trae ese texto listo para mostrar en
+// el toast de error, no hace falta traducirlo del lado del cliente.
+export function eliminarAutor(id: string) {
+  return apiFetch<{ ok: true }>(`/autores/${id}`, {
+    method: 'DELETE',
+  });
+}

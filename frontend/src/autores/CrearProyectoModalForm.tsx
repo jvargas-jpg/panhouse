@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type FormEvent } from 'react';
 import { hoyISO } from '../proyectos/campos';
 import type { ProyectoPendienteSeccion1 } from '../types/api';
-import { crearProyecto, fetchCatalogos, reasignarProyecto } from '../jefatura/jefaturaApi';
+import { crearProyecto, eliminarProyecto, fetchCatalogos, reasignarProyecto } from '../jefatura/jefaturaApi';
 import { fetchAutores } from './autoresApi';
 
 const LABEL_CLASS = 'mb-1.5 mt-4 block text-[11px] font-bold uppercase tracking-wide text-gray-500';
@@ -13,16 +13,26 @@ const INPUT_CLASS =
 // jefatura/CrearProyectoForm.tsx (comercial ya está autorizado ahí, ver
 // server/routes/proyectos.routes.ts) — unidad/presupuesto/fecha son
 // NOT NULL en la tabla `proyectos`, así que un alta real no puede
-// prescindir de ellos aunque el pedido original solo mencionara autor y
-// servicio; se muestran acá solo en modo creación.
+// prescindir de ellos.
 //
-// Editar: PATCH /proyectos/:id/reasignar (ruta nueva, ver
-// server/helpers/proyectos.ts) — deliberadamente acotada a autor y
-// servicio, tal como se pidió: no toca especificaciones operativas
-// (esas ya tienen su propia ruta, a cargo de especialista).
+// Editar: PATCH /proyectos/:id/reasignar — ahora cubre TODOS los
+// parámetros comerciales (servicio, unidad, presupuesto, fecha
+// programada), no solo autor/servicio como al principio: "habilitar la
+// edición completa de los parámetros comerciales" fue un pedido
+// explícito posterior. proyectoEnEdicion (ProyectoPendienteSeccion1) ya
+// trae unidadId/presupuestoId/fechaProgramadaInicio precargados desde
+// el backend (server/helpers/trazabilidad.ts) para poder preseleccionar
+// estos campos sin una consulta aparte.
 //
-// El <select> de servicio ahora lee el catálogo real (GET /catalogos)
-// en vez de una lista fija — así el value siempre coincide con
+// El autor NO se puede cambiar en modo edición (a propósito, no un
+// olvido): reasignar el autor de un proyecto ya creado es redundante
+// con el módulo de Clientes y rompía la integridad del CRM — el
+// selector queda solo para alta de proyecto nuevo; en edición se
+// muestra el nombre en solo lectura y autorId ni siquiera viaja en el
+// payload de la mutación.
+//
+// El <select> de servicio lee el catálogo real (GET /catalogos) en vez
+// de una lista fija — así el value siempre coincide con
 // servicios.codigo en la base de datos, y el proyecto en edición
 // preselecciona su servicio real sin adivinar.
 export function CrearProyectoModalForm({
@@ -45,16 +55,20 @@ export function CrearProyectoModalForm({
   useEffect(() => {
     setAutorId(proyectoEnEdicion?.autor.id ?? '');
     setServicioCodigo(proyectoEnEdicion?.servicio.codigo ?? '');
-    setUnidadId('');
-    setPresupuestoId('');
-    setFechaProgramadaInicio(hoyISO());
+    setUnidadId(proyectoEnEdicion?.unidadId ?? '');
+    setPresupuestoId(proyectoEnEdicion?.presupuestoId ?? '');
+    setFechaProgramadaInicio(proyectoEnEdicion?.fechaProgramadaInicio ?? hoyISO());
   }, [proyectoEnEdicion]);
 
   // "Proyectos Pendientes" en AutoresPage.tsx se pide con esta queryKey
   // de 3 partes — invalidar solo ['pendientes', 'contrato'] no la
   // alcanza (invalidateQueries matchea por prefijo exacto del arreglo).
-  function invalidarPendientes() {
+  // También invalida ['proyectos'] (prefijo compartido con /activos,
+  // /mios, /riesgo, etc.) para que cualquier otra pantalla con un
+  // proyecto editado o eliminado en caché se refresque también.
+  function invalidarProyectos() {
     queryClient.invalidateQueries({ queryKey: ['fichas-trazabilidad', 'pendientes', 'contrato'] });
+    queryClient.invalidateQueries({ queryKey: ['proyectos'] });
   }
 
   const servicioId = catalogosQuery.data?.servicios.find((servicio) => servicio.codigo === servicioCodigo)?.id;
@@ -65,7 +79,7 @@ export function CrearProyectoModalForm({
       return crearProyecto({ autorId, servicioId, unidadId, presupuestoId, fechaProgramadaInicio });
     },
     onSuccess: () => {
-      invalidarPendientes();
+      invalidarProyectos();
       onGuardado('Proyecto creado exitosamente');
     },
   });
@@ -73,11 +87,22 @@ export function CrearProyectoModalForm({
   const mutacionEditar = useMutation({
     mutationFn: () => {
       if (!servicioId) throw new Error('Selecciona un servicio válido');
-      return reasignarProyecto(proyectoEnEdicion!.id, { autorId, servicioId });
+      return reasignarProyecto(proyectoEnEdicion!.id, { servicioId, unidadId, presupuestoId, fechaProgramadaInicio });
     },
     onSuccess: () => {
-      invalidarPendientes();
+      invalidarProyectos();
       onGuardado('Proyecto editado exitosamente');
+    },
+  });
+
+  // onGuardado ya cierra el modal y muestra el toast (así lo conecta
+  // AutoresPage.tsx) — se reutiliza tal cual para el mensaje de
+  // eliminación, no hizo falta un callback aparte.
+  const mutacionEliminar = useMutation({
+    mutationFn: () => eliminarProyecto(proyectoEnEdicion!.id),
+    onSuccess: () => {
+      invalidarProyectos();
+      onGuardado('Proyecto eliminado exitosamente');
     },
   });
 
@@ -88,29 +113,42 @@ export function CrearProyectoModalForm({
     mutacion.mutate();
   }
 
+  function handleEliminar() {
+    if (!proyectoEnEdicion) return;
+    if (!window.confirm('¿Estás seguro de eliminar este proyecto? Esta acción no se puede deshacer.')) return;
+    mutacionEliminar.mutate();
+  }
+
   return (
     <form onSubmit={handleSubmit}>
       <div>
         <label htmlFor="proyecto-autor" className={LABEL_CLASS}>
           Autor
         </label>
-        <select
-          id="proyecto-autor"
-          required
-          value={autorId}
-          onChange={(event) => {
-            setAutorId(event.target.value);
-            mutacion.reset();
-          }}
-          className={INPUT_CLASS}
-        >
-          <option value="">Seleccionar…</option>
-          {autoresQuery.data?.autores.map((autor) => (
-            <option key={autor.id} value={autor.id}>
-              {autor.nombre}
-            </option>
-          ))}
-        </select>
+        {proyectoEnEdicion ? (
+          <p id="proyecto-autor" className="font-medium text-gray-900">
+            {proyectoEnEdicion.autor.nombre}
+            <span className="ml-2 text-xs font-normal text-gray-400">— gestiona el autor desde Clientes</span>
+          </p>
+        ) : (
+          <select
+            id="proyecto-autor"
+            required
+            value={autorId}
+            onChange={(event) => {
+              setAutorId(event.target.value);
+              mutacion.reset();
+            }}
+            className={INPUT_CLASS}
+          >
+            <option value="">Seleccionar…</option>
+            {autoresQuery.data?.autores.map((autor) => (
+              <option key={autor.id} value={autor.id}>
+                {autor.nombre}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       <div>
@@ -138,72 +176,68 @@ export function CrearProyectoModalForm({
         </select>
       </div>
 
-      {!proyectoEnEdicion && (
-        <>
-          <div>
-            <label htmlFor="proyecto-unidad" className={LABEL_CLASS}>
-              Unidad
-            </label>
-            <select
-              id="proyecto-unidad"
-              required
-              value={unidadId}
-              onChange={(event) => {
-                setUnidadId(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            >
-              <option value="">Seleccionar…</option>
-              {catalogosQuery.data?.unidades.map((unidad) => (
-                <option key={unidad.id} value={unidad.id}>
-                  {unidad.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div>
+        <label htmlFor="proyecto-unidad" className={LABEL_CLASS}>
+          Unidad
+        </label>
+        <select
+          id="proyecto-unidad"
+          required
+          value={unidadId}
+          onChange={(event) => {
+            setUnidadId(event.target.value);
+            mutacion.reset();
+          }}
+          className={INPUT_CLASS}
+        >
+          <option value="">Seleccionar…</option>
+          {catalogosQuery.data?.unidades.map((unidad) => (
+            <option key={unidad.id} value={unidad.id}>
+              {unidad.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
 
-          <div>
-            <label htmlFor="proyecto-presupuesto" className={LABEL_CLASS}>
-              Presupuesto
-            </label>
-            <select
-              id="proyecto-presupuesto"
-              required
-              value={presupuestoId}
-              onChange={(event) => {
-                setPresupuestoId(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            >
-              <option value="">Seleccionar…</option>
-              {catalogosQuery.data?.presupuestos.map((presupuesto) => (
-                <option key={presupuesto.id} value={presupuesto.id}>
-                  {presupuesto.nombre}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div>
+        <label htmlFor="proyecto-presupuesto" className={LABEL_CLASS}>
+          Presupuesto
+        </label>
+        <select
+          id="proyecto-presupuesto"
+          required
+          value={presupuestoId}
+          onChange={(event) => {
+            setPresupuestoId(event.target.value);
+            mutacion.reset();
+          }}
+          className={INPUT_CLASS}
+        >
+          <option value="">Seleccionar…</option>
+          {catalogosQuery.data?.presupuestos.map((presupuesto) => (
+            <option key={presupuesto.id} value={presupuesto.id}>
+              {presupuesto.nombre}
+            </option>
+          ))}
+        </select>
+      </div>
 
-          <div>
-            <label htmlFor="proyecto-fecha-inicio" className={LABEL_CLASS}>
-              Fecha programada de inicio
-            </label>
-            <input
-              id="proyecto-fecha-inicio"
-              type="date"
-              required
-              value={fechaProgramadaInicio}
-              onChange={(event) => {
-                setFechaProgramadaInicio(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            />
-          </div>
-        </>
-      )}
+      <div>
+        <label htmlFor="proyecto-fecha-inicio" className={LABEL_CLASS}>
+          Fecha programada de inicio
+        </label>
+        <input
+          id="proyecto-fecha-inicio"
+          type="date"
+          required
+          value={fechaProgramadaInicio}
+          onChange={(event) => {
+            setFechaProgramadaInicio(event.target.value);
+            mutacion.reset();
+          }}
+          className={INPUT_CLASS}
+        />
+      </div>
 
       <button
         type="submit"
@@ -216,6 +250,24 @@ export function CrearProyectoModalForm({
         <p role="alert" className="mt-3 text-sm text-red-600">
           No se pudo guardar{mutacion.error instanceof Error ? `: ${mutacion.error.message}` : ''}.
         </p>
+      )}
+
+      {proyectoEnEdicion && (
+        <>
+          <button
+            type="button"
+            onClick={handleEliminar}
+            disabled={mutacionEliminar.isPending}
+            className="mt-3 w-full rounded-lg py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
+          >
+            {mutacionEliminar.isPending ? 'Eliminando…' : 'Eliminar Proyecto'}
+          </button>
+          {mutacionEliminar.isError && (
+            <p role="alert" className="mt-3 text-sm text-red-600">
+              No se pudo eliminar{mutacionEliminar.error instanceof Error ? `: ${mutacionEliminar.error.message}` : ''}.
+            </p>
+          )}
+        </>
       )}
     </form>
   );
