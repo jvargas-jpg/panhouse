@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, notInArray, type SQL } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, notInArray, type SQL } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import {
   autores,
@@ -14,6 +14,7 @@ import {
 } from '../db/schema/index.js';
 
 import { ESTADOS_ACTIVOS } from './carga.js';
+import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 
 // Se llama al crear el proyecto: nace vacía, cada sección se completa
 // después de forma independiente. Ver server/helpers/proyectos.ts —
@@ -52,7 +53,17 @@ export async function obtenerFichaCompleta(proyectoId: string) {
 
 export interface ProyectoPendienteSeccion1 {
   id: string;
+  // Nulo en proyectos creados antes de que el título fuera obligatorio
+  // en el alta (CrearProyectoModalForm.tsx) — ProyectosPendientesCrmList.tsx
+  // muestra un texto de respaldo cuando falta.
+  titulo: string | null;
+  // Se mantiene (primer autor) por compatibilidad — ListaProyectosPendientes.tsx
+  // (RrppHomePage, SoporteEditorialHomePage, SoporteDigitalHomePage,
+  // DisenadorHomePage) sigue leyéndolo tal cual. `autores` es la lista
+  // completa (coautoría, ver proyectos_autores) — ProyectosPendientesCrmList.tsx
+  // (pestaña "Proyectos" del CRM) es el único consumidor migrado a ella.
   autor: { id: string; nombre: string };
+  autores: AutorDeProyecto[];
   servicio: { id: string; codigo: string; nombre: string };
   // Parámetros comerciales (unidad/presupuesto/fecha programada) — solo
   // los ids, sin nombre resuelto: quien los consume (CrearProyectoModalForm.tsx
@@ -76,6 +87,7 @@ async function listarProyectosPendientesSeccion1(condicionFicha: SQL | undefined
   const filas = await db
     .select({
       id: proyectos.id,
+      titulo: proyectos.titulo,
       autorId: autores.id,
       autorNombre: autores.nombre,
       servicioId: servicios.id,
@@ -89,11 +101,18 @@ async function listarProyectosPendientesSeccion1(condicionFicha: SQL | undefined
     .innerJoin(fichasTrazabilidad, eq(fichasTrazabilidad.proyectoId, proyectos.id))
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
-    .where(and(inArray(proyectos.estado, ESTADOS_ACTIVOS), condicionFicha));
+    .where(and(inArray(proyectos.estado, ESTADOS_ACTIVOS), condicionFicha))
+    .orderBy(desc(proyectos.createdAt));
+
+  // Coautoría: una sola consulta en lote (no N+1) para todos los
+  // proyectos de esta página — ver obtenerAutoresPorProyectos.
+  const autoresPorProyecto = await obtenerAutoresPorProyectos(filas.map((fila) => fila.id));
 
   return filas.map((fila) => ({
     id: fila.id,
+    titulo: fila.titulo,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
+    autores: autoresPorProyecto.get(fila.id) ?? [{ id: fila.autorId, nombre: fila.autorNombre }],
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
     unidadId: fila.unidadId,
     presupuestoId: fila.presupuestoId,
@@ -181,9 +200,6 @@ export interface DatosSeccionProyectoPerfil {
   perfilAutor?: string | null;
   publicoObjetivo?: string | null;
   objetivosComerciales?: string | null;
-  ingresoNombreArtistico?: string | null;
-  ingresoNacionalidad?: string | null;
-  ingresoFechaNacimiento?: string | null;
   ingresoTipoProyecto?: string | null;
   ingresoTipoProyectoDetalle?: string | null;
   ingresoFechaIngreso?: string | null;
@@ -194,9 +210,6 @@ export interface DatosSeccionProyectoPerfil {
   ingresoServicioEjecucion?: string | null;
   ingresoServicioAlianza?: string | null;
   ingresoServicioPresupuesto?: string | null;
-  ingresoRedesSociales?: string | null;
-  ingresoPersonalidad?: string | null;
-  ingresoOcupacion?: string | null;
   ingresoObservaciones?: string | null;
   ingresoPosibleTitulo?: string | null;
   ingresoColeccion?: string | null;

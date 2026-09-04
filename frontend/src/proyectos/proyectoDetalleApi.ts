@@ -11,14 +11,15 @@ import type {
   FichaLanzamientoReunion,
   Pausa,
   Proyecto,
-  ProyectoConRiesgo,
+  ProyectoDetalleConAutores,
   TipoPortada,
   UsuarioEquipo,
 } from '../types/api';
 // Misma forma que "mis proyectos" / "proyectos en riesgo" (ProyectoConRiesgo),
-// solo que para un proyecto puntual y sin filtrar por estado activo.
+// salvo que autor (singular) es autores: [] — GET /:id/riesgo migró a
+// coautoría, ver ProyectoDetalleConAutores en types/api.ts.
 export function fetchProyecto(proyectoId: string) {
-  return apiFetch<{ proyecto: ProyectoConRiesgo }>(`/proyectos/${proyectoId}/riesgo`);
+  return apiFetch<{ proyecto: ProyectoDetalleConAutores }>(`/proyectos/${proyectoId}/riesgo`);
 }
 
 export function fetchFicha(proyectoId: string) {
@@ -53,9 +54,6 @@ export interface DatosSeccionProyectoPerfil {
   perfilAutor?: string | null;
   publicoObjetivo?: string | null;
   objetivosComerciales?: string | null;
-  ingresoNombreArtistico?: string | null;
-  ingresoNacionalidad?: string | null;
-  ingresoFechaNacimiento?: string | null;
   ingresoTipoProyecto?: string | null;
   ingresoTipoProyectoDetalle?: string | null;
   ingresoFechaIngreso?: string | null;
@@ -66,9 +64,6 @@ export interface DatosSeccionProyectoPerfil {
   ingresoServicioEjecucion?: string | null;
   ingresoServicioAlianza?: string | null;
   ingresoServicioPresupuesto?: string | null;
-  ingresoRedesSociales?: string | null;
-  ingresoPersonalidad?: string | null;
-  ingresoOcupacion?: string | null;
   ingresoObservaciones?: string | null;
   ingresoPosibleTitulo?: string | null;
   ingresoColeccion?: string | null;

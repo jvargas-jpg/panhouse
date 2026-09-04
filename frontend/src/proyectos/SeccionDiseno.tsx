@@ -270,7 +270,10 @@ function ContenidoDisenoMicro({
   rolUsuario,
 }: {
   proyectoId: string;
-  proyecto: ProyectoConRiesgo;
+  // Omit<'autor'>: ninguna de las dos secciones de Diseño lee el autor,
+  // solo disenadorId/especialistaId — así acepta tanto ProyectoConRiesgo
+  // como ProyectoDetalleConAutores (coautoría, ver types/api.ts).
+  proyecto: Omit<ProyectoConRiesgo, 'autor'>;
   ficha: FichaCompleta;
   puedeEditar: boolean;
   rolUsuario?: Rol;
@@ -563,7 +566,10 @@ export function SeccionDiseno({
   rolUsuario,
 }: {
   proyectoId: string;
-  proyecto: ProyectoConRiesgo;
+  // Omit<'autor'>: ninguna de las dos secciones de Diseño lee el autor,
+  // solo disenadorId/especialistaId — así acepta tanto ProyectoConRiesgo
+  // como ProyectoDetalleConAutores (coautoría, ver types/api.ts).
+  proyecto: Omit<ProyectoConRiesgo, 'autor'>;
   ficha: FichaCompleta;
   puedeEditar: boolean;
   puedeEditarControl: boolean;

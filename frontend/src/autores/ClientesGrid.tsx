@@ -40,50 +40,49 @@ export function ClientesGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+    <div className="flex flex-col gap-3">
       {filtrados.map((autor) => (
         <div
           key={autor.id}
-          className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-dorado/50 hover:shadow-md"
+          className="flex flex-col items-start justify-between gap-3 rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md md:flex-row md:items-center md:gap-4"
         >
-          <div className="mb-4 flex items-start justify-between">
-            <div className="flex items-start gap-4">
-              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-lg font-bold text-gray-700 shadow-inner">
-                {autor.nombre.charAt(0).toUpperCase()}
-              </div>
-              <div>
-                <h3 className="line-clamp-2 text-base font-bold leading-tight text-gray-900">{autor.nombre}</h3>
-                <p className="mt-1 text-xs text-gray-500">{autor.pais ?? 'Sin país'}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-shrink-0 items-center gap-1">
-              <button
-                onClick={() => onEditar(autor)}
-                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-dorado/10 hover:text-dorado"
-                title="Editar datos del cliente"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={LAPIZ_PATH} />
-                </svg>
-              </button>
-
-              <button
-                onClick={() => onEliminar(autor)}
-                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
-                title="Eliminar cliente"
-              >
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={PAPELERA_PATH} />
-                </svg>
-              </button>
-            </div>
+          {/* Izquierda: nombre completo + correo */}
+          <div className="min-w-0 md:w-1/3">
+            <p className="truncate text-sm font-bold text-gray-900">{autor.nombre}</p>
+            <p className="mt-0.5 truncate text-xs text-gray-500">{autor.email ?? 'Sin correo'}</p>
           </div>
 
-          <div className="mt-auto border-t border-gray-50 pt-4">
-            <span className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-[11px] font-medium text-gray-600">
-              {autor.email ?? 'Sin correo'}
+          {/* Centro: teléfono y país */}
+          <div className="flex flex-wrap items-center gap-2 md:w-1/3">
+            <span className="inline-block rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+              {autor.telefono ?? 'Sin teléfono'}
             </span>
+            <span className="inline-block rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+              {autor.pais ?? 'Sin país'}
+            </span>
+          </div>
+
+          {/* Derecha: editar/eliminar */}
+          <div className="flex flex-shrink-0 items-center gap-2 self-end md:w-1/3 md:justify-end md:self-auto">
+            <button
+              onClick={() => onEditar(autor)}
+              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-dorado/10 hover:text-dorado"
+              title="Editar datos del cliente"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={LAPIZ_PATH} />
+              </svg>
+            </button>
+
+            <button
+              onClick={() => onEliminar(autor)}
+              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-600"
+              title="Eliminar cliente"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={PAPELERA_PATH} />
+              </svg>
+            </button>
           </div>
         </div>
       ))}

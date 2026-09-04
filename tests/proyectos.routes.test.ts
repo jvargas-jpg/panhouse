@@ -1,7 +1,8 @@
+import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../server/db/client.js';
-import { fichasTrazabilidad } from '../server/db/schema/index.js';
+import { fichasTrazabilidad, proyectosAutores } from '../server/db/schema/index.js';
 import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import {
@@ -63,7 +64,8 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          autorId: autor.id,
+          titulo: 'La Magia de las Ventas',
+          autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
           presupuestoId: presupuesto.id,
@@ -72,6 +74,91 @@ describe('rutas de proyectos', () => {
 
       expect(respuesta.status).toBe(201);
       expect(respuesta.body.proyecto.autorId).toBe(autor.id);
+      expect(respuesta.body.proyecto.titulo).toBe('La Magia de las Ventas');
+
+      await app.close();
+    });
+
+    it('rechaza crear un proyecto sin título (o con menos de 2 caracteres)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+      const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+
+      const respuesta = await request(app.server)
+        .post('/api/proyectos')
+        .set('Cookie', cookie)
+        .send({
+          titulo: 'A',
+          autorIds: [autor.id],
+          servicioId: servicio.id,
+          unidadId: unidad.id,
+          presupuestoId: presupuesto.id,
+          fechaProgramadaInicio: '2026-01-01',
+        });
+
+      expect(respuesta.status).toBe(400);
+
+      await app.close();
+    });
+
+    it('con varios autorIds, inserta una fila de coautoría por cada uno en proyectos_autores (y el primero queda como autorId legacy)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const [autor, coautor, unidad, presupuesto] = await Promise.all([
+        crearAutor(),
+        crearAutor(),
+        crearUnidad(),
+        crearPresupuesto(),
+      ]);
+      const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+
+      const respuesta = await request(app.server)
+        .post('/api/proyectos')
+        .set('Cookie', cookie)
+        .send({
+          titulo: 'La Magia de las Ventas',
+          autorIds: [autor.id, coautor.id],
+          servicioId: servicio.id,
+          unidadId: unidad.id,
+          presupuestoId: presupuesto.id,
+          fechaProgramadaInicio: '2026-01-01',
+        });
+
+      expect(respuesta.status).toBe(201);
+      expect(respuesta.body.proyecto.autorId).toBe(autor.id);
+      const filas = await db.select().from(proyectosAutores).where(eq(proyectosAutores.proyectoId, respuesta.body.proyecto.id));
+      expect(filas.map((f) => f.autorId)).toEqual(expect.arrayContaining([autor.id, coautor.id]));
+      expect(filas).toHaveLength(2);
+
+      await app.close();
+    });
+
+    it('rechaza crear un proyecto con autorIds vacío', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const [unidad, presupuesto] = await Promise.all([crearUnidad(), crearPresupuesto()]);
+      const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+
+      const respuesta = await request(app.server)
+        .post('/api/proyectos')
+        .set('Cookie', cookie)
+        .send({
+          titulo: 'La Magia de las Ventas',
+          autorIds: [],
+          servicioId: servicio.id,
+          unidadId: unidad.id,
+          presupuestoId: presupuesto.id,
+          fechaProgramadaInicio: '2026-01-01',
+        });
+
+      expect(respuesta.status).toBe(400);
 
       await app.close();
     });
@@ -101,7 +188,8 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          autorId: autor.id,
+          titulo: 'La Magia de las Ventas',
+          autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
           presupuestoId: presupuesto.id,
@@ -130,7 +218,8 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookieComercial)
         .send({
-          autorId: autor.id,
+          titulo: 'La Magia de las Ventas',
+          autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
           presupuestoId: presupuesto.id,
@@ -163,12 +252,48 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          autorId: autor.id,
+          titulo: 'La Magia de las Ventas',
+          autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
           presupuestoId: presupuesto.id,
           fechaProgramadaInicio: '2026-01-01',
         });
+
+      expect(respuesta.status).toBe(403);
+
+      await app.close();
+    });
+  });
+
+  describe('GET /api/proyectos', () => {
+    it('devuelve autores: [] (no autor singular), con todos los coautores del proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const coautor = await crearAutor();
+      await db.insert(proyectosAutores).values({ proyectoId: proyecto.id, autorId: coautor.id });
+
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+      const respuesta = await request(app.server).get('/api/proyectos').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      const fila = respuesta.body.proyectos.find((p: { id: string }) => p.id === proyecto.id);
+      expect(fila.autor).toBeUndefined();
+      const idsAutores = fila.autores.map((a: { id: string }) => a.id);
+      expect(idsAutores).toHaveLength(2);
+      expect(idsAutores).toEqual(expect.arrayContaining([proyecto.autorId, coautor.id]));
+
+      await app.close();
+    });
+
+    it('rechaza a un rol sin permiso (ej. comercial)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const cookie = await registrarYLoguear(app, 'comercial');
+      const respuesta = await request(app.server).get('/api/proyectos').set('Cookie', cookie);
 
       expect(respuesta.status).toBe(403);
 
@@ -487,6 +612,85 @@ describe('rutas de proyectos', () => {
 
       expect(respuesta.status).toBe(200);
       expect(respuesta.body.proyecto.autorId).toBe(nuevoAutor.id);
+
+      await app.close();
+    });
+
+    it('permite a comercial editar el título de un proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/reasignar`)
+        .set('Cookie', cookie)
+        .send({ titulo: 'La Flor Renombrada' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.proyecto.titulo).toBe('La Flor Renombrada');
+
+      await app.close();
+    });
+
+    it('rechaza un título de menos de 2 caracteres', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/reasignar`)
+        .set('Cookie', cookie)
+        .send({ titulo: 'A' });
+
+      expect(respuesta.status).toBe(400);
+
+      await app.close();
+    });
+
+    it('permite a comercial reemplazar la coautoría completa vía autorIds (proyectos_autores)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const [nuevoAutor, coautor] = await Promise.all([crearAutor(), crearAutor()]);
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/reasignar`)
+        .set('Cookie', cookie)
+        .send({ autorIds: [nuevoAutor.id, coautor.id] });
+
+      expect(respuesta.status).toBe(200);
+      // El primer autorId queda sincronizado como autorId legacy.
+      expect(respuesta.body.proyecto.autorId).toBe(nuevoAutor.id);
+
+      const filas = await db.select().from(proyectosAutores).where(eq(proyectosAutores.proyectoId, proyecto.id));
+      expect(filas.map((f) => f.autorId)).toEqual(expect.arrayContaining([nuevoAutor.id, coautor.id]));
+      expect(filas).toHaveLength(2);
+      // El autor original (de crearProyectoDePrueba) ya no debe seguir
+      // en la tabla de unión — autorIds reemplaza, no agrega.
+      expect(filas.map((f) => f.autorId)).not.toContain(proyecto.autorId);
+
+      await app.close();
+    });
+
+    it('rechaza un autorIds vacío', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}/reasignar`)
+        .set('Cookie', cookie)
+        .send({ autorIds: [] });
+
+      expect(respuesta.status).toBe(400);
 
       await app.close();
     });
@@ -991,8 +1195,85 @@ describe('rutas de proyectos', () => {
 
       expect(respuesta.status).toBe(200);
       expect(respuesta.body.proyecto.riesgo).toBeDefined();
-      expect(respuesta.body.proyecto.autor).toBeDefined();
+      expect(respuesta.body.proyecto.autor).toBeUndefined();
+      // Perfil completo (no solo id/nombre): la ficha de trazabilidad ya
+      // no pide nombre artístico/nacionalidad/etc. como inputs propios,
+      // así que ProyectoDetallePage.tsx los muestra de solo lectura
+      // desde acá (ver TarjetaPerfilAutores en SeccionProyectoPerfil.tsx).
+      expect(respuesta.body.proyecto.autores).toEqual([
+        {
+          id: proyecto.autorId,
+          nombre: expect.any(String),
+          nombreArtistico: null,
+          nacionalidad: null,
+          fechaNacimiento: null,
+          redesSociales: null,
+          personalidad: null,
+          ocupacion: null,
+        },
+      ]);
       expect(respuesta.body.proyecto.servicio).toBeDefined();
+
+      await app.close();
+    });
+
+    it('devuelve el perfil completo del autor (nombre artístico, nacionalidad, etc.), no solo id/nombre', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const [unidad, presupuesto] = await Promise.all([crearUnidad(), crearPresupuesto()]);
+      const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+      const autor = await crearAutor({
+        nombreArtistico: 'Pluma de Oro',
+        nacionalidad: 'Venezolana',
+        fechaNacimiento: '1985-04-12',
+        redesSociales: { instagram: '@plumadeoro' },
+        personalidad: ['Extrovertida', 'Directa'],
+        ocupacion: 'Consultora financiera',
+      });
+      const proyecto = await crearProyecto({
+        autorId: autor.id,
+        servicioId: servicio.id,
+        unidadId: unidad.id,
+        presupuestoId: presupuesto.id,
+        fechaProgramadaInicio: '2026-01-01',
+      });
+
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+      const respuesta = await request(app.server).get(`/api/proyectos/${proyecto.id}/riesgo`).set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.proyecto.autores).toEqual([
+        {
+          id: autor.id,
+          nombre: autor.nombre,
+          nombreArtistico: 'Pluma de Oro',
+          nacionalidad: 'Venezolana',
+          fechaNacimiento: '1985-04-12',
+          redesSociales: { instagram: '@plumadeoro' },
+          personalidad: ['Extrovertida', 'Directa'],
+          ocupacion: 'Consultora financiera',
+        },
+      ]);
+
+      await app.close();
+    });
+
+    it('devuelve todos los coautores de un proyecto (Muchos-a-Muchos vía proyectos_autores)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      const coautor = await crearAutor();
+      await db.insert(proyectosAutores).values({ proyectoId: proyecto.id, autorId: coautor.id });
+
+      const cookie = await registrarYLoguear(app, 'jefe_area');
+      const respuesta = await request(app.server).get(`/api/proyectos/${proyecto.id}/riesgo`).set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      const idsAutores = respuesta.body.proyecto.autores.map((a: { id: string }) => a.id);
+      expect(idsAutores).toHaveLength(2);
+      expect(idsAutores).toEqual(expect.arrayContaining([proyecto.autorId, coautor.id]));
 
       await app.close();
     });

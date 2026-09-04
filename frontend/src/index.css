@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Refuerzo global, no la causa del bug real (ver AppLayout.tsx: usa
+   h-screen, una unidad de viewport que no depende de que html/body/#root
+   tengan alto propio). html/body ya no deberían necesitar su propio
+   scroll — AppLayout.tsx.'s <div> raíz ya es el único dueño del scroll
+   vertical de toda la app (overflow-y-auto) — pero declararlo acá
+   también es la práctica estándar para un app shell de una sola
+   pantalla, y evita que el documento llegue a mostrar su propio
+   scrollbar por accidente si algún elemento futuro se escapa de ese
+   contenedor. */
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
 /* Oculta la barra de scroll horizontal de las píldoras del stepper sin
    quitar la posibilidad de scrollear (ProyectoDetallePage.tsx). */
 .hide-scrollbar {

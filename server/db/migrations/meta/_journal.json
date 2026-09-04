@@ -239,6 +239,48 @@
       "when": 1788187202605,
       "tag": "0033_charming_wallflower",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1788266715616,
+      "tag": "0034_previous_black_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1788268482565,
+      "tag": "0035_thick_mantis",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1788271146820,
+      "tag": "0036_legal_korvac",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1788271806417,
+      "tag": "0037_cloudy_jack_murdock",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1788445067716,
+      "tag": "0038_typical_karen_page",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1788524793072,
+      "tag": "0039_brief_snowbird",
+      "breakpoints": true
     }
   ]
 }

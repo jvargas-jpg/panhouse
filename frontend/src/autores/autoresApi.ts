@@ -1,5 +1,5 @@
 import { apiFetch } from '../lib/api';
-import type { Autor } from '../types/api';
+import type { Autor, RedesSociales } from '../types/api';
 
 export function fetchAutores() {
   return apiFetch<{ autores: Autor[] }>('/autores');
@@ -11,10 +11,15 @@ export function fetchAutores() {
 // como null, JSON.stringify simplemente los omite.
 export interface DatosNuevoAutor {
   nombre: string;
+  nombreArtistico?: string;
+  nacionalidad?: string;
+  fechaNacimiento?: string;
+  redesSociales?: RedesSociales;
+  personalidad?: string[];
+  ocupacion?: string;
   email?: string;
   telefono?: string;
   pais?: string;
-  relevancia?: number;
 }
 
 export function crearAutor(datos: DatosNuevoAutor) {
@@ -29,10 +34,15 @@ export function crearAutor(datos: DatosNuevoAutor) {
 // poder borrarlo, no solo omitirlo.
 export interface DatosEditarAutor {
   nombre?: string;
+  nombreArtistico?: string | null;
+  nacionalidad?: string | null;
+  fechaNacimiento?: string | null;
+  redesSociales?: RedesSociales | null;
+  personalidad?: string[] | null;
+  ocupacion?: string | null;
   email?: string | null;
   telefono?: string | null;
   pais?: string | null;
-  relevancia?: number | null;
 }
 
 export function editarAutor(id: string, datos: DatosEditarAutor) {

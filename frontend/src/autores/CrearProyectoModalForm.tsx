@@ -4,6 +4,7 @@ import { hoyISO } from '../proyectos/campos';
 import type { ProyectoPendienteSeccion1 } from '../types/api';
 import { crearProyecto, eliminarProyecto, fetchCatalogos, reasignarProyecto } from '../jefatura/jefaturaApi';
 import { fetchAutores } from './autoresApi';
+import { SelectorMultipleAutores } from './SelectorMultipleAutores';
 
 const LABEL_CLASS = 'mb-1.5 mt-4 block text-[11px] font-bold uppercase tracking-wide text-gray-500';
 const INPUT_CLASS =
@@ -15,21 +16,17 @@ const INPUT_CLASS =
 // NOT NULL en la tabla `proyectos`, así que un alta real no puede
 // prescindir de ellos.
 //
-// Editar: PATCH /proyectos/:id/reasignar — ahora cubre TODOS los
-// parámetros comerciales (servicio, unidad, presupuesto, fecha
-// programada), no solo autor/servicio como al principio: "habilitar la
-// edición completa de los parámetros comerciales" fue un pedido
-// explícito posterior. proyectoEnEdicion (ProyectoPendienteSeccion1) ya
-// trae unidadId/presupuestoId/fechaProgramadaInicio precargados desde
-// el backend (server/helpers/trazabilidad.ts) para poder preseleccionar
-// estos campos sin una consulta aparte.
+// Editar: PATCH /proyectos/:id/reasignar — cubre TODOS los parámetros
+// comerciales (título, coautoría, servicio, unidad, presupuesto, fecha
+// programada). proyectoEnEdicion (ProyectoPendienteSeccion1) ya trae
+// titulo/autores/unidadId/presupuestoId/fechaProgramadaInicio
+// precargados desde el backend (server/helpers/trazabilidad.ts) para
+// poder preseleccionar estos campos sin una consulta aparte.
 //
-// El autor NO se puede cambiar en modo edición (a propósito, no un
-// olvido): reasignar el autor de un proyecto ya creado es redundante
-// con el módulo de Clientes y rompía la integridad del CRM — el
-// selector queda solo para alta de proyecto nuevo; en edición se
-// muestra el nombre en solo lectura y autorId ni siquiera viaja en el
-// payload de la mutación.
+// Título y autores (coautoría) YA se pueden cambiar en modo edición —
+// reversión explícita de una decisión anterior ("redundante con el
+// módulo de Clientes"): ahora el mismo <input>/SelectorMultipleAutores
+// se usa en los dos modos, sin distinción de solo-lectura.
 //
 // El <select> de servicio lee el catálogo real (GET /catalogos) en vez
 // de una lista fija — así el value siempre coincide con
@@ -46,14 +43,18 @@ export function CrearProyectoModalForm({
   const catalogosQuery = useQuery({ queryKey: ['catalogos'], queryFn: fetchCatalogos });
   const queryClient = useQueryClient();
 
-  const [autorId, setAutorId] = useState('');
+  // Se usan en los dos modos: en alta arrancan vacíos, en edición se
+  // precargan desde proyectoEnEdicion (ver el efecto de abajo).
+  const [titulo, setTitulo] = useState('');
+  const [autorIds, setAutorIds] = useState<string[]>([]);
   const [servicioCodigo, setServicioCodigo] = useState('');
   const [unidadId, setUnidadId] = useState('');
   const [presupuestoId, setPresupuestoId] = useState('');
   const [fechaProgramadaInicio, setFechaProgramadaInicio] = useState(hoyISO());
 
   useEffect(() => {
-    setAutorId(proyectoEnEdicion?.autor.id ?? '');
+    setTitulo(proyectoEnEdicion?.titulo ?? '');
+    setAutorIds(proyectoEnEdicion?.autores.map((autor) => autor.id) ?? []);
     setServicioCodigo(proyectoEnEdicion?.servicio.codigo ?? '');
     setUnidadId(proyectoEnEdicion?.unidadId ?? '');
     setPresupuestoId(proyectoEnEdicion?.presupuestoId ?? '');
@@ -75,8 +76,10 @@ export function CrearProyectoModalForm({
 
   const mutacionCrear = useMutation({
     mutationFn: () => {
+      if (titulo.trim().length < 2) throw new Error('El título es obligatorio');
+      if (autorIds.length === 0) throw new Error('Selecciona al menos un autor');
       if (!servicioId) throw new Error('Selecciona un servicio válido');
-      return crearProyecto({ autorId, servicioId, unidadId, presupuestoId, fechaProgramadaInicio });
+      return crearProyecto({ titulo: titulo.trim(), autorIds, servicioId, unidadId, presupuestoId, fechaProgramadaInicio });
     },
     onSuccess: () => {
       invalidarProyectos();
@@ -86,8 +89,17 @@ export function CrearProyectoModalForm({
 
   const mutacionEditar = useMutation({
     mutationFn: () => {
+      if (titulo.trim().length < 2) throw new Error('El título es obligatorio');
+      if (autorIds.length === 0) throw new Error('Selecciona al menos un autor');
       if (!servicioId) throw new Error('Selecciona un servicio válido');
-      return reasignarProyecto(proyectoEnEdicion!.id, { servicioId, unidadId, presupuestoId, fechaProgramadaInicio });
+      return reasignarProyecto(proyectoEnEdicion!.id, {
+        titulo: titulo.trim(),
+        autorIds,
+        servicioId,
+        unidadId,
+        presupuestoId,
+        fechaProgramadaInicio,
+      });
     },
     onSuccess: () => {
       invalidarProyectos();
@@ -120,35 +132,45 @@ export function CrearProyectoModalForm({
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    // p-6: Modal.tsx daba este padding gratis antes (lo tenía en su
+    // propio wrapper de children); ahora ese wrapper es un slot desnudo
+    // sin padding propio (ver el comentario de Modal.tsx), así que cada
+    // formulario lo pone por su cuenta. Este formulario es corto y
+    // nunca necesitó scroll propio, así que un <form> normal con
+    // padding alcanza — no hace falta el split cuerpo/footer de
+    // CrearAutorForm.tsx.
+    <form onSubmit={handleSubmit} className="min-h-0 flex-1 overflow-y-auto p-6">
       <div>
-        <label htmlFor="proyecto-autor" className={LABEL_CLASS}>
-          Autor
+        <label htmlFor="proyecto-titulo" className={LABEL_CLASS}>
+          Título del proyecto (o posible título)
         </label>
-        {proyectoEnEdicion ? (
-          <p id="proyecto-autor" className="font-medium text-gray-900">
-            {proyectoEnEdicion.autor.nombre}
-            <span className="ml-2 text-xs font-normal text-gray-400">— gestiona el autor desde Clientes</span>
-          </p>
-        ) : (
-          <select
-            id="proyecto-autor"
-            required
-            value={autorId}
-            onChange={(event) => {
-              setAutorId(event.target.value);
-              mutacion.reset();
-            }}
-            className={INPUT_CLASS}
-          >
-            <option value="">Seleccionar…</option>
-            {autoresQuery.data?.autores.map((autor) => (
-              <option key={autor.id} value={autor.id}>
-                {autor.nombre}
-              </option>
-            ))}
-          </select>
-        )}
+        <input
+          id="proyecto-titulo"
+          type="text"
+          required
+          minLength={2}
+          placeholder="Ej. La magia de las ventas..."
+          value={titulo}
+          onChange={(event) => {
+            setTitulo(event.target.value);
+            mutacion.reset();
+          }}
+          className={INPUT_CLASS}
+        />
+      </div>
+
+      <div>
+        <label htmlFor="proyecto-autores-buscador" className={LABEL_CLASS}>
+          Autores (coautoría)
+        </label>
+        <SelectorMultipleAutores
+          autoresDisponibles={autoresQuery.data?.autores ?? []}
+          value={autorIds}
+          onChange={(ids) => {
+            setAutorIds(ids);
+            mutacion.reset();
+          }}
+        />
       </div>
 
       <div>

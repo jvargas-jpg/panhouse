@@ -7,6 +7,7 @@ import {
   pausas,
   presupuestos,
   proyectos,
+  proyectosAutores,
   seguimientoFases,
   servicios,
   unidades,
@@ -44,11 +45,19 @@ export async function crearPresupuesto() {
   );
 }
 
-export async function crearAutor() {
+// $inferInsert (no una lista angosta de campos, como el resto de estos
+// fixtures) porque autores tiene bastantes columnas de perfil opcionales
+// (nombreArtistico, nacionalidad, fechaNacimiento, redesSociales,
+// personalidad, ocupacion) que distintos tests necesitan de a una —
+// evita seguir ensanchando esta firma cada vez. pais/createdAt son los
+// que ya usan los tests de helpers/metricas.ts (topPaises agrupa por
+// pais; clientesPorMes y los KPIs agrupan por createdAt) — createdAt
+// explícito pisa el defaultNow() de la columna, Drizzle lo permite sin más.
+export async function crearAutor(datos: Partial<typeof autores.$inferInsert> = {}) {
   return unaFila(
     await db
       .insert(autores)
-      .values({ nombre: siguiente('autor') })
+      .values({ nombre: siguiente('autor'), ...datos })
       .returning(),
   );
 }
@@ -90,8 +99,18 @@ export async function crearProyecto(datos: {
   fechaProgramadaInicio: string;
   fechaRealInicio?: string;
   fechaDeseadaAutor?: string;
+  // Solo lo necesitan los tests de helpers/metricas.ts
+  // (proyectosMesActual agrupa por createdAt) — pisa el defaultNow() de
+  // la columna.
+  createdAt?: Date;
 }) {
-  return unaFila(await db.insert(proyectos).values(datos).returning());
+  const proyecto = unaFila(await db.insert(proyectos).values(datos).returning());
+  // Mismo dual-write que el crearProyecto real (server/helpers/proyectos.ts)
+  // — sin esto, todo proyecto de prueba quedaría sin filas en la tabla de
+  // unión y los tests de coautoría (autores: []) no reflejarían el
+  // comportamiento real de la app.
+  await db.insert(proyectosAutores).values({ proyectoId: proyecto.id, autorId: datos.autorId });
+  return proyecto;
 }
 
 // Junta autor + unidad + presupuesto + servicio + proyecto en una sola
@@ -107,6 +126,10 @@ export async function crearProyectoDePrueba(
     lanzamientoId: string;
     distribucionId: string;
     estado: EstadoProyecto;
+    // Solo lo necesitan los tests de ordenamiento (ej.
+    // listarProyectosPendientesSeccion1 en helpers/trazabilidad.ts) —
+    // pisa el defaultNow() de la columna, mismo criterio que crearProyecto.
+    createdAt: Date;
   }> = {},
 ) {
   const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);

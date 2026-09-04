@@ -31,7 +31,11 @@ export function SeccionEquipo({
   puedeEditar,
 }: {
   proyectoId: string;
-  proyecto: ProyectoConRiesgo;
+  // Omit<'autor'>: este panel no lee el autor, solo las columnas de
+  // asignación — así acepta tanto ProyectoConRiesgo como
+  // ProyectoDetalleConAutores (coautoría, ver types/api.ts), que ya no
+  // trae `autor` singular.
+  proyecto: Omit<ProyectoConRiesgo, 'autor'>;
   puedeEditar: boolean;
 }) {
   const personalQuery = useQuery({ queryKey: ['usuarios'], queryFn: fetchPersonalEquipo });

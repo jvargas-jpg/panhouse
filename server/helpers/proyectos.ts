@@ -1,8 +1,9 @@
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { autores, fichasTrazabilidad, notificaciones, proyectos, servicios } from '../db/schema/index.js';
+import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios } from '../db/schema/index.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
+import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 
 // Reexportadas desde alertas.ts: comparten el join autor/servicio/riesgo
 // con listarRiesgoProyectosActivos (jefe_area/dirección) en vez de
@@ -10,7 +11,8 @@ import { ESTADOS_ACTIVOS } from './carga.js';
 export { listarProyectosEditor, listarProyectosEspecialista } from './alertas.js';
 
 export interface DatosNuevoProyecto {
-  autorId: string;
+  titulo: string;
+  autorIds: string[];
   servicioId: string;
   unidadId: string;
   presupuestoId: string;
@@ -33,11 +35,34 @@ export interface DatosNuevoProyecto {
 // abajo, el disparador correcto (acción explícita del usuario al
 // terminar de llenar Fase 1).
 export async function crearProyecto(datos: DatosNuevoProyecto) {
+  const { autorIds, ...datosProyecto } = datos;
+  // crearProyectoSchema ya exige al menos un id (.min(1)) — este guard
+  // es solo para que TS sepa que autorPrincipal no es undefined, no una
+  // validación de negocio real.
+  const [autorPrincipal] = autorIds;
+  if (!autorPrincipal) throw new Error('crearProyecto necesita al menos un autorId');
+
   return db.transaction(async (tx) => {
-    const [proyecto] = await tx.insert(proyectos).values(datos).returning();
+    // Etapa aditiva de la migración a coautoría (ver proyectos_autores en
+    // schema/proyectos.ts): proyectos.autorId (columna legacy, todavía
+    // vigente) se sigue llenando con el PRIMER autor del array — es la
+    // fila "principal" para todo el código que aún no migró a la tabla
+    // de unión (control de acceso del Portal del Autor, riesgo, carga,
+    // pagos, seguimiento). Los coautores adicionales solo quedan en
+    // proyectos_autores, más abajo.
+    const [proyecto] = await tx
+      .insert(proyectos)
+      .values({ ...datosProyecto, autorId: autorPrincipal })
+      .returning();
     if (!proyecto) throw new Error('El insert del proyecto no devolvió ninguna fila');
 
     await tx.insert(fichasTrazabilidad).values({ proyectoId: proyecto.id });
+
+    // Una fila por autor (coautoría real) — sin esto, todo proyecto
+    // creado DESPUÉS de la migración quedaría sin autores en
+    // GET /api/proyectos / GET /api/proyectos/:id/riesgo, que ya leen
+    // de acá.
+    await tx.insert(proyectosAutores).values(autorIds.map((autorId) => ({ proyectoId: proyecto.id, autorId })));
 
     return proyecto;
   });
@@ -288,23 +313,62 @@ export async function actualizarProyecto(proyectoId: string, datos: DatosActuali
 }
 
 export interface DatosReasignarProyecto {
+  titulo?: string;
   autorId?: string;
+  // Coautoría — reemplaza TODAS las filas de proyectos_autores del
+  // proyecto por esta lista (no un "agregar"). Ver reasignarProyecto.
+  autorIds?: string[];
   servicioId?: string;
   unidadId?: string;
   presupuestoId?: string;
   fechaProgramadaInicio?: string;
 }
 
-// Corregir a qué autor está asociado un proyecto, su tipo de servicio,
-// o sus otros parámetros comerciales (unidad/presupuesto/fecha
-// programada), después de creado — capacidad propia de comercial (ver
-// PATCH /:id/reasignar). Deliberadamente separada de actualizarProyecto
-// (especificaciones operativas, a cargo de especialista) — ver la nota
-// de solapamiento en el schema de la ruta.
+// Corregir a qué autor(es) está asociado un proyecto, su título, su
+// tipo de servicio, o sus otros parámetros comerciales (unidad/
+// presupuesto/fecha programada), después de creado — capacidad propia
+// de comercial (ver PATCH /:id/reasignar). Deliberadamente separada de
+// actualizarProyecto (especificaciones operativas, a cargo de
+// especialista) — ver la nota de solapamiento en el schema de la ruta.
 export async function reasignarProyecto(proyectoId: string, datos: DatosReasignarProyecto) {
-  const [fila] = await db.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
-  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
-  return fila;
+  const { autorIds, ...datosProyecto } = datos;
+
+  // Sin coautoría en este update: un solo UPDATE de proyectos, como
+  // antes — no hace falta transacción ni tocar proyectos_autores.
+  if (!autorIds) {
+    const [fila] = await db.update(proyectos).set(datosProyecto).where(eq(proyectos.id, proyectoId)).returning();
+    if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    return fila;
+  }
+
+  const [autorPrincipal] = autorIds;
+  // reasignarProyectoSchema ya exige al menos un id cuando autorIds
+  // viene en el body (.min(1)) — este guard es solo para que TS sepa
+  // que autorPrincipal no es undefined, no una validación de negocio real.
+  if (!autorPrincipal) throw new Error('reasignarProyecto necesita al menos un autorId en autorIds');
+
+  return db.transaction(async (tx) => {
+    // proyectos.autorId (columna legacy, todavía vigente en la etapa
+    // aditiva de la migración a coautoría — ver crearProyecto más
+    // arriba) se mantiene sincronizada con el primer autor del array:
+    // sigue siendo la fuente que usan el control de acceso del Portal
+    // del Autor, riesgo, carga, pagos y seguimiento, que no migraron a
+    // proyectos_autores.
+    const [fila] = await tx
+      .update(proyectos)
+      .set({ ...datosProyecto, autorId: autorPrincipal })
+      .where(eq(proyectos.id, proyectoId))
+      .returning();
+    if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+
+    // Reemplaza TODAS las filas de coautoría — más simple y menos
+    // propenso a errores que calcular un diff (altas/bajas) contra lo
+    // que había antes, y el volumen por proyecto es bajo.
+    await tx.delete(proyectosAutores).where(eq(proyectosAutores.proyectoId, proyectoId));
+    await tx.insert(proyectosAutores).values(autorIds.map((autorId) => ({ proyectoId, autorId })));
+
+    return fila;
+  });
 }
 
 // Eliminación real (no soft-delete): destruye la fila de proyectos y,
@@ -354,6 +418,24 @@ export async function actualizarEquipoProyecto(proyectoId: string, datos: DatosE
 // como el resto de esa sección.
 export async function actualizarTituloProyecto(proyectoId: string, titulo: string | null) {
   const [fila] = await db.update(proyectos).set({ titulo }).where(eq(proyectos.id, proyectoId)).returning();
+  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+  return fila;
+}
+
+// Propuesta de portada — dueño especialista o disenador (PATCH
+// /:id/propuesta-portada, verificarAccesoAProyecto ya cubre ambos por su
+// columna individual). Resetea la decisión del autor a 'pendiente' y
+// limpia cualquier feedback anterior: ese feedback pertenecía a la
+// propuesta vieja (normalmente rechazada), no tiene sentido que siga
+// colgando junto a una propuesta nueva que el autor todavía no vio. El
+// otro lado de este ciclo es actualizarDecisionPortada en
+// helpers/portalAutor.ts (dueño autor).
+export async function actualizarPropuestaPortada(proyectoId: string, propuestaPortadaUrl: string | null) {
+  const [fila] = await db
+    .update(proyectos)
+    .set({ propuestaPortadaUrl, portadaDecisionAutor: 'pendiente', portadaFeedback: null })
+    .where(eq(proyectos.id, proyectoId))
+    .returning();
   if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
   return fila;
 }
@@ -429,31 +511,48 @@ export interface ProyectoResumen {
   servicio: { id: string; codigo: string; nombre: string };
 }
 
+// Distinto de ProyectoResumen a propósito: solo GET /api/proyectos (esta
+// función) migró a `autores: []` — GET /api/proyectos/activos
+// (listarProyectosActivosResumen, más abajo) sigue devolviendo `autor`
+// singular sin tocar, es la etapa aditiva de la migración a coautoría
+// (ver proyectos_autores en schema/proyectos.ts y helpers/proyectosAutores.ts).
+export interface ProyectoResumenConAutores {
+  id: string;
+  titulo: string | null;
+  estado: EstadoProyecto;
+  autores: AutorDeProyecto[];
+  servicio: { id: string; codigo: string; nombre: string };
+}
+
 // TODO (Regla de negocio no confirmada): Si el volumen de proyectos crece
 // mucho a lo largo de los años, esta consulta podría necesitar paginación.
-// Por ahora trae todos los proyectos ordenados por fecha de creación.
-export async function listarTodosLosProyectos(): Promise<ProyectoResumen[]> {
+// Por ahora trae todos los proyectos ordenados por fecha de creación
+// descendente (el más nuevo primero).
+export async function listarTodosLosProyectos(): Promise<ProyectoResumenConAutores[]> {
   const filas = await db
     .select({
       id: proyectos.id,
       titulo: proyectos.titulo,
       estado: proyectos.estado,
-      autorId: autores.id,
-      autorNombre: autores.nombre,
       servicioId: servicios.id,
       servicioCodigo: servicios.codigo,
       servicioNombre: servicios.nombre,
     })
     .from(proyectos)
-    .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
-    .orderBy(proyectos.createdAt);
+    .orderBy(desc(proyectos.createdAt));
+
+  // Coautoría: un proyecto puede tener 0 o varios autores en la tabla de
+  // unión (0 solo debería pasar en datos viejos que el backfill de la
+  // migración no haya cubierto) — una sola consulta en lote en vez de
+  // N+1, ver obtenerAutoresPorProyectos.
+  const autoresPorProyecto = await obtenerAutoresPorProyectos(filas.map((fila) => fila.id));
 
   return filas.map((fila) => ({
     id: fila.id,
     titulo: fila.titulo,
     estado: fila.estado,
-    autor: { id: fila.autorId, nombre: fila.autorNombre },
+    autores: autoresPorProyecto.get(fila.id) ?? [],
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
   }));
 }
@@ -481,7 +580,7 @@ export async function listarProyectosActivosResumen(): Promise<ProyectoResumen[]
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
     .where(inArray(proyectos.estado, ESTADOS_ACTIVOS))
-    .orderBy(proyectos.createdAt);
+    .orderBy(desc(proyectos.createdAt));
 
   return filas.map((fila) => ({
     id: fila.id,

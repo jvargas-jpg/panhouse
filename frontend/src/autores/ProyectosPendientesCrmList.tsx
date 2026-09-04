@@ -3,13 +3,19 @@ import { Link } from 'react-router-dom';
 import type { ProyectoPendienteSeccion1 } from '../types/api';
 
 const LAPIZ_PATH = 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z';
+const PAPELERA_PATH =
+  'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16';
 
 function coincide(proyecto: ProyectoPendienteSeccion1, termino: string): boolean {
   const q = termino.trim().toLowerCase();
   if (!q) return true;
   return (
+    (proyecto.titulo ?? '').toLowerCase().includes(q) ||
     proyecto.id.toLowerCase().includes(q) ||
-    proyecto.autor.nombre.toLowerCase().includes(q) ||
+    // Coautoría: revisa TODOS los autores del proyecto, no solo el
+    // primero — antes de esto, buscar por el nombre de un coautor
+    // secundario no encontraba el proyecto.
+    proyecto.autores.some((autor) => autor.nombre.toLowerCase().includes(q)) ||
     proyecto.servicio.codigo.toLowerCase().includes(q) ||
     proyecto.servicio.nombre.toLowerCase().includes(q)
   );
@@ -27,25 +33,31 @@ function coincide(proyecto: ProyectoPendienteSeccion1, termino: string): boolean
 // "Proyectos Pendientes" de esta sección — tenerlo acá también sería
 // un encabezado duplicado.
 //
-// Un solo botón de edición a propósito (no dos, como antes): el lápiz
-// abre CrearProyectoModalForm.tsx en modo edición para que Ventas
-// pueda corregir el tipo de servicio de un proyecto ya creado — el
-// autor queda bloqueado ahí adentro (ver el comentario de ese
+// El lápiz abre CrearProyectoModalForm.tsx en modo edición para que
+// Ventas pueda corregir el tipo de servicio de un proyecto ya creado —
+// el autor queda bloqueado ahí adentro (ver el comentario de ese
 // componente). Los datos de contacto del autor NO se editan desde esta
 // vista — eso sigue centralizado en la pestaña "Clientes"
 // (ClientesGrid.tsx), decisión explícita de una ronda anterior.
+//
+// La papelera (a pedido explícito, para no forzar entrar al modal solo
+// para borrar) elimina directo, sin pasar por edición — mismo patrón
+// que ClientesGrid.tsx: la fila solo dispara el callback, la
+// confirmación nativa y la mutación viven en el padre (AutoresPage.tsx).
 export function ProyectosPendientesCrmList({
   queryKey,
   queryFn,
   mensajeVacio,
   searchTerm,
   onEditarProyecto,
+  onEliminarProyecto,
 }: {
   queryKey: QueryKey;
   queryFn: () => Promise<{ proyectos: ProyectoPendienteSeccion1[] }>;
   mensajeVacio: string;
   searchTerm: string;
   onEditarProyecto: (proyecto: ProyectoPendienteSeccion1) => void;
+  onEliminarProyecto: (proyecto: ProyectoPendienteSeccion1) => void;
 }) {
   const query = useQuery({ queryKey, queryFn });
   const proyectosFiltrados = query.data?.proyectos.filter((proyecto) => coincide(proyecto, searchTerm)) ?? [];
@@ -63,58 +75,69 @@ export function ProyectosPendientesCrmList({
         <p className="text-tinta/70">Ningún proyecto coincide con "{searchTerm}".</p>
       )}
       {proyectosFiltrados.length > 0 && (
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+        <div className="flex flex-col gap-3">
           {proyectosFiltrados.map((proyecto) => (
             <Link
               key={proyecto.id}
               to={`/proyectos/${proyecto.id}`}
-              className="group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all hover:border-dorado/50 hover:shadow-md"
+              className="group flex flex-col items-start justify-between gap-3 rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md md:flex-row md:items-center md:gap-4"
             >
-              {/* Franja superior decorativa sutil */}
-              <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-gray-100 to-gray-200 transition-colors group-hover:from-dorado group-hover:to-yellow-500" />
-
-              {/* Cabecera Tarjeta: Avatar, Nombre y el único botón de edición
-                  (servicio/título del proyecto, ver el comentario del
-                  componente arriba). */}
-              <div className="mb-4 mt-2 flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border border-gray-200 bg-gray-50 text-lg font-bold text-gray-700 shadow-inner">
-                    {proyecto.autor.nombre.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <h3 className="line-clamp-2 text-base font-bold leading-tight text-gray-900 transition-colors group-hover:text-dorado">
-                      {proyecto.autor.nombre}
-                    </h3>
-                    <p className="mt-1 text-xs text-gray-500">ID: {proyecto.id}</p>
-                  </div>
-                </div>
-
-                <button
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onEditarProyecto(proyecto);
-                  }}
-                  className="flex-shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-dorado/10 hover:text-dorado"
-                  title="Editar proyecto (servicio)"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={LAPIZ_PATH} />
-                  </svg>
-                </button>
+              {/* Izquierda: título del proyecto en negrita (identificador
+                  principal, ver CrearProyectoModalForm.tsx), autores + ID
+                  acortado como secundario — proyectos creados antes de que
+                  el título fuera obligatorio no lo tienen, de ahí el
+                  respaldo en cursiva. Coautoría: todos los autores unidos
+                  por coma, no solo el primero. */}
+              <div className="min-w-0 md:w-1/3">
+                <p className="truncate text-sm font-bold text-gray-900 transition-colors group-hover:text-dorado">
+                  {proyecto.titulo ?? <span className="italic text-gray-400">Sin título</span>}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-gray-500">
+                  {proyecto.autores.map((autor) => autor.nombre).join(', ') || 'Sin autor'} · ID: {proyecto.id.slice(0, 8)}
+                </p>
               </div>
 
-              {/* Cuerpo Tarjeta: Badges */}
-              <div className="mt-auto flex items-center justify-between border-t border-gray-50 pt-4">
-                <span className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-gray-600">
+              {/* Centro: tipo de servicio como badge */}
+              <div className="md:w-1/3">
+                <span className="inline-block rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
                   {proyecto.servicio.codigo} — {proyecto.servicio.nombre}
                 </span>
+              </div>
+
+              {/* Derecha: acciones — editar y eliminar directo desde la fila. */}
+              <div className="flex flex-shrink-0 items-center gap-2 self-end md:w-1/3 md:justify-end md:self-auto">
                 <span className="flex items-center gap-1 text-xs font-medium text-gray-400 transition-colors group-hover:text-dorado">
                   Ver ficha{' '}
                   <span className="translate-x-[-5px] transform opacity-0 transition-opacity group-hover:translate-x-0 group-hover:opacity-100">
                     →
                   </span>
                 </span>
+                <button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onEditarProyecto(proyecto);
+                  }}
+                  className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-dorado/10 hover:text-dorado"
+                  title="Editar proyecto (servicio)"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={LAPIZ_PATH} />
+                  </svg>
+                </button>
+                <button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onEliminarProyecto(proyecto);
+                  }}
+                  className="p-2 text-gray-400 transition-colors hover:text-red-600"
+                  title="Eliminar proyecto"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={PAPELERA_PATH} />
+                  </svg>
+                </button>
               </div>
             </Link>
           ))}

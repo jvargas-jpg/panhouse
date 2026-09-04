@@ -1,5 +1,5 @@
 import type { FastifyInstance } from 'fastify';
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
 import { autores } from '../db/schema/index.js';
@@ -15,12 +15,43 @@ const ROLES_ESCRITURA_AUTORES = ['comercial', 'direccion'] as const;
 
 const autorIdParamSchema = z.object({ id: z.string().uuid() });
 
+// Perfil digital — seis plataformas opcionales, ver RedesSociales en
+// server/db/schema/autores.ts. .strict() a propósito: sin esto, un
+// typo de plataforma ("snapchap") se guardaría en silencio en vez de
+// avisar, ya que Zod descarta claves desconocidas por defecto. Mismo
+// objeto (sin nullable por dentro: una plataforma vacía se omite, no se
+// manda como null) para crear y editar; lo que sí difiere entre los dos
+// schemas es si el objeto completo puede ser null (ver editarAutorSchema
+// más abajo).
+const redesSocialesSchema = z
+  .object({
+    instagram: z.string().optional(),
+    x: z.string().optional(),
+    facebook: z.string().optional(),
+    linkedin: z.string().optional(),
+    tiktok: z.string().optional(),
+    youtube: z.string().optional(),
+  })
+  .strict();
+
+// Solo dígitos, "+" inicial opcional, guiones y espacios — bloquea
+// alfabéticos y símbolos raros a nivel de servidor (fuente de verdad;
+// CrearAutorForm.tsx ya filtra lo mismo en el input, pero eso es UX, no
+// la validación real). Compartido entre crear y editar para no repetir
+// el regex/mensaje dos veces.
+const telefonoSchema = z.string().regex(/^\+?[0-9\s-]+$/, 'Solo se permiten números');
+
 const crearAutorSchema = z.object({
   nombre: z.string().min(1),
+  nombreArtistico: z.string().optional(),
+  nacionalidad: z.string().optional(),
+  fechaNacimiento: z.string().optional(),
+  redesSociales: redesSocialesSchema.optional(),
+  personalidad: z.array(z.string()).optional(),
+  ocupacion: z.string().optional(),
   email: z.string().email().optional(),
-  telefono: z.string().optional(),
+  telefono: telefonoSchema.optional(),
   pais: z.string().optional(),
-  relevancia: z.number().int().min(1).max(5).optional(),
 });
 
 // nullable (a diferencia de crearAutorSchema): a diferencia de crear,
@@ -31,10 +62,15 @@ const crearAutorSchema = z.object({
 const editarAutorSchema = z
   .object({
     nombre: z.string().min(1).optional(),
+    nombreArtistico: z.string().nullable().optional(),
+    nacionalidad: z.string().nullable().optional(),
+    fechaNacimiento: z.string().nullable().optional(),
+    redesSociales: redesSocialesSchema.nullable().optional(),
+    personalidad: z.array(z.string()).nullable().optional(),
+    ocupacion: z.string().nullable().optional(),
     email: z.string().email().nullable().optional(),
-    telefono: z.string().nullable().optional(),
+    telefono: telefonoSchema.nullable().optional(),
     pais: z.string().nullable().optional(),
-    relevancia: z.number().int().min(1).max(5).nullable().optional(),
   })
   .refine((datos) => Object.keys(datos).length > 0, {
     message: 'No se recibió ningún campo válido para actualizar',
@@ -45,7 +81,9 @@ export async function autoresRoutes(app: FastifyInstance) {
     '/',
     { preHandler: [requireAuth, requireRole(...ROLES_LECTURA_AUTORES)] },
     async (_request, reply) => {
-      const lista = await db.select().from(autores);
+      // Más reciente primero — mismo criterio de orden que el resto de
+      // listados del CRM (ver listarTodosLosProyectos en helpers/proyectos.ts).
+      const lista = await db.select().from(autores).orderBy(desc(autores.createdAt));
       return reply.send({ autores: lista });
     },
   );

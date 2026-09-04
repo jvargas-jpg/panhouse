@@ -5,6 +5,29 @@ import { limpiarBaseDeDatos } from './helpers/db.js';
 import { crearAutor, crearPresupuesto, crearProyecto, crearServicio, crearUnidad } from './helpers/fixtures.js';
 import { crearAppDePrueba } from './helpers/testApp.js';
 
+describe('GET /api/autores', () => {
+  beforeEach(async () => {
+    await limpiarBaseDeDatos();
+  });
+
+  it('ordena por fecha de creación descendente (el más reciente primero)', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+
+    const antiguo = await crearAutor({ createdAt: new Date('2026-01-01T10:00:00Z') });
+    const reciente = await crearAutor({ createdAt: new Date('2026-06-01T10:00:00Z') });
+    const intermedio = await crearAutor({ createdAt: new Date('2026-03-01T10:00:00Z') });
+
+    const cookie = await registrarYLoguear(app, 'comercial');
+    const respuesta = await request(app.server).get('/api/autores').set('Cookie', cookie);
+
+    expect(respuesta.status).toBe(200);
+    expect(respuesta.body.autores.map((a: { id: string }) => a.id)).toEqual([reciente.id, intermedio.id, antiguo.id]);
+
+    await app.close();
+  });
+});
+
 describe('GET /api/autores/sin-proyecto', () => {
   beforeEach(async () => {
     await limpiarBaseDeDatos();
@@ -64,6 +87,160 @@ describe('GET /api/autores/sin-proyecto', () => {
 
     await app.close();
   });
+});
+
+describe('POST /api/autores', () => {
+  beforeEach(async () => {
+    await limpiarBaseDeDatos();
+  });
+
+  // Cobertura del perfil expandido (nombreArtistico/nacionalidad/
+  // fechaNacimiento/redesSociales/personalidad/ocupacion): estos campos
+  // ya existían como columnas antes de esta ronda, pero nunca habían
+  // estado en crearAutorSchema — sin este test, un typo en el schema
+  // (ej. omitir un campo) pasaría desapercibido igual que pasó antes.
+  it('permite a comercial crear un autor con el perfil completo', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server)
+      .post('/api/autores')
+      .set('Cookie', cookie)
+      .send({
+        nombre: 'Autora de prueba',
+        nombreArtistico: 'La Cronista',
+        nacionalidad: 'Venezuela',
+        fechaNacimiento: '1990-05-12',
+        redesSociales: { instagram: '@lacronista', x: '@lacronista_x', youtube: 'LaCronistaOficial' },
+        personalidad: ['Extrovertida', 'Directa'],
+        ocupacion: 'Periodista freelance',
+        pais: 'Venezuela',
+      });
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.autor.nombreArtistico).toBe('La Cronista');
+    expect(respuesta.body.autor.nacionalidad).toBe('Venezuela');
+    expect(respuesta.body.autor.fechaNacimiento).toBe('1990-05-12');
+    expect(respuesta.body.autor.redesSociales).toEqual({ instagram: '@lacronista', x: '@lacronista_x', youtube: 'LaCronistaOficial' });
+    expect(respuesta.body.autor.personalidad).toEqual(['Extrovertida', 'Directa']);
+    expect(respuesta.body.autor.ocupacion).toBe('Periodista freelance');
+
+    await app.close();
+  });
+
+  it('permite crear un autor sin ninguno de los campos del perfil expandido (todos opcionales)', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).post('/api/autores').set('Cookie', cookie).send({ nombre: 'Autor mínimo' });
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.autor.redesSociales).toBeNull();
+
+    await app.close();
+  });
+
+  it('rechaza redesSociales con una plataforma desconocida (forma cerrada)', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server)
+      .post('/api/autores')
+      .set('Cookie', cookie)
+      .send({ nombre: 'Autor', redesSociales: { snapchat: '@algo' } });
+
+    expect(respuesta.status).toBe(400);
+
+    await app.close();
+  });
+
+  // personalidad pasó de texto libre a array de etiquetas en esta ronda
+  // (CrearAutorForm.tsx: chips en vez de textarea) — sin esto, un string
+  // suelto que antes era válido pasaría desapercibido como aceptado.
+  it('rechaza personalidad como string suelto (debe ser un array)', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server)
+      .post('/api/autores')
+      .set('Cookie', cookie)
+      .send({ nombre: 'Autor', personalidad: 'Extrovertida, directa' });
+
+    expect(respuesta.status).toBe(400);
+
+    await app.close();
+  });
+
+  it('permite crear un autor con personalidad como array vacío', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).post('/api/autores').set('Cookie', cookie).send({ nombre: 'Autor', personalidad: [] });
+
+    expect(respuesta.status).toBe(201);
+    expect(respuesta.body.autor.personalidad).toEqual([]);
+
+    await app.close();
+  });
+
+  it('rechaza sin sesión', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+
+    const respuesta = await request(app.server).post('/api/autores').send({ nombre: 'Autor' });
+
+    expect(respuesta.status).toBe(401);
+
+    await app.close();
+  });
+
+  it('rechaza a un rol sin permiso de escritura (ej. rrpp)', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const cookie = await registrarYLoguear(app, 'rrpp');
+
+    const respuesta = await request(app.server).post('/api/autores').set('Cookie', cookie).send({ nombre: 'Autor' });
+
+    expect(respuesta.status).toBe(403);
+
+    await app.close();
+  });
+
+  it.each(['+58 412-1234567', '0212-1234567', '04121234567', '+1 8091234567'])(
+    'acepta un teléfono válido (%s)',
+    async (telefono) => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server).post('/api/autores').set('Cookie', cookie).send({ nombre: 'Autor', telefono });
+
+      expect(respuesta.status).toBe(201);
+      expect(respuesta.body.autor.telefono).toBe(telefono);
+
+      await app.close();
+    },
+  );
+
+  it.each(['0412-abcd567', 'llamar a Juan', '0412 123 4567 ext. 2', '04121234567;DROP TABLE'])(
+    'rechaza un teléfono con letras u otros símbolos (%s)',
+    async (telefono) => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server).post('/api/autores').set('Cookie', cookie).send({ nombre: 'Autor', telefono });
+
+      expect(respuesta.status).toBe(400);
+
+      await app.close();
+    },
+  );
 });
 
 describe('PATCH /api/autores/:id', () => {

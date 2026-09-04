@@ -8,13 +8,17 @@ import { ProyectoCardJefatura } from './ProyectoCardJefatura';
 import { SeguimientoPage } from './SeguimientoPage';
 
 // AppLayout.tsx envuelve toda la app en <TopBar/> + <main className="mx-auto
-// max-w-4xl px-4 py-6 sm:px-6">. Mismo breakout que AutoresPage.tsx
-// (autores/): ml/mr negativos + w-screen escapan la columna angosta de
-// 896px, -my-6 cancela el padding vertical de ese <main>.
+// max-w-4xl flex-1 overflow-y-auto px-4 py-6 sm:px-6">. Mismo breakout
+// que AutoresPage.tsx (autores/): ml/mr negativos + w-screen escapan la
+// columna angosta de 896px, -my-6 cancela la POSICIÓN del padding
+// vertical de ese <main> (empujando hacia arriba).
 const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen -my-6';
 
-// Alto real del <header> de TopBar (medido: 59px, ver TopBar.tsx).
-const ALTO_SIDEBAR = 'h-[calc(100vh-59px)]';
+// Ver AutoresPage.tsx para la explicación completa: h-full solo deja
+// una franja de 48px sin cubrir en el fondo (resuelve contra la caja de
+// contenido de <main>, ya sin su propio padding py-6). +3rem = ese
+// padding total.
+const ALTO_LLENO_MAIN = 'h-[calc(100%+3rem)]';
 
 const NAV_ACTIVO =
   'w-full flex items-center gap-3 px-4 py-3 bg-dorado/10 text-dorado rounded-xl font-semibold text-sm border border-dorado/20 transition-all text-left';
@@ -52,8 +56,8 @@ export function PanelJefaturaPage() {
   const totalEspecialistas = carga.data?.especialistas.length ?? 0;
 
   return (
-    <div className={`${FULL_BLEED} ${ALTO_SIDEBAR} flex overflow-hidden bg-[#F8F9FA]`}>
-      <aside className="z-20 hidden w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
+    <div className={`${FULL_BLEED} ${ALTO_LLENO_MAIN} flex overflow-hidden bg-[#F8F9FA]`}>
+      <aside className="z-20 hidden h-full w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
         <div className="flex h-20 items-center border-b border-gray-800 px-6">
           <h1 className="text-xl font-light uppercase tracking-widest text-white">
             Pan<span className="font-bold text-dorado">House</span>

@@ -103,7 +103,17 @@ export function ProyectoDetallePage() {
             ← Mis proyectos
           </Link>
 
-          <h1 className="mb-2 mt-6 text-3xl font-light text-white">{proyectoQuery.data.proyecto.autor.nombre}</h1>
+          {/* Título del proyecto: identificador principal (ver
+              CrearProyectoModalForm.tsx) — proyectos creados antes de que
+              fuera obligatorio no lo tienen, de ahí el respaldo. Autores
+              (coautoría, todos unidos por coma — ninguno debería quedar
+              invisible) bajan a texto secundario debajo. */}
+          <h1 className="mb-1 mt-6 text-3xl font-light text-white">
+            {proyectoQuery.data.proyecto.titulo ?? <span className="italic text-white/50">Sin título</span>}
+          </h1>
+          <p className="text-sm text-white/70">
+            {proyectoQuery.data.proyecto.autores.map((autor) => autor.nombre).join(', ') || 'Sin autor asignado'}
+          </p>
           <p className="text-sm text-white/70">
             {proyectoQuery.data.proyecto.servicio.nombre} ({proyectoQuery.data.proyecto.servicio.codigo})
           </p>
@@ -186,6 +196,7 @@ export function ProyectoDetallePage() {
                 proyectoId={id}
                 ficha={fichaQuery.data.ficha}
                 titulo={proyectoQuery.data.proyecto.titulo}
+                autores={proyectoQuery.data.proyecto.autores}
                 puedeEditar={puedeEditarPerfil}
               />
               <SeccionProyectoContrato proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={puedeEditarContrato} />
@@ -212,6 +223,7 @@ export function ProyectoDetallePage() {
                     proyectoId={id}
                     ficha={fichaQuery.data.ficha}
                     titulo={proyectoQuery.data.proyecto.titulo}
+                    autores={proyectoQuery.data.proyecto.autores}
                     puedeEditar={puedeEditarPerfil}
                   />
                   <SeccionProyectoContrato proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={puedeEditarContrato} />

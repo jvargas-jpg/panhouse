@@ -2,10 +2,12 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { CATEGORIAS_STAND_BY, ESTADOS_PROYECTO } from '../db/schema/index.js';
 import { listarRiesgoProyectosActivos, obtenerProyectoConRiesgo } from '../helpers/alertas.js';
-import { actualizarManuscrito, listarMisLibros, verificarAccesoLibroAutor } from '../helpers/portalAutor.js';
+import { actualizarDecisionPortada, actualizarManuscrito, listarMisLibros, verificarAccesoLibroAutor } from '../helpers/portalAutor.js';
+import { obtenerAutoresDeProyecto } from '../helpers/proyectosAutores.js';
 import {
   actualizarEquipoProyecto,
   actualizarProyecto,
+  actualizarPropuestaPortada,
   actualizarTituloProyecto,
   asignarDisenador,
   asignarEditor,
@@ -29,8 +31,14 @@ import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 
+// autorIds (no autorId): coautoría — al menos uno, ver
+// proyectos_autores en schema/proyectos.ts. crearProyecto (helpers/
+// proyectos.ts) inserta el primero como proyectos.autorId (columna
+// legacy, todavía vigente en la etapa aditiva de la migración) y una
+// fila por cada id en la tabla de unión.
 const crearProyectoSchema = z.object({
-  autorId: z.string().uuid(),
+  titulo: z.string().min(2, 'El título es obligatorio'),
+  autorIds: z.array(z.string().uuid()).min(1, 'Selecciona al menos un autor'),
   servicioId: z.string().uuid(),
   unidadId: z.string().uuid(),
   presupuestoId: z.string().uuid(),
@@ -40,19 +48,23 @@ const crearProyectoSchema = z.object({
   fechaDeseadaAutor: z.string().optional(),
 });
 
-// Corregir los parámetros comerciales de un proyecto ya creado — autor
-// (bloqueado del lado del frontend, ver CrearProyectoModalForm.tsx —
-// autorId sigue aceptado acá porque el backend no impone esa regla de
-// UI) y ahora también servicio/unidad/presupuesto/fecha programada, a
-// pedido explícito: "habilitar la edición completa de los parámetros
-// comerciales". Nota de solapamiento: servicioId/unidadId/presupuestoId
-// ya eran editables por especialista vía PATCH /:id (especificaciones
-// operativas) — con este cambio quedan editables por las DOS rutas, con
-// permisos distintos. No se resolvió ese solapamiento (no se pidió);
-// queda documentado acá para quien lo encuentre después.
+// Corregir los parámetros comerciales de un proyecto ya creado —
+// título, coautoría (autorIds; ver reasignarProyecto en helpers/
+// proyectos.ts, ya no bloqueada del lado del frontend, a pedido
+// explícito posterior) y servicio/unidad/presupuesto/fecha programada.
+// autorId (singular, legacy) sigue aceptado tal cual — nadie lo envía
+// ya desde el frontend, pero no se retiró para no romper a otros
+// consumidores hipotéticos de este endpoint. Nota de solapamiento:
+// servicioId/unidadId/presupuestoId ya eran editables por especialista
+// vía PATCH /:id (especificaciones operativas) — con este cambio quedan
+// editables por las DOS rutas, con permisos distintos. No se resolvió
+// ese solapamiento (no se pidió); queda documentado acá para quien lo
+// encuentre después.
 const reasignarProyectoSchema = z
   .object({
+    titulo: z.string().min(2, 'El título es obligatorio').optional(),
     autorId: z.string().uuid().optional(),
+    autorIds: z.array(z.string().uuid()).min(1, 'Selecciona al menos un autor').optional(),
     servicioId: z.string().uuid().optional(),
     unidadId: z.string().uuid().optional(),
     presupuestoId: z.string().uuid().optional(),
@@ -102,6 +114,26 @@ const tituloProyectoSchema = z.object({
 // pagos.comprobanteUrl), ninguno valida formato de URL.
 const manuscritoSchema = z.object({
   manuscritoUrl: z.string().nullable(),
+});
+
+// Dueño especialista/disenador (PATCH /:id/propuesta-portada) — mismo
+// criterio laxo que manuscritoSchema, sin .url(). El reset de
+// portadaDecisionAutor/portadaFeedback a 'pendiente'/null vive en
+// actualizarPropuestaPortada (helpers/proyectos.ts), no acá.
+const propuestaPortadaSchema = z.object({
+  propuestaPortadaUrl: z.string().nullable(),
+});
+
+// Dueño autor (PATCH /:id/decision-portada) — 'pendiente' no es un valor
+// de entrada válido (es el estado inicial/reset, nunca algo que el
+// autor "decide"), por eso el enum acá es más angosto que
+// DECISIONES_PORTADA completo. La regla "feedback obligatorio si
+// rechazada" vive en validarDecisionPortada (helpers/portalAutor.ts),
+// no acá: es una regla de negocio, no de forma — mismo criterio que
+// validarPausaFormal en helpers/pausas.ts.
+const decisionPortadaSchema = z.object({
+  decision: z.enum(['aprobada', 'rechazada']),
+  feedback: z.string().nullable().optional(),
 });
 
 // Los mismos ocho campos operativos confirmados por negocio: ninguno
@@ -283,6 +315,40 @@ export async function proyectosRoutes(app: FastifyInstance) {
     },
   );
 
+  // Ciclo de aprobación de portada, lado autor — el otro lado
+  // (propuesta-portada) lo sube especialista/disenador, ver más abajo.
+  // Mismo patrón de ownership que /:id/manuscrito: autorId sale de la
+  // sesión, verificarAccesoLibroAutor confirma que el proyecto es suyo.
+  app.patch(
+    '/:id/decision-portada',
+    { preHandler: [requireAuth, requireRole('autor')] },
+    async (request, reply) => {
+      const params = parseOrReply(idParamSchema, request.params, reply);
+      if (!params) return;
+      const body = parseOrReply(decisionPortadaSchema, request.body, reply);
+      if (!body) return;
+
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      if (!request.user.autorId) {
+        return reply.code(403).send({ error: 'Esta cuenta todavía no está vinculada a ningún autor' });
+      }
+
+      const acceso = await verificarAccesoLibroAutor(params.id, request.user.autorId);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      try {
+        const proyecto = await actualizarDecisionPortada(params.id, body.decision, body.feedback ?? null);
+        return reply.send({ proyecto });
+      } catch (error) {
+        return reply.code(400).send({ error: error instanceof Error ? error.message : 'Datos inválidos' });
+      }
+    },
+  );
+
   // "Proyectos sin editor asignado": punto de partida del flujo de
   // jefe_edicion, mismo patrón que "Autores sin proyecto" de jefe_area.
   app.get('/sin-editor', { preHandler: [requireAuth, requireRole('jefe_edicion')] }, async (_request, reply) => {
@@ -350,6 +416,34 @@ export async function proyectosRoutes(app: FastifyInstance) {
     return reply.send({ proyecto });
   });
 
+  // Propuesta de portada, lado especialista/disenador — el otro lado
+  // (decision-portada) lo resuelve el autor desde el Portal, ver más
+  // arriba. verificarAccesoAProyecto ya cubre "especialista o disenador,
+  // solo el proyecto donde está asignado" por sus columnas individuales
+  // (especialistaId/disenadorId), sin necesidad de un helper aislado.
+  app.patch(
+    '/:id/propuesta-portada',
+    { preHandler: [requireAuth, requireRole('especialista', 'disenador')] },
+    async (request, reply) => {
+      const params = parseOrReply(idParamSchema, request.params, reply);
+      if (!params) return;
+      const body = parseOrReply(propuestaPortadaSchema, request.body, reply);
+      if (!body) return;
+
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+
+      const acceso = await verificarAccesoAProyecto(params.id, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      const proyecto = await actualizarPropuestaPortada(params.id, body.propuestaPortadaUrl);
+      return reply.send({ proyecto });
+    },
+  );
+
   app.patch('/:id', { preHandler: [requireAuth, requireRole('especialista')] }, async (request, reply) => {
     const params = parseOrReply(idParamSchema, request.params, reply);
     if (!params) return;
@@ -414,7 +508,16 @@ export async function proyectosRoutes(app: FastifyInstance) {
         return reply.code(404).send({ error: 'Proyecto no encontrado' });
       }
 
-      return reply.send({ proyecto });
+      // Etapa aditiva de la migración a coautoría: obtenerProyectoConRiesgo
+      // es compartido con "mis proyectos" (especialista/editor) y el
+      // panel de jefatura (fuera del alcance de este cambio), así que su
+      // `autor` singular no se toca ahí — acá, en la única ruta
+      // migrada, se reemplaza por `autores: []` recién antes de
+      // responder (no se cambia el tipo compartido, solo esta respuesta).
+      const { autor: _autor, ...proyectoSinAutorSingular } = proyecto;
+      const autores = await obtenerAutoresDeProyecto(params.id);
+
+      return reply.send({ proyecto: { ...proyectoSinAutorSingular, autores } });
     },
   );
 }

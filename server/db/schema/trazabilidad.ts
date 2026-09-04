@@ -35,9 +35,14 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   // orquestador. Todo texto libre salvo las fechas (mismo patrón `date`
   // que el resto del archivo) — ningún valor cerrado (ej. tipo de
   // proyecto) está confirmado todavía como enum.
-  ingresoNombreArtistico: text('ingreso_nombre_artistico'),
-  ingresoNacionalidad: text('ingreso_nacionalidad'),
-  ingresoFechaNacimiento: date('ingreso_fecha_nacimiento'),
+  //
+  // ingresoNombreArtistico/ingresoNacionalidad/ingresoFechaNacimiento/
+  // ingresoRedesSociales/ingresoPersonalidad/ingresoOcupacion — que
+  // vivían acá — se eliminaron: duplicaban uno a uno los campos que ya
+  // existen en `autores` (nombreArtistico, nacionalidad, fechaNacimiento,
+  // redesSociales, personalidad, ocupacion), que no cambian de un
+  // proyecto a otro del mismo autor. Ver ese archivo — su propio
+  // comentario ya advertía la duplicación con perfilAutor de acá abajo.
   ingresoTipoProyecto: text('ingreso_tipo_proyecto'),
   ingresoTipoProyectoDetalle: text('ingreso_tipo_proyecto_detalle'),
   ingresoFechaIngreso: date('ingreso_fecha_ingreso'),
@@ -48,9 +53,6 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   ingresoServicioEjecucion: text('ingreso_servicio_ejecucion'),
   ingresoServicioAlianza: text('ingreso_servicio_alianza'),
   ingresoServicioPresupuesto: text('ingreso_servicio_presupuesto'),
-  ingresoRedesSociales: text('ingreso_redes_sociales'),
-  ingresoPersonalidad: text('ingreso_personalidad'),
-  ingresoOcupacion: text('ingreso_ocupacion'),
   ingresoObservaciones: text('ingreso_observaciones'),
 
   // Sección 1 (parte 4) — Datos de ingreso, segunda mitad de la matriz

@@ -1,11 +1,79 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { formatearFechaONull } from './campos';
-import type { FichaCompleta } from '../types/api';
+import type { AutorConPerfil, FichaCompleta } from '../types/api';
 import { actualizarSeccionProyectoPerfil, actualizarTituloProyecto } from './proyectoDetalleApi';
 
 function SinCompletar() {
   return <p className="text-sm italic text-tinta/50">Sin completar</p>;
+}
+
+// "Instagram: @x, X: @y" — solo las plataformas que el autor completó
+// (RedesSociales en server/db/schema/autores.ts, seis todas opcionales).
+function formatearRedesSociales(redes: AutorConPerfil['redesSociales']): string | null {
+  if (!redes) return null;
+  const etiquetas: Record<keyof NonNullable<AutorConPerfil['redesSociales']>, string> = {
+    instagram: 'Instagram',
+    x: 'X',
+    facebook: 'Facebook',
+    linkedin: 'LinkedIn',
+    tiktok: 'TikTok',
+    youtube: 'YouTube',
+  };
+  const partes = (Object.keys(etiquetas) as (keyof typeof etiquetas)[])
+    .filter((clave) => redes[clave])
+    .map((clave) => `${etiquetas[clave]}: ${redes[clave]}`);
+  return partes.length > 0 ? partes.join(', ') : null;
+}
+
+// Tarjeta de solo lectura: el perfil del autor (nombre artístico,
+// nacionalidad, fecha de nacimiento, redes, ocupación, personalidad) ya
+// no se pide como input acá — esos datos viven en `autores` y se editan
+// desde el CRM (ClientesGrid.tsx), no desde la ficha de un proyecto
+// puntual. Esto es solo una referencia rápida para quien llena el resto
+// de la Sección 1 (rrpp), no un formulario — nada de esto viaja en
+// actualizarSeccionProyectoPerfil. Itera sobre `autores` (coautoría, ver
+// proyectos_autores) para que ningún coautor quede sin mostrarse.
+function TarjetaPerfilAutores({ autores }: { autores: AutorConPerfil[] }) {
+  if (autores.length === 0) return null;
+
+  return (
+    <div className="mb-6 rounded-lg border border-tinta/10 bg-gray-50 p-4 sm:p-6">
+      <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
+        <span className="h-1.5 w-1.5 rounded-full bg-dorado" /> Perfil del Autor (solo lectura — se edita desde Clientes)
+      </h3>
+      <div className="space-y-4">
+        {autores.map((autor) => {
+          const campos = [
+            { etiqueta: 'Nombre artístico', valor: autor.nombreArtistico },
+            { etiqueta: 'Nacionalidad', valor: autor.nacionalidad },
+            { etiqueta: 'Fecha de nacimiento', valor: formatearFechaONull(autor.fechaNacimiento) },
+            { etiqueta: 'Redes sociales', valor: formatearRedesSociales(autor.redesSociales) },
+            { etiqueta: 'Ocupación', valor: autor.ocupacion },
+            { etiqueta: 'Personalidad', valor: autor.personalidad && autor.personalidad.length > 0 ? autor.personalidad.join(', ') : null },
+          ].filter((c) => c.valor !== null && c.valor !== '');
+
+          return (
+            <div key={autor.id}>
+              <p className="mb-1.5 text-sm font-semibold text-gray-800">{autor.nombre}</p>
+              {campos.length === 0 ? (
+                <SinCompletar />
+              ) : (
+                <dl className="space-y-1 text-sm">
+                  {campos.map((c) => (
+                    <div key={c.etiqueta}>
+                      <dt className="inline font-medium text-tinta/70">{c.etiqueta}: </dt>
+                      <dd className="inline text-tinta">{c.valor}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 const INPUT_CLASS =
@@ -27,26 +95,28 @@ const GRID_CLASS = 'grid grid-cols-1 md:grid-cols-12 gap-x-6 gap-y-5';
 // Los campos "ingreso*" son la matriz real de Datos de Ingreso provista
 // por el orquestador: se agregan sin tocar perfilAutor/publicoObjetivo/
 // objetivosComerciales, que ya eran una función y ruta establecidas.
+// Los seis campos de perfil del autor (nombre artístico, nacionalidad,
+// fecha de nacimiento, redes sociales, ocupación, personalidad) que
+// vivían acá se eliminaron de este formulario — duplicaban uno a uno
+// los campos que ya existen en `autores` (ver TarjetaPerfilAutores más
+// arriba, que los muestra de solo lectura desde ahí).
 export function SeccionProyectoPerfil({
   proyectoId,
   ficha,
   titulo,
+  autores,
   puedeEditar,
 }: {
   proyectoId: string;
   ficha: FichaCompleta;
   titulo: string | null;
+  autores: AutorConPerfil[];
   puedeEditar: boolean;
 }) {
   const [tituloForm, setTituloForm] = useState(titulo ?? '');
   const [perfilAutor, setPerfilAutor] = useState(ficha.perfilAutor ?? '');
   const [publicoObjetivo, setPublicoObjetivo] = useState(ficha.publicoObjetivo ?? '');
   const [objetivosComerciales, setObjetivosComerciales] = useState(ficha.objetivosComerciales ?? '');
-
-  const [ingresoNombreArtistico, setIngresoNombreArtistico] = useState(ficha.ingresoNombreArtistico ?? '');
-  const [ingresoNacionalidad, setIngresoNacionalidad] = useState(ficha.ingresoNacionalidad ?? '');
-  const [ingresoFechaNacimiento, setIngresoFechaNacimiento] = useState(ficha.ingresoFechaNacimiento ?? '');
-  const [ingresoRedesSociales, setIngresoRedesSociales] = useState(ficha.ingresoRedesSociales ?? '');
 
   const [ingresoTipoProyecto, setIngresoTipoProyecto] = useState(ficha.ingresoTipoProyecto ?? '');
   const [ingresoTipoProyectoDetalle, setIngresoTipoProyectoDetalle] = useState(ficha.ingresoTipoProyectoDetalle ?? '');
@@ -60,8 +130,6 @@ export function SeccionProyectoPerfil({
   const [ingresoServicioAlianza, setIngresoServicioAlianza] = useState(ficha.ingresoServicioAlianza ?? '');
   const [ingresoServicioPresupuesto, setIngresoServicioPresupuesto] = useState(ficha.ingresoServicioPresupuesto ?? '');
 
-  const [ingresoOcupacion, setIngresoOcupacion] = useState(ficha.ingresoOcupacion ?? '');
-  const [ingresoPersonalidad, setIngresoPersonalidad] = useState(ficha.ingresoPersonalidad ?? '');
   const [ingresoObservaciones, setIngresoObservaciones] = useState(ficha.ingresoObservaciones ?? '');
 
   const [ingresoPosibleTitulo, setIngresoPosibleTitulo] = useState(ficha.ingresoPosibleTitulo ?? '');
@@ -100,10 +168,6 @@ export function SeccionProyectoPerfil({
         perfilAutor: perfilAutor || null,
         publicoObjetivo: publicoObjetivo || null,
         objetivosComerciales: objetivosComerciales || null,
-        ingresoNombreArtistico: ingresoNombreArtistico || null,
-        ingresoNacionalidad: ingresoNacionalidad || null,
-        ingresoFechaNacimiento: ingresoFechaNacimiento || null,
-        ingresoRedesSociales: ingresoRedesSociales || null,
         ingresoTipoProyecto: ingresoTipoProyecto || null,
         ingresoTipoProyectoDetalle: ingresoTipoProyectoDetalle || null,
         ingresoFechaIngreso: ingresoFechaIngreso || null,
@@ -114,8 +178,6 @@ export function SeccionProyectoPerfil({
         ingresoServicioEjecucion: ingresoServicioEjecucion || null,
         ingresoServicioAlianza: ingresoServicioAlianza || null,
         ingresoServicioPresupuesto: ingresoServicioPresupuesto || null,
-        ingresoOcupacion: ingresoOcupacion || null,
-        ingresoPersonalidad: ingresoPersonalidad || null,
         ingresoObservaciones: ingresoObservaciones || null,
         ingresoPosibleTitulo: ingresoPosibleTitulo || null,
         ingresoColeccion: ingresoColeccion || null,
@@ -149,10 +211,6 @@ export function SeccionProyectoPerfil({
   if (!puedeEditar) {
     const conValor = [
       { etiqueta: 'Título', valor: titulo },
-      { etiqueta: 'Nombre artístico', valor: ficha.ingresoNombreArtistico },
-      { etiqueta: 'Nacionalidad', valor: ficha.ingresoNacionalidad },
-      { etiqueta: 'Fecha de nacimiento', valor: formatearFechaONull(ficha.ingresoFechaNacimiento) },
-      { etiqueta: 'Redes sociales', valor: ficha.ingresoRedesSociales },
       { etiqueta: 'Tipo de proyecto', valor: ficha.ingresoTipoProyecto },
       { etiqueta: 'Detalle del tipo de proyecto', valor: ficha.ingresoTipoProyectoDetalle },
       { etiqueta: 'Fecha de ingreso', valor: formatearFechaONull(ficha.ingresoFechaIngreso) },
@@ -163,8 +221,6 @@ export function SeccionProyectoPerfil({
       { etiqueta: 'Servicio — Ejecución', valor: ficha.ingresoServicioEjecucion },
       { etiqueta: 'Servicio — Alianza comercial', valor: ficha.ingresoServicioAlianza },
       { etiqueta: 'Servicio — Presupuesto', valor: ficha.ingresoServicioPresupuesto },
-      { etiqueta: 'Ocupación', valor: ficha.ingresoOcupacion },
-      { etiqueta: 'Personalidad', valor: ficha.ingresoPersonalidad },
       { etiqueta: 'Observaciones', valor: ficha.ingresoObservaciones },
       { etiqueta: 'Posible título del libro', valor: ficha.ingresoPosibleTitulo },
       { etiqueta: 'Colección PanHouse', valor: ficha.ingresoColeccion },
@@ -189,27 +245,32 @@ export function SeccionProyectoPerfil({
     ].filter((c) => c.valor !== null && c.valor !== '');
 
     return (
-      <div className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-        <h3 className="mb-2 font-medium text-tinta">1. Proyecto — Perfil</h3>
-        {conValor.length === 0 ? (
-          <SinCompletar />
-        ) : (
-          <dl className="space-y-1 text-sm">
-            {conValor.map((c) => (
-              <div key={c.etiqueta}>
-                <dt className="inline font-medium text-tinta/70">{c.etiqueta}: </dt>
-                <dd className="inline text-tinta">{c.valor}</dd>
-              </div>
-            ))}
-          </dl>
-        )}
+      <div>
+        <TarjetaPerfilAutores autores={autores} />
+        <div className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
+          <h3 className="mb-2 font-medium text-tinta">1. Proyecto — Perfil</h3>
+          {conValor.length === 0 ? (
+            <SinCompletar />
+          ) : (
+            <dl className="space-y-1 text-sm">
+              {conValor.map((c) => (
+                <div key={c.etiqueta}>
+                  <dt className="inline font-medium text-tinta/70">{c.etiqueta}: </dt>
+                  <dd className="inline text-tinta">{c.valor}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm sm:p-6">
-      <h3 className="mb-6 font-medium text-tinta">1. Proyecto — Perfil</h3>
+    <div>
+      <TarjetaPerfilAutores autores={autores} />
+      <form onSubmit={handleSubmit} className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm sm:p-6">
+        <h3 className="mb-6 font-medium text-tinta">1. Proyecto — Perfil</h3>
 
       <div className="mb-8">
         <label htmlFor="proyecto-titulo" className={LABEL_CLASS}>
@@ -225,74 +286,6 @@ export function SeccionProyectoPerfil({
           }}
           className={INPUT_CLASS}
         />
-      </div>
-
-      <div className={BLOQUE_CLASS}>
-        <h3 className={BLOQUE_TITULO_CLASS}>
-          <span className="h-1.5 w-1.5 rounded-full bg-dorado" /> Datos Personales
-        </h3>
-        <div className={GRID_CLASS}>
-          <div className="md:col-span-5">
-            <label htmlFor="ingreso-nombre-artistico" className={LABEL_CLASS}>
-              Nombre artístico
-            </label>
-            <input
-              id="ingreso-nombre-artistico"
-              type="text"
-              value={ingresoNombreArtistico}
-              onChange={(event) => {
-                setIngresoNombreArtistico(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div className="md:col-span-4">
-            <label htmlFor="ingreso-nacionalidad" className={LABEL_CLASS}>
-              Nacionalidad
-            </label>
-            <input
-              id="ingreso-nacionalidad"
-              type="text"
-              value={ingresoNacionalidad}
-              onChange={(event) => {
-                setIngresoNacionalidad(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div className="md:col-span-3">
-            <label htmlFor="ingreso-fecha-nacimiento" className={LABEL_CLASS}>
-              Fecha de nacimiento
-            </label>
-            <input
-              id="ingreso-fecha-nacimiento"
-              type="date"
-              value={ingresoFechaNacimiento}
-              onChange={(event) => {
-                setIngresoFechaNacimiento(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div className="md:col-span-12">
-            <label htmlFor="ingreso-redes-sociales" className={LABEL_CLASS}>
-              Redes sociales
-            </label>
-            <input
-              id="ingreso-redes-sociales"
-              type="text"
-              value={ingresoRedesSociales}
-              onChange={(event) => {
-                setIngresoRedesSociales(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            />
-          </div>
-        </div>
       </div>
 
       <div className={BLOQUE_CLASS}>
@@ -464,40 +457,9 @@ export function SeccionProyectoPerfil({
 
       <div className={BLOQUE_CLASS}>
         <h3 className={BLOQUE_TITULO_CLASS}>
-          <span className="h-1.5 w-1.5 rounded-full bg-dorado" /> Perfil del Autor
+          <span className="h-1.5 w-1.5 rounded-full bg-dorado" /> Observaciones del Ingreso
         </h3>
         <div className={GRID_CLASS}>
-          <div className="md:col-span-12">
-            <label htmlFor="ingreso-ocupacion" className={LABEL_CLASS}>
-              Ocupación
-            </label>
-            <input
-              id="ingreso-ocupacion"
-              type="text"
-              placeholder="A qué se dedica el autor"
-              value={ingresoOcupacion}
-              onChange={(event) => {
-                setIngresoOcupacion(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div className="md:col-span-12">
-            <label htmlFor="ingreso-personalidad" className={LABEL_CLASS}>
-              Personalidad
-            </label>
-            <input
-              id="ingreso-personalidad"
-              type="text"
-              value={ingresoPersonalidad}
-              onChange={(event) => {
-                setIngresoPersonalidad(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            />
-          </div>
           <div className="md:col-span-12">
             <label htmlFor="ingreso-observaciones" className={LABEL_CLASS}>
               Observaciones
@@ -877,6 +839,7 @@ export function SeccionProyectoPerfil({
           </span>
         )}
       </div>
-    </form>
+      </form>
+    </div>
   );
 }

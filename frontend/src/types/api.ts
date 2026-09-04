@@ -28,6 +28,11 @@ export type TipoPortada = 'tipografica' | 'fotografica' | 'ilustrada';
 
 export type EstadoCotizacionImpresion = 'solicitada' | 'enviada' | 'aceptada' | 'rechazada';
 
+// Ciclo de aprobación de portada (Portal del Autor) — varchar en la
+// base de datos, no un enum de Postgres (ver server/db/schema/enums.ts:
+// DecisionPortada), mismo criterio en el frontend.
+export type DecisionPortada = 'pendiente' | 'aprobada' | 'rechazada';
+
 export interface Usuario {
   id: string;
   email: string;
@@ -103,6 +108,30 @@ export interface ProyectoConRiesgo {
   riesgo: RiesgoProyecto;
 }
 
+// Perfil completo del autor (no solo id/nombre): ProyectoDetallePage.tsx
+// lo muestra de solo lectura en la Sección 1 — ver SeccionProyectoPerfil.tsx.
+// Mismos campos que Autor (más abajo), sin los de contacto/país (que no
+// hacen falta en esa tarjeta).
+export interface AutorConPerfil {
+  id: string;
+  nombre: string;
+  nombreArtistico: string | null;
+  nacionalidad: string | null;
+  fechaNacimiento: string | null;
+  redesSociales: RedesSociales | null;
+  personalidad: string[] | null;
+  ocupacion: string | null;
+}
+
+// GET /api/proyectos/:id/riesgo — única ruta migrada a coautoría hasta
+// ahora (etapa aditiva, ver server/helpers/proyectosAutores.ts):
+// `autores: []` reemplaza a `autor` solo en esta respuesta puntual.
+// "Mis proyectos" (fetchMisProyectos) y el panel de jefatura
+// (fetchProyectosRiesgo) siguen usando ProyectoConRiesgo tal cual, sin tocar.
+export type ProyectoDetalleConAutores = Omit<ProyectoConRiesgo, 'autor'> & {
+  autores: AutorConPerfil[];
+};
+
 // GET /api/fichas-trazabilidad/pendientes/perfil y /pendientes/contrato
 // — mismo join autor/servicio que ProyectoConRiesgo pero sin riesgo
 // (no se calcula acá, no aplica a esta lista). unidadId/presupuestoId/
@@ -112,7 +141,12 @@ export interface ProyectoConRiesgo {
 // consulta distinta (listarProyectosSinEditor) que no los incluye.
 export interface ProyectoPendienteSeccion1 {
   id: string;
+  titulo: string | null;
+  // Primer autor, por compatibilidad — ListaProyectosPendientes.tsx sigue
+  // usándolo tal cual. `autores` (coautoría) es la lista completa —
+  // ProyectosPendientesCrmList.tsx es el único consumidor migrado a ella.
   autor: { id: string; nombre: string };
+  autores: { id: string; nombre: string }[];
   servicio: { id: string; codigo: string; nombre: string };
   unidadId?: string;
   presupuestoId?: string;
@@ -202,10 +236,12 @@ export interface FichaCompleta {
   objetivosComerciales: string | null;
   capitulosPactados: number | null;
   paginasPactadas: number | null;
-  // sección 1 (parte 3) — Datos de ingreso
-  ingresoNombreArtistico: string | null;
-  ingresoNacionalidad: string | null;
-  ingresoFechaNacimiento: string | null;
+  // sección 1 (parte 3) — Datos de ingreso. ingresoNombreArtistico/
+  // ingresoNacionalidad/ingresoFechaNacimiento/ingresoRedesSociales/
+  // ingresoPersonalidad/ingresoOcupacion se eliminaron: duplicaban los
+  // campos del perfil del autor (ver Autor más abajo) — esos ahora se
+  // muestran de solo lectura desde proyecto.autores, no se vuelven a
+  // pedir acá.
   ingresoTipoProyecto: string | null;
   ingresoTipoProyectoDetalle: string | null;
   ingresoFechaIngreso: string | null;
@@ -216,9 +252,6 @@ export interface FichaCompleta {
   ingresoServicioEjecucion: string | null;
   ingresoServicioAlianza: string | null;
   ingresoServicioPresupuesto: string | null;
-  ingresoRedesSociales: string | null;
-  ingresoPersonalidad: string | null;
-  ingresoOcupacion: string | null;
   ingresoObservaciones: string | null;
   // sección 1 (parte 4) — Datos de ingreso, especificaciones del proyecto
   ingresoPosibleTitulo: string | null;
@@ -315,19 +348,30 @@ export interface FichaCompleta {
   distribucionObservaciones: string | null;
   distribucionPaises: FichaDistribucionPais[];
 }
+// Perfil digital del autor — seis plataformas, todas opcionales. Mismo
+// tipo que RedesSociales en server/db/schema/autores.ts (columna jsonb).
+export interface RedesSociales {
+  instagram?: string;
+  x?: string;
+  facebook?: string;
+  linkedin?: string;
+  tiktok?: string;
+  youtube?: string;
+}
+
 // GET/POST /api/autores — fila completa de server/db/schema/autores.ts.
-// relevancia es un dato interno de gestión, nunca se expone al autor.
 export interface Autor {
   id: string;
   nombre: string;
   nombreArtistico: string | null;
   nacionalidad: string | null;
   fechaNacimiento: string | null;
-  redesSociales: string | null;
+  redesSociales: RedesSociales | null;
+  personalidad: string[] | null;
+  ocupacion: string | null;
   email: string | null;
   telefono: string | null;
   pais: string | null;
-  relevancia: number | null;
 }
 
 // GET /api/catalogos — para el formulario de creación de proyecto.
@@ -358,6 +402,9 @@ export interface Proyecto {
   id: string;
   titulo: string | null;
   manuscritoUrl: string | null;
+  propuestaPortadaUrl: string | null;
+  portadaDecisionAutor: DecisionPortada;
+  portadaFeedback: string | null;
   autorId: string;
   servicioId: string;
   unidadId: string;
@@ -407,6 +454,11 @@ export interface ProyectoResumen {
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
 }
+
+// GET /api/proyectos (raíz) — jefatura/jefaturaApi.ts define su propio
+// ProyectoResumen local con `autores: []` en vez de reexportar uno de
+// acá (mismo patrón que ya tenía antes de la migración a coautoría, ver
+// server/helpers/proyectosAutores.ts) — nada que declarar en este archivo.
 
 // POST/GET /api/pagos — módulo financiero de Comercial. Sin relación
 // con proyectos.pagoCuota1..6 de arriba (checklist de seis cuotas fijas
@@ -465,4 +517,49 @@ export interface LibroAutor {
   lanzamientoEstatus: string | null;
   impresionEstatus: string | null;
   distribucionEstatus: string | null;
+  // Ciclo de aprobación de portada — el otro lado lo sube especialista/
+  // disenador (PATCH /:id/propuesta-portada, interno); el autor decide
+  // acá (PATCH /:id/decision-portada, ver portalAutorApi.ts).
+  propuestaPortadaUrl: string | null;
+  portadaDecisionAutor: DecisionPortada;
+  portadaFeedback: string | null;
+}
+
+// GET /api/metricas/comercial — server/helpers/metricas.ts.
+export interface KpisComerciales {
+  clientesMesActual: number;
+  clientesMesAnterior: number;
+  // null cuando el mes anterior tuvo 0 clientes registrados (no hay
+  // porcentaje de crecimiento real sobre cero) — el frontend lo muestra
+  // como "Nuevo", no como un +100%/+Infinity% inventado.
+  crecimientoClientesPorcentaje: number | null;
+  proyectosMesActual: number;
+}
+
+export interface ClientesPorMes {
+  mes: string;
+  cantidad: number;
+}
+
+export interface ProyectosPorMes {
+  mes: string;
+  cantidad: number;
+}
+
+export interface PaisRanking {
+  pais: string;
+  cantidad: number;
+}
+
+export interface ServicioRanking {
+  servicio: string;
+  cantidad: number;
+}
+
+export interface MetricasComerciales {
+  kpis: KpisComerciales;
+  clientesPorMes: ClientesPorMes[];
+  proyectosPorMes: ProyectosPorMes[];
+  topPaises: PaisRanking[];
+  proyectosPorServicio: ServicioRanking[];
 }

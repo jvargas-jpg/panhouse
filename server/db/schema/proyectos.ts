@@ -1,4 +1,4 @@
-import { boolean, date, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, date, pgTable, primaryKey, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { autores } from './autores.js';
 import { colecciones, presupuestos, unidades } from './catalogos.js';
 import { categoriaStandByEnum, estadoProyectoEnum } from './enums.js';
@@ -57,10 +57,17 @@ export const proyectos = pgTable('proyectos', {
   // individual disponible para el patrón Macro/Micro.
   distribucionId: uuid('distribucion_id').references(() => users.id, { onDelete: 'set null' }),
 
-  // Título del libro. Vive en proyectos (no en la ficha) porque
-  // identifica al proyecto igual que autor/servicio — dueño rrpp, mismo
-  // rol que el resto de Sección 1 — Perfil, aunque se escribe por una
-  // ruta propia (PATCH /:id/titulo) porque esta tabla, no la ficha.
+  // Título del libro/proyecto: identifica al proyecto en todo el
+  // sistema (listas, detalle), igual que autor/servicio antes de esto.
+  // Vive en proyectos (no en la ficha) porque, aunque su dueño (rrpp)
+  // coincide con Sección 1 — Perfil, se escribe por su propia ruta
+  // (PATCH /:id/titulo, para corregirlo después de creado).
+  //
+  // Columna nullable a propósito, aunque crearProyectoSchema ya lo exige
+  // (POST /api/proyectos) para todo proyecto nuevo: forzar NOT NULL acá
+  // habría requerido inventar un título para los proyectos ya existentes
+  // que se crearon antes de este cambio (no tenían este campo en el
+  // formulario de alta) — se prefirió no fabricar datos históricos.
   titulo: text('titulo'),
 
   // Enlace al manuscrito original (Google Docs, OneDrive, etc.) que el
@@ -110,7 +117,23 @@ export const proyectos = pgTable('proyectos', {
   // mismo paso.
   notificadoRrpp: boolean('notificado_rrpp').notNull().default(false),
   notificadoJefatura: boolean('notificado_jefatura').notNull().default(false),
-  
+
+  // Ciclo de aprobación de portada (Portal del Autor): especialista o
+  // disenador suben la propuesta (PATCH /:id/propuesta-portada, dueño
+  // interno) y el autor la aprueba o pide cambios (PATCH
+  // /:id/decision-portada, dueño autor — ver helpers/portalAutor.ts).
+  // Viven en proyectos, no en fichaDisenoPropuestas (que ya modela
+  // múltiples propuestas internas con su propio ciclo especialista↔autor
+  // interno): esto es deliberadamente una superficie aparte y más
+  // angosta, la única propuesta "activa" que ve el cliente en su portal,
+  // mismo criterio que manuscritoUrl más arriba.
+  propuestaPortadaUrl: text('propuesta_portada_url'),
+  // varchar (no un pgEnum) a propósito, como pidió el negocio — los tres
+  // valores permitidos ('pendiente' | 'aprobada' | 'rechazada') se
+  // validan en la capa Zod de las rutas, no en la base de datos.
+  portadaDecisionAutor: varchar('portada_decision_autor', { length: 20 }).notNull().default('pendiente'),
+  portadaFeedback: text('portada_feedback'),
+
   // TODO (Regla de negocio no confirmada): La Matriz IA tiene "Pago Cuota 1" al 6. 
   // Asumo temporalmente que es un booleano (pagado/no pagado). Si el negocio 
   // requiere guardar la *fecha* de pago en su lugar, esto debe cambiar a date().
@@ -130,3 +153,33 @@ export const proyectos = pgTable('proyectos', {
     .defaultNow()
     .$onUpdate(() => new Date()),
 });
+
+// Tabla de unión para coautoría (Muchos-a-Muchos): un proyecto puede
+// tener varios autores, un autor puede figurar en varios proyectos.
+// proyectos.autorId (arriba) sigue existiendo a propósito — es la
+// primera etapa de una migración aditiva, no un reemplazo: el resto del
+// sistema (control de acceso del Portal del Autor, riesgo, carga,
+// pagos, seguimiento) sigue leyendo esa columna sin cambios. Cada
+// proyecto se crea con al menos una fila acá (ver crearProyecto en
+// helpers/proyectos.ts, que además de escribir autorId inserta la fila
+// correspondiente en esta tabla).
+export const proyectosAutores = pgTable(
+  'proyectos_autores',
+  {
+    // cascade: si se elimina el proyecto, sus filas de coautoría no
+    // deben sobrevivir huérfanas — mismo criterio que fichasTrazabilidad
+    // (ver schema/trazabilidad.ts) y el resto de tablas hijas de proyectos.
+    proyectoId: uuid('proyecto_id')
+      .notNull()
+      .references(() => proyectos.id, { onDelete: 'cascade' }),
+    // restrict: mismo criterio que proyectos.autorId — no se puede
+    // eliminar un autor que sigue vinculado a un proyecto (ver
+    // eliminarAutor en helpers/autores.ts).
+    autorId: uuid('autor_id')
+      .notNull()
+      .references(() => autores.id, { onDelete: 'restrict' }),
+  },
+  (table) => ({
+    pk: primaryKey({ columns: [table.proyectoId, table.autorId] }),
+  }),
+);

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { CajaEntregaManuscrito } from './CajaEntregaManuscrito';
 import { HITOS_STEPPER, calcularPasoStepper } from './faseAutor';
 import { fetchMisLibros } from './portalAutorApi';
+import { TarjetaPropuestaPortada } from './TarjetaPropuestaPortada';
 
 function StepperProgreso({ pasoActivo }: { pasoActivo: number }) {
   const porcentaje = (pasoActivo / HITOS_STEPPER.length) * 100;
@@ -69,6 +70,8 @@ export function LibroDetalleAutorPage() {
       <p className="mb-6 text-sm text-gray-500">{libro.servicio.nombre}</p>
 
       <StepperProgreso pasoActivo={calcularPasoStepper(libro)} />
+
+      <TarjetaPropuestaPortada libro={libro} />
 
       <CajaEntregaManuscrito libro={libro} />
     </div>

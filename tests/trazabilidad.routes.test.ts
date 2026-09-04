@@ -1,5 +1,8 @@
+import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { db } from '../server/db/client.js';
+import { proyectosAutores } from '../server/db/schema/index.js';
 import {
   actualizarBriefDiseno,
   actualizarSeccionProyectoContrato,
@@ -2304,6 +2307,48 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('GET /api/fichas-trazabilidad/pendientes/contrato', () => {
+    it('ordena por fecha de creación descendente (el más reciente primero)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const antiguo = await crearProyectoDePrueba({ createdAt: new Date('2026-01-01T10:00:00Z') });
+      await crearFichaTrazabilidad(antiguo.id);
+      const reciente = await crearProyectoDePrueba({ createdAt: new Date('2026-06-01T10:00:00Z') });
+      await crearFichaTrazabilidad(reciente.id);
+
+      const cookie = await registrarYLoguear(app, 'comercial');
+      const respuesta = await request(app.server).get('/api/fichas-trazabilidad/pendientes/contrato').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.proyectos.map((p: { id: string }) => p.id)).toEqual([reciente.id, antiguo.id]);
+
+      await app.close();
+    });
+
+    it('devuelve autores: [] con todos los coautores del proyecto (no solo el primero)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba();
+      await crearFichaTrazabilidad(proyecto.id);
+      const coautor = await crearAutor();
+      await db.insert(proyectosAutores).values({ proyectoId: proyecto.id, autorId: coautor.id });
+
+      const cookie = await registrarYLoguear(app, 'comercial');
+      const respuesta = await request(app.server).get('/api/fichas-trazabilidad/pendientes/contrato').set('Cookie', cookie);
+
+      expect(respuesta.status).toBe(200);
+      const fila = respuesta.body.proyectos.find((p: { id: string }) => p.id === proyecto.id);
+      const idsAutores = fila.autores.map((a: { id: string }) => a.id);
+      expect(idsAutores).toHaveLength(2);
+      expect(idsAutores).toEqual(expect.arrayContaining([proyecto.autorId, coautor.id]));
+      // Compatibilidad: autor (singular) sigue viajando tal cual, para
+      // ListaProyectosPendientes.tsx (RrppHomePage, etc.), que no migró.
+      expect(fila.autor.id).toBe(proyecto.autorId);
+
+      await app.close();
+    });
+
     it('permite a comercial listar los proyectos con lo contractual todavía sin completar', async () => {
       const app = crearAppDePrueba();
       await app.ready();

@@ -1,5 +1,6 @@
 import { desc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
+import type { DecisionPortada } from '../db/schema/index.js';
 import { fichasTrazabilidad, proyectos, servicios } from '../db/schema/index.js';
 import { crearNotificacion, existeNotificacionNoLeida } from './notificaciones.js';
 
@@ -33,6 +34,13 @@ export interface LibroAutor {
   lanzamientoEstatus: string | null;
   impresionEstatus: string | null;
   distribucionEstatus: string | null;
+  // Ciclo de aprobación de portada — el otro lado lo sube especialista/
+  // disenador (PATCH /:id/propuesta-portada, helpers/proyectos.ts); el
+  // autor lo aprueba/rechaza desde acá (actualizarDecisionPortada, más
+  // abajo).
+  propuestaPortadaUrl: string | null;
+  portadaDecisionAutor: DecisionPortada;
+  portadaFeedback: string | null;
 }
 
 const COLUMNAS_LIBRO_AUTOR = {
@@ -50,6 +58,9 @@ const COLUMNAS_LIBRO_AUTOR = {
   lanzamientoEstatus: fichasTrazabilidad.lanzamientoEstatus,
   impresionEstatus: fichasTrazabilidad.impresionEstatus,
   distribucionEstatus: fichasTrazabilidad.distribucionEstatus,
+  propuestaPortadaUrl: proyectos.propuestaPortadaUrl,
+  portadaDecisionAutor: proyectos.portadaDecisionAutor,
+  portadaFeedback: proyectos.portadaFeedback,
 } as const;
 
 function mapearFilaLibro(fila: {
@@ -67,6 +78,9 @@ function mapearFilaLibro(fila: {
   lanzamientoEstatus: string | null;
   impresionEstatus: string | null;
   distribucionEstatus: string | null;
+  propuestaPortadaUrl: string | null;
+  portadaDecisionAutor: string;
+  portadaFeedback: string | null;
 }): LibroAutor {
   return {
     id: fila.id,
@@ -82,6 +96,13 @@ function mapearFilaLibro(fila: {
     lanzamientoEstatus: fila.lanzamientoEstatus,
     impresionEstatus: fila.impresionEstatus,
     distribucionEstatus: fila.distribucionEstatus,
+    propuestaPortadaUrl: fila.propuestaPortadaUrl,
+    // portadaDecisionAutor es varchar en la base de datos (ver
+    // server/db/schema/proyectos.ts), no un pgEnum — el cast se apoya en
+    // que las únicas rutas de escritura (actualizarPropuestaPortada,
+    // actualizarDecisionPortada) solo escriben valores de DECISIONES_PORTADA.
+    portadaDecisionAutor: fila.portadaDecisionAutor as DecisionPortada,
+    portadaFeedback: fila.portadaFeedback,
   };
 }
 
@@ -139,6 +160,41 @@ export async function actualizarManuscrito(proyectoId: string, manuscritoUrl: st
     if (!yaNotificado) {
       await crearNotificacion({ proyectoId, rolDestino: 'especialista', mensaje: MENSAJE_ENTREGA_MANUSCRITO });
     }
+  }
+
+  return fila;
+}
+
+// Guardián de negocio: rechazar una propuesta sin explicar por qué deja
+// al especialista sin poder corregir nada — mismo criterio que
+// validarPausaFormal en helpers/pausas.ts (la regla vive acá, en el
+// helper, no solo en la forma del request), para que cualquier llamador
+// futuro de actualizarDecisionPortada la respete, no solo la ruta HTTP.
+export function validarDecisionPortada(decision: 'aprobada' | 'rechazada', feedback: string | null): void {
+  if (decision === 'rechazada' && !feedback?.trim()) {
+    throw new Error('El feedback es obligatorio al rechazar la propuesta de portada');
+  }
+}
+
+// Decisión del autor sobre la propuesta de portada — el otro lado de
+// actualizarPropuestaPortada (helpers/proyectos.ts, dueño especialista/
+// disenador). Dispara una alerta a 'especialista', con la misma guardia
+// contra spam que actualizarManuscrito de arriba: si el autor cambia de
+// opinión varias veces seguidas antes de que alguien la lea, no se apila
+// una notificación por cada cambio.
+export async function actualizarDecisionPortada(proyectoId: string, decision: 'aprobada' | 'rechazada', feedback: string | null) {
+  validarDecisionPortada(decision, feedback);
+
+  const [fila] = await db
+    .update(proyectos)
+    .set({ portadaDecisionAutor: decision, portadaFeedback: feedback })
+    .where(eq(proyectos.id, proyectoId))
+    .returning();
+
+  const mensaje = `El autor ha ${decision} la propuesta de portada.`;
+  const yaNotificado = await existeNotificacionNoLeida({ proyectoId, rolDestino: 'especialista', mensaje });
+  if (!yaNotificado) {
+    await crearNotificacion({ proyectoId, rolDestino: 'especialista', mensaje });
   }
 
   return fila;

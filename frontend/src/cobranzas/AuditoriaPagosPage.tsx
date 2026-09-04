@@ -8,7 +8,12 @@ import type { Pago } from '../types/api';
 // Mismo breakout que AutoresPage.tsx/MisProyectosPage.tsx: el layout
 // con sidebar necesita el ancho real de la pantalla.
 const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen -my-6';
-const ALTO_SIDEBAR = 'h-[calc(100vh-59px)]';
+
+// Ver AutoresPage.tsx para la explicación completa: h-full solo deja
+// una franja de 48px sin cubrir en el fondo (resuelve contra la caja de
+// contenido de <main>, ya sin su propio padding py-6). +3rem = ese
+// padding total.
+const ALTO_LLENO_MAIN = 'h-[calc(100%+3rem)]';
 
 const NAV_ACTIVO =
   'w-full flex items-center gap-3 px-4 py-3 bg-dorado/10 text-dorado rounded-xl font-semibold text-sm border border-dorado/20 transition-all text-left';
@@ -136,8 +141,8 @@ export function AuditoriaPagosPage() {
   const estaProcesando = (pagoId: string) => mutacionVerificar.isPending && mutacionVerificar.variables?.id === pagoId;
 
   return (
-    <div className={`${FULL_BLEED} ${ALTO_SIDEBAR} flex overflow-hidden bg-[#F8F9FA]`}>
-      <aside className="z-20 hidden w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
+    <div className={`${FULL_BLEED} ${ALTO_LLENO_MAIN} flex overflow-hidden bg-[#F8F9FA]`}>
+      <aside className="z-20 hidden h-full w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
         <div className="px-6 py-8">
           <p className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-500">Panel Financiero</p>
           <nav className="space-y-2">

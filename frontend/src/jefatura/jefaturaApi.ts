@@ -13,8 +13,13 @@ export function fetchCatalogos() {
   return apiFetch<Catalogos>('/catalogos');
 }
 
+// autorIds (no autorId): coautoría — al menos uno, ver
+// server/db/schema/proyectos.ts (proyectos_autores). titulo obligatorio
+// (crearProyectoSchema en server/routes/proyectos.routes.ts) — sigue
+// editable después vía actualizarTituloProyecto (PATCH /:id/titulo).
 export interface DatosNuevoProyecto {
-  autorId: string;
+  titulo: string;
+  autorIds: string[];
   servicioId: string;
   unidadId: string;
   presupuestoId: string;
@@ -39,14 +44,16 @@ export function asignarEspecialista(proyectoId: string, especialistaId: string) 
   });
 }
 
-// Corregir los parámetros comerciales de un proyecto ya creado — usado
-// por el modal "Editar Proyecto" de AutoresPage.tsx (ver PATCH
-// /:id/reasignar en server/routes/proyectos.routes.ts). autorId sigue
-// en la interfaz por compatibilidad con el tipo del backend, pero
-// CrearProyectoModalForm.tsx nunca lo envía en modo edición (el
-// selector de autor está bloqueado del lado de la UI).
+// Corregir título, coautoría y parámetros comerciales de un proyecto ya
+// creado — usado por el modal "Editar Proyecto" de AutoresPage.tsx (ver
+// PATCH /:id/reasignar en server/routes/proyectos.routes.ts). autorId
+// (singular, legacy) sigue en la interfaz por compatibilidad con el
+// tipo del backend, pero CrearProyectoModalForm.tsx ya no lo usa — envía
+// autorIds (coautoría, ver proyectos_autores en schema/proyectos.ts).
 export interface DatosReasignarProyecto {
+  titulo?: string;
   autorId?: string;
+  autorIds?: string[];
   servicioId?: string;
   unidadId?: string;
   presupuestoId?: string;
@@ -88,10 +95,12 @@ export function notificarJefatura(proyectoId: string) {
     method: 'POST',
   });
 }
+// autores: [] (no autor singular) — GET /api/proyectos migró a
+// coautoría, ver server/helpers/proyectosAutores.ts.
 export interface ProyectoResumen {
   id: string;
   estado: 'en_proceso' | 'retrasado' | 'stand_by' | 'pausado' | 'culminado' | 'retirado';
-  autor: { id: string; nombre: string };
+  autores: { id: string; nombre: string }[];
   servicio: { id: string; codigo: string; nombre: string };
 }
 

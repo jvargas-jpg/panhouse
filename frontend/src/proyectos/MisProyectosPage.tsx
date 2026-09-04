@@ -8,14 +8,19 @@ import { fetchMisProyectos } from './proyectosApi';
 import { RiesgoBadge } from './RiesgoBadge';
 
 // AppLayout.tsx envuelve toda la app en <TopBar/> + <main className="mx-auto
-// max-w-4xl px-4 py-6 sm:px-6">. Mismo breakout que AutoresPage.tsx/
-// PanelJefaturaPage.tsx (ml/mr negativos + w-screen, -my-6 cancela el
-// padding vertical de ese <main>) — un layout con sidebar de 256px + un
-// Kanban de columnas de 320px necesita el ancho real de la pantalla.
+// max-w-4xl flex-1 overflow-y-auto px-4 py-6 sm:px-6">. Mismo breakout
+// que AutoresPage.tsx/PanelJefaturaPage.tsx (ml/mr negativos + w-screen,
+// -my-6 cancela la POSICIÓN del padding vertical de ese <main>,
+// empujando hacia arriba) — un layout con sidebar de 256px + un Kanban
+// de columnas de 320px necesita el ancho real de la pantalla.
 const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen -my-6';
 
-// Alto real del <header> de TopBar (medido: 59px, ver TopBar.tsx).
-const ALTO_SIDEBAR = 'h-[calc(100vh-59px)]';
+// h-full solo (sin esto) deja una franja de 48px de bg-crema sin cubrir
+// en el fondo (ver AutoresPage.tsx para la explicación completa): h-full
+// resuelve contra la caja de CONTENIDO de <main> (ya sin su propio
+// padding, py-6 = 48px totales), y -my-6 de arriba solo corrige
+// posición, no alto. +3rem = ese mismo padding total de <main>.
+const ALTO_LLENO_MAIN = 'h-[calc(100%+3rem)]';
 
 const NAV_ACTIVO =
   'w-full flex items-center gap-3 px-4 py-3 bg-dorado/10 text-dorado rounded-xl font-semibold text-sm border border-dorado/20 transition-all text-left';
@@ -188,8 +193,8 @@ export function MisProyectosPage() {
   const [vistaActiva, setVistaActiva] = useState<VistaEspecialista>('kanban');
 
   return (
-    <div className={`${FULL_BLEED} ${ALTO_SIDEBAR} flex overflow-hidden bg-[#F8F9FA]`}>
-      <aside className="z-20 hidden w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
+    <div className={`${FULL_BLEED} ${ALTO_LLENO_MAIN} flex overflow-hidden bg-[#F8F9FA]`}>
+      <aside className="z-20 hidden h-full w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
         <div className="px-6 py-8">
           <p className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-500">Panel Operativo</p>
           <nav className="space-y-2">

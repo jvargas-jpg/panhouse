@@ -76,3 +76,11 @@ export const ESTADOS_COTIZACION_IMPRESION = ['solicitada', 'enviada', 'aceptada'
 export type EstadoCotizacionImpresion = (typeof ESTADOS_COTIZACION_IMPRESION)[number];
 
 export const estadoCotizacionImpresionEnum = pgEnum('estado_cotizacion_impresion', ESTADOS_COTIZACION_IMPRESION);
+
+// Ciclo de aprobación de portada (Portal del Autor) — proyectos.portadaDecisionAutor
+// es varchar en la base de datos, no un pgEnum, a pedido explícito del
+// negocio; estos tres valores solo se validan en la capa de rutas (ver
+// server/routes/proyectos.routes.ts y server/helpers/portalAutor.ts).
+export const DECISIONES_PORTADA = ['pendiente', 'aprobada', 'rechazada'] as const;
+
+export type DecisionPortada = (typeof DECISIONES_PORTADA)[number];

@@ -12,7 +12,7 @@ export function TopBar() {
   }
 
   return (
-    <header className="flex items-center justify-between border-b border-tinta/10 bg-white px-4 py-3 sm:px-6">
+    <header className="flex shrink-0 items-center justify-between border-b border-tinta/10 bg-white px-4 py-3 sm:px-6">
       <span className="font-semibold text-tinta">Panhouse Gestor Editorial</span>
 
       <div className="flex items-center gap-3">
