@@ -37,7 +37,7 @@ describe('ficha de trazabilidad (integración con base de datos)', () => {
     const ficha = await crearFichaTrazabilidad(proyecto.id);
 
     expect(ficha.proyectoId).toBe(proyecto.id);
-    expect(ficha.perfilAutor).toBeNull();
+    expect(ficha.ingresoObservaciones).toBeNull();
     expect(ficha.correccionTripaCompleta).toBeNull();
     expect(ficha.disenoBriefCreativo).toBeNull();
     expect(ficha.soporteDigitalCuentaAmazon).toBeNull();
@@ -56,25 +56,25 @@ describe('ficha de trazabilidad (integración con base de datos)', () => {
     await crearFichaTrazabilidad(proyecto.id);
 
     const ficha = await actualizarSeccionProyectoPerfil(proyecto.id, {
-      perfilAutor: 'Autor primerizo, orientado a negocios',
-      // publicoObjetivo y objetivosComerciales quedan sin llenar.
+      ingresoObservaciones: 'Autor primerizo, orientado a negocios',
+      // ingresoServicioPresupuesto queda sin llenar.
     });
 
-    expect(ficha.perfilAutor).toBe('Autor primerizo, orientado a negocios');
-    expect(ficha.publicoObjetivo).toBeNull();
+    expect(ficha.ingresoObservaciones).toBe('Autor primerizo, orientado a negocios');
+    expect(ficha.ingresoServicioPresupuesto).toBeNull();
   });
 
   it('actualizarSeccionProyectoContrato es independiente del perfil (dueños distintos: comercial vs. RRPP)', async () => {
     const proyecto = await crearProyectoDePrueba();
     await crearFichaTrazabilidad(proyecto.id);
 
-    await actualizarSeccionProyectoPerfil(proyecto.id, { perfilAutor: 'Autor con experiencia previa' });
-    const ficha = await actualizarSeccionProyectoContrato(proyecto.id, { capitulosPactados: 12, paginasPactadas: 200 });
+    await actualizarSeccionProyectoPerfil(proyecto.id, { ingresoObservaciones: 'Autor con experiencia previa' });
+    const ficha = await actualizarSeccionProyectoContrato(proyecto.id, { capitulosPactados: '11 a 20', paginasPactadas: '200' });
 
-    expect(ficha.capitulosPactados).toBe(12);
-    expect(ficha.paginasPactadas).toBe(200);
+    expect(ficha.capitulosPactados).toBe('11 a 20');
+    expect(ficha.paginasPactadas).toBe('200');
     // El perfil, escrito por otra función, sigue intacto.
-    expect(ficha.perfilAutor).toBe('Autor con experiencia previa');
+    expect(ficha.ingresoObservaciones).toBe('Autor con experiencia previa');
   });
 
   it('agregarPaisDistribucion permite países sin porcentaje de regalías todavía', async () => {
@@ -100,11 +100,10 @@ describe('ficha de trazabilidad (integración con base de datos)', () => {
 
     // Sección 1 — Proyecto (perfil + contrato)
     await actualizarSeccionProyectoPerfil(proyecto.id, {
-      perfilAutor: 'Autor con experiencia previa',
-      publicoObjetivo: 'Emprendedores jóvenes',
-      objetivosComerciales: 'Posicionarse como referente del sector',
+      ingresoObservaciones: 'Autor con experiencia previa',
+      ingresoServicioPresupuesto: 'Oro',
     });
-    await actualizarSeccionProyectoContrato(proyecto.id, { capitulosPactados: 10, paginasPactadas: 180 });
+    await actualizarSeccionProyectoContrato(proyecto.id, { capitulosPactados: '6 a 10', paginasPactadas: '150' });
     // Sección 3 — Corrección
     await actualizarSeccionCorreccion(proyecto.id, {
       correccionTripaCompleta: 'Sin observaciones mayores',
@@ -173,7 +172,7 @@ describe('obtenerFichaCompleta (integración con base de datos)', () => {
     const ficha = await obtenerFichaCompleta(proyecto.id);
 
     expect(ficha?.proyectoId).toBe(proyecto.id);
-    expect(ficha?.perfilAutor).toBeNull();
+    expect(ficha?.ingresoObservaciones).toBeNull();
     expect(ficha?.calidadFases).toEqual([]);
     expect(ficha?.disenoPropuestas).toEqual([]);
     expect(ficha?.lanzamientoReuniones).toEqual([]);
@@ -184,13 +183,13 @@ describe('obtenerFichaCompleta (integración con base de datos)', () => {
     const proyecto = await crearProyectoDePrueba();
     await crearFichaTrazabilidad(proyecto.id);
 
-    await actualizarSeccionProyectoPerfil(proyecto.id, { perfilAutor: 'Autor con experiencia previa' });
+    await actualizarSeccionProyectoPerfil(proyecto.id, { ingresoObservaciones: 'Autor con experiencia previa' });
     await agregarFaseCalidad(proyecto.id, { numeroFase: 1, pdfUrl: 'https://drive.example/f1' });
     await agregarPaisDistribucion(proyecto.id, { pais: 'México' });
 
     const ficha = await obtenerFichaCompleta(proyecto.id);
 
-    expect(ficha?.perfilAutor).toBe('Autor con experiencia previa');
+    expect(ficha?.ingresoObservaciones).toBe('Autor con experiencia previa');
     expect(ficha?.calidadFases).toHaveLength(1);
     expect(ficha?.calidadFases[0]?.numeroFase).toBe(1);
     expect(ficha?.distribucionPaises).toHaveLength(1);

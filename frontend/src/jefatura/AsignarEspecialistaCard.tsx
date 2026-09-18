@@ -1,18 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { formatearFechaONull } from '../proyectos/campos';
 import { asignarEspecialista, fetchCargaEquipo } from './jefaturaApi';
 
 // Segundo paso del flujo, inmediatamente después de crear el proyecto:
 // reutiliza la misma carga ponderada que ya ve el panel de jefatura
 // (GET /especialistas/carga), no duplica esa lógica.
+//
+// servicioCodigo/servicioNombre/fechaDeseadaAutor: "información básica
+// del proyecto" a pedido explícito del negocio, para que jefatura no
+// tenga que salir del modal a buscarla — antes solo se mostraba el
+// nombre del autor.
 export function AsignarEspecialistaCard({
   proyectoId,
   autorNombre,
+  servicioCodigo,
+  servicioNombre,
+  fechaDeseadaAutor,
   onAsignado,
   onCancelar,
 }: {
   proyectoId: string;
   autorNombre: string;
+  servicioCodigo: string;
+  servicioNombre: string;
+  fechaDeseadaAutor: string | null;
   onAsignado: () => void;
   onCancelar: () => void;
 }) {
@@ -40,6 +52,23 @@ export function AsignarEspecialistaCard({
     <div className="rounded-lg border border-dorado/40 bg-white p-4 shadow-sm">
       <h3 className="mb-2 font-medium text-tinta">Asignar especialista — {autorNombre}</h3>
       <p className="mb-3 text-sm text-tinta/70">Proyecto creado. Elige quién queda a cargo.</p>
+
+      <dl className="mb-4 grid grid-cols-1 gap-2 rounded-md bg-crema/30 p-3 text-sm sm:grid-cols-3">
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-tinta/50">Autor</dt>
+          <dd className="text-tinta">{autorNombre}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-tinta/50">Servicio</dt>
+          <dd className="text-tinta">
+            {servicioCodigo} — {servicioNombre}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-tinta/50">Fecha deseada</dt>
+          <dd className="text-tinta">{formatearFechaONull(fechaDeseadaAutor) ?? 'Sin definir'}</dd>
+        </div>
+      </dl>
 
       {cargaQuery.isLoading && <p className="text-sm text-tinta/70">Cargando equipo…</p>}
       {cargaQuery.isError && (

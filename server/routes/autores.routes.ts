@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
-import { autores } from '../db/schema/index.js';
+import { autores, CATEGORIAS_CLIENTE } from '../db/schema/index.js';
 import { eliminarAutor, listarAutoresSinProyecto } from '../helpers/autores.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
@@ -41,17 +41,35 @@ const redesSocialesSchema = z
 // el regex/mensaje dos veces.
 const telefonoSchema = z.string().regex(/^\+?[0-9\s-]+$/, 'Solo se permiten números');
 
+// Array de correos (no un solo string) — un autor puede tener varios
+// contactos (personal, representante, editorial), mismo criterio que
+// personalidad: chips en CrearAutorForm.tsx, no texto libre. Cada
+// elemento se valida como email individual.
+const emailSchema = z.array(z.string().email('Formato inválido'));
+
+// Categoría comercial (autores.categoria, ver server/db/schema/enums.ts)
+// — mismo enum cerrado que la columna, default 'Estándar' del lado del
+// schema de Drizzle no aplica a un insert explícito de Zod .parse(), así
+// que se repite acá para que crear un autor sin elegir categoría siga
+// funcionando igual que antes de esta columna.
+const categoriaSchema = z.enum(CATEGORIAS_CLIENTE).default('Estándar');
+
+// Array de nacionalidades — un autor puede tener más de una (doble
+// nacionalidad, naturalización), mismo criterio que emailSchema arriba.
+const nacionalidadSchema = z.array(z.string());
+
 const crearAutorSchema = z.object({
   nombre: z.string().min(1),
   nombreArtistico: z.string().optional(),
-  nacionalidad: z.string().optional(),
+  nacionalidad: nacionalidadSchema.optional(),
   fechaNacimiento: z.string().optional(),
   redesSociales: redesSocialesSchema.optional(),
   personalidad: z.array(z.string()).optional(),
   ocupacion: z.string().optional(),
-  email: z.string().email().optional(),
+  email: emailSchema.optional(),
   telefono: telefonoSchema.optional(),
   pais: z.string().optional(),
+  categoria: categoriaSchema,
 });
 
 // nullable (a diferencia de crearAutorSchema): a diferencia de crear,
@@ -63,14 +81,21 @@ const editarAutorSchema = z
   .object({
     nombre: z.string().min(1).optional(),
     nombreArtistico: z.string().nullable().optional(),
-    nacionalidad: z.string().nullable().optional(),
+    nacionalidad: nacionalidadSchema.nullable().optional(),
     fechaNacimiento: z.string().nullable().optional(),
     redesSociales: redesSocialesSchema.nullable().optional(),
     personalidad: z.array(z.string()).nullable().optional(),
     ocupacion: z.string().nullable().optional(),
-    email: z.string().email().nullable().optional(),
+    email: emailSchema.nullable().optional(),
     telefono: telefonoSchema.nullable().optional(),
     pais: z.string().nullable().optional(),
+    // Sin .nullable() ni .default() a propósito, a diferencia de
+    // categoriaSchema (crear): categoria es NOT NULL en la base — no
+    // tiene sentido "borrarla" a null — y omitirla en un PATCH debe
+    // dejar la categoría actual intacta, no resetearla a 'Estándar'
+    // (que es lo que pasaría si reusara categoriaSchema, con su
+    // .default(), acá).
+    categoria: z.enum(CATEGORIAS_CLIENTE).optional(),
   })
   .refine((datos) => Object.keys(datos).length > 0, {
     message: 'No se recibió ningún campo válido para actualizar',

@@ -1,11 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Autor, RedesSociales } from '../types/api';
+import type { Autor, CategoriaCliente, RedesSociales } from '../types/api';
 import { crearAutor, editarAutor } from './autoresApi';
 import { CODIGOS_UNICOS } from './codigosTelefonicos';
+import { EtiquetasCorreos } from './EtiquetasCorreos';
 import { EtiquetasPersonalidad } from './EtiquetasPersonalidad';
 import { PAISES } from './paises';
 import { SelectorCodigoTelefonico } from './SelectorCodigoTelefonico';
+import { SelectorMultipleNacionalidades } from './SelectorMultipleNacionalidades';
 
 const LABEL_CLASS = 'mb-1.5 mt-4 block text-[11px] font-bold uppercase tracking-wide text-gray-500';
 const INPUT_CLASS =
@@ -96,11 +98,12 @@ export function CrearAutorForm({
 }) {
   const [nombre, setNombre] = useState('');
   const [nombreArtistico, setNombreArtistico] = useState('');
-  const [email, setEmail] = useState('');
+  const [categoria, setCategoria] = useState<CategoriaCliente>('Estándar');
+  const [email, setEmail] = useState<string[]>([]);
   const [telefonoCodigo, setTelefonoCodigo] = useState(CODIGO_POR_DEFECTO);
   const [telefonoNumero, setTelefonoNumero] = useState('');
   const [pais, setPais] = useState('');
-  const [nacionalidad, setNacionalidad] = useState('');
+  const [nacionalidad, setNacionalidad] = useState<string[]>([]);
   const [fechaNacimiento, setFechaNacimiento] = useState('');
   const [redes, setRedes] = useState<CamposRedes>(REDES_VACIAS);
   const [personalidad, setPersonalidad] = useState<string[]>([]);
@@ -110,12 +113,13 @@ export function CrearAutorForm({
   useEffect(() => {
     setNombre(autorEnEdicion?.nombre ?? '');
     setNombreArtistico(autorEnEdicion?.nombreArtistico ?? '');
-    setEmail(autorEnEdicion?.email ?? '');
+    setCategoria(autorEnEdicion?.categoria ?? 'Estándar');
+    setEmail(autorEnEdicion?.email ?? []);
     const telefonoParseado = parseTelefono(autorEnEdicion?.telefono ?? null);
     setTelefonoCodigo(telefonoParseado.codigo);
     setTelefonoNumero(telefonoParseado.numero);
     setPais(autorEnEdicion?.pais ?? '');
-    setNacionalidad(autorEnEdicion?.nacionalidad ?? '');
+    setNacionalidad(autorEnEdicion?.nacionalidad ?? []);
     setFechaNacimiento(autorEnEdicion?.fechaNacimiento ?? '');
     setRedes(redesDesdeAutor(autorEnEdicion?.redesSociales ?? null));
     setPersonalidad(autorEnEdicion?.personalidad ?? []);
@@ -125,11 +129,12 @@ export function CrearAutorForm({
   function limpiarFormulario() {
     setNombre('');
     setNombreArtistico('');
-    setEmail('');
+    setCategoria('Estándar');
+    setEmail([]);
     setTelefonoCodigo(CODIGO_POR_DEFECTO);
     setTelefonoNumero('');
     setPais('');
-    setNacionalidad('');
+    setNacionalidad([]);
     setFechaNacimiento('');
     setRedes(REDES_VACIAS);
     setPersonalidad([]);
@@ -146,10 +151,11 @@ export function CrearAutorForm({
       crearAutor({
         nombre,
         nombreArtistico: nombreArtistico || undefined,
-        email: email || undefined,
+        categoria,
+        email: email.length > 0 ? email : undefined,
         telefono: construirTelefono(telefonoCodigo, telefonoNumero),
         pais: pais || undefined,
-        nacionalidad: nacionalidad || undefined,
+        nacionalidad: nacionalidad.length > 0 ? nacionalidad : undefined,
         fechaNacimiento: fechaNacimiento || undefined,
         redesSociales: construirRedesSociales(redes),
         personalidad: personalidad.length > 0 ? personalidad : undefined,
@@ -167,10 +173,11 @@ export function CrearAutorForm({
       editarAutor(autorEnEdicion!.id, {
         nombre,
         nombreArtistico: nombreArtistico || null,
-        email: email || null,
+        categoria,
+        email: email.length > 0 ? email : null,
         telefono: construirTelefono(telefonoCodigo, telefonoNumero) ?? null,
         pais: pais || null,
-        nacionalidad: nacionalidad || null,
+        nacionalidad: nacionalidad.length > 0 ? nacionalidad : null,
         fechaNacimiento: fechaNacimiento || null,
         redesSociales: construirRedesSociales(redes) ?? null,
         personalidad: personalidad.length > 0 ? personalidad : null,
@@ -217,18 +224,33 @@ export function CrearAutorForm({
         </div>
 
         <div>
-          <label htmlFor="autor-email" className={LABEL_CLASS}>
-            Correo
+          <label htmlFor="autor-categoria" className={LABEL_CLASS}>
+            Categoría
           </label>
-          <input
-            id="autor-email"
-            type="email"
-            value={email}
+          <select
+            id="autor-categoria"
+            value={categoria}
             onChange={(event) => {
-              setEmail(event.target.value);
+              setCategoria(event.target.value as CategoriaCliente);
               mutacion.reset();
             }}
             className={INPUT_CLASS}
+          >
+            <option value="Estándar">Estándar</option>
+            <option value="VIP">VIP</option>
+          </select>
+        </div>
+
+        <div>
+          <label htmlFor="autor-email-entrada" className={LABEL_CLASS}>
+            Correo
+          </label>
+          <EtiquetasCorreos
+            value={email}
+            onChange={(correos) => {
+              setEmail(correos);
+              mutacion.reset();
+            }}
           />
         </div>
 
@@ -310,22 +332,13 @@ export function CrearAutorForm({
             <label htmlFor="autor-nacionalidad" className={LABEL_CLASS}>
               Nacionalidad
             </label>
-            <select
-              id="autor-nacionalidad"
+            <SelectorMultipleNacionalidades
               value={nacionalidad}
-              onChange={(event) => {
-                setNacionalidad(event.target.value);
+              onChange={(nacionalidades) => {
+                setNacionalidad(nacionalidades);
                 mutacion.reset();
               }}
-              className={INPUT_CLASS}
-            >
-              <option value="">Sin definir</option>
-              {PAISES.map((nombrePais) => (
-                <option key={nombrePais} value={nombrePais}>
-                  {nombrePais}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
 

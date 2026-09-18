@@ -1,5 +1,8 @@
+import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { db } from '../server/db/client.js';
+import { proyectosAutores } from '../server/db/schema/index.js';
 import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import { crearAutor, crearPresupuesto, crearProyecto, crearServicio, crearUnidad } from './helpers/fixtures.js';
@@ -110,7 +113,7 @@ describe('POST /api/autores', () => {
       .send({
         nombre: 'Autora de prueba',
         nombreArtistico: 'La Cronista',
-        nacionalidad: 'Venezuela',
+        nacionalidad: ['Venezuela'],
         fechaNacimiento: '1990-05-12',
         redesSociales: { instagram: '@lacronista', x: '@lacronista_x', youtube: 'LaCronistaOficial' },
         personalidad: ['Extrovertida', 'Directa'],
@@ -120,7 +123,7 @@ describe('POST /api/autores', () => {
 
     expect(respuesta.status).toBe(201);
     expect(respuesta.body.autor.nombreArtistico).toBe('La Cronista');
-    expect(respuesta.body.autor.nacionalidad).toBe('Venezuela');
+    expect(respuesta.body.autor.nacionalidad).toEqual(['Venezuela']);
     expect(respuesta.body.autor.fechaNacimiento).toBe('1990-05-12');
     expect(respuesta.body.autor.redesSociales).toEqual({ instagram: '@lacronista', x: '@lacronista_x', youtube: 'LaCronistaOficial' });
     expect(respuesta.body.autor.personalidad).toEqual(['Extrovertida', 'Directa']);
@@ -257,10 +260,10 @@ describe('PATCH /api/autores/:id', () => {
     const respuesta = await request(app.server)
       .patch(`/api/autores/${autor.id}`)
       .set('Cookie', cookie)
-      .send({ email: 'corregido@ejemplo.test' });
+      .send({ email: ['corregido@ejemplo.test'] });
 
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body.autor.email).toBe('corregido@ejemplo.test');
+    expect(respuesta.body.autor.email).toEqual(['corregido@ejemplo.test']);
 
     await app.close();
   });
@@ -372,9 +375,46 @@ describe('DELETE /api/autores/:id', () => {
     const respuesta = await request(app.server).delete(`/api/autores/${autor.id}`).set('Cookie', cookie);
 
     expect(respuesta.status).toBe(400);
-    expect(respuesta.body.error).toBe('No se puede eliminar un autor con proyectos asociados');
+    expect(respuesta.body.error).toBe('No se puede eliminar un autor con proyectos activos. Elimina sus proyectos primero.');
 
     const verificacion = await request(app.server).patch(`/api/autores/${autor.id}`).set('Cookie', cookie).send({ nombre: 'x' });
+    expect(verificacion.status).toBe(200); // sigue existiendo
+
+    await app.close();
+  });
+
+  // Coautoría: un autor puede estar vinculado a un proyecto solo como
+  // coautor (proyectos_autores), sin ser el autorId principal de
+  // ninguno — antes de este fix, eliminarAutor() solo revisaba
+  // proyectos.autorId y dejaba pasar este caso hasta el DELETE real,
+  // donde proyectos_autores.autor_id (onDelete: 'restrict') lo hacía
+  // fallar con un error crudo de Postgres (500) en vez del 400 legible.
+  it('devuelve 400 (no 500) si el autor es coautor de un proyecto, aunque no sea el autorId principal de ninguno', async () => {
+    const app = crearAppDePrueba();
+    await app.ready();
+    const [autorPrincipal, coautor, unidad, presupuesto] = await Promise.all([
+      crearAutor(),
+      crearAutor(),
+      crearUnidad(),
+      crearPresupuesto(),
+    ]);
+    const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
+    const proyecto = await crearProyecto({
+      autorId: autorPrincipal.id,
+      servicioId: servicio.id,
+      unidadId: unidad.id,
+      presupuestoId: presupuesto.id,
+      fechaProgramadaInicio: '2026-01-01',
+    });
+    await db.insert(proyectosAutores).values({ proyectoId: proyecto.id, autorId: coautor.id });
+    const cookie = await registrarYLoguear(app, 'comercial');
+
+    const respuesta = await request(app.server).delete(`/api/autores/${coautor.id}`).set('Cookie', cookie);
+
+    expect(respuesta.status).toBe(400);
+    expect(respuesta.body.error).toBe('No se puede eliminar un autor con proyectos activos. Elimina sus proyectos primero.');
+
+    const verificacion = await request(app.server).patch(`/api/autores/${coautor.id}`).set('Cookie', cookie).send({ nombre: 'x' });
     expect(verificacion.status).toBe(200); // sigue existiendo
 
     await app.close();

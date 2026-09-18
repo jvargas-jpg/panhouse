@@ -9,7 +9,24 @@ import {
   fichasTrazabilidad,
   proyectos,
   servicios,
+  type AsesoriaEstado,
+  type AsesoriaFase,
+  type AsesoriaFeriaAParticipar,
+  type AsesoriaFeriaProyectada,
+  type AsesoriaFuturoAutor,
+  type AsesoriaNivelSatisfaccion,
+  type AsesoriaResponsableDistribucion,
+  type AsesoriaResponsableImpresion,
+  type ColeccionPanhouse,
+  type CondicionEspecial,
+  type EjecucionServicio,
   type EstadoCotizacionImpresion,
+  type EstadoReunion,
+  type ParticipacionFerias,
+  type PresupuestoServicio,
+  type PropietarioMatrizIngreso,
+  type PublicoSexo,
+  type SubtipoCrudo,
   type TipoPortada,
 } from '../db/schema/index.js';
 
@@ -53,10 +70,12 @@ export async function obtenerFichaCompleta(proyectoId: string) {
 
 export interface ProyectoPendienteSeccion1 {
   id: string;
-  // Nulo en proyectos creados antes de que el título fuera obligatorio
-  // en el alta (CrearProyectoModalForm.tsx) — ProyectosPendientesCrmList.tsx
-  // muestra un texto de respaldo cuando falta.
+  // Legacy: título manual, ya no se escribe desde ningún formulario —
+  // ver el comentario de la columna en schema/proyectos.ts. codigo
+  // (siempre presente) es el identificador real ahora, ProyectosPendientesCrmList.tsx
+  // arma el nombre visual con autores + codigo.
   titulo: string | null;
+  codigo: string;
   // Se mantiene (primer autor) por compatibilidad — ListaProyectosPendientes.tsx
   // (RrppHomePage, SoporteEditorialHomePage, SoporteDigitalHomePage,
   // DisenadorHomePage) sigue leyéndolo tal cual. `autores` es la lista
@@ -88,8 +107,10 @@ async function listarProyectosPendientesSeccion1(condicionFicha: SQL | undefined
     .select({
       id: proyectos.id,
       titulo: proyectos.titulo,
+      codigo: proyectos.codigo,
       autorId: autores.id,
       autorNombre: autores.nombre,
+      autorNombreArtistico: autores.nombreArtistico,
       servicioId: servicios.id,
       servicioCodigo: servicios.codigo,
       servicioNombre: servicios.nombre,
@@ -111,8 +132,11 @@ async function listarProyectosPendientesSeccion1(condicionFicha: SQL | undefined
   return filas.map((fila) => ({
     id: fila.id,
     titulo: fila.titulo,
+    codigo: fila.codigo,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
-    autores: autoresPorProyecto.get(fila.id) ?? [{ id: fila.autorId, nombre: fila.autorNombre }],
+    autores: autoresPorProyecto.get(fila.id) ?? [
+      { id: fila.autorId, nombre: fila.autorNombre, nombreArtistico: fila.autorNombreArtistico },
+    ],
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
     unidadId: fila.unidadId,
     presupuestoId: fila.presupuestoId,
@@ -121,14 +145,33 @@ async function listarProyectosPendientesSeccion1(condicionFicha: SQL | undefined
 }
 
 // "Proyectos pendientes de tu perfil" — pantalla de inicio de rrpp.
+// perfilAutor/objetivosComerciales (el criterio original) se eliminaron
+// como columnas junto con el resto de "Resumen y Objetivos" (ver el
+// comentario en schema/trazabilidad.ts) — de los campos que le quedan a
+// esta sección, ingresoServicioPresupuesto e ingresoObservaciones son los
+// únicos dos sin default, así que son la señal más fiel que queda de "RRPP
+// ya completó su parte" (ejecución/alianza siempre tienen un valor,
+// aunque nadie los haya tocado; fechaIngreso/fechaCierre ya no sirven
+// como señal porque ingresoFechaIngreso se siembra solo al crear el
+// proyecto — ver crearProyectoConCodigo en helpers/proyectos.ts).
 export function listarProyectosPendientesPerfil(): Promise<ProyectoPendienteSeccion1[]> {
   return listarProyectosPendientesSeccion1(
-    and(
-      isNull(fichasTrazabilidad.perfilAutor),
-      isNull(fichasTrazabilidad.publicoObjetivo),
-      isNull(fichasTrazabilidad.objetivosComerciales),
-    ),
+    and(isNull(fichasTrazabilidad.ingresoServicioPresupuesto), isNull(fichasTrazabilidad.ingresoObservaciones)),
   );
+}
+
+// "Matrices de Ingreso (RRPP)" — módulo propio en el inicio de rrpp
+// (MatrizIngresoPage.tsx, fuera de la vista de detalle del proyecto,
+// ver el comentario de la extracción completa en
+// ProyectoDetallePage.tsx). A diferencia de listarProyectosPendientesPerfil
+// arriba (que se vacía en cuanto RRPP completa su parte), esta es un
+// archivo persistente: todo proyecto que Comercial ya envió a rrpp
+// (notificadoRrpp), sin importar si su matriz sigue pendiente o ya se
+// mandó a jefatura — rrpp necesita poder volver a abrir/editar la
+// matriz de un proyecto en cualquier momento de ese recorrido, no solo
+// mientras está "pendiente".
+export function listarProyectosEnviadosARrpp(): Promise<ProyectoPendienteSeccion1[]> {
+  return listarProyectosPendientesSeccion1(eq(proyectos.notificadoRrpp, true));
 }
 
 // "Proyectos pendientes de lo contractual" — sección extra en la
@@ -197,40 +240,56 @@ export async function listarProyectosPendientesCalidad(): Promise<ProyectoPendie
 // sección — cada función toca solo sus propias columnas.
 
 export interface DatosSeccionProyectoPerfil {
-  perfilAutor?: string | null;
-  publicoObjetivo?: string | null;
-  objetivosComerciales?: string | null;
-  ingresoTipoProyecto?: string | null;
-  ingresoTipoProyectoDetalle?: string | null;
   ingresoFechaIngreso?: string | null;
   ingresoFechaCierre?: string | null;
-  ingresoFechaDeseada?: string | null;
-  ingresoTemaGeneral?: string | null;
-  ingresoServicioPerfil?: string | null;
-  ingresoServicioEjecucion?: string | null;
-  ingresoServicioAlianza?: string | null;
-  ingresoServicioPresupuesto?: string | null;
+  ingresoServicioSubtipoCrudo?: SubtipoCrudo | null;
+  ingresoServicioEjecucion?: EjecucionServicio;
+  ingresoTiempoExpresMeses?: number | null;
+  ingresoServicioAlianza?: boolean;
+  ingresoServicioPresupuesto?: PresupuestoServicio | null;
   ingresoObservaciones?: string | null;
-  ingresoPosibleTitulo?: string | null;
-  ingresoColeccion?: string | null;
-  ingresoPublicoSexo?: string | null;
-  ingresoPublicoEdad?: string | null;
-  ingresoPublicoPerfil?: string | null;
-  ingresoPropositoSocial?: string | null;
-  ingresoObjetivoComercial?: string | null;
-  ingresoTonoEstilo?: string | null;
-  ingresoCriterioExtra?: string | null;
-  ingresoCondicionesEspeciales?: string | null;
-  ingresoObservacionesEquipo?: string | null;
-  ingresoCoordinador?: string | null;
-  ingresoJefeDepartamento?: string | null;
-  ingresoEditor?: string | null;
-  ingresoCorrector?: string | null;
-  ingresoDisenador?: string | null;
-  ingresoCalidad?: string | null;
 }
 
+// ingresoFechaIngreso (acá) y proyectos.fechaProgramadaInicio (fijada al
+// crear el proyecto, ver crearProyectoConCodigo en helpers/proyectos.ts)
+// son la misma fecha en la cabeza del negocio — "Fecha programada de
+// inicio" en ambos lados de la UI (CrearProyectoModalForm.tsx al crear,
+// SeccionProyectoPerfil.tsx al entrar al proyecto ya creado). Cuando
+// esta función recibe un ingresoFechaIngreso explícito (no undefined:
+// las otras ~20 secciones de la ficha llaman a este mismo helper para
+// sus propias columnas sin tocar esta), se escribe también en
+// `proyectos` para que cronograma.ts y alertas.ts (que solo leen
+// fechaProgramadaInicio, nunca la ficha) sigan viendo el valor real que
+// el usuario corrigió acá, en vez de quedarse con la fecha original del
+// alta.
 export async function actualizarSeccionProyectoPerfil(proyectoId: string, datos: DatosSeccionProyectoPerfil) {
+  return db.transaction(async (tx) => {
+    const [fila] = await tx
+      .update(fichasTrazabilidad)
+      .set(datos)
+      .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+      .returning();
+    if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+
+    if (datos.ingresoFechaIngreso !== undefined && datos.ingresoFechaIngreso !== null) {
+      await tx.update(proyectos).set({ fechaProgramadaInicio: datos.ingresoFechaIngreso }).where(eq(proyectos.id, proyectoId));
+    }
+
+    return fila;
+  });
+}
+
+export interface DatosSeccionProyectoContrato {
+  // string, no number: <select> de opciones predefinidas, no un input
+  // numérico libre — ver el comentario de estas dos columnas en
+  // schema/trazabilidad.ts.
+  capitulosPactados?: string | null;
+  paginasPactadas?: string | null;
+  criterioExtra?: string | null;
+  condicionesEspeciales?: CondicionEspecial[] | null;
+}
+
+export async function actualizarSeccionProyectoContrato(proyectoId: string, datos: DatosSeccionProyectoContrato) {
   const [fila] = await db
     .update(fichasTrazabilidad)
     .set(datos)
@@ -240,12 +299,135 @@ export async function actualizarSeccionProyectoPerfil(proyectoId: string, datos:
   return fila;
 }
 
-export interface DatosSeccionProyectoContrato {
-  capitulosPactados?: number | null;
-  paginasPactadas?: number | null;
+// "Ficha Editorial (Completado por RRPP)" — dueño rrpp/jefe_area, no
+// comercial (a diferencia de las dos secciones de arriba). Ver el
+// comentario completo en schema/trazabilidad.ts.
+export interface DatosSeccionFichaEditorial {
+  fechaDeseadaCulminacion?: string | null;
+  temaGeneral?: string | null;
+  posibleTituloLibro?: string | null;
+  coleccionPanhouse?: ColeccionPanhouse | null;
+  tonoEstilo?: string | null;
+  publicoSexo?: PublicoSexo | null;
+  publicoEdad?: string | null;
+  publicoPerfil?: string | null;
+  propositoSocial?: string | null;
+  objetivoComercial?: string[] | null;
 }
 
-export async function actualizarSeccionProyectoContrato(proyectoId: string, datos: DatosSeccionProyectoContrato) {
+export async function actualizarSeccionFichaEditorial(proyectoId: string, datos: DatosSeccionFichaEditorial) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
+// "Matriz de Ingreso (RRPP)" — dueño rrpp/jefe_area, mismo alcance que
+// Ficha Editorial arriba. Solo el bloque operativo tiene columnas
+// propias (ver el comentario completo en schema/trazabilidad.ts) — el
+// bloque de datos sincronizados no pasa por acá, se arma en el frontend
+// a partir de `autores` y de los campos de solo lectura que ya trae
+// FichaCompleta (ingresoFechaIngreso, posibleTituloLibro).
+export interface DatosSeccionMatrizIngreso {
+  matrizCiudadResidencia?: string | null;
+  matrizEstadoReunion?: EstadoReunion | null;
+  matrizPropietario?: PropietarioMatrizIngreso | null;
+  matrizContratoFirmado?: boolean;
+  matrizBienvenidaGenerada?: boolean;
+  matrizLinkResumen?: string | null;
+  matrizDiagnosticoGenerado?: boolean;
+  matrizLinkDiagnostico?: string | null;
+  matrizIngresoGenerado?: boolean;
+  matrizFechaReunionCreativa?: string | null;
+  matrizVentaCruzada?: string[] | null;
+  matrizObservacionesComerciales?: string | null;
+}
+
+export async function actualizarSeccionMatrizIngreso(proyectoId: string, datos: DatosSeccionMatrizIngreso) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
+// "Proceso de Lanzamiento y Promoción" — Área exclusiva de RRPP, Fase 1
+// (dueño rrpp, comercial ve de solo lectura, mismo alcance que Ficha
+// Editorial/Matriz de Ingreso arriba). Distinto de la Sección 7
+// "Lanzamiento y promoción" (lanzamientoEstatus/nivelSatisfaccion/
+// fichaLanzamientoReuniones, más abajo) — ver el comentario completo en
+// schema/trazabilidad.ts.
+export interface DatosSeccionLanzamientoPromocion {
+  lanzamientoPromocionFechaPrimeraReunion?: string | null;
+  lanzamientoPromocionEncargadoPrimeraReunion?: PropietarioMatrizIngreso | null;
+  lanzamientoPromocionPuntosTratadosPrimera?: string | null;
+  lanzamientoPromocionFechaSegundaReunion?: string | null;
+  lanzamientoPromocionEncargadoSegundaReunion?: PropietarioMatrizIngreso | null;
+  lanzamientoPromocionAcuerdosSegunda?: string | null;
+  lanzamientoPromocionObjetivoComercial?: string | null;
+  lanzamientoPromocionParticipacionFerias?: ParticipacionFerias | null;
+  lanzamientoPromocionIsbn?: string | null;
+  lanzamientoPromocionDetallesProyeccion?: string | null;
+  lanzamientoPromocionFechaTentativa?: string | null;
+  lanzamientoPromocionTipo?: string | null;
+  lanzamientoPromocionObservaciones?: string | null;
+  lanzamientoPromocionObservacionesGenerales?: string | null;
+  lanzamientoPromocionLinkMinuta?: string | null;
+}
+
+export async function actualizarSeccionLanzamientoPromocion(proyectoId: string, datos: DatosSeccionLanzamientoPromocion) {
+  const [fila] = await db
+    .update(fichasTrazabilidad)
+    .set(datos)
+    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+    .returning();
+  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  return fila;
+}
+
+// "Matriz de Asesorías con fechas" — dueño rrpp/jefe_area, mismo
+// alcance y mismo módulo que Matriz de Ingreso (/rrpp/matriz/:proyectoId,
+// ver el comentario completo en schema/trazabilidad.ts). LIBRO
+// (posibleTituloLibro) no se repite acá — se lee de solo lectura en el
+// frontend, ya viaja en FichaCompleta.
+export interface DatosSeccionMatrizAsesorias {
+  asesoriaEstado?: AsesoriaEstado | null;
+  asesoriaEspecialistaResponsable?: string | null;
+  asesoriaFechaPrimeraReunion?: string | null;
+  asesoriaFechaSegundaReunion?: string | null;
+  asesoriaFechaAdicional?: string | null;
+  asesoriaIsbnPais?: string | null;
+  asesoriaNivelSatisfaccion?: AsesoriaNivelSatisfaccion | null;
+  asesoriaFase?: AsesoriaFase | null;
+  asesoriaFechaSugeridaGe?: string | null;
+  asesoriaFechaPautadaAutor?: string | null;
+  asesoriaFeriaProyectada?: AsesoriaFeriaProyectada | null;
+  asesoriaNotas?: string | null;
+  asesoriaLinkMinutaGerencia?: string | null;
+  asesoriaRutaPromocionEnviada?: boolean;
+  asesoriaLinkRutaPromocion?: string | null;
+  asesoriaFuturoAutor?: AsesoriaFuturoAutor | null;
+  asesoriaInfoFeriaEnviada?: boolean;
+  asesoriaParticipacionFeria?: boolean;
+  asesoriaFeriaAParticipar?: AsesoriaFeriaAParticipar | null;
+  asesoriaCotizacionImpresion?: boolean;
+  asesoriaResponsableImpresion?: AsesoriaResponsableImpresion | null;
+  asesoriaFechaCotizacionSolicitada?: string | null;
+  asesoriaFechaCotizacionEnviada?: string | null;
+  asesoriaCotizacionAceptada?: boolean;
+  asesoriaDistribucionAceptada?: boolean;
+  asesoriaResponsableDistribucion?: AsesoriaResponsableDistribucion | null;
+  asesoriaNotaDistribucion?: string | null;
+  asesoriaFechaContratoEnviado?: string | null;
+  asesoriaContratoRecibidoFirmado?: boolean;
+}
+
+export async function actualizarSeccionMatrizAsesorias(proyectoId: string, datos: DatosSeccionMatrizAsesorias) {
   const [fila] = await db
     .update(fichasTrazabilidad)
     .set(datos)

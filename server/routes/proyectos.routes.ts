@@ -8,7 +8,6 @@ import {
   actualizarEquipoProyecto,
   actualizarProyecto,
   actualizarPropuestaPortada,
-  actualizarTituloProyecto,
   asignarDisenador,
   asignarEditor,
   asignarEspecialista,
@@ -37,7 +36,6 @@ const idParamSchema = z.object({ id: z.string().uuid() });
 // legacy, todavía vigente en la etapa aditiva de la migración) y una
 // fila por cada id en la tabla de unión.
 const crearProyectoSchema = z.object({
-  titulo: z.string().min(2, 'El título es obligatorio'),
   autorIds: z.array(z.string().uuid()).min(1, 'Selecciona al menos un autor'),
   servicioId: z.string().uuid(),
   unidadId: z.string().uuid(),
@@ -49,9 +47,12 @@ const crearProyectoSchema = z.object({
 });
 
 // Corregir los parámetros comerciales de un proyecto ya creado —
-// título, coautoría (autorIds; ver reasignarProyecto en helpers/
-// proyectos.ts, ya no bloqueada del lado del frontend, a pedido
-// explícito posterior) y servicio/unidad/presupuesto/fecha programada.
+// coautoría (autorIds; ver reasignarProyecto en helpers/proyectos.ts,
+// ya no bloqueada del lado del frontend, a pedido explícito posterior)
+// y servicio/unidad/presupuesto/fecha programada. titulo se retiró (ver
+// el comentario de la columna en schema/proyectos.ts) — ya no hay nada
+// que reasignar ahí, el nombre visual del proyecto ahora sale de
+// autores + codigo, ninguno de los dos editable por esta ruta.
 // autorId (singular, legacy) sigue aceptado tal cual — nadie lo envía
 // ya desde el frontend, pero no se retiró para no romper a otros
 // consumidores hipotéticos de este endpoint. Nota de solapamiento:
@@ -62,7 +63,6 @@ const crearProyectoSchema = z.object({
 // encuentre después.
 const reasignarProyectoSchema = z
   .object({
-    titulo: z.string().min(2, 'El título es obligatorio').optional(),
     autorId: z.string().uuid().optional(),
     autorIds: z.array(z.string().uuid()).min(1, 'Selecciona al menos un autor').optional(),
     servicioId: z.string().uuid().optional(),
@@ -103,10 +103,6 @@ const asignarEditorSchema = z.object({
 
 const asignarDisenadorSchema = z.object({
   disenadorId: z.string().uuid(),
-});
-
-const tituloProyectoSchema = z.object({
-  titulo: z.string().nullable(),
 });
 
 // Portal del Autor: sin .url() a propósito — mismo criterio laxo que el
@@ -178,8 +174,11 @@ export async function proyectosRoutes(app: FastifyInstance) {
     const body = parseOrReply(crearProyectoSchema, request.body, reply);
     if (!body) return;
 
-    const proyecto = await crearProyecto(body);
-    return reply.code(201).send({ proyecto });
+    const resultado = await crearProyecto(body);
+    if (!resultado.ok) {
+      return reply.code(resultado.status).send({ error: resultado.error });
+    }
+    return reply.code(201).send({ proyecto: resultado.proyecto });
   });
 
   // Paso 1 de la cascada de Fase 1 (Inicio): comercial termina de cargar
@@ -400,19 +399,6 @@ export async function proyectosRoutes(app: FastifyInstance) {
 
     await asignarDisenador(params.id, body.disenadorId);
     const proyecto = await obtenerProyecto(params.id);
-    return reply.send({ proyecto });
-  });
-
-  // Título del libro — dueño rrpp, mismo rol que el resto de Sección 1
-  // (Perfil), aunque escribe proyectos directamente (ruta propia, no
-  // pasa por fichas-trazabilidad como perfilAutor/publicoObjetivo).
-  app.patch('/:id/titulo', { preHandler: [requireAuth, requireRole('rrpp')] }, async (request, reply) => {
-    const params = parseOrReply(idParamSchema, request.params, reply);
-    if (!params) return;
-    const body = parseOrReply(tituloProyectoSchema, request.body, reply);
-    if (!body) return;
-
-    const proyecto = await actualizarTituloProyecto(params.id, body.titulo);
     return reply.send({ proyecto });
   });
 

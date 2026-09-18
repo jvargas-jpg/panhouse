@@ -20,8 +20,14 @@ const NOMBRES_PRESUPUESTOS = ['Plata', 'Oro', 'Platinium'];
 // el piloto si la carga calculada no se siente realista.
 const SERVICIOS = [
   { codigo: 'EF', nombre: 'Escritura fantasma', plazoDias: 180, pesoComplejidad: 4 },
-  { codigo: 'EEC', nombre: 'Edición de estilo por capítulo', plazoDias: 150, pesoComplejidad: 3 },
-  { codigo: 'EET', nombre: 'Edición de estilo tripa completa', plazoDias: 150, pesoComplejidad: 2 },
+  // Retirados a pedido explícito del negocio — 'Crudo' (más abajo) los
+  // reemplaza como categoría general en el <select> de alta. Se dejan
+  // inactivos, no se borran: hay proyectos reales ya creados con estos
+  // códigos (servicios.id es su FK, onDelete 'restrict') y GET
+  // /catalogos ya filtra por activo=true, así que basta con esto para
+  // que dejen de aparecer en cualquier <select> nuevo.
+  { codigo: 'EEC', nombre: 'Edición de estilo por capítulo', plazoDias: 150, pesoComplejidad: 3, activo: false },
+  { codigo: 'EET', nombre: 'Edición de estilo tripa completa', plazoDias: 150, pesoComplejidad: 2, activo: false },
   {
     codigo: 'SE',
     nombre: 'Sello editorial',
@@ -29,6 +35,15 @@ const SERVICIOS = [
     plazoComercialDias: 90,
     pesoComplejidad: 1,
   },
+  // Categoría general que Comercial elige al crear el proyecto (ver
+  // CODIGOS_SERVICIO_PERMITIDOS_EN_ALTA en helpers/proyectos.ts) —
+  // reemplaza a EEC/EET en el <select> de alta. El subtipo real
+  // (Capítulo/Tripa) todavía no tiene UI propia — RRPP lo define más
+  // adelante (fichasTrazabilidad.ingresoServicioSubtipoCrudo, columna ya
+  // lista, sin formulario todavía: ver el comentario en
+  // SeccionProyectoPerfil.tsx). plazoDias/pesoComplejidad de acá son un
+  // default razonable para riesgo/cronograma mientras tanto.
+  { codigo: 'CR', nombre: 'Crudo', plazoDias: 150, pesoComplejidad: 3 },
 ];
 
 async function main() {

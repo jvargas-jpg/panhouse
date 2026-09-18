@@ -1,5 +1,5 @@
 import { apiFetch } from '../lib/api';
-import type { Autor, RedesSociales } from '../types/api';
+import type { Autor, CategoriaCliente, RedesSociales } from '../types/api';
 
 export function fetchAutores() {
   return apiFetch<{ autores: Autor[] }>('/autores');
@@ -12,14 +12,15 @@ export function fetchAutores() {
 export interface DatosNuevoAutor {
   nombre: string;
   nombreArtistico?: string;
-  nacionalidad?: string;
+  nacionalidad?: string[];
   fechaNacimiento?: string;
   redesSociales?: RedesSociales;
   personalidad?: string[];
   ocupacion?: string;
-  email?: string;
+  email?: string[];
   telefono?: string;
   pais?: string;
+  categoria?: CategoriaCliente;
 }
 
 export function crearAutor(datos: DatosNuevoAutor) {
@@ -35,14 +36,19 @@ export function crearAutor(datos: DatosNuevoAutor) {
 export interface DatosEditarAutor {
   nombre?: string;
   nombreArtistico?: string | null;
-  nacionalidad?: string | null;
+  nacionalidad?: string[] | null;
   fechaNacimiento?: string | null;
   redesSociales?: RedesSociales | null;
   personalidad?: string[] | null;
   ocupacion?: string | null;
-  email?: string | null;
+  email?: string[] | null;
   telefono?: string | null;
   pais?: string | null;
+  // Sin null, a diferencia del resto de este objeto: categoria es
+  // NOT NULL en la base (ver server/routes/autores.routes.ts), no se
+  // puede "borrar" a un estado vacío, solo cambiar entre los dos
+  // valores válidos.
+  categoria?: CategoriaCliente;
 }
 
 export function editarAutor(id: string, datos: DatosEditarAutor) {

@@ -10,6 +10,16 @@ export function hoyISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Si el valor guardado no está entre las opciones fijas de un <select>
+// "sugerido" (texto libre, no un enum cerrado — ver capitulosPactados/
+// publicoEdad/tonoEstilo en SeccionProyectoPerfil.tsx/SeccionFichaEditorial.tsx)
+// se agrega igual como <option> a mano: sin esto, un <select> nativo
+// cuyo value no matchea ningún <option> cae al primero de la lista SIN
+// avisar, mostrando un valor distinto al que en realidad está guardado.
+export function conValorLegacyIncluido(opciones: readonly string[], valorActual: string): string[] {
+  return valorActual && !opciones.includes(valorActual) ? [valorActual, ...opciones] : [...opciones];
+}
+
 export function formatearFecha(fecha: string | null): string {
   if (!fecha) return '—';
   return new Date(fecha).toLocaleDateString('es');
@@ -51,6 +61,25 @@ export function CampoResumen({ etiqueta, valor, span }: { etiqueta: string; valo
     <div className={span}>
       <span className={LABEL_CLASS}>{etiqueta}</span>
       <p className="font-medium text-gray-900">{valor ?? <span className="font-normal text-gray-400">Sin completar</span>}</p>
+    </div>
+  );
+}
+
+// "Ficha Técnica": una celda por campo, para las secciones que un rol ve
+// en modo lectura (a pedido explícito del negocio, en vez del texto
+// plano simple de CampoResumen — nació en SeccionProyectoPerfil.tsx,
+// extraída acá porque SeccionFichaEditorial.tsx la necesita también).
+// Grid de 2 columnas: con 3-4 campos por bloque, ni se ve vacío como una
+// sola columna ni se aprieta como 3-4.
+// advertencia (ej. "Servicio Adquirido" en SeccionMatrizIngreso.tsx
+// cuando el servicio es Crudo pero todavía no se eligió el subtipo):
+// mismo bloque, valor en rojo en vez de gris oscuro, para que salte a
+// la vista que falta un dato sin necesidad de un ícono o badge aparte.
+export function CampoFichaTecnica({ etiqueta, valor, advertencia }: { etiqueta: string; valor: string; advertencia?: boolean }) {
+  return (
+    <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{etiqueta}</p>
+      <p className={`mt-1 text-sm font-medium ${advertencia ? 'text-red-600' : 'text-gray-900'}`}>{valor}</p>
     </div>
   );
 }

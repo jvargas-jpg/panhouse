@@ -40,7 +40,7 @@ describe('Autorización por rol', () => {
     const respuesta = await request(app.server)
       .post('/api/autores')
       .set('Cookie', cookie)
-      .send({ nombre: 'Autor de prueba', email: 'autor@panhouse.test', pais: 'Colombia' });
+      .send({ nombre: 'Autor de prueba', email: ['autor@panhouse.test'], pais: 'Colombia' });
 
     expect(respuesta.status).toBe(201);
     expect(respuesta.body.autor.pais).toBe('Colombia');

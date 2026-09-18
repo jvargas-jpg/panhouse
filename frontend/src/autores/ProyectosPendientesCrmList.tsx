@@ -10,7 +10,7 @@ function coincide(proyecto: ProyectoPendienteSeccion1, termino: string): boolean
   const q = termino.trim().toLowerCase();
   if (!q) return true;
   return (
-    (proyecto.titulo ?? '').toLowerCase().includes(q) ||
+    (proyecto.codigo ?? '').toLowerCase().includes(q) ||
     proyecto.id.toLowerCase().includes(q) ||
     // Coautoría: revisa TODOS los autores del proyecto, no solo el
     // primero — antes de esto, buscar por el nombre de un coautor
@@ -82,18 +82,16 @@ export function ProyectosPendientesCrmList({
               to={`/proyectos/${proyecto.id}`}
               className="group flex flex-col items-start justify-between gap-3 rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md md:flex-row md:items-center md:gap-4"
             >
-              {/* Izquierda: título del proyecto en negrita (identificador
-                  principal, ver CrearProyectoModalForm.tsx), autores + ID
-                  acortado como secundario — proyectos creados antes de que
-                  el título fuera obligatorio no lo tienen, de ahí el
-                  respaldo en cursiva. Coautoría: todos los autores unidos
-                  por coma, no solo el primero. */}
+              {/* Izquierda: identificador principal en negrita, generado
+                  solo (el negocio retiró el título manual, ver el
+                  comentario de la columna en server/db/schema/proyectos.ts)
+                  — autores (coautoría, todos unidos por coma, por su
+                  nombre real/legal, no el artístico — a pedido explícito
+                  del negocio) + el codigo único del proyecto. */}
               <div className="min-w-0 md:w-1/3">
                 <p className="truncate text-sm font-bold text-gray-900 transition-colors group-hover:text-dorado">
-                  {proyecto.titulo ?? <span className="italic text-gray-400">Sin título</span>}
-                </p>
-                <p className="mt-0.5 truncate text-xs text-gray-500">
-                  {proyecto.autores.map((autor) => autor.nombre).join(', ') || 'Sin autor'} · ID: {proyecto.id.slice(0, 8)}
+                  {proyecto.autores.map((autor) => autor.nombre).join(', ') || 'Sin autor'} — #
+                  {proyecto.codigo || proyecto.id.slice(0, 6).toUpperCase()}
                 </p>
               </div>
 

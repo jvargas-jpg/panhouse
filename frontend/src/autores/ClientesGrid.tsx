@@ -1,4 +1,5 @@
 import type { Autor } from '../types/api';
+import { CategoriaBadge } from './CategoriaBadge';
 
 const LAPIZ_PATH = 'M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z';
 const PAPELERA_PATH =
@@ -9,8 +10,14 @@ function coincide(autor: Autor, termino: string): boolean {
   if (!q) return true;
   return (
     autor.nombre.toLowerCase().includes(q) ||
-    (autor.email ?? '').toLowerCase().includes(q) ||
-    (autor.pais ?? '').toLowerCase().includes(q)
+    // El nombre real/legal es el identificador principal en pantalla
+    // (ver el comentario del <p> más abajo) — el artístico sigue
+    // aceptado acá como atajo de búsqueda, por si alguien lo recuerda
+    // mejor que el legal.
+    (autor.nombreArtistico ?? '').toLowerCase().includes(q) ||
+    (autor.email ?? []).some((correo) => correo.toLowerCase().includes(q)) ||
+    (autor.pais ?? '').toLowerCase().includes(q) ||
+    autor.categoria.toLowerCase().includes(q)
   );
 }
 
@@ -46,10 +53,25 @@ export function ClientesGrid({
           key={autor.id}
           className="flex flex-col items-start justify-between gap-3 rounded-lg border border-gray-100 bg-white p-4 shadow-sm transition hover:shadow-md md:flex-row md:items-center md:gap-4"
         >
-          {/* Izquierda: nombre completo + correo */}
+          {/* Izquierda: nombre completo + categoría + correo. Nombre
+              real/legal como título principal — a pedido explícito del
+              negocio se abandonó el nombre artístico como identificador
+              principal en toda la app (antes era al revés; mismo
+              criterio en TarjetaPerfilAutores en SeccionProyectoPerfil.tsx
+              y el encabezado de ProyectoDetallePage.tsx). El nombre
+              artístico, cuando existe, queda como referencia secundaria
+              debajo, no desaparece. */}
           <div className="min-w-0 md:w-1/3">
-            <p className="truncate text-sm font-bold text-gray-900">{autor.nombre}</p>
-            <p className="mt-0.5 truncate text-xs text-gray-500">{autor.email ?? 'Sin correo'}</p>
+            <div className="flex items-center gap-2">
+              <p className="truncate text-sm font-bold text-gray-900">{autor.nombre}</p>
+              <CategoriaBadge categoria={autor.categoria} />
+            </div>
+            {autor.nombreArtistico && (
+              <p className="mt-0.5 truncate text-xs text-gray-400">Nombre artístico: {autor.nombreArtistico}</p>
+            )}
+            <p className="mt-0.5 truncate text-xs text-gray-500">
+              {autor.email && autor.email.length > 0 ? autor.email.join(', ') : 'Sin correo'}
+            </p>
           </div>
 
           {/* Centro: teléfono y país */}

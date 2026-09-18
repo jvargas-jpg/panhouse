@@ -4,8 +4,22 @@ import { Modal } from '../autores/Modal';
 import type { ProyectoConRiesgo } from '../types/api';
 import { AsignarEspecialistaCard } from './AsignarEspecialistaCard';
 import { fetchCargaEquipo, fetchProyectosRiesgo, fetchTodosLosProyectos } from './jefaturaApi';
-import { ProyectoCardJefatura } from './ProyectoCardJefatura';
+import { ProyectoFilaJefatura } from './ProyectoFilaJefatura';
 import { SeguimientoPage } from './SeguimientoPage';
+
+// Mismo criterio de búsqueda que ProyectosPendientesCrmList.tsx
+// (autores/): coautoría completa (todos los autores, no solo el
+// primero), código y servicio (código + nombre).
+function coincide(proyecto: ProyectoConRiesgo, termino: string): boolean {
+  const q = termino.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    proyecto.codigo.toLowerCase().includes(q) ||
+    proyecto.autores.some((autor) => autor.nombre.toLowerCase().includes(q)) ||
+    proyecto.servicio.codigo.toLowerCase().includes(q) ||
+    proyecto.servicio.nombre.toLowerCase().includes(q)
+  );
+}
 
 // AppLayout.tsx envuelve toda la app en <TopBar/> + <main className="mx-auto
 // max-w-4xl flex-1 overflow-y-auto px-4 py-6 sm:px-6">. Mismo breakout
@@ -46,10 +60,27 @@ export function PanelJefaturaPage() {
   const todos = useQuery({ queryKey: ['proyectos', 'todos'], queryFn: fetchTodosLosProyectos });
 
   const [proyectoParaAsignar, setProyectoParaAsignar] = useState<ProyectoConRiesgo | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const proyectosActivos = riesgo.data?.proyectos ?? [];
-  const nuevosSinAsignar = proyectosActivos.filter((proyecto) => proyecto.especialistaId === null);
-  const enCurso = proyectosActivos.filter((proyecto) => proyecto.especialistaId !== null);
+  // "Nuevos Proyectos por Asignar" — a pedido explícito del negocio,
+  // exclusivamente proyectos que RRPP ya mandó a Jefatura
+  // (notificadoJefatura, ver el botón "Mandar a Jefatura" en
+  // ProyectoDetallePage.tsx). Antes filtraba solo por especialistaId
+  // === null, así que mostraba CUALQUIER proyecto activo sin
+  // especialista — incluidos los que todavía estaban en manos de
+  // Comercial o RRPP, nunca enviados a Jefatura. Ese era el bug real
+  // ("muestra proyectos incorrectos"): no hacía falta un nuevo estado en
+  // la base, notificadoJefatura ya existía en ProyectoConRiesgo.
+  const nuevosSinAsignar = proyectosActivos
+    .filter((proyecto) => proyecto.especialistaId === null && proyecto.notificadoJefatura)
+    .filter((proyecto) => coincide(proyecto, searchTerm));
+  // "Proyectos en Curso" — especialistaId !== null sigue siendo el
+  // criterio correcto: proyectos.estado (en_proceso/retrasado/etc.) no
+  // cambia al asignar (nace en 'en_proceso' desde que se crea, ver
+  // schema/proyectos.ts) — especialistaId es la señal real de "ya
+  // arrancó la producción", no un estado aparte que haya que tocar.
+  const enCurso = proyectosActivos.filter((proyecto) => proyecto.especialistaId !== null).filter((proyecto) => coincide(proyecto, searchTerm));
   const proyectosConAlerta = proyectosActivos.filter((p) => p.riesgo.vencido || p.riesgo.enRiesgo);
 
   const totalProyectos = todos.data?.proyectos.length ?? 0;
@@ -107,6 +138,14 @@ export function PanelJefaturaPage() {
               </div>
             </section>
 
+            <input
+              type="search"
+              placeholder="Buscar por ID, autor o servicio..."
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              className="w-full max-w-md rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm outline-none transition-all focus:border-dorado focus:ring-2 focus:ring-dorado/40"
+            />
+
             <section>
               <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-gray-900">
                 <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
@@ -122,14 +161,16 @@ export function PanelJefaturaPage() {
 
               {riesgo.data && nuevosSinAsignar.length === 0 && (
                 <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center">
-                  <p className="text-sm text-gray-500">No hay proyectos nuevos pendientes de revisión.</p>
+                  <p className="text-sm text-gray-500">
+                    {searchTerm ? `Ningún proyecto nuevo coincide con "${searchTerm}".` : 'No hay proyectos nuevos pendientes de revisión.'}
+                  </p>
                 </div>
               )}
 
               {nuevosSinAsignar.length > 0 && (
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="flex flex-col gap-4">
                   {nuevosSinAsignar.map((proyecto) => (
-                    <ProyectoCardJefatura
+                    <ProyectoFilaJefatura
                       key={proyecto.id}
                       proyecto={proyecto}
                       accion={
@@ -166,14 +207,16 @@ export function PanelJefaturaPage() {
 
               {riesgo.data && enCurso.length === 0 && (
                 <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center">
-                  <p className="text-sm text-gray-500">Ningún proyecto en curso todavía.</p>
+                  <p className="text-sm text-gray-500">
+                    {searchTerm ? `Ningún proyecto en curso coincide con "${searchTerm}".` : 'Ningún proyecto en curso todavía.'}
+                  </p>
                 </div>
               )}
 
               {enCurso.length > 0 && (
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="flex flex-col gap-4">
                   {enCurso.map((proyecto) => (
-                    <ProyectoCardJefatura key={proyecto.id} proyecto={proyecto} />
+                    <ProyectoFilaJefatura key={proyecto.id} proyecto={proyecto} />
                   ))}
                 </div>
               )}
@@ -183,10 +226,13 @@ export function PanelJefaturaPage() {
       </div>
 
       {proyectoParaAsignar && (
-        <Modal titulo="Asignar Especialista" onClose={() => setProyectoParaAsignar(null)}>
+        <Modal titulo="Asignar Escuadrón de Producción" onClose={() => setProyectoParaAsignar(null)}>
           <AsignarEspecialistaCard
             proyectoId={proyectoParaAsignar.id}
-            autorNombre={proyectoParaAsignar.autor.nombre}
+            autorNombre={proyectoParaAsignar.autores.map((autor) => autor.nombre).join(', ') || proyectoParaAsignar.autor.nombre}
+            servicioCodigo={proyectoParaAsignar.servicio.codigo}
+            servicioNombre={proyectoParaAsignar.servicio.nombre}
+            fechaDeseadaAutor={proyectoParaAsignar.fechaDeseadaAutor}
             onAsignado={() => setProyectoParaAsignar(null)}
             onCancelar={() => setProyectoParaAsignar(null)}
           />

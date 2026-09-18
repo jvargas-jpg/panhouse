@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
@@ -11,7 +12,6 @@ import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAut
 export { listarProyectosEditor, listarProyectosEspecialista } from './alertas.js';
 
 export interface DatosNuevoProyecto {
-  titulo: string;
   autorIds: string[];
   servicioId: string;
   unidadId: string;
@@ -20,6 +20,16 @@ export interface DatosNuevoProyecto {
   fechaProgramadaInicio: string;
   fechaRealInicio?: string | null;
   fechaDeseadaAutor?: string | null;
+}
+
+// 6 caracteres hexadecimales de un UUID v4 real (no un contador ni un
+// timestamp) — mismo criterio que sugiere el negocio: suficiente
+// entropía para este volumen de proyectos sin sumar una dependencia
+// nueva (nanoid) para un solo uso. proyectos.codigo es UNIQUE — el
+// código Postgres de colisión (23505) es el único que crearProyecto
+// reintenta abajo; cualquier otro error de la transacción se propaga tal cual.
+function generarCodigoCorto(): string {
+  return randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase();
 }
 
 // Crea el proyecto y su ficha de trazabilidad vacía en la misma
@@ -34,7 +44,41 @@ export interface DatosNuevoProyecto {
 // revisar algo sin contenido. Ver notificarJefaturaFichaCompletada más
 // abajo, el disparador correcto (acción explícita del usuario al
 // terminar de llenar Fase 1).
-export async function crearProyecto(datos: DatosNuevoProyecto) {
+// La transacción entera se reintenta (no solo el insert) porque
+// Postgres aborta toda la transacción en curso ante cualquier error,
+// incluida una violación de unicidad — no hay forma de "seguir" con un
+// nuevo codigo dentro de la misma tx una vez que falló. 5 intentos es
+// generoso: con 6 hex de un UUID v4 real (16^6 ≈ 16.7M combinaciones)
+// una colisión es prácticamente imposible al volumen de esta app;
+// esto es una red de seguridad barata, no una mitigación de un riesgo
+// real esperado.
+const INTENTOS_CODIGO_UNICO = 5;
+
+function esColisionDeCodigo(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === '23505' &&
+    'constraint' in error &&
+    (error as { constraint?: unknown }).constraint === 'proyectos_codigo_unique'
+  );
+}
+
+// Comercial (y jefe_area, que comparte el mismo formulario/endpoint de
+// alta — no hay uno separado) solo elige la categoría general del
+// servicio al crear un proyecto: Sello editorial, Escritura fantasma o
+// Crudo. El resto del catálogo real (EEC/EET, hoy subsumidos por Crudo
+// + ingresoServicioSubtipoCrudo — ver schema/enums.ts) sigue existiendo
+// para proyectos legacy y para el <select> de corrección
+// (PATCH /:id/reasignar, sin esta restricción).
+const CODIGOS_SERVICIO_PERMITIDOS_EN_ALTA = ['SE', 'EF', 'CR'] as const;
+
+export type ResultadoCrearProyecto =
+  | { ok: true; proyecto: Awaited<ReturnType<typeof crearProyectoConCodigo>> }
+  | { ok: false; status: 400; error: string };
+
+export async function crearProyecto(datos: DatosNuevoProyecto): Promise<ResultadoCrearProyecto> {
   const { autorIds, ...datosProyecto } = datos;
   // crearProyectoSchema ya exige al menos un id (.min(1)) — este guard
   // es solo para que TS sepa que autorPrincipal no es undefined, no una
@@ -42,6 +86,36 @@ export async function crearProyecto(datos: DatosNuevoProyecto) {
   const [autorPrincipal] = autorIds;
   if (!autorPrincipal) throw new Error('crearProyecto necesita al menos un autorId');
 
+  const [servicio] = await db.select({ codigo: servicios.codigo }).from(servicios).where(eq(servicios.id, datosProyecto.servicioId)).limit(1);
+  if (!servicio) {
+    return { ok: false, status: 400, error: 'Servicio no encontrado' };
+  }
+  if (!CODIGOS_SERVICIO_PERMITIDOS_EN_ALTA.includes(servicio.codigo as (typeof CODIGOS_SERVICIO_PERMITIDOS_EN_ALTA)[number])) {
+    return {
+      ok: false,
+      status: 400,
+      error: 'Al crear un proyecto solo se puede elegir Sello editorial, Escritura fantasma o Crudo como servicio',
+    };
+  }
+
+  for (let intento = 1; intento <= INTENTOS_CODIGO_UNICO; intento++) {
+    try {
+      const proyecto = await crearProyectoConCodigo(datosProyecto, autorPrincipal, autorIds);
+      return { ok: true, proyecto };
+    } catch (error) {
+      if (!esColisionDeCodigo(error) || intento === INTENTOS_CODIGO_UNICO) throw error;
+    }
+  }
+  // Inalcanzable en la práctica (el loop siempre retorna o lanza), pero
+  // TS no puede probarlo — ver el `for` de arriba.
+  throw new Error('No se pudo generar un código único para el proyecto');
+}
+
+async function crearProyectoConCodigo(
+  datosProyecto: Omit<DatosNuevoProyecto, 'autorIds'>,
+  autorPrincipal: string,
+  autorIds: string[],
+) {
   return db.transaction(async (tx) => {
     // Etapa aditiva de la migración a coautoría (ver proyectos_autores en
     // schema/proyectos.ts): proyectos.autorId (columna legacy, todavía
@@ -52,11 +126,17 @@ export async function crearProyecto(datos: DatosNuevoProyecto) {
     // proyectos_autores, más abajo.
     const [proyecto] = await tx
       .insert(proyectos)
-      .values({ ...datosProyecto, autorId: autorPrincipal })
+      .values({ ...datosProyecto, autorId: autorPrincipal, codigo: generarCodigoCorto() })
       .returning();
     if (!proyecto) throw new Error('El insert del proyecto no devolvió ninguna fila');
 
-    await tx.insert(fichasTrazabilidad).values({ proyectoId: proyecto.id });
+    // ingresoFechaIngreso arranca igual a fechaProgramadaInicio (misma
+    // fecha, dos lugares donde se ve: acá en el alta de Comercial, y
+    // editable dentro de la ficha del proyecto — ver el comentario en
+    // actualizarSeccionProyectoPerfil sobre cómo se mantienen
+    // sincronizadas después). Sin este seed, la ficha arrancaría con la
+    // fecha vacía y ambos campos divergirían desde el día uno.
+    await tx.insert(fichasTrazabilidad).values({ proyectoId: proyecto.id, ingresoFechaIngreso: datosProyecto.fechaProgramadaInicio });
 
     // Una fila por autor (coautoría real) — sin esto, todo proyecto
     // creado DESPUÉS de la migración quedaría sin autores en
@@ -89,26 +169,36 @@ export async function notificarRrppProyectoBase(proyectoId: string): Promise<Res
       return { ok: false, status: 409, error: 'Este proyecto ya fue notificado a rrpp' };
     }
 
-    // titulo casi siempre es null en este punto (rrpp lo completa
-    // después, ver actualizarTituloProyecto más abajo) — el mensaje cae
-    // al nombre del servicio contratado como respaldo legible.
+    // titulo ya no existe como campo manual (ver schema/proyectos.ts) —
+    // el mensaje usa el codigo generado al crear el proyecto, siempre
+    // presente, con el nombre del servicio como respaldo legible.
     const [servicio] = await tx.select({ nombre: servicios.nombre }).from(servicios).where(eq(servicios.id, proyecto.servicioId)).limit(1);
 
     await tx.update(proyectos).set({ notificadoRrpp: true }).where(eq(proyectos.id, proyectoId));
     await tx.insert(notificaciones).values({
       proyectoId: proyecto.id,
       rolDestino: 'rrpp',
-      mensaje: `Nuevo proyecto base registrado, pendiente de Ficha de Trazabilidad: ${proyecto.titulo ?? servicio?.nombre ?? 'servicio sin especificar'}`,
+      mensaje: `Nuevo proyecto base registrado, pendiente de Ficha de Trazabilidad: #${proyecto.codigo} — ${servicio?.nombre ?? 'servicio sin especificar'}`,
     });
 
     return { ok: true };
   });
 }
 
-// Paso 2 de la misma cascada: rrpp termina de llenar la ficha de
-// trazabilidad y pasa el proyecto a jefe_area para revisión.
-// notificadoJefatura como guardia de idempotencia — mismo criterio que
-// notificarRrppProyectoBase de arriba.
+// Paso 2 de la misma cascada: rrpp termina de llenar el Perfil y la
+// Ficha Editorial (área exclusiva de rrpp en ProyectoDetallePage.tsx,
+// ver SeccionFichaEditorial.tsx — la Matriz de Ingreso ya no vive acá,
+// se extrajo a su propio módulo /rrpp/matriz/:proyectoId) y pasa el
+// proyecto a jefe_area para asignación. notificadoJefatura como guardia
+// de idempotencia — mismo criterio que notificarRrppProyectoBase de
+// arriba. Botón "Mandar a Jefatura" en ProyectoDetallePage.tsx — a
+// pedido explícito del negocio, el mensaje nombra a los autores en vez
+// de solo el servicio (mismo criterio de nombre real/legal que el resto
+// de la app, ver autores.nombre). Reutiliza este mismo endpoint/función
+// de siempre (POST /api/proyectos/:id/notificar-jefatura) — no se creó
+// una ruta paralela cuando el negocio lo volvió a pedir: ya hacía
+// exactamente lo pedido (transacción con el update de notificadoJefatura
+// + el insert en notificaciones), solo cambió el texto del mensaje.
 export async function notificarJefaturaFichaCompletada(proyectoId: string): Promise<ResultadoTransicionFase1> {
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
@@ -119,16 +209,18 @@ export async function notificarJefaturaFichaCompletada(proyectoId: string): Prom
       return { ok: false, status: 409, error: 'La ficha de este proyecto ya fue notificada a jefatura' };
     }
 
-    // titulo casi siempre es null en este punto (rrpp lo completa
-    // después, ver actualizarTituloProyecto más abajo) — el mensaje cae
-    // al nombre del servicio contratado como respaldo legible.
-    const [servicio] = await tx.select({ nombre: servicios.nombre }).from(servicios).where(eq(servicios.id, proyecto.servicioId)).limit(1);
+    const filasAutores = await tx
+      .select({ nombre: autores.nombre })
+      .from(proyectosAutores)
+      .innerJoin(autores, eq(proyectosAutores.autorId, autores.id))
+      .where(eq(proyectosAutores.proyectoId, proyectoId));
+    const nombresAutores = filasAutores.map((fila) => fila.nombre).join(', ') || 'Sin autor asignado';
 
     await tx.update(proyectos).set({ notificadoJefatura: true }).where(eq(proyectos.id, proyectoId));
     await tx.insert(notificaciones).values({
       proyectoId: proyecto.id,
       rolDestino: 'jefe_area',
-      mensaje: `Ficha de trazabilidad completada por RRPP, lista para revisión: ${proyecto.titulo ?? servicio?.nombre ?? 'servicio sin especificar'}`,
+      mensaje: `RRPP ha completado la Ficha Editorial del proyecto ${nombresAutores} - #${proyecto.codigo}. Listo para asignación al escuadrón.`,
     });
 
     return { ok: true };
@@ -313,7 +405,6 @@ export async function actualizarProyecto(proyectoId: string, datos: DatosActuali
 }
 
 export interface DatosReasignarProyecto {
-  titulo?: string;
   autorId?: string;
   // Coautoría — reemplaza TODAS las filas de proyectos_autores del
   // proyecto por esta lista (no un "agregar"). Ver reasignarProyecto.
@@ -413,15 +504,6 @@ export async function actualizarEquipoProyecto(proyectoId: string, datos: DatosE
   return fila;
 }
 
-// Título del libro — dueño rrpp, mismo rol que el resto de Sección 1
-// (Perfil). Ruta propia porque escribe proyectos, no fichasTrazabilidad
-// como el resto de esa sección.
-export async function actualizarTituloProyecto(proyectoId: string, titulo: string | null) {
-  const [fila] = await db.update(proyectos).set({ titulo }).where(eq(proyectos.id, proyectoId)).returning();
-  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
-  return fila;
-}
-
 // Propuesta de portada — dueño especialista o disenador (PATCH
 // /:id/propuesta-portada, verificarAccesoAProyecto ya cubre ambos por su
 // columna individual). Resetea la decisión del autor a 'pendiente' y
@@ -506,6 +588,7 @@ export async function listarProyectosSinEditor(): Promise<ProyectoSinEditor[]> {
 export interface ProyectoResumen {
   id: string;
   titulo: string | null;
+  codigo: string;
   estado: EstadoProyecto;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
@@ -519,6 +602,7 @@ export interface ProyectoResumen {
 export interface ProyectoResumenConAutores {
   id: string;
   titulo: string | null;
+  codigo: string;
   estado: EstadoProyecto;
   autores: AutorDeProyecto[];
   servicio: { id: string; codigo: string; nombre: string };
@@ -533,6 +617,7 @@ export async function listarTodosLosProyectos(): Promise<ProyectoResumenConAutor
     .select({
       id: proyectos.id,
       titulo: proyectos.titulo,
+      codigo: proyectos.codigo,
       estado: proyectos.estado,
       servicioId: servicios.id,
       servicioCodigo: servicios.codigo,
@@ -551,6 +636,7 @@ export async function listarTodosLosProyectos(): Promise<ProyectoResumenConAutor
   return filas.map((fila) => ({
     id: fila.id,
     titulo: fila.titulo,
+    codigo: fila.codigo,
     estado: fila.estado,
     autores: autoresPorProyecto.get(fila.id) ?? [],
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
@@ -569,6 +655,7 @@ export async function listarProyectosActivosResumen(): Promise<ProyectoResumen[]
     .select({
       id: proyectos.id,
       titulo: proyectos.titulo,
+      codigo: proyectos.codigo,
       estado: proyectos.estado,
       autorId: autores.id,
       autorNombre: autores.nombre,
@@ -585,6 +672,7 @@ export async function listarProyectosActivosResumen(): Promise<ProyectoResumen[]
   return filas.map((fila) => ({
     id: fila.id,
     titulo: fila.titulo,
+    codigo: fila.codigo,
     estado: fila.estado,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },

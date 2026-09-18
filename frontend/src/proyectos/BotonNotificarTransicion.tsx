@@ -14,6 +14,11 @@ import { Toast } from '../autores/Toast';
 // si la página se recarga después de haber notificado, el botón nace
 // deshabilitado sin depender de que la mutación haya corrido en esta
 // misma sesión.
+//
+// variante "destacado" (botón "Mandar a Jefatura", ver
+// ProyectoDetallePage.tsx) — a pedido explícito del negocio, un color
+// distinto al resto de los botones "Guardar"/"Notificar" (dorado): este
+// cierra el área exclusiva de rrpp, no una sección más.
 export function BotonNotificarTransicion({
   proyectoId,
   notificadoInicial,
@@ -21,6 +26,7 @@ export function BotonNotificarTransicion({
   mensajeConfirmacion,
   mensajeToast,
   mutationFn,
+  variante = 'default',
 }: {
   proyectoId: string;
   notificadoInicial: boolean;
@@ -28,6 +34,7 @@ export function BotonNotificarTransicion({
   mensajeConfirmacion: string;
   mensajeToast: string;
   mutationFn: (proyectoId: string) => Promise<{ ok: true }>;
+  variante?: 'default' | 'destacado';
 }) {
   const queryClient = useQueryClient();
   const [notificado, setNotificado] = useState(notificadoInicial);
@@ -49,14 +56,14 @@ export function BotonNotificarTransicion({
     mutacion.mutate();
   }
 
+  const claseBoton =
+    variante === 'destacado'
+      ? 'flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-60'
+      : 'flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60';
+
   return (
     <div>
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={notificado || mutacion.isPending}
-        className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <button type="button" onClick={handleClick} disabled={notificado || mutacion.isPending} className={claseBoton}>
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
             strokeLinecap="round"

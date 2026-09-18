@@ -281,6 +281,139 @@
       "when": 1788524793072,
       "tag": "0039_brief_snowbird",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1788787895452,
+      "tag": "0040_unique_sage",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1788788380374,
+      "tag": "0041_foamy_ego",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1788789153079,
+      "tag": "0042_sour_ultimates",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1788791230605,
+      "tag": "0043_overrated_nightmare",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1788792529219,
+      "tag": "0044_whole_franklin_richards",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1788793489061,
+      "tag": "0045_normal_ultragirl",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1788794507909,
+      "tag": "0046_safe_adam_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1788794539486,
+      "tag": "0047_silky_post",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1788871322142,
+      "tag": "0048_amused_sue_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1788873296440,
+      "tag": "0049_sleepy_sharon_carter",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1788876732943,
+      "tag": "0050_condemned_mac_gargan",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1788877567003,
+      "tag": "0051_wet_captain_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1788878850827,
+      "tag": "0052_daily_speedball",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1788964190645,
+      "tag": "0053_stiff_vertigo",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1789482081787,
+      "tag": "0054_noisy_ted_forrester",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1789565329835,
+      "tag": "0055_magical_wind_dancer",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1789569859808,
+      "tag": "0056_regular_bastion",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1789570860302,
+      "tag": "0057_funny_moira_mactaggert",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1789739144940,
+      "tag": "0058_massive_alice",
+      "breakpoints": true
     }
   ]
 }

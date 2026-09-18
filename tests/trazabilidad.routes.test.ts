@@ -150,10 +150,10 @@ describe('rutas de la ficha de trazabilidad', () => {
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/proyecto-perfil`)
         .set('Cookie', cookie)
-        .send({ perfilAutor: 'Autor primerizo' });
+        .send({ ingresoObservaciones: 'Autor primerizo' });
 
       expect(respuesta.status).toBe(200);
-      expect(respuesta.body.ficha.perfilAutor).toBe('Autor primerizo');
+      expect(respuesta.body.ficha.ingresoObservaciones).toBe('Autor primerizo');
       await app.close();
     });
 
@@ -164,7 +164,7 @@ describe('rutas de la ficha de trazabilidad', () => {
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/proyecto-perfil`)
-        .send({ perfilAutor: 'Autor primerizo' });
+        .send({ ingresoObservaciones: 'Autor primerizo' });
 
       expect(respuesta.status).toBe(401);
       await app.close();
@@ -179,7 +179,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/proyecto-perfil`)
         .set('Cookie', cookie)
-        .send({ perfilAutor: 'Autor primerizo' });
+        .send({ ingresoObservaciones: 'Autor primerizo' });
 
       expect(respuesta.status).toBe(403);
       await app.close();
@@ -196,10 +196,10 @@ describe('rutas de la ficha de trazabilidad', () => {
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/proyecto-contrato`)
         .set('Cookie', cookie)
-        .send({ capitulosPactados: 8, paginasPactadas: 160 });
+        .send({ capitulosPactados: '6 a 10', paginasPactadas: '150' });
 
       expect(respuesta.status).toBe(200);
-      expect(respuesta.body.ficha.capitulosPactados).toBe(8);
+      expect(respuesta.body.ficha.capitulosPactados).toBe('6 a 10');
       await app.close();
     });
 
@@ -210,7 +210,7 @@ describe('rutas de la ficha de trazabilidad', () => {
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/proyecto-contrato`)
-        .send({ capitulosPactados: 8 });
+        .send({ capitulosPactados: '6 a 10' });
 
       expect(respuesta.status).toBe(401);
       await app.close();
@@ -225,7 +225,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/proyecto-contrato`)
         .set('Cookie', cookie)
-        .send({ capitulosPactados: 8 });
+        .send({ capitulosPactados: '6 a 10' });
 
       expect(respuesta.status).toBe(403);
       await app.close();
@@ -2219,9 +2219,8 @@ describe('rutas de la ficha de trazabilidad', () => {
       const proyectoPendiente = await crearProyectoConFicha();
       const proyectoCompleto = await crearProyectoConFicha();
       await actualizarSeccionProyectoPerfil(proyectoCompleto.id, {
-        perfilAutor: 'Perfil completo',
-        publicoObjetivo: 'Público objetivo',
-        objetivosComerciales: 'Objetivos comerciales',
+        ingresoServicioPresupuesto: 'Oro',
+        ingresoObservaciones: 'Objetivos comerciales',
       });
 
       const cookie = await registrarYLoguear(app, 'rrpp');
@@ -2241,7 +2240,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.ready();
 
       const proyecto = await crearProyectoConFicha();
-      await actualizarSeccionProyectoPerfil(proyecto.id, { perfilAutor: 'Solo este campo' });
+      await actualizarSeccionProyectoPerfil(proyecto.id, { ingresoObservaciones: 'Solo este campo' });
 
       const cookie = await registrarYLoguear(app, 'rrpp');
 
@@ -2355,7 +2354,7 @@ describe('rutas de la ficha de trazabilidad', () => {
 
       const proyectoPendiente = await crearProyectoConFicha();
       const proyectoCompleto = await crearProyectoConFicha();
-      await actualizarSeccionProyectoContrato(proyectoCompleto.id, { capitulosPactados: 10, paginasPactadas: 200 });
+      await actualizarSeccionProyectoContrato(proyectoCompleto.id, { capitulosPactados: '6 a 10', paginasPactadas: '200' });
 
       const cookie = await registrarYLoguear(app, 'comercial');
 

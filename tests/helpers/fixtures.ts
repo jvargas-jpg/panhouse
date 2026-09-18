@@ -103,8 +103,13 @@ export async function crearProyecto(datos: {
   // (proyectosMesActual agrupa por createdAt) — pisa el defaultNow() de
   // la columna.
   createdAt?: Date;
+  // NOT NULL UNIQUE en la base (ver schema/proyectos.ts) — mismo
+  // criterio que crearAutor/crearServicio de acá arriba: autogenerado
+  // con el contador de siguiente() si el test no necesita un valor
+  // puntual, nunca hace falta pasarlo a mano.
+  codigo?: string;
 }) {
-  const proyecto = unaFila(await db.insert(proyectos).values(datos).returning());
+  const proyecto = unaFila(await db.insert(proyectos).values({ codigo: siguiente('COD'), ...datos }).returning());
   // Mismo dual-write que el crearProyecto real (server/helpers/proyectos.ts)
   // — sin esto, todo proyecto de prueba quedaría sin filas en la tabla de
   // unión y los tests de coautoría (autores: []) no reflejarían el

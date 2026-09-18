@@ -64,7 +64,6 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          titulo: 'La Magia de las Ventas',
           autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
@@ -74,12 +73,15 @@ describe('rutas de proyectos', () => {
 
       expect(respuesta.status).toBe(201);
       expect(respuesta.body.proyecto.autorId).toBe(autor.id);
-      expect(respuesta.body.proyecto.titulo).toBe('La Magia de las Ventas');
+      // Ya no hay título manual — el nombre visual del proyecto sale de
+      // autores + codigo (ver generarCodigoCorto en helpers/proyectos.ts),
+      // generado solo, sin que nadie lo escriba en el alta.
+      expect(respuesta.body.proyecto.codigo).toMatch(/^[0-9A-F]{6}$/);
 
       await app.close();
     });
 
-    it('rechaza crear un proyecto sin título (o con menos de 2 caracteres)', async () => {
+    it('genera un codigo distinto para cada proyecto (columna UNIQUE)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
@@ -87,11 +89,60 @@ describe('rutas de proyectos', () => {
       const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
       const cookie = await registrarYLoguear(app, 'jefe_area');
 
+      const datos = { autorIds: [autor.id], servicioId: servicio.id, unidadId: unidad.id, presupuestoId: presupuesto.id, fechaProgramadaInicio: '2026-01-01' };
+      const [primero, segundo] = await Promise.all([
+        request(app.server).post('/api/proyectos').set('Cookie', cookie).send(datos),
+        request(app.server).post('/api/proyectos').set('Cookie', cookie).send(datos),
+      ]);
+
+      expect(primero.status).toBe(201);
+      expect(segundo.status).toBe(201);
+      expect(primero.body.proyecto.codigo).not.toBe(segundo.body.proyecto.codigo);
+
+      await app.close();
+    });
+
+    it('permite crear un proyecto con servicio Crudo (categoría general, subtipo lo define RRPP después)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+      const servicio = await crearServicio({ codigo: 'CR', nombre: 'Crudo', pesoComplejidad: 3, plazoDias: 150 });
+      const cookie = await registrarYLoguear(app, 'comercial');
+
       const respuesta = await request(app.server)
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          titulo: 'A',
+          autorIds: [autor.id],
+          servicioId: servicio.id,
+          unidadId: unidad.id,
+          presupuestoId: presupuesto.id,
+          fechaProgramadaInicio: '2026-01-01',
+        });
+
+      expect(respuesta.status).toBe(201);
+
+      await app.close();
+    });
+
+    it('rechaza crear un proyecto con un servicio fuera de Sello editorial/Escritura fantasma/Crudo (ej. un código legacy EEC)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
+      const servicio = await crearServicio({
+        codigo: 'EEC',
+        nombre: 'Edición de estilo por capítulo',
+        pesoComplejidad: 3,
+        plazoDias: 150,
+      });
+      const cookie = await registrarYLoguear(app, 'comercial');
+
+      const respuesta = await request(app.server)
+        .post('/api/proyectos')
+        .set('Cookie', cookie)
+        .send({
           autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
@@ -121,7 +172,6 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          titulo: 'La Magia de las Ventas',
           autorIds: [autor.id, coautor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
@@ -150,7 +200,6 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          titulo: 'La Magia de las Ventas',
           autorIds: [],
           servicioId: servicio.id,
           unidadId: unidad.id,
@@ -188,7 +237,6 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          titulo: 'La Magia de las Ventas',
           autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
@@ -218,7 +266,6 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookieComercial)
         .send({
-          titulo: 'La Magia de las Ventas',
           autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
@@ -252,7 +299,6 @@ describe('rutas de proyectos', () => {
         .post('/api/proyectos')
         .set('Cookie', cookie)
         .send({
-          titulo: 'La Magia de las Ventas',
           autorIds: [autor.id],
           servicioId: servicio.id,
           unidadId: unidad.id,
@@ -455,8 +501,9 @@ describe('rutas de proyectos', () => {
       expect(respuestaNotificaciones.body.notificaciones).toHaveLength(1);
       expect(respuestaNotificaciones.body.notificaciones[0].proyectoId).toBe(proyecto.id);
       expect(respuestaNotificaciones.body.notificaciones[0].mensaje).toContain(
-        'Ficha de trazabilidad completada por RRPP, lista para revisión',
+        'RRPP ha completado la Ficha Editorial del proyecto',
       );
+      expect(respuestaNotificaciones.body.notificaciones[0].mensaje).toContain('Listo para asignación al escuadrón');
 
       await app.close();
     });
@@ -612,41 +659,6 @@ describe('rutas de proyectos', () => {
 
       expect(respuesta.status).toBe(200);
       expect(respuesta.body.proyecto.autorId).toBe(nuevoAutor.id);
-
-      await app.close();
-    });
-
-    it('permite a comercial editar el título de un proyecto', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-
-      const proyecto = await crearProyectoDePrueba();
-      const cookie = await registrarYLoguear(app, 'comercial');
-
-      const respuesta = await request(app.server)
-        .patch(`/api/proyectos/${proyecto.id}/reasignar`)
-        .set('Cookie', cookie)
-        .send({ titulo: 'La Flor Renombrada' });
-
-      expect(respuesta.status).toBe(200);
-      expect(respuesta.body.proyecto.titulo).toBe('La Flor Renombrada');
-
-      await app.close();
-    });
-
-    it('rechaza un título de menos de 2 caracteres', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-
-      const proyecto = await crearProyectoDePrueba();
-      const cookie = await registrarYLoguear(app, 'comercial');
-
-      const respuesta = await request(app.server)
-        .patch(`/api/proyectos/${proyecto.id}/reasignar`)
-        .set('Cookie', cookie)
-        .send({ titulo: 'A' });
-
-      expect(respuesta.status).toBe(400);
 
       await app.close();
     });
@@ -991,56 +1003,6 @@ describe('rutas de proyectos', () => {
     });
   });
 
-  describe('PATCH /api/proyectos/:id/titulo', () => {
-    it('permite a rrpp actualizar el título del proyecto', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-
-      const proyecto = await crearProyectoDePrueba();
-      const cookie = await registrarYLoguear(app, 'rrpp');
-
-      const respuesta = await request(app.server)
-        .patch(`/api/proyectos/${proyecto.id}/titulo`)
-        .set('Cookie', cookie)
-        .send({ titulo: 'El libro que faltaba' });
-
-      expect(respuesta.status).toBe(200);
-      expect(respuesta.body.proyecto.titulo).toBe('El libro que faltaba');
-
-      await app.close();
-    });
-
-    it('rechaza actualizar el título sin sesión', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-
-      const proyecto = await crearProyectoDePrueba();
-
-      const respuesta = await request(app.server).patch(`/api/proyectos/${proyecto.id}/titulo`).send({ titulo: 'x' });
-
-      expect(respuesta.status).toBe(401);
-
-      await app.close();
-    });
-
-    it('rechaza actualizar el título a un rol distinto de rrpp (ej. especialista)', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-
-      const proyecto = await crearProyectoDePrueba();
-      const cookie = await registrarYLoguear(app, 'especialista');
-
-      const respuesta = await request(app.server)
-        .patch(`/api/proyectos/${proyecto.id}/titulo`)
-        .set('Cookie', cookie)
-        .send({ titulo: 'x' });
-
-      expect(respuesta.status).toBe(403);
-
-      await app.close();
-    });
-  });
-
   describe('PATCH /api/proyectos/:id', () => {
     it('permite a un especialista actualizar las especificaciones del proyecto', async () => {
       const app = crearAppDePrueba();
@@ -1210,6 +1172,8 @@ describe('rutas de proyectos', () => {
           redesSociales: null,
           personalidad: null,
           ocupacion: null,
+          categoria: 'Estándar',
+          pais: null,
         },
       ]);
       expect(respuesta.body.proyecto.servicio).toBeDefined();
@@ -1225,7 +1189,7 @@ describe('rutas de proyectos', () => {
       const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
       const autor = await crearAutor({
         nombreArtistico: 'Pluma de Oro',
-        nacionalidad: 'Venezolana',
+        nacionalidad: ['Venezolana'],
         fechaNacimiento: '1985-04-12',
         redesSociales: { instagram: '@plumadeoro' },
         personalidad: ['Extrovertida', 'Directa'],
@@ -1248,11 +1212,13 @@ describe('rutas de proyectos', () => {
           id: autor.id,
           nombre: autor.nombre,
           nombreArtistico: 'Pluma de Oro',
-          nacionalidad: 'Venezolana',
+          nacionalidad: ['Venezolana'],
           fechaNacimiento: '1985-04-12',
           redesSociales: { instagram: '@plumadeoro' },
           personalidad: ['Extrovertida', 'Directa'],
           ocupacion: 'Consultora financiera',
+          categoria: 'Estándar',
+          pais: null,
         },
       ]);
 

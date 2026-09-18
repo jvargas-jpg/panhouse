@@ -47,13 +47,7 @@ function calcularFaseOperativa(ficha: FichaCompleta | undefined): FaseOperativa 
     Boolean(ficha.correccionCubiertaExtendida);
   if (enCorreccion) return 'Corrección';
 
-  const enEdicion =
-    Boolean(ficha.edicionEstatus) ||
-    Boolean(ficha.perfilAutor) ||
-    Boolean(ficha.publicoObjetivo) ||
-    Boolean(ficha.objetivosComerciales) ||
-    ficha.capitulosPactados != null ||
-    ficha.paginasPactadas != null;
+  const enEdicion = Boolean(ficha.edicionEstatus) || ficha.capitulosPactados != null || ficha.paginasPactadas != null;
 
   return enEdicion ? 'Edición' : 'Inicio';
 }

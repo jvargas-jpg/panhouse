@@ -14,11 +14,11 @@ export function fetchCatalogos() {
 }
 
 // autorIds (no autorId): coautoría — al menos uno, ver
-// server/db/schema/proyectos.ts (proyectos_autores). titulo obligatorio
-// (crearProyectoSchema en server/routes/proyectos.routes.ts) — sigue
-// editable después vía actualizarTituloProyecto (PATCH /:id/titulo).
+// server/db/schema/proyectos.ts (proyectos_autores). Sin titulo: el
+// negocio lo retiró como campo manual — el nombre visual del proyecto
+// ahora sale de autores + codigo, generado solo al crear (ver
+// generarCodigoCorto en server/helpers/proyectos.ts).
 export interface DatosNuevoProyecto {
-  titulo: string;
   autorIds: string[];
   servicioId: string;
   unidadId: string;
@@ -44,14 +44,14 @@ export function asignarEspecialista(proyectoId: string, especialistaId: string) 
   });
 }
 
-// Corregir título, coautoría y parámetros comerciales de un proyecto ya
-// creado — usado por el modal "Editar Proyecto" de AutoresPage.tsx (ver
-// PATCH /:id/reasignar en server/routes/proyectos.routes.ts). autorId
-// (singular, legacy) sigue en la interfaz por compatibilidad con el
-// tipo del backend, pero CrearProyectoModalForm.tsx ya no lo usa — envía
-// autorIds (coautoría, ver proyectos_autores en schema/proyectos.ts).
+// Corregir coautoría y parámetros comerciales de un proyecto ya creado —
+// usado por el modal "Editar Proyecto" de AutoresPage.tsx (ver PATCH
+// /:id/reasignar en server/routes/proyectos.routes.ts). Sin titulo, ver
+// el comentario de DatosNuevoProyecto arriba. autorId (singular, legacy)
+// sigue en la interfaz por compatibilidad con el tipo del backend, pero
+// CrearProyectoModalForm.tsx ya no lo usa — envía autorIds (coautoría,
+// ver proyectos_autores en schema/proyectos.ts).
 export interface DatosReasignarProyecto {
-  titulo?: string;
   autorId?: string;
   autorIds?: string[];
   servicioId?: string;
@@ -100,7 +100,7 @@ export function notificarJefatura(proyectoId: string) {
 export interface ProyectoResumen {
   id: string;
   estado: 'en_proceso' | 'retrasado' | 'stand_by' | 'pausado' | 'culminado' | 'retirado';
-  autores: { id: string; nombre: string }[];
+  autores: { id: string; nombre: string; nombreArtistico: string | null }[];
   servicio: { id: string; codigo: string; nombre: string };
 }
 

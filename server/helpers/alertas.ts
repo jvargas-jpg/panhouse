@@ -4,6 +4,7 @@ import type { EstadoProyecto } from '../db/schema/index.js';
 import { autores, proyectos, servicios } from '../db/schema/index.js';
 import { columnaAsignacion, ESTADOS_ACTIVOS, type RolConCarga } from './carga.js';
 import { calcularDiasEfectivosProyecto } from './pausas.js';
+import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 
 export interface PlazosServicio {
   plazoDias: number | null;
@@ -83,6 +84,7 @@ export async function evaluarRiesgoProyecto(
 export interface ProyectoConRiesgo {
   id: string;
   titulo: string | null;
+  codigo: string;
   estado: EstadoProyecto;
   fechaProgramadaInicio: string;
   fechaRealInicio: string | null;
@@ -102,7 +104,16 @@ export interface ProyectoConRiesgo {
   // tras recargar la página.
   notificadoRrpp: boolean;
   notificadoJefatura: boolean;
+  // `autor` (singular, legacy) se mantiene sin tocar por compatibilidad
+  // — MisProyectosPage.tsx (especialista/editor) y otros consumidores de
+  // este mismo tipo todavía lo usan tal cual. `autores` (coautoría, todos
+  // los autores reales del proyecto) es aditivo, a pedido explícito del
+  // negocio para PanelJefaturaPage.tsx: esa pantalla mostraba solo el
+  // primer autor (proyectos.autorId, la FK legacy) y truncaba cualquier
+  // coautor — mismo criterio ya usado en GET /api/proyectos
+  // (obtenerAutoresPorProyectos, ver proyectosAutores.ts).
   autor: { id: string; nombre: string };
+  autores: AutorDeProyecto[];
   servicio: { id: string; codigo: string; nombre: string };
   riesgo: RiesgoProyecto;
 }
@@ -118,6 +129,7 @@ export interface ProyectoConRiesgo {
 const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   id: proyectos.id,
   titulo: proyectos.titulo,
+  codigo: proyectos.codigo,
   estado: proyectos.estado,
   fechaProgramadaInicio: proyectos.fechaProgramadaInicio,
   fechaRealInicio: proyectos.fechaRealInicio,
@@ -142,6 +154,7 @@ const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
 type FilaProyectoConAutorYServicio = {
   id: string;
   titulo: string | null;
+  codigo: string;
   estado: EstadoProyecto;
   fechaProgramadaInicio: string;
   fechaRealInicio: string | null;
@@ -163,10 +176,19 @@ type FilaProyectoConAutorYServicio = {
   servicioNombre: string;
 };
 
-async function mapearFilaConRiesgo(fila: FilaProyectoConAutorYServicio): Promise<ProyectoConRiesgo> {
+// autoresPorProyecto: mapa en lote (obtenerAutoresPorProyectos), no una
+// consulta por fila — mismo motivo que en GET /api/proyectos. El
+// fallback al autor legacy de la propia fila es una red de seguridad,
+// no el camino esperado: todo proyecto activo ya tiene su fila en
+// proyectos_autores (ver crearProyecto en helpers/proyectos.ts).
+async function mapearFilaConRiesgo(
+  fila: FilaProyectoConAutorYServicio,
+  autoresPorProyecto: Map<string, AutorDeProyecto[]>,
+): Promise<ProyectoConRiesgo> {
   return {
     id: fila.id,
     titulo: fila.titulo,
+    codigo: fila.codigo,
     estado: fila.estado,
     fechaProgramadaInicio: fila.fechaProgramadaInicio,
     fechaRealInicio: fila.fechaRealInicio,
@@ -182,6 +204,7 @@ async function mapearFilaConRiesgo(fila: FilaProyectoConAutorYServicio): Promise
     notificadoRrpp: fila.notificadoRrpp,
     notificadoJefatura: fila.notificadoJefatura,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
+    autores: autoresPorProyecto.get(fila.id) ?? [{ id: fila.autorId, nombre: fila.autorNombre, nombreArtistico: null }],
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
     riesgo: await evaluarRiesgoProyecto(fila.id),
   };
@@ -210,7 +233,8 @@ async function listarProyectosConRiesgo(asignacion?: { rol: RolConCarga; usuario
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
     .where(and(...condiciones));
 
-  return Promise.all(filas.map(mapearFilaConRiesgo));
+  const autoresPorProyecto = await obtenerAutoresPorProyectos(filas.map((fila) => fila.id));
+  return Promise.all(filas.map((fila) => mapearFilaConRiesgo(fila, autoresPorProyecto)));
 }
 
 // "Mis proyectos" para la pantalla del especialista.
@@ -243,5 +267,6 @@ export async function obtenerProyectoConRiesgo(proyectoId: string): Promise<Proy
     .limit(1);
 
   if (!fila) return undefined;
-  return mapearFilaConRiesgo(fila);
+  const autoresPorProyecto = await obtenerAutoresPorProyectos([fila.id]);
+  return mapearFilaConRiesgo(fila, autoresPorProyecto);
 }

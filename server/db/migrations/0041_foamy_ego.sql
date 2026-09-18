@@ -1,0 +1,1 @@
+ALTER TABLE "autores" ALTER COLUMN "email" SET DATA TYPE text[] USING (CASE WHEN "email" IS NULL THEN NULL ELSE ARRAY["email"] END);

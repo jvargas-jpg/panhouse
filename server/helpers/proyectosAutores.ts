@@ -1,6 +1,6 @@
 import { eq, inArray } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { autores, proyectosAutores, type RedesSociales } from '../db/schema/index.js';
+import { autores, proyectosAutores, type CategoriaCliente, type RedesSociales } from '../db/schema/index.js';
 
 // Archivo aparte a propósito (no agregado a alertas.ts ni a
 // proyectos.ts): la etapa aditiva de la migración a coautoría no debe
@@ -12,9 +12,15 @@ import { autores, proyectosAutores, type RedesSociales } from '../db/schema/inde
 // rutas explícitamente migradas (GET /api/proyectos y GET
 // /api/proyectos/:id/riesgo, en proyectos.routes.ts).
 
+// nombreArtistico viaja también en el listado en lote (no solo en el
+// perfil completo de abajo): el nombre visual del proyecto en listas
+// (ProyectosPendientesCrmList.tsx, ProyectoDetallePage.tsx) se arma con
+// autores + codigo, y usa el nombre artístico cuando existe — el mismo
+// criterio que ya aplicaba TarjetaPerfilAutores para el detalle.
 export interface AutorDeProyecto {
   id: string;
   nombre: string;
+  nombreArtistico: string | null;
 }
 
 // Distinto de AutorDeProyecto a propósito: solo obtenerAutoresDeProyecto
@@ -23,14 +29,24 @@ export interface AutorDeProyecto {
 // "Perfil del Autor") ahora que la ficha de trazabilidad ya no pide
 // estos datos como inputs propios (ver schema/trazabilidad.ts). El
 // listado en lote (obtenerAutoresPorProyectos, GET /api/proyectos) no
-// lo necesita — sigue trayendo solo id/nombre.
+// necesita el resto del perfil — solo nombreArtistico, para el nombre
+// visual (ver el comentario de AutorDeProyecto arriba).
 export interface AutorDeProyectoConPerfil extends AutorDeProyecto {
-  nombreArtistico: string | null;
-  nacionalidad: string | null;
+  nacionalidad: string[] | null;
   fechaNacimiento: string | null;
   redesSociales: RedesSociales | null;
   personalidad: string[] | null;
   ocupacion: string | null;
+  // Ver server/db/schema/enums.ts: cerrado a 'Estándar'/'VIP',
+  // TarjetaPerfilAutores (SeccionProyectoPerfil.tsx) lo muestra como
+  // badge junto al nombre artístico de cada autor.
+  categoria: CategoriaCliente;
+  // "País de residencia" (Bloque 1, Datos Sincronizados) en
+  // SeccionMatrizIngreso.tsx — antes ausente acá, causaba un mismatch de
+  // tipos silencioso porque la verificación de tipos del frontend corría
+  // sobre el tsconfig "solución" equivocado (sin archivos, ver
+  // frontend/tsconfig.json) en vez de tsconfig.app.json.
+  pais: string | null;
 }
 
 // La inserción de la fila de coautoría vive directo en crearProyecto
@@ -51,6 +67,8 @@ export async function obtenerAutoresDeProyecto(proyectoId: string): Promise<Auto
       redesSociales: autores.redesSociales,
       personalidad: autores.personalidad,
       ocupacion: autores.ocupacion,
+      categoria: autores.categoria,
+      pais: autores.pais,
     })
     .from(proyectosAutores)
     .innerJoin(autores, eq(proyectosAutores.autorId, autores.id))
@@ -67,14 +85,19 @@ export async function obtenerAutoresPorProyectos(proyectoIds: string[]): Promise
   if (proyectoIds.length === 0) return mapa;
 
   const filas = await db
-    .select({ proyectoId: proyectosAutores.proyectoId, id: autores.id, nombre: autores.nombre })
+    .select({
+      proyectoId: proyectosAutores.proyectoId,
+      id: autores.id,
+      nombre: autores.nombre,
+      nombreArtistico: autores.nombreArtistico,
+    })
     .from(proyectosAutores)
     .innerJoin(autores, eq(proyectosAutores.autorId, autores.id))
     .where(inArray(proyectosAutores.proyectoId, proyectoIds));
 
   for (const fila of filas) {
     const lista = mapa.get(fila.proyectoId) ?? [];
-    lista.push({ id: fila.id, nombre: fila.nombre });
+    lista.push({ id: fila.id, nombre: fila.nombre, nombreArtistico: fila.nombreArtistico });
     mapa.set(fila.proyectoId, lista);
   }
   return mapa;

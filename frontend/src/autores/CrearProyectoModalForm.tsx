@@ -10,6 +10,17 @@ const LABEL_CLASS = 'mb-1.5 mt-4 block text-[11px] font-bold uppercase tracking-
 const INPUT_CLASS =
   'w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-dorado focus:bg-white focus:ring-2 focus:ring-dorado/40';
 
+// Comercial (al crear un proyecto nuevo) solo elige la categoría
+// general del servicio — el resto del catálogo real (EEC/EET, hoy
+// subsumidos por Crudo + subtipo, ver SeccionProyectoPerfil.tsx) queda
+// oculto acá pero sigue existiendo para proyectos legacy. Mismo backend
+// (helpers/proyectos.ts:CODIGOS_SERVICIO_PERMITIDOS_EN_ALTA) valida esto
+// también — esto es solo la UX, no la única barrera. En modo edición
+// (proyectoEnEdicion) se muestra el catálogo completo sin filtrar: un
+// proyecto legacy ya asignado a EEC/EET tiene que poder seguir
+// mostrando/corrigiendo su servicio real.
+const CODIGOS_SERVICIO_ALTA = ['SE', 'EF', 'CR'];
+
 // Crear: POST /proyectos, mismo endpoint y validación que
 // jefatura/CrearProyectoForm.tsx (comercial ya está autorizado ahí, ver
 // server/routes/proyectos.routes.ts) — unidad/presupuesto/fecha son
@@ -17,16 +28,16 @@ const INPUT_CLASS =
 // prescindir de ellos.
 //
 // Editar: PATCH /proyectos/:id/reasignar — cubre TODOS los parámetros
-// comerciales (título, coautoría, servicio, unidad, presupuesto, fecha
+// comerciales (coautoría, servicio, unidad, presupuesto, fecha
 // programada). proyectoEnEdicion (ProyectoPendienteSeccion1) ya trae
-// titulo/autores/unidadId/presupuestoId/fechaProgramadaInicio
-// precargados desde el backend (server/helpers/trazabilidad.ts) para
-// poder preseleccionar estos campos sin una consulta aparte.
+// autores/unidadId/presupuestoId/fechaProgramadaInicio precargados
+// desde el backend (server/helpers/trazabilidad.ts) para poder
+// preseleccionar estos campos sin una consulta aparte.
 //
-// Título y autores (coautoría) YA se pueden cambiar en modo edición —
-// reversión explícita de una decisión anterior ("redundante con el
-// módulo de Clientes"): ahora el mismo <input>/SelectorMultipleAutores
-// se usa en los dos modos, sin distinción de solo-lectura.
+// Sin campo de título: el negocio lo retiró (ver el comentario de la
+// columna en server/db/schema/proyectos.ts) — el nombre visual del
+// proyecto ahora se genera solo (autores + codigo), no hay nada que
+// escribir acá ni en modo alta ni en edición.
 //
 // El <select> de servicio lee el catálogo real (GET /catalogos) en vez
 // de una lista fija — así el value siempre coincide con
@@ -45,7 +56,6 @@ export function CrearProyectoModalForm({
 
   // Se usan en los dos modos: en alta arrancan vacíos, en edición se
   // precargan desde proyectoEnEdicion (ver el efecto de abajo).
-  const [titulo, setTitulo] = useState('');
   const [autorIds, setAutorIds] = useState<string[]>([]);
   const [servicioCodigo, setServicioCodigo] = useState('');
   const [unidadId, setUnidadId] = useState('');
@@ -53,7 +63,6 @@ export function CrearProyectoModalForm({
   const [fechaProgramadaInicio, setFechaProgramadaInicio] = useState(hoyISO());
 
   useEffect(() => {
-    setTitulo(proyectoEnEdicion?.titulo ?? '');
     setAutorIds(proyectoEnEdicion?.autores.map((autor) => autor.id) ?? []);
     setServicioCodigo(proyectoEnEdicion?.servicio.codigo ?? '');
     setUnidadId(proyectoEnEdicion?.unidadId ?? '');
@@ -76,10 +85,9 @@ export function CrearProyectoModalForm({
 
   const mutacionCrear = useMutation({
     mutationFn: () => {
-      if (titulo.trim().length < 2) throw new Error('El título es obligatorio');
       if (autorIds.length === 0) throw new Error('Selecciona al menos un autor');
       if (!servicioId) throw new Error('Selecciona un servicio válido');
-      return crearProyecto({ titulo: titulo.trim(), autorIds, servicioId, unidadId, presupuestoId, fechaProgramadaInicio });
+      return crearProyecto({ autorIds, servicioId, unidadId, presupuestoId, fechaProgramadaInicio });
     },
     onSuccess: () => {
       invalidarProyectos();
@@ -89,11 +97,9 @@ export function CrearProyectoModalForm({
 
   const mutacionEditar = useMutation({
     mutationFn: () => {
-      if (titulo.trim().length < 2) throw new Error('El título es obligatorio');
       if (autorIds.length === 0) throw new Error('Selecciona al menos un autor');
       if (!servicioId) throw new Error('Selecciona un servicio válido');
       return reasignarProyecto(proyectoEnEdicion!.id, {
-        titulo: titulo.trim(),
         autorIds,
         servicioId,
         unidadId,
@@ -141,25 +147,6 @@ export function CrearProyectoModalForm({
     // CrearAutorForm.tsx.
     <form onSubmit={handleSubmit} className="min-h-0 flex-1 overflow-y-auto p-6">
       <div>
-        <label htmlFor="proyecto-titulo" className={LABEL_CLASS}>
-          Título del proyecto (o posible título)
-        </label>
-        <input
-          id="proyecto-titulo"
-          type="text"
-          required
-          minLength={2}
-          placeholder="Ej. La magia de las ventas..."
-          value={titulo}
-          onChange={(event) => {
-            setTitulo(event.target.value);
-            mutacion.reset();
-          }}
-          className={INPUT_CLASS}
-        />
-      </div>
-
-      <div>
         <label htmlFor="proyecto-autores-buscador" className={LABEL_CLASS}>
           Autores (coautoría)
         </label>
@@ -190,11 +177,13 @@ export function CrearProyectoModalForm({
           <option value="" disabled>
             Selecciona el servicio a contratar...
           </option>
-          {catalogosQuery.data?.servicios.map((servicio) => (
-            <option key={servicio.id} value={servicio.codigo}>
-              {servicio.codigo} — {servicio.nombre}
-            </option>
-          ))}
+          {catalogosQuery.data?.servicios
+            .filter((servicio) => proyectoEnEdicion || CODIGOS_SERVICIO_ALTA.includes(servicio.codigo))
+            .map((servicio) => (
+              <option key={servicio.id} value={servicio.codigo}>
+                {servicio.codigo} — {servicio.nombre}
+              </option>
+            ))}
         </select>
       </div>
 
@@ -246,7 +235,7 @@ export function CrearProyectoModalForm({
 
       <div>
         <label htmlFor="proyecto-fecha-inicio" className={LABEL_CLASS}>
-          Fecha programada de inicio
+          Fecha de ingreso
         </label>
         <input
           id="proyecto-fecha-inicio"

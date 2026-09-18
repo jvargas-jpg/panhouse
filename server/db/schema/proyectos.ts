@@ -57,18 +57,23 @@ export const proyectos = pgTable('proyectos', {
   // individual disponible para el patrón Macro/Micro.
   distribucionId: uuid('distribucion_id').references(() => users.id, { onDelete: 'set null' }),
 
-  // Título del libro/proyecto: identifica al proyecto en todo el
-  // sistema (listas, detalle), igual que autor/servicio antes de esto.
-  // Vive en proyectos (no en la ficha) porque, aunque su dueño (rrpp)
-  // coincide con Sección 1 — Perfil, se escribe por su propia ruta
-  // (PATCH /:id/titulo, para corregirlo después de creado).
-  //
-  // Columna nullable a propósito, aunque crearProyectoSchema ya lo exige
-  // (POST /api/proyectos) para todo proyecto nuevo: forzar NOT NULL acá
-  // habría requerido inventar un título para los proyectos ya existentes
-  // que se crearon antes de este cambio (no tenían este campo en el
-  // formulario de alta) — se prefirió no fabricar datos históricos.
+  // Legacy: título manual del libro/proyecto. El negocio retiró el
+  // campo — ya no hay ningún <input> ni ruta que lo escriba (PATCH
+  // /:id/titulo se eliminó junto con él) — a favor del nombre generado
+  // automáticamente (autores + codigo, ver más abajo). Se deja la
+  // columna sin dropear para no fabricar una migración destructiva
+  // sobre datos históricos de proyectos que sí lo tenían; queda nullable,
+  // ya inerte para cualquier fila nueva.
   titulo: text('titulo'),
+
+  // Código corto único que identifica al proyecto visualmente en toda
+  // la app (listas, detalle) junto con los autores — reemplaza a
+  // `titulo` como identificador legible. Se genera en el momento de
+  // crear el proyecto (ver generarCodigoCorto en helpers/proyectos.ts),
+  // nunca editable después: no tiene el problema de ambigüedad de un
+  // título libre (dos proyectos con el mismo nombre), y no depende de
+  // que rrpp lo complete manualmente más tarde como pasaba con titulo.
+  codigo: text('codigo').notNull().unique(),
 
   // Enlace al manuscrito original (Google Docs, OneDrive, etc.) que el
   // propio autor entrega desde el Portal del Autor — PATCH

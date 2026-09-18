@@ -60,12 +60,7 @@ function calcularFaseKanban(ficha: FichaCompleta | undefined): FaseKanban {
   const enCorreccion = Boolean(ficha.correccionTripaCompleta) || Boolean(ficha.correccionPreliminares) || Boolean(ficha.correccionCubiertaExtendida);
   if (enCorreccion) return 'Corrección';
 
-  const inicioCompleto =
-    Boolean(ficha.perfilAutor) ||
-    Boolean(ficha.publicoObjetivo) ||
-    Boolean(ficha.objetivosComerciales) ||
-    ficha.capitulosPactados != null ||
-    ficha.paginasPactadas != null;
+  const inicioCompleto = ficha.capitulosPactados != null || ficha.paginasPactadas != null;
 
   return inicioCompleto ? 'Edición' : 'Inicio';
 }

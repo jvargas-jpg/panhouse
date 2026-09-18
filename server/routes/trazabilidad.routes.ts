@@ -1,6 +1,26 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { ESTADOS_COTIZACION_IMPRESION, TIPOS_PORTADA } from '../db/schema/index.js';
+import {
+  ASESORIA_ESTADOS,
+  ASESORIA_FASES,
+  ASESORIA_FERIAS_A_PARTICIPAR,
+  ASESORIA_FERIAS_PROYECTADAS,
+  ASESORIA_FUTURO_AUTOR,
+  ASESORIA_NIVELES_SATISFACCION,
+  ASESORIA_RESPONSABLES_DISTRIBUCION,
+  ASESORIA_RESPONSABLES_IMPRESION,
+  COLECCIONES_PANHOUSE,
+  CONDICIONES_ESPECIALES,
+  EJECUCIONES_SERVICIO,
+  ESTADOS_COTIZACION_IMPRESION,
+  ESTADOS_REUNION,
+  PARTICIPACION_FERIAS,
+  PRESUPUESTOS_SERVICIO,
+  PROPIETARIOS_MATRIZ_INGRESO,
+  PUBLICOS_SEXO,
+  SUBTIPOS_CRUDO,
+  TIPOS_PORTADA,
+} from '../db/schema/index.js';
 import {
   verificarAccesoAProyecto,
   verificarAccesoControlCalidad,
@@ -20,9 +40,13 @@ import {
   actualizarSeccionDisenoControl,
   actualizarSeccionDistribucionControl,
   actualizarSeccionEdicion,
+  actualizarSeccionFichaEditorial,
   actualizarSeccionImpresion,
   actualizarSeccionLanzamientoControl,
   actualizarSeccionLanzamientoGeneral,
+  actualizarSeccionLanzamientoPromocion,
+  actualizarSeccionMatrizAsesorias,
+  actualizarSeccionMatrizIngreso,
   actualizarSeccionProyectoContrato,
   actualizarSeccionProyectoPerfil,
   actualizarSeccionSoporteDigital,
@@ -34,6 +58,7 @@ import {
   eliminarPaisDistribucion,
   eliminarPropuestaDiseno,
   eliminarReunionLanzamiento,
+  listarProyectosEnviadosARrpp,
   listarProyectosPendientesCalidad,
   listarProyectosPendientesContrato,
   listarProyectosPendientesDiseno,
@@ -56,45 +81,156 @@ const distribucionPaisParamsSchema = z.object({ proyectoId: z.string().uuid(), p
 // Sección 1 — Proyecto, partida en dos dueños.
 const seccionProyectoPerfilSchema = z
   .object({
-    perfilAutor: z.string().nullable().optional(),
-    publicoObjetivo: z.string().nullable().optional(),
-    objetivosComerciales: z.string().nullable().optional(),
-    ingresoTipoProyecto: z.string().nullable().optional(),
-    ingresoTipoProyectoDetalle: z.string().nullable().optional(),
     ingresoFechaIngreso: z.string().nullable().optional(),
     ingresoFechaCierre: z.string().nullable().optional(),
-    ingresoFechaDeseada: z.string().nullable().optional(),
-    ingresoTemaGeneral: z.string().nullable().optional(),
-    ingresoServicioPerfil: z.string().nullable().optional(),
-    ingresoServicioEjecucion: z.string().nullable().optional(),
-    ingresoServicioAlianza: z.string().nullable().optional(),
-    ingresoServicioPresupuesto: z.string().nullable().optional(),
+    // Solo tiene sentido cuando el servicio contratado es 'Crudo' — RRPP
+    // lo llena después de que Comercial crea el proyecto. Nullable sin
+    // .superRefine que lo exija (a diferencia de ingresoTiempoExpresMeses
+    // más abajo): acá lo "pendiente" es el estado esperado y correcto
+    // mientras RRPP no decide, no un dato faltante que haya que forzar.
+    ingresoServicioSubtipoCrudo: z.enum(SUBTIPOS_CRUDO).nullable().optional(),
+    // Sin .nullable() ni .default(), a diferencia del resto de este
+    // objeto — mismo criterio que autores.categoria (ver
+    // server/routes/autores.routes.ts): son NOT NULL en la base, no se
+    // pueden "borrar" a null, y omitirlas en un PATCH parcial debe dejar
+    // el valor actual intacto, no resetearlo al default.
+    ingresoServicioEjecucion: z.enum(EJECUCIONES_SERVICIO).optional(),
+    // Solo obligatorio cuando ingresoServicioEjecucion === 'Express' —
+    // ver el .superRefine más abajo. Nullable: un proyecto 'Normal'
+    // legítimamente nunca lo llena.
+    ingresoTiempoExpresMeses: z.number().int().nullable().optional(),
+    ingresoServicioAlianza: z.boolean().optional(),
+    ingresoServicioPresupuesto: z.enum(PRESUPUESTOS_SERVICIO).nullable().optional(),
     ingresoObservaciones: z.string().nullable().optional(),
-    ingresoPosibleTitulo: z.string().nullable().optional(),
-    ingresoColeccion: z.string().nullable().optional(),
-    ingresoPublicoSexo: z.string().nullable().optional(),
-    ingresoPublicoEdad: z.string().nullable().optional(),
-    ingresoPublicoPerfil: z.string().nullable().optional(),
-    ingresoPropositoSocial: z.string().nullable().optional(),
-    ingresoObjetivoComercial: z.string().nullable().optional(),
-    ingresoTonoEstilo: z.string().nullable().optional(),
-    ingresoCriterioExtra: z.string().nullable().optional(),
-    ingresoCondicionesEspeciales: z.string().nullable().optional(),
-    ingresoObservacionesEquipo: z.string().nullable().optional(),
-    ingresoCoordinador: z.string().nullable().optional(),
-    ingresoJefeDepartamento: z.string().nullable().optional(),
-    ingresoEditor: z.string().nullable().optional(),
-    ingresoCorrector: z.string().nullable().optional(),
-    ingresoDisenador: z.string().nullable().optional(),
-    ingresoCalidad: z.string().nullable().optional(),
   })
   .refine((datos) => Object.keys(datos).length > 0, {
     message: 'No se recibió ningún campo válido para actualizar',
+  })
+  // Solo valida la co-presencia dentro de ESTE body puntual — si un
+  // PATCH no toca ingresoServicioEjecucion en absoluto, no hay forma de
+  // saber el valor actual sin otra consulta, así que no se exige nada.
+  // SeccionProyectoPerfil.tsx siempre manda la sección completa junta
+  // (ver su mutación), así que en la práctica esto sí cubre el caso real.
+  .superRefine((datos, ctx) => {
+    if (datos.ingresoServicioEjecucion === 'Express' && (datos.ingresoTiempoExpresMeses === null || datos.ingresoTiempoExpresMeses === undefined)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['ingresoTiempoExpresMeses'],
+        message: 'Tiempo Exprés (meses) es obligatorio cuando la ejecución es Express',
+      });
+    }
   });
 
 const seccionProyectoContratoSchema = z.object({
-  capitulosPactados: z.number().int().nonnegative().nullable().optional(),
-  paginasPactadas: z.number().int().nonnegative().nullable().optional(),
+  // string, no number: <select> de opciones predefinidas ('1 a 5'/'6 a
+  // 10'/'11 a 20' para capítulos; '50'/'100'/'150'/'200' para páginas,
+  // ver el bloque "Capítulos y páginas" en SeccionProyectoPerfil.tsx), no
+  // un número libre — un rango como '1 a 5' no pasaría z.number(). Sin
+  // z.enum() a propósito (a diferencia de condicionesEspeciales abajo):
+  // son opciones temporales/placeholder mientras el negocio no define
+  // los rangos reales, no un catálogo cerrado confirmado todavía.
+  capitulosPactados: z.string().nullable().optional(),
+  paginasPactadas: z.string().nullable().optional(),
+  criterioExtra: z.string().nullable().optional(),
+  // Array (no un solo valor) — mismo criterio que nacionalidadSchema en
+  // autores.routes.ts: selección múltiple sobre un catálogo cerrado, ver
+  // SelectorMultipleCondicionesEspeciales.tsx.
+  condicionesEspeciales: z.array(z.enum(CONDICIONES_ESPECIALES)).nullable().optional(),
+});
+
+// "Ficha Editorial (Completado por RRPP)" — dueño rrpp/jefe_area, no
+// comercial (a diferencia de los dos schemas de arriba). publicoEdad/
+// tonoEstilo: string libre, no z.enum() — <select> de sugerencias en el
+// frontend, no un catálogo cerrado confirmado todavía (mismo criterio
+// que capitulosPactados/paginasPactadas arriba).
+const seccionFichaEditorialSchema = z.object({
+  fechaDeseadaCulminacion: z.string().nullable().optional(),
+  temaGeneral: z.string().nullable().optional(),
+  posibleTituloLibro: z.string().nullable().optional(),
+  coleccionPanhouse: z.enum(COLECCIONES_PANHOUSE).nullable().optional(),
+  tonoEstilo: z.string().nullable().optional(),
+  publicoSexo: z.enum(PUBLICOS_SEXO).nullable().optional(),
+  publicoEdad: z.string().nullable().optional(),
+  publicoPerfil: z.string().nullable().optional(),
+  propositoSocial: z.string().nullable().optional(),
+  // Array de texto libre — mismo criterio que nacionalidadSchema en
+  // autores.routes.ts: sin catálogo cerrado, ver EtiquetasObjetivoComercial.tsx.
+  objetivoComercial: z.array(z.string()).nullable().optional(),
+});
+
+// "Matriz de Ingreso (RRPP)" — dueño rrpp/jefe_area, mismo alcance que
+// seccionFichaEditorialSchema arriba.
+const seccionMatrizIngresoSchema = z.object({
+  matrizCiudadResidencia: z.string().nullable().optional(),
+  matrizEstadoReunion: z.enum(ESTADOS_REUNION).nullable().optional(),
+  matrizPropietario: z.enum(PROPIETARIOS_MATRIZ_INGRESO).nullable().optional(),
+  matrizContratoFirmado: z.boolean().optional(),
+  matrizBienvenidaGenerada: z.boolean().optional(),
+  matrizLinkResumen: z.string().nullable().optional(),
+  matrizDiagnosticoGenerado: z.boolean().optional(),
+  matrizLinkDiagnostico: z.string().nullable().optional(),
+  matrizIngresoGenerado: z.boolean().optional(),
+  matrizFechaReunionCreativa: z.string().nullable().optional(),
+  // Array de texto libre — mismo criterio que objetivoComercial arriba.
+  matrizVentaCruzada: z.array(z.string()).nullable().optional(),
+  matrizObservacionesComerciales: z.string().nullable().optional(),
+});
+
+// "Proceso de Lanzamiento y Promoción" — dueño rrpp, mismo alcance que
+// seccionMatrizIngresoSchema arriba. No confundir con
+// seccionLanzamientoGeneralSchema/lanzamientoControlSchema más abajo
+// (Sección 7, otro dueño de columnas — ver el comentario completo en
+// schema/trazabilidad.ts).
+const seccionLanzamientoPromocionSchema = z.object({
+  lanzamientoPromocionFechaPrimeraReunion: z.string().nullable().optional(),
+  lanzamientoPromocionEncargadoPrimeraReunion: z.enum(PROPIETARIOS_MATRIZ_INGRESO).nullable().optional(),
+  lanzamientoPromocionPuntosTratadosPrimera: z.string().nullable().optional(),
+  lanzamientoPromocionFechaSegundaReunion: z.string().nullable().optional(),
+  lanzamientoPromocionEncargadoSegundaReunion: z.enum(PROPIETARIOS_MATRIZ_INGRESO).nullable().optional(),
+  lanzamientoPromocionAcuerdosSegunda: z.string().nullable().optional(),
+  lanzamientoPromocionObjetivoComercial: z.string().nullable().optional(),
+  lanzamientoPromocionParticipacionFerias: z.enum(PARTICIPACION_FERIAS).nullable().optional(),
+  lanzamientoPromocionIsbn: z.string().nullable().optional(),
+  lanzamientoPromocionDetallesProyeccion: z.string().nullable().optional(),
+  lanzamientoPromocionFechaTentativa: z.string().nullable().optional(),
+  lanzamientoPromocionTipo: z.string().nullable().optional(),
+  lanzamientoPromocionObservaciones: z.string().nullable().optional(),
+  lanzamientoPromocionObservacionesGenerales: z.string().nullable().optional(),
+  lanzamientoPromocionLinkMinuta: z.string().nullable().optional(),
+});
+
+// "Matriz de Asesorías con fechas" — dueño rrpp/jefe_area, mismo alcance
+// que seccionMatrizIngresoSchema arriba.
+const seccionMatrizAsesoriasSchema = z.object({
+  asesoriaEstado: z.enum(ASESORIA_ESTADOS).nullable().optional(),
+  asesoriaEspecialistaResponsable: z.string().nullable().optional(),
+  asesoriaFechaPrimeraReunion: z.string().nullable().optional(),
+  asesoriaFechaSegundaReunion: z.string().nullable().optional(),
+  asesoriaFechaAdicional: z.string().nullable().optional(),
+  asesoriaIsbnPais: z.string().nullable().optional(),
+  asesoriaNivelSatisfaccion: z.enum(ASESORIA_NIVELES_SATISFACCION).nullable().optional(),
+  asesoriaFase: z.enum(ASESORIA_FASES).nullable().optional(),
+  asesoriaFechaSugeridaGe: z.string().nullable().optional(),
+  asesoriaFechaPautadaAutor: z.string().nullable().optional(),
+  asesoriaFeriaProyectada: z.enum(ASESORIA_FERIAS_PROYECTADAS).nullable().optional(),
+  asesoriaNotas: z.string().nullable().optional(),
+  asesoriaLinkMinutaGerencia: z.string().nullable().optional(),
+  asesoriaRutaPromocionEnviada: z.boolean().optional(),
+  asesoriaLinkRutaPromocion: z.string().nullable().optional(),
+  asesoriaFuturoAutor: z.enum(ASESORIA_FUTURO_AUTOR).nullable().optional(),
+  asesoriaInfoFeriaEnviada: z.boolean().optional(),
+  asesoriaParticipacionFeria: z.boolean().optional(),
+  asesoriaFeriaAParticipar: z.enum(ASESORIA_FERIAS_A_PARTICIPAR).nullable().optional(),
+  asesoriaCotizacionImpresion: z.boolean().optional(),
+  asesoriaResponsableImpresion: z.enum(ASESORIA_RESPONSABLES_IMPRESION).nullable().optional(),
+  asesoriaFechaCotizacionSolicitada: z.string().nullable().optional(),
+  asesoriaFechaCotizacionEnviada: z.string().nullable().optional(),
+  asesoriaCotizacionAceptada: z.boolean().optional(),
+  asesoriaDistribucionAceptada: z.boolean().optional(),
+  asesoriaResponsableDistribucion: z.enum(ASESORIA_RESPONSABLES_DISTRIBUCION).nullable().optional(),
+  asesoriaNotaDistribucion: z.string().nullable().optional(),
+  asesoriaFechaContratoEnviado: z.string().nullable().optional(),
+  asesoriaContratoRecibidoFirmado: z.boolean().optional(),
 });
 
 // Sección 2 — Edición de estilo.
@@ -351,6 +487,15 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     return reply.send({ proyectos });
   });
 
+  // "Matrices de Ingreso (RRPP)": módulo propio en el inicio de rrpp,
+  // fuera de la vista de detalle del proyecto — ver el comentario
+  // completo en listarProyectosEnviadosARrpp (helpers/trazabilidad.ts).
+  // jefe_area también puede (mismo alcance que PATCH .../matriz-ingreso).
+  app.get('/enviados-a-rrpp', { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] }, async (_request, reply) => {
+    const proyectos = await listarProyectosEnviadosARrpp();
+    return reply.send({ proyectos });
+  });
+
   // "Notificación interna" de comercial: sección extra en su pantalla ya
   // existente, junto al formulario de crear autor.
   app.get('/pendientes/contrato', { preHandler: [requireAuth, requireRole('comercial')] }, async (_request, reply) => {
@@ -410,6 +555,73 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       if (!body) return;
 
       const ficha = await actualizarSeccionProyectoContrato(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
+  // Dueño rrpp/jefe_area, no comercial — a diferencia de las dos rutas
+  // de arriba (proyecto-perfil, proyecto-contrato). "(y Comercial si lo
+  // deseas)" del pedido original NO se aplicó acá a propósito: el pedido
+  // es explícito en que Comercial ve esta sección en modo lectura, no
+  // que pueda editarla.
+  app.patch(
+    '/:proyectoId/ficha-editorial',
+    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+      const body = parseOrReply(seccionFichaEditorialSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionFichaEditorial(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
+  app.patch(
+    '/:proyectoId/matriz-ingreso',
+    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+      const body = parseOrReply(seccionMatrizIngresoSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionMatrizIngreso(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
+  // "Proceso de Lanzamiento y Promoción" — mismo alcance que PATCH
+  // .../matriz-ingreso arriba (rrpp/jefe_area, ver el comentario
+  // completo en schema/trazabilidad.ts).
+  app.patch(
+    '/:proyectoId/lanzamiento-promocion',
+    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+      const body = parseOrReply(seccionLanzamientoPromocionSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionLanzamientoPromocion(params.proyectoId, body);
+      return reply.send({ ficha });
+    },
+  );
+
+  // "Matriz de Asesorías con fechas" — mismo alcance que PATCH
+  // .../matriz-ingreso arriba (rrpp/jefe_area, ver el comentario
+  // completo en schema/trazabilidad.ts).
+  app.patch(
+    '/:proyectoId/matriz-asesorias',
+    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    async (request, reply) => {
+      const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
+      if (!params) return;
+      const body = parseOrReply(seccionMatrizAsesoriasSchema, request.body, reply);
+      if (!body) return;
+
+      const ficha = await actualizarSeccionMatrizAsesorias(params.proyectoId, body);
       return reply.send({ ficha });
     },
   );

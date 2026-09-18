@@ -35,7 +35,12 @@ export function SelectorMultipleAutores({
   const q = busqueda.trim().toLowerCase();
   const resultados = autoresDisponibles
     .filter((autor) => !value.includes(autor.id))
-    .filter((autor) => !q || autor.nombre.toLowerCase().includes(q))
+    // Busca por nombre legal o artístico — el nombre real es el
+    // identificador principal en toda la app (ver el <li> más abajo,
+    // ya no muestra el artístico), pero el filtro sigue aceptando el
+    // artístico como atajo de búsqueda: alguien puede recordar el
+    // nombre de pluma de un autor sin saber su nombre legal de memoria.
+    .filter((autor) => !q || autor.nombre.toLowerCase().includes(q) || (autor.nombreArtistico ?? '').toLowerCase().includes(q))
     .slice(0, MAX_RESULTADOS);
 
   function agregar(autorId: string) {
@@ -95,6 +100,12 @@ export function SelectorMultipleAutores({
               {autoresDisponibles.length === 0 ? 'No hay clientes registrados todavía.' : 'Sin resultados.'}
             </li>
           ) : (
+            // Nombre real/legal, sin el artístico — a pedido explícito
+            // del negocio se abandonó el nombre artístico como
+            // identificador en toda la app (antes era al revés, con el
+            // legal entre paréntesis como referencia; ver el mismo
+            // criterio en ClientesGrid.tsx y TarjetaPerfilAutores en
+            // SeccionProyectoPerfil.tsx).
             resultados.map((autor) => (
               <li key={autor.id}>
                 <button

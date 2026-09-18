@@ -1,17 +1,34 @@
 import { apiFetch } from '../lib/api';
 import type {
+  AsesoriaEstado,
+  AsesoriaFase,
+  AsesoriaFeriaAParticipar,
+  AsesoriaFeriaProyectada,
+  AsesoriaFuturoAutor,
+  AsesoriaNivelSatisfaccion,
+  AsesoriaResponsableDistribucion,
+  AsesoriaResponsableImpresion,
   Capitulo,
   CargaDisenador,
   CausaPausa,
+  ColeccionPanhouse,
+  CondicionEspecial,
+  EjecucionServicio,
   EstadoCotizacionImpresion,
+  EstadoReunion,
   FichaCalidadFase,
   FichaCompleta,
   FichaDisenoPropuesta,
   FichaDistribucionPais,
   FichaLanzamientoReunion,
+  ParticipacionFerias,
   Pausa,
+  PresupuestoServicio,
+  PropietarioMatrizIngreso,
   Proyecto,
   ProyectoDetalleConAutores,
+  PublicoSexo,
+  SubtipoCrudo,
   TipoPortada,
   UsuarioEquipo,
 } from '../types/api';
@@ -49,39 +66,33 @@ export function crearPausa(datos: DatosNuevaPausa) {
   });
 }
 
-// Sección 1, dueño rrpp.
+// Sección 1, dueño rrpp. perfilAutor/objetivosComerciales
+// ("Resumen y Objetivos"), ingresoServicioPerfil (redundante con
+// autor.categoria) e ingresoPublicoSexo/ingresoPublicoEdad/
+// ingresoPublicoPerfil/ingresoCantidadCapitulos/ingresoHojasDiagramadas/
+// ingresoCriterioExtra/ingresoCondicionesEspeciales/
+// ingresoObservacionesEquipo/ingresoCoordinador/ingresoJefeDepartamento/
+// ingresoEditor/ingresoCorrector/ingresoDisenador/ingresoCalidad
+// ("Audiencia y Propósito", "Parámetros Técnicos y Equipo", "Equipo
+// Editorial (Ingreso)") se eliminaron a pedido explícito del negocio —
+// ver el comentario en server/db/schema/trazabilidad.ts.
 export interface DatosSeccionProyectoPerfil {
-  perfilAutor?: string | null;
-  publicoObjetivo?: string | null;
-  objetivosComerciales?: string | null;
-  ingresoTipoProyecto?: string | null;
-  ingresoTipoProyectoDetalle?: string | null;
   ingresoFechaIngreso?: string | null;
   ingresoFechaCierre?: string | null;
-  ingresoFechaDeseada?: string | null;
-  ingresoTemaGeneral?: string | null;
-  ingresoServicioPerfil?: string | null;
-  ingresoServicioEjecucion?: string | null;
-  ingresoServicioAlianza?: string | null;
-  ingresoServicioPresupuesto?: string | null;
+  // Solo tiene sentido cuando el servicio contratado es 'Crudo' — RRPP
+  // lo llena después de que Comercial crea el proyecto (ver el
+  // useEffect de cálculo de Fecha de Cierre en SeccionProyectoPerfil.tsx).
+  ingresoServicioSubtipoCrudo?: SubtipoCrudo | null;
+  // Sin null: mismo criterio que autores.categoria (ver server/routes/
+  // autores.routes.ts) — son NOT NULL en la base, omitirlas en un PATCH
+  // deja el valor actual intacto.
+  ingresoServicioEjecucion?: EjecucionServicio;
+  // Obligatorio cuando ingresoServicioEjecucion se manda como 'Express'
+  // (ver el .superRefine de seccionProyectoPerfilSchema en el backend).
+  ingresoTiempoExpresMeses?: number | null;
+  ingresoServicioAlianza?: boolean;
+  ingresoServicioPresupuesto?: PresupuestoServicio | null;
   ingresoObservaciones?: string | null;
-  ingresoPosibleTitulo?: string | null;
-  ingresoColeccion?: string | null;
-  ingresoPublicoSexo?: string | null;
-  ingresoPublicoEdad?: string | null;
-  ingresoPublicoPerfil?: string | null;
-  ingresoPropositoSocial?: string | null;
-  ingresoObjetivoComercial?: string | null;
-  ingresoTonoEstilo?: string | null;
-  ingresoCriterioExtra?: string | null;
-  ingresoCondicionesEspeciales?: string | null;
-  ingresoObservacionesEquipo?: string | null;
-  ingresoCoordinador?: string | null;
-  ingresoJefeDepartamento?: string | null;
-  ingresoEditor?: string | null;
-  ingresoCorrector?: string | null;
-  ingresoDisenador?: string | null;
-  ingresoCalidad?: string | null;
 }
 
 export function actualizarSeccionProyectoPerfil(proyectoId: string, datos: DatosSeccionProyectoPerfil) {
@@ -91,14 +102,137 @@ export function actualizarSeccionProyectoPerfil(proyectoId: string, datos: Datos
   });
 }
 
-// Sección 1, dueño comercial — aparte del perfil a propósito.
+// Sección 1, dueño comercial — aparte del resto del perfil a propósito
+// (permiso más angosto: solo comercial, ver ProyectoDetallePage.tsx),
+// aunque ambas viven en la misma tarjeta/formulario, ver
+// SeccionProyectoPerfil.tsx. capitulosPactados/paginasPactadas: string,
+// no number — <select> de opciones predefinidas.
 export interface DatosSeccionProyectoContrato {
-  capitulosPactados?: number | null;
-  paginasPactadas?: number | null;
+  capitulosPactados?: string | null;
+  paginasPactadas?: string | null;
+  criterioExtra?: string | null;
+  condicionesEspeciales?: CondicionEspecial[] | null;
 }
 
 export function actualizarSeccionProyectoContrato(proyectoId: string, datos: DatosSeccionProyectoContrato) {
   return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/proyecto-contrato`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
+// "Ficha Editorial (Completado por RRPP)" — dueño rrpp/jefe_area, no
+// comercial (a diferencia de las dos secciones de arriba).
+export interface DatosSeccionFichaEditorial {
+  fechaDeseadaCulminacion?: string | null;
+  temaGeneral?: string | null;
+  posibleTituloLibro?: string | null;
+  coleccionPanhouse?: ColeccionPanhouse | null;
+  tonoEstilo?: string | null;
+  publicoSexo?: PublicoSexo | null;
+  publicoEdad?: string | null;
+  publicoPerfil?: string | null;
+  propositoSocial?: string | null;
+  objetivoComercial?: string[] | null;
+}
+
+export function actualizarSeccionFichaEditorial(proyectoId: string, datos: DatosSeccionFichaEditorial) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/ficha-editorial`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
+// "Matriz de Ingreso (RRPP)" — dueño rrpp/jefe_area, mismo alcance que
+// DatosSeccionFichaEditorial arriba.
+export interface DatosSeccionMatrizIngreso {
+  matrizCiudadResidencia?: string | null;
+  matrizEstadoReunion?: EstadoReunion | null;
+  matrizPropietario?: PropietarioMatrizIngreso | null;
+  matrizContratoFirmado?: boolean;
+  matrizBienvenidaGenerada?: boolean;
+  matrizLinkResumen?: string | null;
+  matrizDiagnosticoGenerado?: boolean;
+  matrizLinkDiagnostico?: string | null;
+  matrizIngresoGenerado?: boolean;
+  matrizFechaReunionCreativa?: string | null;
+  matrizVentaCruzada?: string[] | null;
+  matrizObservacionesComerciales?: string | null;
+}
+
+export function actualizarSeccionMatrizIngreso(proyectoId: string, datos: DatosSeccionMatrizIngreso) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/matriz-ingreso`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
+// "Proceso de Lanzamiento y Promoción" (Área exclusiva de RRPP, Fase 1)
+// — dueño rrpp/jefe_area, mismo alcance que DatosSeccionMatrizIngreso
+// arriba. NO es la Sección 7 "Lanzamiento y promoción" (ver
+// DatosSeccionLanzamientoGeneral/DatosReunionLanzamiento más abajo).
+export interface DatosSeccionLanzamientoPromocion {
+  lanzamientoPromocionFechaPrimeraReunion?: string | null;
+  lanzamientoPromocionEncargadoPrimeraReunion?: PropietarioMatrizIngreso | null;
+  lanzamientoPromocionPuntosTratadosPrimera?: string | null;
+  lanzamientoPromocionFechaSegundaReunion?: string | null;
+  lanzamientoPromocionEncargadoSegundaReunion?: PropietarioMatrizIngreso | null;
+  lanzamientoPromocionAcuerdosSegunda?: string | null;
+  lanzamientoPromocionObjetivoComercial?: string | null;
+  lanzamientoPromocionParticipacionFerias?: ParticipacionFerias | null;
+  lanzamientoPromocionIsbn?: string | null;
+  lanzamientoPromocionDetallesProyeccion?: string | null;
+  lanzamientoPromocionFechaTentativa?: string | null;
+  lanzamientoPromocionTipo?: string | null;
+  lanzamientoPromocionObservaciones?: string | null;
+  lanzamientoPromocionObservacionesGenerales?: string | null;
+  lanzamientoPromocionLinkMinuta?: string | null;
+}
+
+export function actualizarSeccionLanzamientoPromocion(proyectoId: string, datos: DatosSeccionLanzamientoPromocion) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/lanzamiento-promocion`, {
+    method: 'PATCH',
+    body: JSON.stringify(datos),
+  });
+}
+
+// "Matriz de Asesorías con fechas" (módulo de RRPP, debajo de Matriz de
+// Ingreso) — dueño rrpp/jefe_area, mismo alcance que
+// DatosSeccionMatrizIngreso arriba.
+export interface DatosSeccionMatrizAsesorias {
+  asesoriaEstado?: AsesoriaEstado | null;
+  asesoriaEspecialistaResponsable?: string | null;
+  asesoriaFechaPrimeraReunion?: string | null;
+  asesoriaFechaSegundaReunion?: string | null;
+  asesoriaFechaAdicional?: string | null;
+  asesoriaIsbnPais?: string | null;
+  asesoriaNivelSatisfaccion?: AsesoriaNivelSatisfaccion | null;
+  asesoriaFase?: AsesoriaFase | null;
+  asesoriaFechaSugeridaGe?: string | null;
+  asesoriaFechaPautadaAutor?: string | null;
+  asesoriaFeriaProyectada?: AsesoriaFeriaProyectada | null;
+  asesoriaNotas?: string | null;
+  asesoriaLinkMinutaGerencia?: string | null;
+  asesoriaRutaPromocionEnviada?: boolean;
+  asesoriaLinkRutaPromocion?: string | null;
+  asesoriaFuturoAutor?: AsesoriaFuturoAutor | null;
+  asesoriaInfoFeriaEnviada?: boolean;
+  asesoriaParticipacionFeria?: boolean;
+  asesoriaFeriaAParticipar?: AsesoriaFeriaAParticipar | null;
+  asesoriaCotizacionImpresion?: boolean;
+  asesoriaResponsableImpresion?: AsesoriaResponsableImpresion | null;
+  asesoriaFechaCotizacionSolicitada?: string | null;
+  asesoriaFechaCotizacionEnviada?: string | null;
+  asesoriaCotizacionAceptada?: boolean;
+  asesoriaDistribucionAceptada?: boolean;
+  asesoriaResponsableDistribucion?: AsesoriaResponsableDistribucion | null;
+  asesoriaNotaDistribucion?: string | null;
+  asesoriaFechaContratoEnviado?: string | null;
+  asesoriaContratoRecibidoFirmado?: boolean;
+}
+
+export function actualizarSeccionMatrizAsesorias(proyectoId: string, datos: DatosSeccionMatrizAsesorias) {
+  return apiFetch<{ ficha: FichaCompleta }>(`/fichas-trazabilidad/${proyectoId}/matriz-asesorias`, {
     method: 'PATCH',
     body: JSON.stringify(datos),
   });
@@ -455,16 +589,6 @@ export function actualizarPaisDistribucion(proyectoId: string, paisId: string, d
 export function eliminarPaisDistribucion(proyectoId: string, paisId: string) {
   return apiFetch<{ ok: true }>(`/fichas-trazabilidad/${proyectoId}/distribucion/paises/${paisId}`, {
     method: 'DELETE',
-  });
-}
-
-// Título del libro — dueño rrpp, mismo rol que el resto de Sección 1
-// (Perfil), pero escribe proyectos directamente (ruta propia, ver
-// server/routes/proyectos.routes.ts).
-export function actualizarTituloProyecto(proyectoId: string, titulo: string | null) {
-  return apiFetch<{ proyecto: Proyecto }>(`/proyectos/${proyectoId}/titulo`, {
-    method: 'PATCH',
-    body: JSON.stringify({ titulo }),
   });
 }
 

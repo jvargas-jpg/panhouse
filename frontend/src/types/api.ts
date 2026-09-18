@@ -33,6 +33,88 @@ export type EstadoCotizacionImpresion = 'solicitada' | 'enviada' | 'aceptada' | 
 // DecisionPortada), mismo criterio en el frontend.
 export type DecisionPortada = 'pendiente' | 'aprobada' | 'rechazada';
 
+// Categoría comercial del cliente — ver server/db/schema/enums.ts
+// (CATEGORIAS_CLIENTE). Cerrada a estas dos, badge dorado para VIP en
+// ClientesGrid.tsx / TarjetaPerfilAutores (SeccionProyectoPerfil.tsx).
+export type CategoriaCliente = 'Estándar' | 'VIP';
+
+// Velocidad de ejecución contratada (fichasTrazabilidad.ingresoServicioEjecucion)
+// — ver server/db/schema/enums.ts (EJECUCIONES_SERVICIO). Cerrada a
+// propósito, ver SeccionProyectoPerfil.tsx. 'Express' (sin tilde):
+// dispara el campo condicional ingresoTiempoExpresMeses.
+export type EjecucionServicio = 'Normal' | 'Express';
+
+// PerfilServicio (Estándar/VIP a nivel de PROYECTO) se eliminó a pedido
+// explícito del negocio: redundante con CategoriaCliente, que ya captura
+// el mismo estatus a nivel de Cliente.
+
+// Nivel de presupuesto de la matriz de ingreso (fichasTrazabilidad.ingresoServicioPresupuesto)
+// — ver PRESUPUESTOS_SERVICIO en server/db/schema/enums.ts.
+export type PresupuestoServicio = 'Plata' | 'Oro' | 'Platinium';
+
+// Subtipo del servicio 'Crudo' (fichasTrazabilidad.ingresoServicioSubtipoCrudo)
+// — ver SUBTIPOS_CRUDO en server/db/schema/enums.ts. Comercial solo
+// elige la categoría general (Sello editorial/Escritura fantasma/Crudo)
+// al crear el proyecto; si es Crudo, RRPP define el subtipo después —
+// mientras tanto queda null ("pendiente de RRPP", ver SeccionProyectoPerfil.tsx).
+export type SubtipoCrudo = 'Capítulo' | 'Tripa';
+
+// Condiciones especiales del contrato (fichasTrazabilidad.condicionesEspeciales)
+// — ver CONDICIONES_ESPECIALES en server/db/schema/enums.ts. Cerrada a
+// propósito, selección múltiple (ver SelectorMultipleCondicionesEspeciales.tsx
+// y el bloque "Capítulos y páginas" en SeccionProyectoPerfil.tsx). Sin
+// 'Ninguna': un array vacío ya representa "ninguna condición especial".
+export type CondicionEspecial = 'Ilustraciones' | 'Gráficos' | 'Diagramación especial' | 'Diagramación ultra especial';
+
+// Colección de la editorial (fichasTrazabilidad.coleccionPanhouse) —
+// ver COLECCIONES_PANHOUSE en server/db/schema/enums.ts. Cerrada a
+// propósito, ver SeccionFichaEditorial.tsx.
+export type ColeccionPanhouse =
+  | 'Crecimiento Espiritual'
+  | 'Emprendimiento y Crecimiento Personal'
+  | 'Literatura'
+  | 'Salud y Bienestar'
+  | 'Sin asignar'
+  | 'Liderazgo'
+  | 'Ciencias sociales'
+  | 'PanHouse Kids';
+
+// Público objetivo — sexo (fichasTrazabilidad.publicoSexo) — ver
+// PUBLICOS_SEXO en server/db/schema/enums.ts. Cerrada a propósito, ver
+// SeccionFichaEditorial.tsx.
+export type PublicoSexo = 'Masculino' | 'Femenino' | 'Mixto';
+
+// "Matriz de Ingreso (RRPP)" — etapa agregada de seguimiento de
+// reuniones con el autor, de ingreso a lanzamiento. No confundir con
+// FichaLanzamientoReunion (más abajo): eso son las reuniones de
+// lanzamiento en sí, una fila por reunión.
+export type EstadoReunion =
+  | 'Reunión de ingreso'
+  | 'Revisión de objetivos'
+  | 'Reunión creativa'
+  | 'Reunión de promoción, lanzamiento y distribución';
+
+// "Matriz de Ingreso (RRPP)" — cerrado a las dos personas reales que
+// hoy llevan cuentas (antes texto libre, ver el comentario histórico en
+// server/db/schema/trazabilidad.ts).
+export type PropietarioMatrizIngreso = 'Paola Morales' | 'Daniel Valente';
+
+// "Proceso de Lanzamiento y Promoción" (Área exclusiva de RRPP) — tres
+// valores explícitos dados por el negocio.
+export type ParticipacionFerias = 'Sí' | 'No' | 'Pendiente';
+
+// "Matriz de Asesorías con fechas" — módulo de RRPP (/rrpp/matriz/:proyectoId),
+// debajo de Matriz de Ingreso. Ver el comentario completo en
+// server/db/schema/enums.ts.
+export type AsesoriaEstado = 'Completado' | 'Con fecha de lanzamiento' | 'En proceso editorial' | 'Finalizado';
+export type AsesoriaNivelSatisfaccion = 'Bueno' | 'Excelente' | 'Regular';
+export type AsesoriaFase = 'En asesoramiento' | 'Esperando fecha' | 'En espera de lanzamiento' | 'Culminado';
+export type AsesoriaFeriaProyectada = 'Bogotá' | 'Colombia' | 'Guadalajara' | 'Panamá';
+export type AsesoriaFuturoAutor = 'Desea ser publicado' | 'No desea ser publicado aún' | 'Publicado';
+export type AsesoriaFeriaAParticipar = 'Bogotá' | 'Guadalajara' | 'Panamá' | 'Ambas';
+export type AsesoriaResponsableImpresion = 'Barbara Carballo' | 'Impresiones PanHouse - Casa Editorial PanHouse' | 'Paola Morales' | 'Miranda Cedillo';
+export type AsesoriaResponsableDistribucion = 'Paola Morales' | 'Distribución PanHouse';
+
 export interface Usuario {
   id: string;
   email: string;
@@ -86,6 +168,7 @@ export interface RiesgoProyecto {
 export interface ProyectoConRiesgo {
   id: string;
   titulo: string | null;
+  codigo: string;
   estado: EstadoProyecto;
   fechaProgramadaInicio: string;
   fechaRealInicio: string | null;
@@ -103,24 +186,33 @@ export interface ProyectoConRiesgo {
   // POST /:id/notificar-jefatura, los dos pasos de la cascada.
   notificadoRrpp: boolean;
   notificadoJefatura: boolean;
+  // autor (singular, legacy) se mantiene por compatibilidad —
+  // MisProyectosPage.tsx y otros consumidores de este mismo tipo lo
+  // siguen usando tal cual. autores (coautoría) es aditivo, para
+  // PanelJefaturaPage.tsx (ver ProyectoFilaJefatura.tsx) — mismo
+  // criterio que ProyectoPendienteSeccion1.autores más abajo.
   autor: { id: string; nombre: string };
+  autores: { id: string; nombre: string; nombreArtistico: string | null }[];
   servicio: { id: string; codigo: string; nombre: string };
   riesgo: RiesgoProyecto;
 }
 
 // Perfil completo del autor (no solo id/nombre): ProyectoDetallePage.tsx
 // lo muestra de solo lectura en la Sección 1 — ver SeccionProyectoPerfil.tsx.
-// Mismos campos que Autor (más abajo), sin los de contacto/país (que no
-// hacen falta en esa tarjeta).
+// Mismos campos que Autor (más abajo), sin los de contacto (email/
+// teléfono, que no hacen falta en esa tarjeta) — pais sí viaja, lo usa
+// "País de residencia" en SeccionMatrizIngreso.tsx.
 export interface AutorConPerfil {
   id: string;
   nombre: string;
   nombreArtistico: string | null;
-  nacionalidad: string | null;
+  nacionalidad: string[] | null;
   fechaNacimiento: string | null;
   redesSociales: RedesSociales | null;
   personalidad: string[] | null;
   ocupacion: string | null;
+  categoria: CategoriaCliente;
+  pais: string | null;
 }
 
 // GET /api/proyectos/:id/riesgo — única ruta migrada a coautoría hasta
@@ -142,11 +234,18 @@ export type ProyectoDetalleConAutores = Omit<ProyectoConRiesgo, 'autor'> & {
 export interface ProyectoPendienteSeccion1 {
   id: string;
   titulo: string | null;
+  // Igual que unidadId/presupuestoId/fechaProgramadaInicio abajo:
+  // presente en las listas "pendientes/*" (listarProyectosPendientesSeccion1,
+  // ver server/helpers/trazabilidad.ts), ausente en GET /proyectos/sin-editor
+  // (consulta distinta que no lo trae). ProyectosPendientesCrmList.tsx —
+  // el único consumidor que arma el nombre visual (autores + codigo) —
+  // solo recibe datos de las listas "pendientes/*", donde siempre viene.
+  codigo?: string;
   // Primer autor, por compatibilidad — ListaProyectosPendientes.tsx sigue
   // usándolo tal cual. `autores` (coautoría) es la lista completa —
   // ProyectosPendientesCrmList.tsx es el único consumidor migrado a ella.
   autor: { id: string; nombre: string };
-  autores: { id: string; nombre: string }[];
+  autores: { id: string; nombre: string; nombreArtistico: string | null }[];
   servicio: { id: string; codigo: string; nombre: string };
   unidadId?: string;
   presupuestoId?: string;
@@ -230,48 +329,130 @@ export interface FichaDistribucionPais {
 
 export interface FichaCompleta {
   proyectoId: string;
-  // sección 1
-  perfilAutor: string | null;
-  publicoObjetivo: string | null;
-  objetivosComerciales: string | null;
-  capitulosPactados: number | null;
-  paginasPactadas: number | null;
+  // sección 1. perfilAutor/objetivosComerciales ("Resumen y Objetivos")
+  // se eliminaron a pedido explícito del negocio: texto libre de una
+  // plantilla de Excel vieja, sin uso real en producción.
+  //
+  // capitulosPactados/paginasPactadas: string, no number — <select> de
+  // opciones predefinidas (ver el bloque "Capítulos y páginas" en
+  // SeccionProyectoPerfil.tsx), no un número libre.
+  capitulosPactados: string | null;
+  paginasPactadas: string | null;
+  criterioExtra: string | null;
+  // Array (no un solo valor) — selección múltiple, ver
+  // SelectorMultipleCondicionesEspeciales.tsx.
+  condicionesEspeciales: CondicionEspecial[] | null;
+  // "Ficha Editorial (Completado por RRPP)" — dueño rrpp/jefe_area, ver
+  // SeccionFichaEditorial.tsx.
+  fechaDeseadaCulminacion: string | null;
+  temaGeneral: string | null;
+  posibleTituloLibro: string | null;
+  coleccionPanhouse: ColeccionPanhouse | null;
+  tonoEstilo: string | null;
+  publicoSexo: PublicoSexo | null;
+  publicoEdad: string | null;
+  publicoPerfil: string | null;
+  propositoSocial: string | null;
+  // Array (no un solo valor) — chips de texto libre, ver
+  // EtiquetasObjetivoComercial.tsx.
+  objetivoComercial: string[] | null;
+  // "Matriz de Ingreso (RRPP)" — dueño rrpp/jefe_area, ver
+  // SeccionMatrizIngreso.tsx. Bloque "Datos Sincronizados" de esa
+  // sección no tiene columnas propias: sale de proyecto.autores y de
+  // ingresoFechaIngreso/posibleTituloLibro, ya declarados arriba.
+  matrizCiudadResidencia: string | null;
+  matrizEstadoReunion: EstadoReunion | null;
+  matrizPropietario: PropietarioMatrizIngreso | null;
+  matrizContratoFirmado: boolean;
+  matrizBienvenidaGenerada: boolean;
+  matrizLinkResumen: string | null;
+  matrizDiagnosticoGenerado: boolean;
+  matrizLinkDiagnostico: string | null;
+  matrizIngresoGenerado: boolean;
+  matrizFechaReunionCreativa: string | null;
+  matrizVentaCruzada: string[] | null;
+  matrizObservacionesComerciales: string | null;
+  // "Proceso de Lanzamiento y Promoción" (Área exclusiva de RRPP, Fase
+  // 1) — dueño rrpp/jefe_area, ver SeccionLanzamientoPromocion.tsx. NO
+  // es la Sección 7 "Lanzamiento y promoción" (lanzamientoEstatus/
+  // nivelSatisfaccion/lanzamientoReuniones, más abajo) — mismo nombre de
+  // negocio, dueño y alcance distintos.
+  lanzamientoPromocionFechaPrimeraReunion: string | null;
+  lanzamientoPromocionEncargadoPrimeraReunion: PropietarioMatrizIngreso | null;
+  lanzamientoPromocionPuntosTratadosPrimera: string | null;
+  lanzamientoPromocionFechaSegundaReunion: string | null;
+  lanzamientoPromocionEncargadoSegundaReunion: PropietarioMatrizIngreso | null;
+  lanzamientoPromocionAcuerdosSegunda: string | null;
+  lanzamientoPromocionObjetivoComercial: string | null;
+  lanzamientoPromocionParticipacionFerias: ParticipacionFerias | null;
+  lanzamientoPromocionIsbn: string | null;
+  lanzamientoPromocionDetallesProyeccion: string | null;
+  lanzamientoPromocionFechaTentativa: string | null;
+  lanzamientoPromocionTipo: string | null;
+  lanzamientoPromocionObservaciones: string | null;
+  lanzamientoPromocionObservacionesGenerales: string | null;
+  lanzamientoPromocionLinkMinuta: string | null;
+  // "Matriz de Asesorías con fechas" — módulo de RRPP
+  // (/rrpp/matriz/:proyectoId), debajo de Matriz de Ingreso, ver
+  // SeccionMatrizAsesorias.tsx. LIBRO (posibleTituloLibro, más abajo) se
+  // muestra de solo lectura en la cabecera de esa sección — no se
+  // duplica acá.
+  asesoriaEstado: AsesoriaEstado | null;
+  asesoriaEspecialistaResponsable: string | null;
+  asesoriaFechaPrimeraReunion: string | null;
+  asesoriaFechaSegundaReunion: string | null;
+  asesoriaFechaAdicional: string | null;
+  asesoriaIsbnPais: string | null;
+  asesoriaNivelSatisfaccion: AsesoriaNivelSatisfaccion | null;
+  asesoriaFase: AsesoriaFase | null;
+  asesoriaFechaSugeridaGe: string | null;
+  asesoriaFechaPautadaAutor: string | null;
+  asesoriaFeriaProyectada: AsesoriaFeriaProyectada | null;
+  asesoriaNotas: string | null;
+  asesoriaLinkMinutaGerencia: string | null;
+  asesoriaRutaPromocionEnviada: boolean;
+  asesoriaLinkRutaPromocion: string | null;
+  asesoriaFuturoAutor: AsesoriaFuturoAutor | null;
+  asesoriaInfoFeriaEnviada: boolean;
+  asesoriaParticipacionFeria: boolean;
+  asesoriaFeriaAParticipar: AsesoriaFeriaAParticipar | null;
+  asesoriaCotizacionImpresion: boolean;
+  asesoriaResponsableImpresion: AsesoriaResponsableImpresion | null;
+  asesoriaFechaCotizacionSolicitada: string | null;
+  asesoriaFechaCotizacionEnviada: string | null;
+  asesoriaCotizacionAceptada: boolean;
+  asesoriaDistribucionAceptada: boolean;
+  asesoriaResponsableDistribucion: AsesoriaResponsableDistribucion | null;
+  asesoriaNotaDistribucion: string | null;
+  asesoriaFechaContratoEnviado: string | null;
+  asesoriaContratoRecibidoFirmado: boolean;
   // sección 1 (parte 3) — Datos de ingreso. ingresoNombreArtistico/
   // ingresoNacionalidad/ingresoFechaNacimiento/ingresoRedesSociales/
   // ingresoPersonalidad/ingresoOcupacion se eliminaron: duplicaban los
   // campos del perfil del autor (ver Autor más abajo) — esos ahora se
   // muestran de solo lectura desde proyecto.autores, no se vuelven a
-  // pedir acá.
-  ingresoTipoProyecto: string | null;
-  ingresoTipoProyectoDetalle: string | null;
+  // pedir acá. ingresoTipoProyecto/ingresoTipoProyectoDetalle también se
+  // eliminaron: duplicaban proyecto.servicio (catálogo elegido al crear
+  // el proyecto) — ver el <select> de servicio en SeccionProyectoPerfil.tsx.
+  // ingresoServicioPerfil (Estándar/VIP a nivel de PROYECTO) también se
+  // eliminó — redundante con autor.categoria, ya visible en CategoriaBadge.
   ingresoFechaIngreso: string | null;
   ingresoFechaCierre: string | null;
-  ingresoFechaDeseada: string | null;
-  ingresoTemaGeneral: string | null;
-  ingresoServicioPerfil: string | null;
-  ingresoServicioEjecucion: string | null;
-  ingresoServicioAlianza: string | null;
-  ingresoServicioPresupuesto: string | null;
+  ingresoServicioSubtipoCrudo: SubtipoCrudo | null;
+  ingresoServicioEjecucion: EjecucionServicio;
+  ingresoTiempoExpresMeses: number | null;
+  ingresoServicioAlianza: boolean;
+  ingresoServicioPresupuesto: PresupuestoServicio | null;
   ingresoObservaciones: string | null;
-  // sección 1 (parte 4) — Datos de ingreso, especificaciones del proyecto
-  ingresoPosibleTitulo: string | null;
-  ingresoColeccion: string | null;
-  ingresoPublicoSexo: string | null;
-  ingresoPublicoEdad: string | null;
-  ingresoPublicoPerfil: string | null;
-  ingresoPropositoSocial: string | null;
-  ingresoObjetivoComercial: string | null;
-  ingresoTonoEstilo: string | null;
-  ingresoCriterioExtra: string | null;
-  ingresoCondicionesEspeciales: string | null;
-  ingresoObservacionesEquipo: string | null;
-  // sección 1 (parte 5) — Datos de ingreso, Equipo Editorial
-  ingresoCoordinador: string | null;
-  ingresoJefeDepartamento: string | null;
-  ingresoEditor: string | null;
-  ingresoCorrector: string | null;
-  ingresoDisenador: string | null;
-  ingresoCalidad: string | null;
+  // sección 1 (parte 4/5) — "Audiencia y Propósito", "Parámetros Técnicos
+  // y Equipo" y "Equipo Editorial (Ingreso)" (ingresoPublicoSexo/
+  // ingresoPublicoEdad/ingresoPublicoPerfil, ingresoCantidadCapitulos/
+  // ingresoHojasDiagramadas/ingresoCriterioExtra/
+  // ingresoCondicionesEspeciales/ingresoObservacionesEquipo,
+  // ingresoCoordinador/ingresoJefeDepartamento/ingresoEditor/
+  // ingresoCorrector/ingresoDisenador/ingresoCalidad) se eliminaron a
+  // pedido explícito del negocio: bloques de la matriz de ingreso que
+  // venían de una plantilla de Excel vieja, sin uso real en producción.
   // sección 2
   edicionEstatus: string | null;
   edicionFechaEnvioEditor: string | null;
@@ -364,14 +545,15 @@ export interface Autor {
   id: string;
   nombre: string;
   nombreArtistico: string | null;
-  nacionalidad: string | null;
+  nacionalidad: string[] | null;
   fechaNacimiento: string | null;
   redesSociales: RedesSociales | null;
   personalidad: string[] | null;
   ocupacion: string | null;
-  email: string | null;
+  email: string[] | null;
   telefono: string | null;
   pais: string | null;
+  categoria: CategoriaCliente;
 }
 
 // GET /api/catalogos — para el formulario de creación de proyecto.
@@ -401,6 +583,7 @@ export interface Catalogos {
 export interface Proyecto {
   id: string;
   titulo: string | null;
+  codigo: string;
   manuscritoUrl: string | null;
   propuestaPortadaUrl: string | null;
   portadaDecisionAutor: DecisionPortada;

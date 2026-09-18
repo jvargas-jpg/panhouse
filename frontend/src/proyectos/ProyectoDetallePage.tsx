@@ -2,12 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
-import { notificarJefatura, notificarRrpp } from '../jefatura/jefaturaApi';
+import { notificarJefatura } from '../jefatura/jefaturaApi';
 import type { Pausa } from '../types/api';
 import { BotonNotificarTransicion } from './BotonNotificarTransicion';
 import { formatearFecha } from './campos';
 import { CapituloRow } from './CapituloRow';
 import { EstadoBadge } from './EstadoBadge';
+import { EstadoTraspasoBadge } from './EstadoTraspasoBadge';
 import { fetchCapitulos, fetchFicha, fetchPausas, fetchProyecto } from './proyectoDetalleApi';
 import { RegistrarPausaForm } from './RegistrarPausaForm';
 import { RiesgoBadge } from './RiesgoBadge';
@@ -18,9 +19,10 @@ import { SeccionDiseno } from './SeccionDiseno';
 import { SeccionDistribucion } from './SeccionDistribucion';
 import { SeccionEdicion } from './SeccionEdicion';
 import { SeccionEquipo } from './SeccionEquipo';
+import { SeccionFichaEditorial } from './SeccionFichaEditorial';
 import { SeccionImpresion } from './SeccionImpresion';
 import { SeccionLanzamiento } from './SeccionLanzamiento';
-import { SeccionProyectoContrato } from './SeccionProyectoContrato';
+import { SeccionLanzamientoPromocion } from './SeccionLanzamientoPromocion';
 import { SeccionProyectoPerfil } from './SeccionProyectoPerfil';
 import { SeccionSoporteDigital } from './SeccionSoporteDigital';
 
@@ -74,8 +76,37 @@ export function ProyectoDetallePage() {
     rol === 'soporte_digital';
   const puedeVerCapitulos = rol === 'jefe_area' || rol === 'especialista' || rol === 'editor';
   const puedeVerPausas = rol === 'jefe_area' || rol === 'especialista';
+  // puedeEditarPerfil (más amplio, incluye rrpp) sigue gateando si el
+  // formulario se ve como <form> editable vs. resumen de solo lectura —
+  // dentro de ese formulario, puedeEditarComercial (más angosto, sin
+  // rrpp) decide campo por campo qué se ve como <select>/<input> real y
+  // qué como texto estático (a pedido explícito del negocio: rrpp veía
+  // los campos comerciales como editables, cuando debían ser de solo
+  // lectura — solo "Observaciones" y el nuevo subtipo de Crudo son
+  // editables para rrpp, ver SeccionProyectoPerfil.tsx). Mismo alcance
+  // que el guard de PATCH /api/proyectos/:id/reasignar en el backend
+  // (requireRole('comercial', 'jefe_area')) — sin este permiso aparte,
+  // SeccionProyectoPerfil.tsx dispararía esa mutación igual para rrpp y
+  // el backend la rechazaría con 403 en cada Guardar.
   const puedeEditarPerfil = rol === 'comercial' || rol === 'rrpp' || rol === 'jefe_area';
   const puedeEditarContrato = rol === 'comercial';
+  const puedeEditarComercial = rol === 'comercial' || rol === 'jefe_area';
+  // Comercial es dueño del traspaso a RRPP (el botón "Enviar a RRPP" en
+  // SeccionProyectoPerfil.tsx) — mismo alcance que el antiguo botón
+  // separado "Notificar a RRPP" que reemplaza, ahora fusionado al
+  // guardado del formulario en vez de vivir aparte.
+  const puedeNotificarRrpp = rol === 'comercial';
+  // "Ficha Editorial (Completado por RRPP)" — dueño rrpp/jefe_area, al
+  // revés de puedeEditarComercial de arriba: acá comercial es quien ve
+  // la sección en modo lectura. Mismo alcance que el guard de PATCH
+  // /api/fichas-trazabilidad/:id/ficha-editorial en el backend
+  // (requireRole('rrpp', 'jefe_area')).
+  const puedeEditarFichaEditorial = rol === 'rrpp' || rol === 'jefe_area';
+  // "Proceso de Lanzamiento y Promoción" — mismo alcance que
+  // puedeEditarFichaEditorial (rrpp/jefe_area editan, comercial ve de
+  // solo lectura). Constante propia, mismo criterio que el resto de
+  // "Área exclusiva de RRPP".
+  const puedeEditarLanzamientoPromocion = rol === 'rrpp' || rol === 'jefe_area';
 
   const proyectoQuery = useQuery({ queryKey: ['proyecto', id], queryFn: () => fetchProyecto(id) });
   const fichaQuery = useQuery({ queryKey: ['ficha', id], queryFn: () => fetchFicha(id), enabled: puedeVerFicha });
@@ -94,36 +125,65 @@ export function ProyectoDetallePage() {
         </p>
       )}
 
-      {/* Hero Header — de lado a lado, degradado oscuro moderno */}
+      {/* Hero Header — de lado a lado, degradado oscuro moderno. Padding
+          vertical compacto (py-8, antes pb-2 pt-10 + pb-6 extra del
+          bloque de badges) y bloque de identidad centrado — el enlace de
+          vuelta se deja fuera de ese centrado (patrón estándar: acción
+          de navegación arriba a la izquierda, contenido del proyecto
+          centrado debajo). */}
       {proyectoQuery.data && (
         <div
-          className={`${FULL_BLEED} relative overflow-hidden bg-gradient-to-b from-gray-900 to-black px-6 pb-2 pt-10 text-white shadow-lg md:px-16`}
+          className={`${FULL_BLEED} relative overflow-hidden bg-gradient-to-b from-gray-900 to-black px-6 py-8 text-white shadow-lg md:px-16`}
         >
           <Link to="/" className="text-sm text-white/60 hover:text-white hover:underline">
             ← Mis proyectos
           </Link>
 
-          {/* Título del proyecto: identificador principal (ver
-              CrearProyectoModalForm.tsx) — proyectos creados antes de que
-              fuera obligatorio no lo tienen, de ahí el respaldo. Autores
-              (coautoría, todos unidos por coma — ninguno debería quedar
-              invisible) bajan a texto secundario debajo. */}
-          <h1 className="mb-1 mt-6 text-3xl font-light text-white">
-            {proyectoQuery.data.proyecto.titulo ?? <span className="italic text-white/50">Sin título</span>}
-          </h1>
-          <p className="text-sm text-white/70">
-            {proyectoQuery.data.proyecto.autores.map((autor) => autor.nombre).join(', ') || 'Sin autor asignado'}
-          </p>
-          <p className="text-sm text-white/70">
-            {proyectoQuery.data.proyecto.servicio.nombre} ({proyectoQuery.data.proyecto.servicio.codigo})
-          </p>
-          <div className="mt-3 flex flex-wrap items-center gap-2 pb-6">
-            <EstadoBadge estado={proyectoQuery.data.proyecto.estado} />
-            <RiesgoBadge riesgo={proyectoQuery.data.proyecto.riesgo} />
+          <div className="flex flex-col items-center text-center">
+            {/* Ya no hay título manual (el negocio lo retiró, ver el
+                comentario de la columna en server/db/schema/proyectos.ts)
+                — el identificador principal ahora se genera solo:
+                autores (coautoría, todos unidos por coma — ninguno debería
+                quedar invisible — por su nombre real/legal, no el
+                artístico, a pedido explícito del negocio: ver el mismo
+                criterio en TarjetaPerfilAutores en SeccionProyectoPerfil.tsx)
+                + el codigo único asignado al crear el proyecto. */}
+            <h1 className="mb-1 mt-4 text-3xl font-light text-white">
+              {proyectoQuery.data.proyecto.autores.map((autor) => autor.nombre).join(', ') || 'Sin autor asignado'}{' '}
+              — #{proyectoQuery.data.proyecto.codigo}
+            </h1>
+            <p className="text-sm text-white/70">
+              {proyectoQuery.data.proyecto.servicio.nombre} ({proyectoQuery.data.proyecto.servicio.codigo})
+            </p>
+            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <EstadoBadge estado={proyectoQuery.data.proyecto.estado} />
+              {/* Estado del traspaso Comercial → RRPP → Jefatura — derivado
+                  de notificadoRrpp/notificadoJefatura (ya existían para la
+                  cascada de notificaciones, ver BotonNotificarTransicion
+                  más abajo), no una columna nueva: evita un segundo campo
+                  "estado" en la misma tabla que el de arriba (operativo,
+                  en_proceso/retrasado/etc.), que ya se usa en riesgo/carga
+                  y no tiene relación con este traspaso. */}
+              <EstadoTraspasoBadge
+                notificadoRrpp={proyectoQuery.data.proyecto.notificadoRrpp}
+                notificadoJefatura={proyectoQuery.data.proyecto.notificadoJefatura}
+              />
+              <RiesgoBadge riesgo={proyectoQuery.data.proyecto.riesgo} />
+            </div>
           </div>
 
-          {/* El progreso (gigante) — Master Stepper exclusivo de producción, oculto para comercial */}
-          {puedeVerFicha && rol !== 'comercial' && (
+          {/* El progreso (gigante) — Master Stepper exclusivo de producción,
+              oculto para comercial Y para rrpp. rrpp perdió acceso de UI a
+              Lanzamiento/Impresión/Distribución (fases 7-9) a pedido
+              explícito del negocio: su entorno queda limitado a esta vista
+              central (Fase 1 — Perfil/Ficha Editorial/Matriz de Ingreso/
+              Lanzamiento y Promoción), confirmado aunque esos permisos de
+              edición sigan existiendo en el backend (PATCH .../impresion,
+              .../distribucion-control, .../lanzamiento-control siguen
+              aceptando rrpp — decisión deliberada, no un descuido: si esas
+              pantallas dejan de ser necesarias del todo, revisar también
+              esos guards). */}
+          {puedeVerFicha && rol !== 'comercial' && rol !== 'rrpp' && (
             <div className="mt-4">
               <div className="mb-6 mt-8">
                 <span className="text-sm font-bold uppercase tracking-[0.2em] text-dorado">
@@ -163,8 +223,13 @@ export function ProyectoDetallePage() {
         </div>
       )}
 
-      {/* Escuadrón de Producción — visible para todo el equipo interno, nunca para comercial */}
-      {proyectoQuery.data && puedeVerFicha && rol !== 'comercial' && (
+      {/* Escuadrón de Producción — visible para el equipo interno, nunca
+          para comercial ni rrpp (a pedido explícito del negocio: la
+          asignación de especialista/editor/corrector/etc. no es tarea de
+          rrpp). A diferencia del stepper de arriba, esta tarjeta es solo
+          de asignación — ocultarla del todo no le bloquea ningún flujo a
+          rrpp. */}
+      {proyectoQuery.data && puedeVerFicha && rol !== 'comercial' && rol !== 'rrpp' && (
         <div className="mx-auto w-full max-w-7xl px-6 pt-12 md:px-16">
           <SeccionEquipo proyectoId={id} proyecto={proyectoQuery.data.proyecto} puedeEditar={rol === 'jefe_area'} />
         </div>
@@ -182,24 +247,58 @@ export function ProyectoDetallePage() {
 
           {fichaQuery.data && proyectoQuery.data && rol === 'comercial' && (
             <div className="flex w-full flex-col gap-6">
-              <div className="flex justify-end">
-                <BotonNotificarTransicion
-                  proyectoId={id}
-                  notificadoInicial={proyectoQuery.data.proyecto.notificadoRrpp}
-                  etiqueta="Notificar a RRPP"
-                  mensajeConfirmacion="¿Notificar a RRPP que el proyecto base ya está registrado y listo para la Ficha de Trazabilidad?"
-                  mensajeToast="RRPP notificado exitosamente"
-                  mutationFn={notificarRrpp}
-                />
-              </div>
+              {/* key={id}: sin esto, React no vuelve a montar este
+                  componente al navegar de un proyecto a otro sin recarga
+                  completa (misma ruta /proyectos/:id, solo cambia el
+                  param) — todo su estado local (servicioCodigo,
+                  ingresoServicioSubtipoCrudo, etc., inicializado una sola
+                  vez vía useState(prop)) se quedaba pegado al proyecto
+                  anterior, mostrando datos de OTRO proyecto (ej. el
+                  selector de "Especificación de Crudo" no aparecía al
+                  entrar a un proyecto Crudo si el anterior no lo era) —
+                  y un Guardar en ese estado podía sobreescribir el
+                  proyecto actual con datos del anterior. */}
               <SeccionProyectoPerfil
+                key={id}
                 proyectoId={id}
                 ficha={fichaQuery.data.ficha}
-                titulo={proyectoQuery.data.proyecto.titulo}
                 autores={proyectoQuery.data.proyecto.autores}
+                servicio={proyectoQuery.data.proyecto.servicio}
                 puedeEditar={puedeEditarPerfil}
+                puedeEditarContrato={puedeEditarContrato}
+                puedeEditarComercial={puedeEditarComercial}
+                puedeNotificarRrpp={puedeNotificarRrpp}
+                notificadoRrpp={proyectoQuery.data.proyecto.notificadoRrpp}
               />
-              <SeccionProyectoContrato proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={puedeEditarContrato} />
+              {/* "Área exclusiva de RRPP" — a pedido explícito del negocio,
+                  separación visual clara entre la Ficha de Trazabilidad de
+                  Comercial (arriba, SeccionProyectoPerfil) y la Ficha
+                  Editorial, que pertenece a rrpp: acá comercial solo mira
+                  (puedeEditarFichaEditorial ya resuelve el modo lectura
+                  dentro de la sección), sin botón de traspaso — ese es
+                  exclusivo de la rama rol==='rrpp' más abajo. La Matriz de
+                  Ingreso ya NO vive acá: se extrajo a su propio módulo
+                  (/rrpp/matriz/:proyectoId, ver MatrizIngresoPage.tsx),
+                  accesible desde el inicio de rrpp — a pedido explícito del
+                  negocio, para que quede fuera de la vista unificada del
+                  proyecto. */}
+              <div className="rounded-xl border-2 border-purple-300 bg-purple-50/40 p-4 sm:p-6">
+                <div className="mb-4 flex items-center gap-2">
+                  <span className="rounded-full bg-purple-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
+                    RRPP
+                  </span>
+                  <h2 className="text-base font-bold text-purple-900">Área exclusiva de RRPP</h2>
+                </div>
+                <div className="flex flex-col gap-6">
+                  <SeccionFichaEditorial key={id} proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={puedeEditarFichaEditorial} />
+                  <SeccionLanzamientoPromocion
+                    key={id}
+                    proyectoId={id}
+                    ficha={fichaQuery.data.ficha}
+                    puedeEditar={puedeEditarLanzamientoPromocion}
+                  />
+                </div>
+              </div>
             </div>
           )}
 
@@ -207,26 +306,61 @@ export function ProyectoDetallePage() {
             <div key={pasoActivo} className="w-full animate-fade-in">
               {pasoActivo === 1 && (
                 <div className="flex w-full flex-col gap-6">
-                  {rol === 'rrpp' && (
-                    <div className="flex justify-end">
-                      <BotonNotificarTransicion
-                        proyectoId={id}
-                        notificadoInicial={proyectoQuery.data.proyecto.notificadoJefatura}
-                        etiqueta="Notificar a Jefatura"
-                        mensajeConfirmacion="¿Notificar a Jefatura que la Fase 1 (Inicio) está completa y lista para revisión?"
-                        mensajeToast="Jefatura notificada exitosamente"
-                        mutationFn={notificarJefatura}
-                      />
-                    </div>
-                  )}
+                  {/* key={id}: ver el comentario en el otro uso de este
+                      componente más arriba (rama comercial). */}
                   <SeccionProyectoPerfil
+                    key={id}
                     proyectoId={id}
                     ficha={fichaQuery.data.ficha}
-                    titulo={proyectoQuery.data.proyecto.titulo}
                     autores={proyectoQuery.data.proyecto.autores}
+                    servicio={proyectoQuery.data.proyecto.servicio}
                     puedeEditar={puedeEditarPerfil}
+                    puedeEditarContrato={puedeEditarContrato}
+                    puedeEditarComercial={puedeEditarComercial}
+                    puedeNotificarRrpp={puedeNotificarRrpp}
+                    notificadoRrpp={proyectoQuery.data.proyecto.notificadoRrpp}
                   />
-                  <SeccionProyectoContrato proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={puedeEditarContrato} />
+                  {/* "Área exclusiva de RRPP" — ver el comentario completo
+                      en el otro uso de este bloque más arriba (rama
+                      comercial). El botón de traspaso "Mandar a Jefatura"
+                      cierra la Ficha Editorial — misma lógica de siempre
+                      (notificadoJefatura, POST /:id/notificar-jefatura,
+                      inserción en notificaciones), solo cambió dónde vive. */}
+                  <div className="rounded-xl border-2 border-purple-300 bg-purple-50/40 p-4 sm:p-6">
+                    <div className="mb-4 flex items-center gap-2">
+                      <span className="rounded-full bg-purple-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
+                        RRPP
+                      </span>
+                      <h2 className="text-base font-bold text-purple-900">Área exclusiva de RRPP</h2>
+                    </div>
+                    <SeccionFichaEditorial
+                      key={id}
+                      proyectoId={id}
+                      ficha={fichaQuery.data.ficha}
+                      puedeEditar={puedeEditarFichaEditorial}
+                    />
+                    <div className="mt-6">
+                      <SeccionLanzamientoPromocion
+                        key={id}
+                        proyectoId={id}
+                        ficha={fichaQuery.data.ficha}
+                        puedeEditar={puedeEditarLanzamientoPromocion}
+                      />
+                    </div>
+                    {rol === 'rrpp' && (
+                      <div className="mt-6 flex justify-end border-t border-purple-200 pt-4">
+                        <BotonNotificarTransicion
+                          proyectoId={id}
+                          notificadoInicial={proyectoQuery.data.proyecto.notificadoJefatura}
+                          etiqueta="Mandar a Jefatura"
+                          mensajeConfirmacion="¿Estás seguro de mandar este proyecto a Jefatura? Asegúrate de que la Ficha Editorial esté completa."
+                          mensajeToast="Proyecto enviado a Jefatura exitosamente"
+                          mutationFn={notificarJefatura}
+                          variante="destacado"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

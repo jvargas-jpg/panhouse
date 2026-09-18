@@ -6,6 +6,15 @@ export function fetchProyectosPendientesPerfil() {
   return apiFetch<{ proyectos: ProyectoPendienteSeccion1[] }>('/fichas-trazabilidad/pendientes/perfil');
 }
 
+// "Matrices de Ingreso (RRPP)" — módulo propio en el inicio de rrpp,
+// ver MatrizIngresoPage.tsx. A diferencia de fetchProyectosPendientesPerfil
+// arriba, es un archivo persistente (todo proyecto ya enviado a rrpp),
+// no solo lo pendiente — ver listarProyectosEnviadosARrpp en
+// server/helpers/trazabilidad.ts.
+export function fetchProyectosEnviadosARrpp() {
+  return apiFetch<{ proyectos: ProyectoPendienteSeccion1[] }>('/fichas-trazabilidad/enviados-a-rrpp');
+}
+
 // "Notificación interna" de comercial — sección extra junto a Crear autor.
 export function fetchProyectosPendientesContrato() {
   return apiFetch<{ proyectos: ProyectoPendienteSeccion1[] }>('/fichas-trazabilidad/pendientes/contrato');
