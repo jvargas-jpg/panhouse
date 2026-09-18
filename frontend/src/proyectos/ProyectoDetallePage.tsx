@@ -3,14 +3,10 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
 import { notificarJefatura } from '../jefatura/jefaturaApi';
-import type { Pausa } from '../types/api';
 import { BotonNotificarTransicion } from './BotonNotificarTransicion';
-import { formatearFecha } from './campos';
-import { CapituloRow } from './CapituloRow';
 import { EstadoBadge } from './EstadoBadge';
 import { EstadoTraspasoBadge } from './EstadoTraspasoBadge';
-import { fetchCapitulos, fetchFicha, fetchPausas, fetchProyecto } from './proyectoDetalleApi';
-import { RegistrarPausaForm } from './RegistrarPausaForm';
+import { fetchFicha, fetchProyecto } from './proyectoDetalleApi';
 import { RiesgoBadge } from './RiesgoBadge';
 import { SeccionCalidad } from './SeccionCalidad';
 import { SeccionCorreccion } from './SeccionCorreccion';
@@ -25,11 +21,6 @@ import { SeccionLanzamiento } from './SeccionLanzamiento';
 import { SeccionLanzamientoPromocion } from './SeccionLanzamientoPromocion';
 import { SeccionProyectoPerfil } from './SeccionProyectoPerfil';
 import { SeccionSoporteDigital } from './SeccionSoporteDigital';
-
-const CAUSA_LABEL: Record<Pausa['causa'], string> = {
-  autor: 'Autor',
-  otro_departamento: 'Otro departamento',
-};
 
 const FASES = [
   { id: 1, label: 'Inicio' },
@@ -74,8 +65,6 @@ export function ProyectoDetallePage() {
     rol === 'lider_creativo' ||
     rol === 'soporte_editorial' ||
     rol === 'soporte_digital';
-  const puedeVerCapitulos = rol === 'jefe_area' || rol === 'especialista' || rol === 'editor';
-  const puedeVerPausas = rol === 'jefe_area' || rol === 'especialista';
   // puedeEditarPerfil (más amplio, incluye rrpp) sigue gateando si el
   // formulario se ve como <form> editable vs. resumen de solo lectura —
   // dentro de ese formulario, puedeEditarComercial (más angosto, sin
@@ -110,8 +99,6 @@ export function ProyectoDetallePage() {
 
   const proyectoQuery = useQuery({ queryKey: ['proyecto', id], queryFn: () => fetchProyecto(id) });
   const fichaQuery = useQuery({ queryKey: ['ficha', id], queryFn: () => fetchFicha(id), enabled: puedeVerFicha });
-  const capitulosQuery = useQuery({ queryKey: ['capitulos', id], queryFn: () => fetchCapitulos(id), enabled: puedeVerCapitulos });
-  const pausasQuery = useQuery({ queryKey: ['pausas', id], queryFn: () => fetchPausas(id), enabled: puedeVerPausas });
 
   const porcentaje = (pasoActivo / FASES.length) * 100;
   const faseActual = FASES.find((f) => f.id === pasoActivo);
@@ -367,16 +354,6 @@ export function ProyectoDetallePage() {
               {pasoActivo === 2 && (
                 <div className="w-full">
                   <SeccionEdicion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
-
-                  <h3 className="mb-4 text-lg font-bold text-tinta">2. Edición</h3>
-                  {capitulosQuery.data ? (
-                    <p className="text-sm text-tinta">
-                      {capitulosQuery.data.capitulos.length} capítulo{capitulosQuery.data.capitulos.length === 1 ? '' : 's'} registrado
-                      {capitulosQuery.data.capitulos.length === 1 ? '' : 's'} — ver detalle en "Capítulos" más abajo.
-                    </p>
-                  ) : (
-                    <p className="text-sm italic text-tinta/50">Sin completar</p>
-                  )}
                 </div>
               )}
 
@@ -457,67 +434,6 @@ export function ProyectoDetallePage() {
         </div>
       )}
 
-      {/* Capítulos */}
-      {puedeVerCapitulos && (
-        <section className="mx-auto w-full max-w-7xl px-6 pb-12 md:px-16">
-          <h2 className="mb-3 text-base font-semibold text-tinta">Capítulos</h2>
-
-          {capitulosQuery.isLoading && <p className="text-tinta/70">Cargando capítulos…</p>}
-          {capitulosQuery.isError && (
-            <p role="alert" className="text-red-600">
-              No se pudieron cargar los capítulos{capitulosQuery.error instanceof Error ? `: ${capitulosQuery.error.message}` : ''}.
-            </p>
-          )}
-          {capitulosQuery.data && capitulosQuery.data.capitulos.length === 0 && (
-            <p className="text-tinta/70">Todavía no hay capítulos registrados.</p>
-          )}
-          {capitulosQuery.data && capitulosQuery.data.capitulos.length > 0 && (
-            <ul className="space-y-2">
-              {capitulosQuery.data.capitulos.map((capitulo) => (
-                <CapituloRow
-                  key={capitulo.id}
-                  proyectoId={id}
-                  capitulo={capitulo}
-                  puedeEditarAutor={rol === 'especialista'}
-                  puedeEditarEditor={rol === 'editor'}
-                />
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-
-      {/* Pausas */}
-      {puedeVerPausas && (
-        <section className="mx-auto w-full max-w-7xl px-6 pb-12 md:px-16">
-          <h2 className="mb-3 text-base font-semibold text-tinta">Pausas</h2>
-
-          {pausasQuery.isLoading && <p className="text-tinta/70">Cargando pausas…</p>}
-          {pausasQuery.isError && (
-            <p role="alert" className="text-red-600">
-              No se pudieron cargar las pausas{pausasQuery.error instanceof Error ? `: ${pausasQuery.error.message}` : ''}.
-            </p>
-          )}
-          {pausasQuery.data && pausasQuery.data.pausas.length === 0 && <p className="mb-3 text-tinta/70">No hay pausas registradas.</p>}
-          {pausasQuery.data && pausasQuery.data.pausas.length > 0 && (
-            <ul className="mb-3 space-y-2">
-              {pausasQuery.data.pausas.map((pausa) => (
-                <li key={pausa.id} className="rounded-lg border border-tinta/10 bg-white p-3 text-sm shadow-sm">
-                  <span className="font-medium text-tinta">{CAUSA_LABEL[pausa.causa]}</span>
-                  <span className="ml-3 text-tinta/70">
-                    {formatearFecha(pausa.fechaInicio)} — {pausa.fechaFin ? formatearFecha(pausa.fechaFin) : 'en curso'}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          <div className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-            <h3 className="mb-3 font-medium text-tinta">Registrar pausa</h3>
-            <RegistrarPausaForm proyectoId={id} />
-          </div>
-        </section>
-      )}
     </div>
   );
 }

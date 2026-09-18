@@ -526,10 +526,21 @@ export async function actualizarPropuestaPortada(proyectoId: string, propuestaPo
 // separado de la creación del proyecto: jefe_area crea el proyecto y
 // luego reparte el trabajo, casi siempre en dos pasos seguidos de la
 // misma pantalla, pero nunca es el mismo paso.
+// estado: 'en_proceso' es explícito a pedido del negocio ("pasa a
+// producción activa al asignar") — hoy es un no-op en la práctica:
+// proyectos.estado nace en 'en_proceso' (ver schema/proyectos.ts) y
+// ningún otro punto del backend lo cambia todavía (retrasado/stand_by/
+// pausado/culminado/retirado no tienen flujo propio implementado aún),
+// así que un proyecto sin especialista nunca puede estar en otro
+// estado. Se deja igual, en vez de omitirlo, para que el contrato de
+// este endpoint sea correcto el día que esos otros flujos existan — sin
+// esto, asignar especialista a un proyecto marcado 'pausado' antes de
+// tener especialista (caso hoy imposible, no garantizado a futuro) lo
+// dejaría con un especialista pero sin volver a 'en_proceso'.
 export async function asignarEspecialista(proyectoId: string, especialistaId: string): Promise<void> {
   const [fila] = await db
     .update(proyectos)
-    .set({ especialistaId })
+    .set({ especialistaId, estado: 'en_proceso' })
     .where(eq(proyectos.id, proyectoId))
     .returning({ id: proyectos.id });
 

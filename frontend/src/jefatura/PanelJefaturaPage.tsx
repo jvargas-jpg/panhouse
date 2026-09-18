@@ -226,7 +226,14 @@ export function PanelJefaturaPage() {
       </div>
 
       {proyectoParaAsignar && (
-        <Modal titulo="Asignar Escuadrón de Producción" onClose={() => setProyectoParaAsignar(null)}>
+        // Título corregido a pedido explícito del negocio: este modal
+        // (vista rápida del dashboard) solo asigna al Especialista/
+        // Coordinador Responsable — "Escuadrón de Producción" es el
+        // nombre de la tarjeta completa dentro del proyecto
+        // (SeccionEquipo.tsx), que sí reparte editor/corrector/
+        // diseñador además del especialista. Llamar igual a este modal
+        // generaba la confusión de que asignaba todo el equipo desde acá.
+        <Modal titulo="Asignar Especialista / Coordinador Responsable" onClose={() => setProyectoParaAsignar(null)}>
           <AsignarEspecialistaCard
             proyectoId={proyectoParaAsignar.id}
             autorNombre={proyectoParaAsignar.autores.map((autor) => autor.nombre).join(', ') || proyectoParaAsignar.autor.nombre}
