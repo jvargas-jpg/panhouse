@@ -26,10 +26,26 @@ import type { ReactNode } from 'react';
 // CrearProyectoModalForm.tsx (más corto, nunca necesitó scroll) sigue
 // funcionando igual que siempre, sin cambios, porque un <form> normal
 // dentro de un flex-col simplemente ocupa su alto de contenido.
-export function Modal({ titulo, onClose, children }: { titulo: string; onClose: () => void; children: ReactNode }) {
+// `ancho` es opcional (default 'md', el tamaño de siempre para los
+// modales angostos de un solo campo) — los formularios largos de varias
+// columnas (ej. RegistroSeguimientoForm.tsx) necesitan más aire que
+// max-w-md, donde un grid de 2-3 columnas nunca llega a activarse.
+const ANCHOS = { md: 'max-w-md', '3xl': 'max-w-3xl' } as const;
+
+export function Modal({
+  titulo,
+  onClose,
+  children,
+  ancho = 'md',
+}: {
+  titulo: string;
+  onClose: () => void;
+  children: ReactNode;
+  ancho?: keyof typeof ANCHOS;
+}) {
   return (
     <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-gray-900/40 p-4 backdrop-blur-sm">
-      <div className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+      <div className={`relative flex max-h-[90vh] w-full ${ANCHOS[ancho]} flex-col overflow-hidden rounded-2xl bg-white shadow-xl`}>
         <button
           type="button"
           onClick={onClose}

@@ -414,6 +414,13 @@
       "when": 1789739144940,
       "tag": "0058_massive_alice",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1790001987895,
+      "tag": "0059_shocking_puck",
+      "breakpoints": true
     }
   ]
 }

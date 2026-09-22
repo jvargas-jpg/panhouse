@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Modal } from '../autores/Modal';
 import { formatearFecha } from '../proyectos/campos';
 import type { RegistroSeguimiento } from '../types/api';
+import { RegistroSeguimientoForm } from './RegistroSeguimientoForm';
 import { fetchSeguimiento } from './seguimientoApi';
 
 function formatearHora(hora: string | null): string {
@@ -25,6 +26,18 @@ function BadgeEstatus({ estatus }: { estatus: string | null }) {
   return <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{estatus}</span>;
 }
 
+function BadgePago({ activo, etiqueta }: { activo: boolean; etiqueta: string }) {
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+        activo ? 'bg-dorado/20 text-tinta' : 'bg-gray-100 text-gray-400'
+      }`}
+    >
+      {etiqueta}
+    </span>
+  );
+}
+
 function FechaHora({ fecha, hora }: { fecha: string | null; hora: string | null }) {
   if (!fecha) return <span className="text-gray-400">—</span>;
   return (
@@ -35,13 +48,34 @@ function FechaHora({ fecha, hora }: { fecha: string | null; hora: string | null 
   );
 }
 
-const COLUMNAS = ['Proyecto/Autor', 'Tipo Asignación', 'Páginas', 'Recibido', 'Inicio', 'Entrega', 'Analista', 'Estatus', 'Tiempo', 'Obs.'];
+const COLUMNAS = [
+  'Proyecto/Autor',
+  'Unidad',
+  'Asignación',
+  'Especialista',
+  'Páginas',
+  'Recibido',
+  'Inicio',
+  'Entrega',
+  'Analista',
+  'Tipo servicio',
+  'Estatus',
+  'Tiempo',
+  'Pagos',
+  'Obs.',
+  '',
+];
 
-function FilaRegistro({ registro }: { registro: RegistroSeguimiento }) {
+function FilaRegistro({ registro, onEditar }: { registro: RegistroSeguimiento; onEditar: () => void }) {
   return (
     <tr className="border-b border-gray-100 text-sm text-gray-700 transition-colors last:border-0 hover:bg-gray-50">
-      <td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-900">{registro.proyecto.autorNombre}</td>
+      <td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-900">
+        {registro.proyecto.autorNombre}
+        <span className="ml-1.5 font-normal text-gray-400">#{registro.proyecto.codigo}</span>
+      </td>
+      <td className="whitespace-nowrap px-4 py-3">{registro.proyecto.unidadNombre ?? <span className="text-gray-400">—</span>}</td>
       <td className="whitespace-nowrap px-4 py-3">{registro.asignacionTipo ?? <span className="text-gray-400">—</span>}</td>
+      <td className="whitespace-nowrap px-4 py-3">{registro.especialista?.nombre ?? <span className="text-gray-400">Sin asignar</span>}</td>
       <td className="whitespace-nowrap px-4 py-3">{registro.paginas ?? <span className="text-gray-400">—</span>}</td>
       <td className="whitespace-nowrap px-4 py-3">
         <FechaHora fecha={registro.fechaAsignada} hora={registro.horaRecibida} />
@@ -53,25 +87,39 @@ function FilaRegistro({ registro }: { registro: RegistroSeguimiento }) {
         <FechaHora fecha={registro.fechaEntrega} hora={registro.horaEntrega} />
       </td>
       <td className="whitespace-nowrap px-4 py-3">{registro.analista?.nombre ?? <span className="text-gray-400">Sin asignar</span>}</td>
+      <td className="whitespace-nowrap px-4 py-3">{registro.tipoServicio ?? <span className="text-gray-400">—</span>}</td>
       <td className="whitespace-nowrap px-4 py-3">
         <BadgeEstatus estatus={registro.estatus} />
       </td>
       <td className="whitespace-nowrap px-4 py-3">
         {registro.totalDias ?? '—'}d / {registro.totalHoras ?? '—'}h
       </td>
+      <td className="whitespace-nowrap px-4 py-3">
+        <div className="flex flex-wrap gap-1">
+          <BadgePago activo={registro.freelance} etiqueta="Freelance" />
+          <BadgePago activo={registro.pago80} etiqueta="80%" />
+          <BadgePago activo={registro.pago20} etiqueta="20%" />
+        </div>
+      </td>
       <td className="max-w-[220px] truncate px-4 py-3 text-gray-500" title={registro.observaciones ?? undefined}>
         {registro.observaciones ?? <span className="text-gray-400">—</span>}
+      </td>
+      <td className="whitespace-nowrap px-4 py-3 text-right">
+        <button onClick={onEditar} className="text-xs font-medium text-tinta/70 underline hover:text-tinta">
+          Editar
+        </button>
       </td>
     </tr>
   );
 }
 
 // "Control de Tiempos": matriz de rendimiento de jefe_area, trasladada
-// del Excel "Seguimiento Corrección" real. Solo lectura por ahora (ver
-// Restricción del pedido original) — "+ Nuevo Registro" es un modal
-// vacío a propósito, no hay todavía una ruta de creación en el backend.
+// del Excel "Seguimiento Corrección" real. Crear/editar ya está
+// conectado al backend (ver seguimiento.routes.ts) — el modal "+ Nuevo
+// Registro" dejó de ser un stub.
 export function SeguimientoPage() {
   const query = useQuery({ queryKey: ['seguimiento'], queryFn: fetchSeguimiento });
+  const [registroEnEdicion, setRegistroEnEdicion] = useState<RegistroSeguimiento | null>(null);
   const [modalNuevoAbierto, setModalNuevoAbierto] = useState(false);
 
   return (
@@ -81,10 +129,7 @@ export function SeguimientoPage() {
           <span className="h-2 w-2 rounded-full bg-dorado" /> Control de Tiempos y Producción
         </h2>
         <button
-          onClick={() => {
-            console.log('Nuevo registro de seguimiento (pendiente de backend de creación)');
-            setModalNuevoAbierto(true);
-          }}
+          onClick={() => setModalNuevoAbierto(true)}
           className="flex-shrink-0 rounded-lg bg-tinta px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-gray-800"
         >
           + Nuevo Registro
@@ -105,7 +150,7 @@ export function SeguimientoPage() {
       )}
 
       {query.data && query.data.registros.length > 0 && (
-        <div className="min-w-[1200px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="min-w-[1600px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="w-full border-collapse text-left">
             <thead className="border-b border-gray-200 bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500">
               <tr>
@@ -118,7 +163,7 @@ export function SeguimientoPage() {
             </thead>
             <tbody>
               {query.data.registros.map((registro) => (
-                <FilaRegistro key={registro.id} registro={registro} />
+                <FilaRegistro key={registro.id} registro={registro} onEditar={() => setRegistroEnEdicion(registro)} />
               ))}
             </tbody>
           </table>
@@ -126,11 +171,18 @@ export function SeguimientoPage() {
       )}
 
       {modalNuevoAbierto && (
-        <Modal titulo="Nuevo Registro de Seguimiento" onClose={() => setModalNuevoAbierto(false)}>
-          <p className="text-sm text-gray-500">
-            Función en desarrollo — todavía no existe una ruta de backend para crear registros de seguimiento. Esta ventana valida el
-            diseño del flujo mientras se define esa parte.
-          </p>
+        <Modal titulo="Nuevo Registro de Seguimiento" onClose={() => setModalNuevoAbierto(false)} ancho="3xl">
+          <RegistroSeguimientoForm registro={null} onGuardado={() => setModalNuevoAbierto(false)} onCancelar={() => setModalNuevoAbierto(false)} />
+        </Modal>
+      )}
+
+      {registroEnEdicion && (
+        <Modal titulo="Editar Registro de Seguimiento" onClose={() => setRegistroEnEdicion(null)} ancho="3xl">
+          <RegistroSeguimientoForm
+            registro={registroEnEdicion}
+            onGuardado={() => setRegistroEnEdicion(null)}
+            onCancelar={() => setRegistroEnEdicion(null)}
+          />
         </Modal>
       )}
     </div>

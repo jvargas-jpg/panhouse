@@ -138,9 +138,11 @@ export interface UsuarioEquipo {
 // las devuelve como texto para no perder precisión.
 export interface RegistroSeguimiento {
   id: string;
-  proyecto: { id: string; autorNombre: string };
+  proyecto: { id: string; autorNombre: string; codigo: string; unidadNombre: string | null };
   analista: { id: string; nombre: string } | null;
+  especialista: { id: string; nombre: string } | null;
   asignacionTipo: string | null;
+  tipoServicio: string | null;
   paginas: number | null;
   fechaAsignada: string | null;
   horaRecibida: string | null;
@@ -151,7 +153,14 @@ export interface RegistroSeguimiento {
   estatus: string | null;
   totalDias: string | null;
   totalHoras: string | null;
+  tiempoCorrecto: string | null;
   observaciones: string | null;
+  freelance: boolean;
+  pago80: boolean;
+  pago20: boolean;
+  resultadosCorreccion: string | null;
+  cantidadComentarios: number | null;
+  cumplimiento: string | null;
 }
 
 export interface RiesgoProyecto {
