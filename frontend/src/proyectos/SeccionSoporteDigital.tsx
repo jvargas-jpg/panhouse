@@ -42,7 +42,7 @@ function ContenidoDigitalMicro({
   if (!puedeEditar) {
     return (
       <div className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-        <h3 className="mb-2 font-medium text-tinta">6. Soporte digital</h3>
+        <h3 className="mb-2 font-medium text-tinta">9. Solicitud de paquete final</h3>
         <CamposReadOnly
           campos={[
             { etiqueta: 'Cuenta Amazon', valor: ficha.soporteDigitalCuentaAmazon },
@@ -56,7 +56,7 @@ function ContenidoDigitalMicro({
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-      <h3 className="mb-2 font-medium text-tinta">6. Soporte digital</h3>
+      <h3 className="mb-2 font-medium text-tinta">9. Solicitud de paquete final</h3>
       <div className="space-y-3">
         <div>
           <label htmlFor="soporte-cuenta-amazon" className="mb-1 block text-sm font-medium text-tinta">

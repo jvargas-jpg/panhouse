@@ -73,7 +73,7 @@ export function SeccionCorreccion({
       <div className="relative w-full overflow-hidden rounded-xl border border-dorado/40 bg-white p-6 shadow-md">
         <div className="absolute left-0 top-0 h-1 w-full bg-dorado" />
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-tinta">3. Matriz de Corrección</h3>
+          <h3 className="text-lg font-semibold text-tinta">5. Matriz de Corrección</h3>
           <p className="text-xs uppercase tracking-wider text-tinta/50">Control de Especialista</p>
         </div>
         <CamposReadOnly
@@ -97,7 +97,7 @@ export function SeccionCorreccion({
     <form onSubmit={handleSubmit} className="relative w-full overflow-hidden rounded-xl border border-dorado/40 bg-white p-6 shadow-md">
       <div className="absolute left-0 top-0 h-1 w-full bg-dorado" />
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-tinta">3. Matriz de Corrección</h3>
+        <h3 className="text-lg font-semibold text-tinta">5. Matriz de Corrección</h3>
         <p className="text-xs uppercase tracking-wider text-tinta/50">Control de Especialista</p>
       </div>
 

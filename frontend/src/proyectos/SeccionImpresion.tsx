@@ -12,8 +12,8 @@ const ESTADO_COTIZACION_LABEL: Record<EstadoCotizacionImpresion, string> = {
   rechazada: 'Rechazada',
 };
 
-// Sección 8, dueño rrpp (jefe_area también puede, mismo alcance amplio
-// que ya tiene sobre el resto de la ficha). Renombrado a componente
+// Sección 8, dueño exclusivo rrpp — jefatura solo la ve (mismo criterio
+// que el resto de "Área exclusiva de RRPP"). Renombrado a componente
 // privado: ver el wrapper SeccionImpresion al final del archivo, que
 // monta esto como vista "Micro" debajo del panel de control agregado
 // (Macro).
@@ -53,7 +53,7 @@ function ContenidoImpresionMicro({
   if (!puedeEditar) {
     return (
       <div className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-        <h3 className="mb-2 font-medium text-tinta">8. Impresión</h3>
+        <h3 className="mb-2 font-medium text-tinta">Impresión</h3>
         <CamposReadOnly
           campos={[
             {
@@ -74,7 +74,7 @@ function ContenidoImpresionMicro({
 
   return (
     <form onSubmit={handleSubmit} className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-      <h3 className="mb-2 font-medium text-tinta">8. Impresión</h3>
+      <h3 className="mb-2 font-medium text-tinta">Impresión</h3>
 
       <div className="space-y-3 rounded-lg bg-crema/20 p-4">
         <div className="flex items-center gap-2">

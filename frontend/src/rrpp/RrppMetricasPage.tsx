@@ -56,7 +56,7 @@ export function RrppMetricasPage() {
   const rol = usuario?.rol;
   const navigate = useNavigate();
   // Mismo alcance que el resto del módulo de rrpp
-  // (MatrizIngresoPage.tsx/RrppHomePage.tsx): rrpp y jefe_area.
+  // (FichaTrazabilidadPage.tsx/RrppHomePage.tsx): rrpp y jefe_area.
   const puedeVer = rol === 'rrpp' || rol === 'jefe_area';
 
   if (!puedeVer) {

@@ -267,7 +267,7 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   lanzamientoPromocionLinkMinuta: text('lanzamiento_promocion_link_minuta'),
 
   // "Matriz de Asesorías con fechas" — módulo de RRPP, mismo lugar que
-  // Matriz de Ingreso (/rrpp/matriz/:proyectoId, ver MatrizIngresoPage.tsx
+  // Matriz de Ingreso (/proyectos/:id/ficha-trazabilidad, ver FichaTrazabilidadPage.tsx
   // en el frontend, debajo de <SeccionMatrizIngreso>). Prefijo `asesoria`
   // — ver el comentario completo en schema/enums.ts (evita choques con
   // nivelSatisfaccion/impresionResponsable/matrizContratoFirmado, que ya
@@ -437,10 +437,13 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   // edicionEstatus/correccionEstatus/etc. Convive con
   // deseaCotizacion/responsable/estadoCotizacion/notas de arriba: esto
   // es la vista de conjunto de la fase, no la reemplaza. Sin dueño
-  // individual (no existe impresionId en proyectos — a diferencia de
-  // calidadId/digitalId/lanzamientoId/distribucionId): el acceso sigue
-  // siendo por rol (rrpp, jefe_area), mismo alcance que ya tenía el
-  // resto de esta sección — no hace falta un helper aislado.
+  // individual (no existe impresionId en proyectos): el acceso sigue
+  // siendo por rol (rrpp para editar, rrpp/jefe_area para ver), mismo
+  // alcance que ya tenía el resto de esta sección — no hace falta un
+  // helper aislado. Calidad/Digital/Lanzamiento/Distribución perdieron
+  // su dueño individual (calidadId/digitalId/lanzamientoId/
+  // distribucionId) en una ronda posterior y ahora siguen este mismo
+  // patrón.
   impresionEstatus: text('impresion_estatus'),
   impresionFechaInicio: date('impresion_fecha_inicio'),
   impresionFechaEntrega: date('impresion_fecha_entrega'),

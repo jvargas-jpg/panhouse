@@ -226,7 +226,7 @@ export type ParticipacionFerias = (typeof PARTICIPACION_FERIAS)[number];
 export const participacionFeriasEnum = pgEnum('participacion_ferias', PARTICIPACION_FERIAS);
 
 // "Matriz de Asesorías con fechas" — módulo de RRPP, mismo lugar que
-// "Matriz de Ingreso" (/rrpp/matriz/:proyectoId, ver MatrizIngresoPage.tsx
+// "Matriz de Ingreso" (/proyectos/:id/ficha-trazabilidad, ver FichaTrazabilidadPage.tsx
 // en el frontend y el comentario completo en schema/trazabilidad.ts).
 // Prefijo `asesoria` en todas las columnas de esta matriz a propósito:
 // varios nombres de campo pedidos por el negocio (nivelSatisfaccion,

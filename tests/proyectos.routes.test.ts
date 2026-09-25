@@ -798,13 +798,10 @@ describe('rutas de proyectos', () => {
       await app.ready();
 
       const proyecto = await crearProyectoDePrueba();
-      const [especialista, corrector, calidad, digital, lanzamiento, distribucion] = await Promise.all([
+      const [especialista, corrector, jefeArea] = await Promise.all([
         crearUsuario('especialista'),
         crearUsuario('soporte_editorial'),
-        crearUsuario('soporte_editorial'),
-        crearUsuario('soporte_digital'),
-        crearUsuario('rrpp'),
-        crearUsuario('rrpp'),
+        crearUsuario('jefe_area'),
       ]);
       const cookie = await registrarYLoguear(app, 'jefe_area');
 
@@ -814,19 +811,13 @@ describe('rutas de proyectos', () => {
         .send({
           especialistaId: especialista.id,
           correctorId: corrector.id,
-          calidadId: calidad.id,
-          digitalId: digital.id,
-          lanzamientoId: lanzamiento.id,
-          distribucionId: distribucion.id,
+          jefeAreaId: jefeArea.id,
         });
 
       expect(respuesta.status).toBe(200);
       expect(respuesta.body.proyecto.especialistaId).toBe(especialista.id);
       expect(respuesta.body.proyecto.correctorId).toBe(corrector.id);
-      expect(respuesta.body.proyecto.digitalId).toBe(digital.id);
-      expect(respuesta.body.proyecto.lanzamientoId).toBe(lanzamiento.id);
-      expect(respuesta.body.proyecto.distribucionId).toBe(distribucion.id);
-      expect(respuesta.body.proyecto.calidadId).toBe(calidad.id);
+      expect(respuesta.body.proyecto.jefeAreaId).toBe(jefeArea.id);
 
       await app.close();
     });

@@ -17,7 +17,7 @@ import { asignarEspecialista, fetchCargaEquipo } from './jefaturaApi';
 // Especialista/Coordinador Responsable (proyectos.especialistaId, único
 // campo que toca PATCH /proyectos/:id/especialista). No hay ni un solo
 // <select> acá para editor/corrector/diseñador — esos roles del
-// "Escuadrón de Producción" solo se asignan desde dentro del proyecto
+// "Equipo asignado" solo se asignan desde dentro del proyecto
 // (SeccionEquipo.tsx), donde jefatura ve el contexto completo de la
 // ficha antes de repartir el resto del equipo.
 export function AsignarEspecialistaCard({
@@ -62,7 +62,7 @@ export function AsignarEspecialistaCard({
       <h3 className="mb-2 font-medium text-tinta">Asignar Especialista / Coordinador Responsable — {autorNombre}</h3>
       <p className="mb-3 text-sm text-tinta/70">
         Elige quién queda a cargo del proyecto. El resto del equipo (editor, corrector, diseñador) se asigna después, desde el
-        Escuadrón de Producción dentro del proyecto.
+        Equipo asignado dentro del proyecto.
       </p>
 
       <dl className="mb-4 grid grid-cols-1 gap-2 rounded-md bg-crema/30 p-3 text-sm sm:grid-cols-3">

@@ -91,10 +91,7 @@ export async function crearProyecto(datos: {
   especialistaId?: string;
   editorId?: string;
   disenadorId?: string;
-  calidadId?: string;
-  digitalId?: string;
-  lanzamientoId?: string;
-  distribucionId?: string;
+  jefeAreaId?: string;
   estado?: EstadoProyecto;
   fechaProgramadaInicio: string;
   fechaRealInicio?: string;
@@ -126,10 +123,7 @@ export async function crearProyectoDePrueba(
     especialistaId: string;
     editorId: string;
     disenadorId: string;
-    calidadId: string;
-    digitalId: string;
-    lanzamientoId: string;
-    distribucionId: string;
+    jefeAreaId: string;
     estado: EstadoProyecto;
     // Solo lo necesitan los tests de ordenamiento (ej.
     // listarProyectosPendientesSeccion1 en helpers/trazabilidad.ts) —

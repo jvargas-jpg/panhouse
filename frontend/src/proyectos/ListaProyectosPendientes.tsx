@@ -9,9 +9,9 @@ import type { ProyectoPendienteSeccion1 } from '../types/api';
 //
 // linkTo (opcional): "Matrices de Ingreso (RRPP)" en RrppHomePage.tsx
 // reutiliza este mismo componente pero navega a
-// /rrpp/matriz/:proyectoId (módulo propio, fuera de la vista de detalle
-// del proyecto) en vez de /proyectos/:id — default sin cambios para los
-// consumidores existentes.
+// /proyectos/:id/ficha-trazabilidad (módulo propio, fuera de la vista de
+// detalle del proyecto — ver FichaTrazabilidadPage.tsx) en vez de
+// /proyectos/:id — default sin cambios para los consumidores existentes.
 export function ListaProyectosPendientes({
   titulo,
   queryKey,

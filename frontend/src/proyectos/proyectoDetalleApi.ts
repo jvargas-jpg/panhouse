@@ -598,18 +598,16 @@ export function fetchPersonalEquipo() {
   return apiFetch<{ usuarios: UsuarioEquipo[] }>('/usuarios');
 }
 
-// "Escuadrón de Producción" — las cinco columnas de asignación de un
-// proyecto en un solo PATCH, dueño jefe_area (ver DatosEquipoProyecto
-// en server/helpers/proyectos.ts). null limpia una asignación existente.
+// "Equipo asignado" (antes "Escuadrón de Producción") — las columnas de
+// asignación de un proyecto en un solo PATCH, dueño jefe_area (ver
+// DatosEquipoProyecto en server/helpers/proyectos.ts). null limpia una
+// asignación existente.
 export interface DatosEquipoProyecto {
   especialistaId?: string | null;
   editorId?: string | null;
   correctorId?: string | null;
   disenadorId?: string | null;
-  calidadId?: string | null;
-  digitalId?: string | null;
-  lanzamientoId?: string | null;
-  distribucionId?: string | null;
+  jefeAreaId?: string | null;
 }
 
 export function actualizarEquipoProyecto(proyectoId: string, datos: DatosEquipoProyecto) {

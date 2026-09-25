@@ -12,11 +12,12 @@ const ESTATUS_OPCIONES = ['Pendiente', 'En imprenta', 'Control de calidad físic
 // que SeccionCalidadControl.tsx/SeccionDigitalControl.tsx/
 // SeccionLanzamientoControl.tsx/SeccionDistribucionControl.tsx.
 //
-// Sin dueño individual: no existe impresionId en proyectos (a
-// diferencia de calidadId/digitalId/lanzamientoId/distribucionId), así
-// que puedeEditar es solo por rol (rrpp/jefe_area) — mismo alcance que
+// Sin dueño individual: no existe impresionId en proyectos, así que
+// puedeEditar es solo por rol (rrpp exclusivamente) — mismo alcance que
 // el resto de esta sección, sin necesidad de un puedeEditarControl
-// separado en ProyectoDetallePage.tsx.
+// separado en ProyectoDetallePage.tsx. Calidad/Digital/Lanzamiento/
+// Distribución siguen ahora este mismo patrón (perdieron su columna de
+// dueño individual en una ronda posterior).
 export function SeccionImpresionControl({
   proyectoId,
   ficha,

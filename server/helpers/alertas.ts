@@ -93,10 +93,7 @@ export interface ProyectoConRiesgo {
   especialistaId: string | null;
   editorId: string | null;
   correctorId: string | null;
-  calidadId: string | null;
-  digitalId: string | null;
-  lanzamientoId: string | null;
-  distribucionId: string | null;
+  jefeAreaId: string | null;
   // Botones "Notificar a RRPP" / "Notificar a Jefatura" de Fase 1 -
   // Inicio (ProyectoDetallePage.tsx): sin esto viajando acá, el
   // frontend no tendría cómo saber cuál de los dos ya se disparó, y el
@@ -123,8 +120,8 @@ export interface ProyectoConRiesgo {
 // Las columnas de asignación viajan acá (y no solo en la fila cruda de
 // proyectos) para que el frontend pueda decidir sin un segundo fetch:
 // ProyectoDetallePage.tsx usa disenadorId para el mini-form de
-// asignación de Diseño y las cinco juntas para SeccionEquipo.tsx
-// ("Escuadrón de Producción"); PanelJefaturaPage.tsx usa especialistaId
+// asignación de Diseño y el resto juntas para SeccionEquipo.tsx
+// ("Equipo asignado"); PanelJefaturaPage.tsx usa especialistaId
 // para partir la bandeja de jefatura en "nuevos por asignar" vs. "en curso".
 const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   id: proyectos.id,
@@ -138,10 +135,7 @@ const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   especialistaId: proyectos.especialistaId,
   editorId: proyectos.editorId,
   correctorId: proyectos.correctorId,
-  calidadId: proyectos.calidadId,
-  digitalId: proyectos.digitalId,
-  lanzamientoId: proyectos.lanzamientoId,
-  distribucionId: proyectos.distribucionId,
+  jefeAreaId: proyectos.jefeAreaId,
   notificadoRrpp: proyectos.notificadoRrpp,
   notificadoJefatura: proyectos.notificadoJefatura,
   autorId: autores.id,
@@ -163,10 +157,7 @@ type FilaProyectoConAutorYServicio = {
   especialistaId: string | null;
   editorId: string | null;
   correctorId: string | null;
-  calidadId: string | null;
-  digitalId: string | null;
-  lanzamientoId: string | null;
-  distribucionId: string | null;
+  jefeAreaId: string | null;
   notificadoRrpp: boolean;
   notificadoJefatura: boolean;
   autorId: string;
@@ -197,10 +188,7 @@ async function mapearFilaConRiesgo(
     especialistaId: fila.especialistaId,
     editorId: fila.editorId,
     correctorId: fila.correctorId,
-    calidadId: fila.calidadId,
-    digitalId: fila.digitalId,
-    lanzamientoId: fila.lanzamientoId,
-    distribucionId: fila.distribucionId,
+    jefeAreaId: fila.jefeAreaId,
     notificadoRrpp: fila.notificadoRrpp,
     notificadoJefatura: fila.notificadoJefatura,
     autor: { id: fila.autorId, nombre: fila.autorNombre },

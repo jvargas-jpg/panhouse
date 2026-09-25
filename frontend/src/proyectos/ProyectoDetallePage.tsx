@@ -2,8 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
-import { notificarJefatura } from '../jefatura/jefaturaApi';
-import { BotonNotificarTransicion } from './BotonNotificarTransicion';
 import { EstadoBadge } from './EstadoBadge';
 import { EstadoTraspasoBadge } from './EstadoTraspasoBadge';
 import { fetchFicha, fetchProyecto } from './proyectoDetalleApi';
@@ -11,27 +9,73 @@ import { RiesgoBadge } from './RiesgoBadge';
 import { SeccionCalidad } from './SeccionCalidad';
 import { SeccionCorreccion } from './SeccionCorreccion';
 import { SeccionCorreccionControl } from './SeccionCorreccionControl';
-import { SeccionDiseno } from './SeccionDiseno';
+import { SeccionDiseno, SeccionDisenoBrief } from './SeccionDiseno';
 import { SeccionDistribucion } from './SeccionDistribucion';
 import { SeccionEdicion } from './SeccionEdicion';
 import { SeccionEquipo } from './SeccionEquipo';
-import { SeccionFichaEditorial } from './SeccionFichaEditorial';
 import { SeccionImpresion } from './SeccionImpresion';
 import { SeccionLanzamiento } from './SeccionLanzamiento';
-import { SeccionLanzamientoPromocion } from './SeccionLanzamientoPromocion';
-import { SeccionProyectoPerfil } from './SeccionProyectoPerfil';
 import { SeccionSoporteDigital } from './SeccionSoporteDigital';
 
+// "Fase 1 - Ingreso" ya no muestra los formularios de Perfil/Ficha
+// Editorial/Matriz de Ingreso/Lanzamiento y Promoción acá adentro — a
+// pedido explícito del negocio, esos datos se mudaron a su propia
+// pantalla, "Ficha de Trazabilidad" (ver FichaTrazabilidadPage.tsx). La
+// pestaña Fase 1 sigue existiendo en el stepper (no desaparece), pero
+// ahora es solo un puntero hacia allá. Mismo componente para la rama
+// comercial (arriba) y para pasoActivo===1 (dentro del stepper de
+// producción) — antes eran dos copias casi idénticas del mismo bloque.
+function FaseIngresoPointer({ proyectoId }: { proyectoId: string }) {
+  return (
+    <div className="flex w-full flex-col items-start gap-4 rounded-xl border-2 border-purple-300 bg-purple-50/40 p-6 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <span className="rounded-full bg-purple-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">RRPP</span>
+        <h2 className="mt-2 text-base font-bold text-purple-900">Ficha de Trazabilidad</h2>
+        <p className="mt-1 text-sm text-purple-900/70">
+          Perfil del Autor, Ficha Editorial, Matriz de Ingreso y Lanzamiento y Promoción se completan desde su propia pantalla.
+        </p>
+      </div>
+      <Link
+        to={`/proyectos/${proyectoId}/ficha-trazabilidad`}
+        className="shrink-0 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-700"
+      >
+        Ver Ficha de Trazabilidad completa →
+      </Link>
+    </div>
+  );
+}
+
+// 10 fases — a pedido explícito del negocio, adaptadas para calzar con
+// el stepper de otro proyecto de referencia (Desktop/Gestor de Proyectos
+// Editoriales/panhouse-gestor, ProyectoDetailPage.jsx: Ingreso,
+// Extracción, Creación de contenido, Feedback de contenido, Corrección,
+// Proceso creativo, Diseño gráfico, Tripa diagramada, Solicitud de
+// paquete final, Publicación). El mapeo a nuestras 9 fases reales no es
+// 1 a 1 — quedó confirmado así con el negocio, con estas salvedades
+// explícitas:
+// - Extracción/Creación de contenido/Feedback de contenido (2-4) son
+//   las 3 caras de una sola fase nuestra real (Edición): no existe hoy
+//   ningún dato que las distinga, así que las 3 pestañas muestran el
+//   mismo SeccionEdicion (ver más abajo) — no se fabricó un split falso.
+// - Proceso creativo/Diseño gráfico (6-7) si tienen datos reales
+//   distintos: el brief creativo (SeccionDisenoBrief) quedó separado de
+//   las propuestas de portada + control agregado (SeccionDiseno).
+// - Tripa diagramada (8) = nuestra Calidad; Solicitud de paquete final
+//   (9) = nuestra Digital — mismos componentes, solo cambió la etiqueta.
+// - Publicación (10) comprime nuestras 3 fases finales (Lanzamiento,
+//   Impresión, Distribución), que siguen siendo secciones separadas
+//   apiladas dentro de esta única pestaña — no se fusionaron sus datos.
 const FASES = [
-  { id: 1, label: 'Inicio' },
-  { id: 2, label: 'Edición' },
-  { id: 3, label: 'Corrección' },
-  { id: 4, label: 'Diseño' },
-  { id: 5, label: 'Calidad' },
-  { id: 6, label: 'Digital' },
-  { id: 7, label: 'Lanzamiento' },
-  { id: 8, label: 'Impresión' },
-  { id: 9, label: 'Distribución' },
+  { id: 1, label: 'Ingreso' },
+  { id: 2, label: 'Extracción' },
+  { id: 3, label: 'Creación de contenido' },
+  { id: 4, label: 'Feedback de contenido' },
+  { id: 5, label: 'Corrección' },
+  { id: 6, label: 'Proceso creativo' },
+  { id: 7, label: 'Diseño gráfico' },
+  { id: 8, label: 'Tripa diagramada' },
+  { id: 9, label: 'Solicitud de paquete final' },
+  { id: 10, label: 'Publicación' },
 ];
 
 // AppLayout.tsx envuelve toda la app en <main className="mx-auto max-w-4xl px-4 ...">
@@ -65,38 +109,6 @@ export function ProyectoDetallePage() {
     rol === 'lider_creativo' ||
     rol === 'soporte_editorial' ||
     rol === 'soporte_digital';
-  // puedeEditarPerfil (más amplio, incluye rrpp) sigue gateando si el
-  // formulario se ve como <form> editable vs. resumen de solo lectura —
-  // dentro de ese formulario, puedeEditarComercial (más angosto, sin
-  // rrpp) decide campo por campo qué se ve como <select>/<input> real y
-  // qué como texto estático (a pedido explícito del negocio: rrpp veía
-  // los campos comerciales como editables, cuando debían ser de solo
-  // lectura — solo "Observaciones" y el nuevo subtipo de Crudo son
-  // editables para rrpp, ver SeccionProyectoPerfil.tsx). Mismo alcance
-  // que el guard de PATCH /api/proyectos/:id/reasignar en el backend
-  // (requireRole('comercial', 'jefe_area')) — sin este permiso aparte,
-  // SeccionProyectoPerfil.tsx dispararía esa mutación igual para rrpp y
-  // el backend la rechazaría con 403 en cada Guardar.
-  const puedeEditarPerfil = rol === 'comercial' || rol === 'rrpp' || rol === 'jefe_area';
-  const puedeEditarContrato = rol === 'comercial';
-  const puedeEditarComercial = rol === 'comercial' || rol === 'jefe_area';
-  // Comercial es dueño del traspaso a RRPP (el botón "Enviar a RRPP" en
-  // SeccionProyectoPerfil.tsx) — mismo alcance que el antiguo botón
-  // separado "Notificar a RRPP" que reemplaza, ahora fusionado al
-  // guardado del formulario en vez de vivir aparte.
-  const puedeNotificarRrpp = rol === 'comercial';
-  // "Ficha Editorial (Completado por RRPP)" — dueño rrpp/jefe_area, al
-  // revés de puedeEditarComercial de arriba: acá comercial es quien ve
-  // la sección en modo lectura. Mismo alcance que el guard de PATCH
-  // /api/fichas-trazabilidad/:id/ficha-editorial en el backend
-  // (requireRole('rrpp', 'jefe_area')).
-  const puedeEditarFichaEditorial = rol === 'rrpp' || rol === 'jefe_area';
-  // "Proceso de Lanzamiento y Promoción" — mismo alcance que
-  // puedeEditarFichaEditorial (rrpp/jefe_area editan, comercial ve de
-  // solo lectura). Constante propia, mismo criterio que el resto de
-  // "Área exclusiva de RRPP".
-  const puedeEditarLanzamientoPromocion = rol === 'rrpp' || rol === 'jefe_area';
-
   const proyectoQuery = useQuery({ queryKey: ['proyecto', id], queryFn: () => fetchProyecto(id) });
   const fichaQuery = useQuery({ queryKey: ['ficha', id], queryFn: () => fetchFicha(id), enabled: puedeVerFicha });
 
@@ -146,11 +158,11 @@ export function ProyectoDetallePage() {
               <EstadoBadge estado={proyectoQuery.data.proyecto.estado} />
               {/* Estado del traspaso Comercial → RRPP → Jefatura — derivado
                   de notificadoRrpp/notificadoJefatura (ya existían para la
-                  cascada de notificaciones, ver BotonNotificarTransicion
-                  más abajo), no una columna nueva: evita un segundo campo
-                  "estado" en la misma tabla que el de arriba (operativo,
-                  en_proceso/retrasado/etc.), que ya se usa en riesgo/carga
-                  y no tiene relación con este traspaso. */}
+                  cascada de notificaciones, ver BotonNotificarTransicion en
+                  FichaTrazabilidadPage.tsx), no una columna nueva: evita un
+                  segundo campo "estado" en la misma tabla que el de arriba
+                  (operativo, en_proceso/retrasado/etc.), que ya se usa en
+                  riesgo/carga y no tiene relación con este traspaso. */}
               <EstadoTraspasoBadge
                 notificadoRrpp={proyectoQuery.data.proyecto.notificadoRrpp}
                 notificadoJefatura={proyectoQuery.data.proyecto.notificadoJefatura}
@@ -161,57 +173,114 @@ export function ProyectoDetallePage() {
 
           {/* El progreso (gigante) — Master Stepper exclusivo de producción,
               oculto para comercial Y para rrpp. rrpp perdió acceso de UI a
-              Lanzamiento/Impresión/Distribución (fases 7-9) a pedido
-              explícito del negocio: su entorno queda limitado a esta vista
-              central (Fase 1 — Perfil/Ficha Editorial/Matriz de Ingreso/
-              Lanzamiento y Promoción), confirmado aunque esos permisos de
-              edición sigan existiendo en el backend (PATCH .../impresion,
+              Lanzamiento/Impresión/Distribución (todas apiladas hoy bajo
+              "Publicación", fase 10 de 10) a pedido explícito del negocio:
+              su entorno queda limitado a esta vista central (Fase 1 —
+              Perfil/Ficha Editorial/Matriz de Ingreso/Lanzamiento y
+              Promoción), confirmado aunque esos permisos de edición sigan
+              existiendo en el backend (PATCH .../impresion,
               .../distribucion-control, .../lanzamiento-control siguen
               aceptando rrpp — decisión deliberada, no un descuido: si esas
               pantallas dejan de ser necesarias del todo, revisar también
               esos guards). */}
           {puedeVerFicha && rol !== 'comercial' && rol !== 'rrpp' && (
-            <div className="mt-4">
-              <div className="mb-6 mt-8">
-                <span className="text-sm font-bold uppercase tracking-[0.2em] text-dorado">
-                  Fase {pasoActivo} de {FASES.length}
-                </span>
-                <h2 className="mt-2 text-4xl font-light tracking-tight text-white md:text-5xl">{faseActual?.label}</h2>
-              </div>
-              <div className="mb-8 h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-dorado to-green-500 shadow-[0_0_15px_rgba(74,222,128,0.3)] transition-all duration-1000 ease-out"
-                  style={{ width: `${porcentaje}%` }}
-                />
-              </div>
-
-              {/* Navegación integrada al hero — píldoras de cristal */}
-              <div className="hide-scrollbar mt-2 flex w-full gap-3 overflow-x-auto pb-4">
-                {FASES.map((fase) => {
-                  const isActive = pasoActivo === fase.id;
-                  return (
-                    <button
-                      key={fase.id}
-                      type="button"
-                      onClick={() => setPasoActivo(fase.id)}
-                      className={`rounded-full px-5 py-2 text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'border border-white/5 bg-white/10 text-white shadow-lg backdrop-blur-sm'
-                          : 'text-white/50 hover:bg-white/5 hover:text-white'
-                      }`}
-                    >
-                      {fase.id}. {fase.label}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="mb-6 mt-8">
+              <span className="text-sm font-bold uppercase tracking-[0.2em] text-dorado">
+                Fase {pasoActivo} de {FASES.length}
+              </span>
+              <h2 className="mt-2 text-4xl font-light tracking-tight text-white md:text-5xl">{faseActual?.label}</h2>
             </div>
           )}
         </div>
       )}
 
-      {/* Escuadrón de Producción — visible para el equipo interno, nunca
-          para comercial ni rrpp (a pedido explícito del negocio: la
+      {/* Pipeline de fases — mismo componente visual (track dorado +
+          círculos con check) que ya usa el proyecto de referencia
+          (Desktop/Gestor de Proyectos Editoriales/panhouse-gestor,
+          ProyectoDetailPage.jsx), a pedido explícito del negocio de que
+          "sea igual". Única diferencia real: allá el check sale de un
+          booleano de completado por fase (fase1_ok...fase10_ok) porque
+          ese stepper es de solo lectura; acá no existe ese booleano por
+          fase (solo *Estatus de texto libre, no todas las fases tienen
+          uno — Inicio no tiene) y el click sigue navegando entre
+          secciones (pasoActivo), así que "completada" se resuelve como
+          "ya la pasaste" (fase.id < pasoActivo) — decisión confirmada
+          con el negocio en vez de inventar un mapeo de estatus por
+          fase. Franja separada (hermana del hero oscuro, no anidada
+          adentro) con su propio FULL_BLEED — mismo criterio que el
+          hero de arriba para llegar de borde a borde de la pantalla. */}
+      {proyectoQuery.data && puedeVerFicha && rol !== 'comercial' && rol !== 'rrpp' && (
+        <div className={`${FULL_BLEED} bg-crema px-6 pb-4 pt-5 shadow-lg md:px-16`}>
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-4 flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                Progreso — {pasoActivo}/{FASES.length} fases
+              </span>
+              <span className="text-sm font-bold text-tinta">{Math.round(porcentaje)}%</span>
+            </div>
+            <div className="relative">
+              <div className="absolute h-0.5 bg-gray-200" style={{ top: '14px', left: '5.5%', right: '5.5%' }} />
+              <div
+                className="absolute h-0.5 bg-dorado transition-all duration-700"
+                style={{
+                  top: '14px',
+                  left: '5.5%',
+                  width: pasoActivo <= 1 ? 0 : `${((pasoActivo - 2) / (FASES.length - 1)) * 89}%`,
+                }}
+              />
+              <div className="relative z-10 flex">
+                {FASES.map((fase) => {
+                  const hecha = fase.id < pasoActivo;
+                  const actual = fase.id === pasoActivo;
+                  return (
+                    <button
+                      key={fase.id}
+                      type="button"
+                      onClick={() => setPasoActivo(fase.id)}
+                      className="flex flex-1 flex-col items-center"
+                    >
+                      <div
+                        className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                          hecha
+                            ? 'bg-dorado text-white shadow-sm'
+                            : actual
+                              ? 'animate-pulse border-2 border-dorado bg-crema text-dorado shadow-md'
+                              : 'border-2 border-gray-200 bg-crema text-gray-300'
+                        }`}
+                      >
+                        {hecha ? (
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 14 14">
+                            <path
+                              d="M2.5 7l3.5 3.5 5.5-6"
+                              stroke="white"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        ) : (
+                          fase.id
+                        )}
+                      </div>
+                      <span
+                        className={`mt-1.5 text-center text-[10px] leading-tight ${
+                          hecha ? 'text-gray-400' : actual ? 'font-semibold text-dorado' : 'text-gray-300'
+                        }`}
+                      >
+                        <span className="block font-semibold">Fase {fase.id}</span>
+                        <span className="block">{fase.label}</span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Equipo asignado — visible para el equipo interno, nunca para
+          comercial ni rrpp (a pedido explícito del negocio: la
           asignación de especialista/editor/corrector/etc. no es tarea de
           rrpp). A diferencia del stepper de arriba, esta tarjeta es solo
           de asignación — ocultarla del todo no le bloquea ningún flujo a
@@ -232,139 +301,43 @@ export function ProyectoDetallePage() {
             </p>
           )}
 
-          {fichaQuery.data && proyectoQuery.data && rol === 'comercial' && (
-            <div className="flex w-full flex-col gap-6">
-              {/* key={id}: sin esto, React no vuelve a montar este
-                  componente al navegar de un proyecto a otro sin recarga
-                  completa (misma ruta /proyectos/:id, solo cambia el
-                  param) — todo su estado local (servicioCodigo,
-                  ingresoServicioSubtipoCrudo, etc., inicializado una sola
-                  vez vía useState(prop)) se quedaba pegado al proyecto
-                  anterior, mostrando datos de OTRO proyecto (ej. el
-                  selector de "Especificación de Crudo" no aparecía al
-                  entrar a un proyecto Crudo si el anterior no lo era) —
-                  y un Guardar en ese estado podía sobreescribir el
-                  proyecto actual con datos del anterior. */}
-              <SeccionProyectoPerfil
-                key={id}
-                proyectoId={id}
-                ficha={fichaQuery.data.ficha}
-                autores={proyectoQuery.data.proyecto.autores}
-                servicio={proyectoQuery.data.proyecto.servicio}
-                puedeEditar={puedeEditarPerfil}
-                puedeEditarContrato={puedeEditarContrato}
-                puedeEditarComercial={puedeEditarComercial}
-                puedeNotificarRrpp={puedeNotificarRrpp}
-                notificadoRrpp={proyectoQuery.data.proyecto.notificadoRrpp}
-              />
-              {/* "Área exclusiva de RRPP" — a pedido explícito del negocio,
-                  separación visual clara entre la Ficha de Trazabilidad de
-                  Comercial (arriba, SeccionProyectoPerfil) y la Ficha
-                  Editorial, que pertenece a rrpp: acá comercial solo mira
-                  (puedeEditarFichaEditorial ya resuelve el modo lectura
-                  dentro de la sección), sin botón de traspaso — ese es
-                  exclusivo de la rama rol==='rrpp' más abajo. La Matriz de
-                  Ingreso ya NO vive acá: se extrajo a su propio módulo
-                  (/rrpp/matriz/:proyectoId, ver MatrizIngresoPage.tsx),
-                  accesible desde el inicio de rrpp — a pedido explícito del
-                  negocio, para que quede fuera de la vista unificada del
-                  proyecto. */}
-              <div className="rounded-xl border-2 border-purple-300 bg-purple-50/40 p-4 sm:p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <span className="rounded-full bg-purple-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
-                    RRPP
-                  </span>
-                  <h2 className="text-base font-bold text-purple-900">Área exclusiva de RRPP</h2>
-                </div>
-                <div className="flex flex-col gap-6">
-                  <SeccionFichaEditorial key={id} proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={puedeEditarFichaEditorial} />
-                  <SeccionLanzamientoPromocion
-                    key={id}
-                    proyectoId={id}
-                    ficha={fichaQuery.data.ficha}
-                    puedeEditar={puedeEditarLanzamientoPromocion}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
+          {proyectoQuery.data && rol === 'comercial' && <FaseIngresoPointer proyectoId={id} />}
 
           {fichaQuery.data && proyectoQuery.data && rol !== 'comercial' && (
             <div key={pasoActivo} className="w-full animate-fade-in">
-              {pasoActivo === 1 && (
-                <div className="flex w-full flex-col gap-6">
-                  {/* key={id}: ver el comentario en el otro uso de este
-                      componente más arriba (rama comercial). */}
-                  <SeccionProyectoPerfil
-                    key={id}
-                    proyectoId={id}
-                    ficha={fichaQuery.data.ficha}
-                    autores={proyectoQuery.data.proyecto.autores}
-                    servicio={proyectoQuery.data.proyecto.servicio}
-                    puedeEditar={puedeEditarPerfil}
-                    puedeEditarContrato={puedeEditarContrato}
-                    puedeEditarComercial={puedeEditarComercial}
-                    puedeNotificarRrpp={puedeNotificarRrpp}
-                    notificadoRrpp={proyectoQuery.data.proyecto.notificadoRrpp}
-                  />
-                  {/* "Área exclusiva de RRPP" — ver el comentario completo
-                      en el otro uso de este bloque más arriba (rama
-                      comercial). El botón de traspaso "Mandar a Jefatura"
-                      cierra la Ficha Editorial — misma lógica de siempre
-                      (notificadoJefatura, POST /:id/notificar-jefatura,
-                      inserción en notificaciones), solo cambió dónde vive. */}
-                  <div className="rounded-xl border-2 border-purple-300 bg-purple-50/40 p-4 sm:p-6">
-                    <div className="mb-4 flex items-center gap-2">
-                      <span className="rounded-full bg-purple-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
-                        RRPP
-                      </span>
-                      <h2 className="text-base font-bold text-purple-900">Área exclusiva de RRPP</h2>
-                    </div>
-                    <SeccionFichaEditorial
-                      key={id}
-                      proyectoId={id}
-                      ficha={fichaQuery.data.ficha}
-                      puedeEditar={puedeEditarFichaEditorial}
-                    />
-                    <div className="mt-6">
-                      <SeccionLanzamientoPromocion
-                        key={id}
-                        proyectoId={id}
-                        ficha={fichaQuery.data.ficha}
-                        puedeEditar={puedeEditarLanzamientoPromocion}
-                      />
-                    </div>
-                    {rol === 'rrpp' && (
-                      <div className="mt-6 flex justify-end border-t border-purple-200 pt-4">
-                        <BotonNotificarTransicion
-                          proyectoId={id}
-                          notificadoInicial={proyectoQuery.data.proyecto.notificadoJefatura}
-                          etiqueta="Mandar a Jefatura"
-                          mensajeConfirmacion="¿Estás seguro de mandar este proyecto a Jefatura? Asegúrate de que la Ficha Editorial esté completa."
-                          mensajeToast="Proyecto enviado a Jefatura exitosamente"
-                          mutationFn={notificarJefatura}
-                          variante="destacado"
-                        />
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {pasoActivo === 1 && <FaseIngresoPointer proyectoId={id} />}
 
-              {pasoActivo === 2 && (
+              {/* Extracción / Creación de contenido / Feedback de contenido
+                  (2-4): las 3 caras de una sola fase real (Edición) — ver
+                  el comentario completo de FASES más arriba. Mismo
+                  componente, mismos datos, en las 3 pestañas; el <div
+                  key={pasoActivo}> que envuelve todo este bloque ya
+                  fuerza un remount limpio al cambiar de pestaña, así que
+                  no hace falta una key extra acá. */}
+              {(pasoActivo === 2 || pasoActivo === 3 || pasoActivo === 4) && (
                 <div className="w-full">
                   <SeccionEdicion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
                 </div>
               )}
 
-              {pasoActivo === 3 && (
+              {pasoActivo === 5 && (
                 <div className="flex w-full flex-col">
                   <SeccionCorreccionControl proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
                   <SeccionCorreccion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
                 </div>
               )}
 
-              {pasoActivo === 4 && (
+              {pasoActivo === 6 && (
+                <SeccionDisenoBrief
+                  proyectoId={id}
+                  proyecto={proyectoQuery.data.proyecto}
+                  ficha={fichaQuery.data.ficha}
+                  puedeEditar={rol === 'disenador' || rol === 'lider_creativo'}
+                  rolUsuario={rol}
+                />
+              )}
+
+              {pasoActivo === 7 && (
                 <SeccionDiseno
                   proyectoId={id}
                   proyecto={proyectoQuery.data.proyecto}
@@ -378,56 +351,53 @@ export function ProyectoDetallePage() {
                 />
               )}
 
-              {pasoActivo === 5 && (
+              {pasoActivo === 8 && (
                 <SeccionCalidad
                   proyectoId={id}
                   ficha={fichaQuery.data.ficha}
                   puedeEditar={rol === 'soporte_editorial'}
                   puedeEditarControl={
-                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
-                    (rol === 'soporte_editorial' && proyectoQuery.data.proyecto.calidadId === usuario?.id)
+                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) || rol === 'soporte_editorial'
                   }
                 />
               )}
 
-              {pasoActivo === 6 && (
+              {pasoActivo === 9 && (
                 <SeccionSoporteDigital
                   proyectoId={id}
                   ficha={fichaQuery.data.ficha}
                   puedeEditar={rol === 'soporte_digital'}
                   puedeEditarControl={
-                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
-                    (rol === 'soporte_digital' && proyectoQuery.data.proyecto.digitalId === usuario?.id)
+                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) || rol === 'soporte_digital'
                   }
                 />
               )}
 
-              {pasoActivo === 7 && (
-                <SeccionLanzamiento
-                  proyectoId={id}
-                  ficha={fichaQuery.data.ficha}
-                  puedeEditar={rol === 'rrpp'}
-                  puedeEditarControl={
-                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
-                    (rol === 'rrpp' && proyectoQuery.data.proyecto.lanzamientoId === usuario?.id)
-                  }
-                />
-              )}
-
-              {pasoActivo === 8 && (
-                <SeccionImpresion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'rrpp' || rol === 'jefe_area'} />
-              )}
-
-              {pasoActivo === 9 && (
-                <SeccionDistribucion
-                  proyectoId={id}
-                  ficha={fichaQuery.data.ficha}
-                  puedeEditar={rol === 'rrpp'}
-                  puedeEditarControl={
-                    (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) ||
-                    (rol === 'rrpp' && proyectoQuery.data.proyecto.distribucionId === usuario?.id)
-                  }
-                />
+              {/* Publicación (10): comprime Lanzamiento + Impresión +
+                  Distribución — ver el comentario completo de FASES más
+                  arriba. Se apilan las 3 secciones reales, sin fusionar
+                  sus datos (mismo criterio que la Fase 1, que ya apila
+                  Perfil + Ficha Editorial + Lanzamiento y Promoción). */}
+              {pasoActivo === 10 && (
+                <div className="flex w-full flex-col gap-6">
+                  <SeccionLanzamiento
+                    proyectoId={id}
+                    ficha={fichaQuery.data.ficha}
+                    puedeEditar={rol === 'rrpp'}
+                    puedeEditarControl={
+                      (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) || rol === 'rrpp'
+                    }
+                  />
+                  <SeccionImpresion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'rrpp'} />
+                  <SeccionDistribucion
+                    proyectoId={id}
+                    ficha={fichaQuery.data.ficha}
+                    puedeEditar={rol === 'rrpp'}
+                    puedeEditarControl={
+                      (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) || rol === 'rrpp'
+                    }
+                  />
+                </div>
               )}
             </div>
           )}

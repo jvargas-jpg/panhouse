@@ -26,9 +26,11 @@ type Vista = 'proyectos' | 'matrices';
 // mismo queryKey en las dos) — no son rutas propias (mismo patrón
 // vistaActiva que ya usaba AutoresPage.tsx para Proyectos/Clientes),
 // pero cambiar de pestaña no dispara un segundo fetch ni recarga la
-// página, solo cambia cómo se navega desde cada fila: "Proyectos" va a
-// la ficha completa (/proyectos/:id), "Matrices de Ingreso" va directo
-// al módulo de la matriz (/rrpp/matriz/:id, ver MatrizIngresoPage.tsx).
+// página, solo cambia cómo se navega desde cada fila: "Proyectos" va al
+// detalle completo (/proyectos/:id), "Matrices de Ingreso" va directo a
+// la Ficha de Trazabilidad (/proyectos/:id/ficha-trazabilidad, ver
+// FichaTrazabilidadPage.tsx — ahí vive la Matriz de Ingreso desde que se
+// fusionó con el resto de la Fase 1).
 export function RrppHomePage() {
   const [vistaActiva, setVistaActiva] = useState<Vista>('proyectos');
   const navigate = useNavigate();
@@ -68,7 +70,7 @@ export function RrppHomePage() {
           queryKey={['fichas-trazabilidad', 'enviados-a-rrpp']}
           queryFn={fetchProyectosEnviadosARrpp}
           mensajeVacio="Todavía no hay proyectos enviados a RRPP."
-          linkTo={(proyecto) => `/rrpp/matriz/${proyecto.id}`}
+          linkTo={(proyecto) => `/proyectos/${proyecto.id}/ficha-trazabilidad`}
         />
       )}
     </CrmSidebarLayout>

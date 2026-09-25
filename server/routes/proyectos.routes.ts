@@ -74,8 +74,8 @@ const reasignarProyectoSchema = z
     message: 'No se recibió ningún campo válido para actualizar',
   });
 
-// "Escuadrón de Producción" — panel único de jefe_area para las cinco
-// columnas de asignación a la vez (ver DatosEquipoProyecto en
+// "Equipo asignado" — panel único de jefe_area para las columnas de
+// asignación a la vez (ver DatosEquipoProyecto en
 // server/helpers/proyectos.ts). nullable: también debe poder dejar un
 // rol sin asignar de nuevo.
 const equipoProyectoSchema = z
@@ -84,10 +84,7 @@ const equipoProyectoSchema = z
     editorId: z.string().uuid().nullable().optional(),
     correctorId: z.string().uuid().nullable().optional(),
     disenadorId: z.string().uuid().nullable().optional(),
-    calidadId: z.string().uuid().nullable().optional(),
-    digitalId: z.string().uuid().nullable().optional(),
-    lanzamientoId: z.string().uuid().nullable().optional(),
-    distribucionId: z.string().uuid().nullable().optional(),
+    jefeAreaId: z.string().uuid().nullable().optional(),
   })
   .refine((datos) => Object.keys(datos).length > 0, {
     message: 'No se recibió ningún campo válido para actualizar',

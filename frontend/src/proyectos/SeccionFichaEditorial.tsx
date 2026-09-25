@@ -35,10 +35,10 @@ const OPCIONES_TONO = ['Académico', 'Inspiracional', 'Narrativo', 'Técnico', '
 // "Ficha Editorial (Completado por RRPP)" — a pedido explícito del
 // negocio, revive campos que existían en una ronda anterior de "Datos de
 // Ingreso" (ver el comentario completo en server/db/schema/trazabilidad.ts)
-// pero ahora bajo un dueño distinto: rrpp/jefe_area, no comercial —
-// comercial ve esta sección en modo lectura, la misma "Ficha Técnica"
-// (CampoFichaTecnica, ver campos.tsx) que el resto de la app usa para
-// bloques que un rol no puede editar.
+// pero ahora bajo un dueño distinto: rrpp exclusivamente, no comercial —
+// comercial y jefatura ven esta sección en modo lectura, la misma
+// "Ficha Técnica" (CampoFichaTecnica, ver campos.tsx) que el resto de la
+// app usa para bloques que un rol no puede editar.
 export function SeccionFichaEditorial({
   proyectoId,
   ficha,

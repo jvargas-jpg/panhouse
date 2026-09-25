@@ -186,12 +186,12 @@ export async function notificarRrppProyectoBase(proyectoId: string): Promise<Res
 }
 
 // Paso 2 de la misma cascada: rrpp termina de llenar el Perfil y la
-// Ficha Editorial (área exclusiva de rrpp en ProyectoDetallePage.tsx,
-// ver SeccionFichaEditorial.tsx — la Matriz de Ingreso ya no vive acá,
-// se extrajo a su propio módulo /rrpp/matriz/:proyectoId) y pasa el
-// proyecto a jefe_area para asignación. notificadoJefatura como guardia
-// de idempotencia — mismo criterio que notificarRrppProyectoBase de
-// arriba. Botón "Mandar a Jefatura" en ProyectoDetallePage.tsx — a
+// Ficha Editorial (área exclusiva de rrpp, ahora en su propio módulo
+// /proyectos/:id/ficha-trazabilidad, ver FichaTrazabilidadPage.tsx y
+// SeccionFichaEditorial.tsx) y pasa el proyecto a jefe_area para
+// asignación. notificadoJefatura como guardia de idempotencia — mismo
+// criterio que notificarRrppProyectoBase de arriba. Botón "Mandar a
+// Jefatura" en FichaTrazabilidadPage.tsx — a
 // pedido explícito del negocio, el mensaje nombra a los autores en vez
 // de solo el servicio (mismo criterio de nombre real/legal que el resto
 // de la app, ver autores.nombre). Reutiliza este mismo endpoint/función
@@ -266,17 +266,12 @@ export async function verificarAccesoAProyecto(
   return { ok: true };
 }
 
-// Chequeo de dueño doble específico de PATCH /:proyectoId/calidad-control
-// (especialista dueño del proyecto o el analista de calidad asignado en
-// calidadId). Deliberadamente NO se agregó una rama soporte_editorial a
-// verificarAccesoAProyecto de arriba: ese helper también protege GET
-// /:proyectoId (ficha completa) y las rutas de /calidad/fases, donde
-// soporte_editorial hoy tiene acceso de grupo (cualquier analista puede
-// tomar cualquier proyecto pendiente — ver listarProyectosPendientesCalidad,
-// que no filtra por calidadId). Agregar esa rama ahí habría bloqueado a
-// un analista de ver/trabajar un proyecto que todavía no le asignaron en
-// calidadId, rompiendo ese flujo existente. Este control queda aislado a
-// la única ruta nueva que sí necesita el dueño individual.
+// Chequeo específico de PATCH /:proyectoId/calidad-control (especialista
+// dueño del proyecto, o cualquier soporte_editorial — a pedido explícito
+// del negocio, calidadId (columna de dueño individual) se dio de baja:
+// ya no hace falta ser "el" asignado, alcanza con el rol, mismo acceso
+// de grupo que ya tenían el resto de las rutas de esta sección (ver
+// listarProyectosPendientesCalidad/las rutas de /calidad/fases).
 export async function verificarAccesoControlCalidad(
   proyectoId: string,
   usuario: { id: string; rol: Rol },
@@ -288,20 +283,13 @@ export async function verificarAccesoControlCalidad(
   if (usuario.rol === 'especialista' && proyecto.especialistaId !== usuario.id) {
     return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
   }
-  if (usuario.rol === 'soporte_editorial' && proyecto.calidadId !== usuario.id) {
-    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
-  }
   return { ok: true };
 }
 
-// Chequeo de dueño doble específico de PATCH /:proyectoId/digital-control
-// (especialista dueño del proyecto o el encargado digital asignado en
-// digitalId). Mismo motivo que verificarAccesoControlCalidad arriba, no
-// se agregó una rama soporte_digital a verificarAccesoAProyecto: ese
-// helper también protege GET /:proyectoId y las rutas de
-// /soporte-digital, donde soporte_digital hoy tiene acceso de grupo (sin
-// chequeo de dueño individual, mismo criterio que soporte_editorial
-// tenía con /calidad/fases antes de este cambio).
+// Chequeo específico de PATCH /:proyectoId/digital-control (especialista
+// dueño del proyecto, o cualquier soporte_digital — digitalId se dio de
+// baja, mismo motivo y mismo acceso de grupo que verificarAccesoControlCalidad
+// arriba).
 export async function verificarAccesoControlDigital(
   proyectoId: string,
   usuario: { id: string; rol: Rol },
@@ -313,20 +301,13 @@ export async function verificarAccesoControlDigital(
   if (usuario.rol === 'especialista' && proyecto.especialistaId !== usuario.id) {
     return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
   }
-  if (usuario.rol === 'soporte_digital' && proyecto.digitalId !== usuario.id) {
-    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
-  }
   return { ok: true };
 }
 
-// Chequeo de dueño doble específico de PATCH /:proyectoId/lanzamiento-control
-// (especialista dueño del proyecto o el responsable de lanzamiento
-// asignado en lanzamientoId). Mismo motivo que verificarAccesoControlCalidad/
-// verificarAccesoControlDigital arriba: no se agregó una rama rrpp a
-// verificarAccesoAProyecto porque ese helper también protege GET
-// /:proyectoId y el resto de las rutas de la Sección 7 (reuniones,
-// general), donde rrpp hoy tiene acceso de grupo (sin chequeo de dueño
-// individual).
+// Chequeo específico de PATCH /:proyectoId/lanzamiento-control (especialista
+// dueño del proyecto, o cualquier rrpp — lanzamientoId se dio de baja,
+// mismo motivo y mismo acceso de grupo que verificarAccesoControlCalidad/
+// verificarAccesoControlDigital arriba).
 export async function verificarAccesoControlLanzamiento(
   proyectoId: string,
   usuario: { id: string; rol: Rol },
@@ -338,19 +319,13 @@ export async function verificarAccesoControlLanzamiento(
   if (usuario.rol === 'especialista' && proyecto.especialistaId !== usuario.id) {
     return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
   }
-  if (usuario.rol === 'rrpp' && proyecto.lanzamientoId !== usuario.id) {
-    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
-  }
   return { ok: true };
 }
 
-// Chequeo de dueño doble específico de PATCH /:proyectoId/distribucion-control
-// (especialista dueño del proyecto o el responsable logístico asignado
-// en distribucionId). Mismo motivo que los helpers aislados anteriores
-// (Calidad/Digital/Lanzamiento): no se agregó una rama rrpp a
-// verificarAccesoAProyecto porque ese helper también protege GET
-// /:proyectoId y el resto de las rutas de la Sección 9 (países de
-// distribución), donde rrpp hoy tiene acceso de grupo.
+// Chequeo específico de PATCH /:proyectoId/distribucion-control
+// (especialista dueño del proyecto, o cualquier rrpp — distribucionId se
+// dio de baja, mismo motivo y mismo acceso de grupo que los helpers
+// aislados anteriores).
 export async function verificarAccesoControlDistribucion(
   proyectoId: string,
   usuario: { id: string; rol: Rol },
@@ -360,9 +335,6 @@ export async function verificarAccesoControlDistribucion(
     return { ok: false, status: 404, error: 'Proyecto no encontrado' };
   }
   if (usuario.rol === 'especialista' && proyecto.especialistaId !== usuario.id) {
-    return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
-  }
-  if (usuario.rol === 'rrpp' && proyecto.distribucionId !== usuario.id) {
     return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
   }
   return { ok: true };
@@ -482,22 +454,23 @@ export interface DatosEquipoProyecto {
   editorId?: string | null;
   correctorId?: string | null;
   disenadorId?: string | null;
-  calidadId?: string | null;
-  digitalId?: string | null;
-  lanzamientoId?: string | null;
-  distribucionId?: string | null;
+  jefeAreaId?: string | null;
 }
 
-// "Escuadrón de Producción" (SeccionEquipo.tsx): panel único de
-// jefe_area para ver y reasignar las cinco columnas de asignación de un
-// proyecto en un solo lugar. No reemplaza las rutas puntuales que ya
-// existían (asignarEspecialista, asignarEditor, asignarDisenador) —
-// esas siguen siendo el camino de cada flujo propio (jefe_area asigna
-// especialista al recibir el proyecto, jefe_edicion asigna editor,
-// el especialista dueño asigna disenador); esta es la vista consolidada
-// para corregir cualquiera de las cinco después, sin salir del detalle
-// del proyecto. nullable: jefe_area también debe poder dejar un rol sin
-// asignar de nuevo, no solo reemplazarlo.
+// "Equipo asignado" (SeccionEquipo.tsx, antes "Escuadrón de Producción"):
+// panel único de jefe_area para ver y reasignar las columnas de
+// asignación de un proyecto en un solo lugar. No reemplaza las rutas
+// puntuales que ya existían (asignarEspecialista, asignarEditor,
+// asignarDisenador) — esas siguen siendo el camino de cada flujo propio
+// (jefe_area asigna especialista al recibir el proyecto, jefe_edicion
+// asigna editor, el especialista dueño asigna disenador); esta es la
+// vista consolidada para corregir cualquiera de estos después, sin salir
+// del detalle del proyecto. nullable: jefe_area también debe poder dejar
+// un rol sin asignar de nuevo, no solo reemplazarlo. calidadId/digitalId/
+// lanzamientoId/distribucionId se dieron de baja a pedido explícito del
+// negocio (ver el comentario completo en schema/proyectos.ts); jefeAreaId
+// es nuevo — son 2 personas reales las que se reparten los proyectos
+// entrantes.
 export async function actualizarEquipoProyecto(proyectoId: string, datos: DatosEquipoProyecto) {
   const [fila] = await db.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
   if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);

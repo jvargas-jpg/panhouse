@@ -256,7 +256,7 @@ function ContenidoLanzamientoMicro({
 
   return (
     <div className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-      <h3 className="mb-2 font-medium text-tinta">7. Lanzamiento y promoción</h3>
+      <h3 className="mb-2 font-medium text-tinta">Lanzamiento y promoción</h3>
 
       <DatosGeneralesLanzamiento proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditar} />
 

@@ -51,8 +51,8 @@ function calcularServicioAdquirido(servicio: Servicio, subtipoCrudo: string | nu
   return { valor: 'Crudo — [Esperando selección en ficha de trazabilidad]', advertencia: true };
 }
 
-// "Matriz de Ingreso (RRPP)" — dueño rrpp/jefe_area, comercial ve de
-// solo lectura (mismo alcance que "Ficha Editorial", ver
+// "Matriz de Ingreso (RRPP)" — dueño exclusivo rrpp, comercial y
+// jefatura ven de solo lectura (mismo alcance que "Ficha Editorial", ver
 // SeccionFichaEditorial.tsx). El Bloque 1 ("Datos Sincronizados") es de
 // solo lectura para todos los roles, sin excepción: no tiene columnas
 // propias, sale de `autores` y de ingresoFechaIngreso/posibleTituloLibro

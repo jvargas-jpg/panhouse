@@ -103,9 +103,9 @@ export type PropietarioMatrizIngreso = 'Paola Morales' | 'Daniel Valente';
 // valores explícitos dados por el negocio.
 export type ParticipacionFerias = 'Sí' | 'No' | 'Pendiente';
 
-// "Matriz de Asesorías con fechas" — módulo de RRPP (/rrpp/matriz/:proyectoId),
-// debajo de Matriz de Ingreso. Ver el comentario completo en
-// server/db/schema/enums.ts.
+// "Matriz de Asesorías con fechas" — módulo de RRPP
+// (/proyectos/:id/ficha-trazabilidad), debajo de Matriz de Ingreso. Ver
+// el comentario completo en server/db/schema/enums.ts.
 export type AsesoriaEstado = 'Completado' | 'Con fecha de lanzamiento' | 'En proceso editorial' | 'Finalizado';
 export type AsesoriaNivelSatisfaccion = 'Bueno' | 'Excelente' | 'Regular';
 export type AsesoriaFase = 'En asesoramiento' | 'Esperando fecha' | 'En espera de lanzamiento' | 'Culminado';
@@ -186,10 +186,7 @@ export interface ProyectoConRiesgo {
   especialistaId: string | null;
   editorId: string | null;
   correctorId: string | null;
-  calidadId: string | null;
-  digitalId: string | null;
-  lanzamientoId: string | null;
-  distribucionId: string | null;
+  jefeAreaId: string | null;
   // Botones "Notificar a RRPP" / "Notificar a Jefatura" de Fase 1
   // (ProyectoDetallePage.tsx) — ver POST /:id/notificar-rrpp y
   // POST /:id/notificar-jefatura, los dos pasos de la cascada.
@@ -402,7 +399,7 @@ export interface FichaCompleta {
   lanzamientoPromocionObservacionesGenerales: string | null;
   lanzamientoPromocionLinkMinuta: string | null;
   // "Matriz de Asesorías con fechas" — módulo de RRPP
-  // (/rrpp/matriz/:proyectoId), debajo de Matriz de Ingreso, ver
+  // (/proyectos/:id/ficha-trazabilidad), debajo de Matriz de Ingreso, ver
   // SeccionMatrizAsesorias.tsx. LIBRO (posibleTituloLibro, más abajo) se
   // muestra de solo lectura en la cabecera de esa sección — no se
   // duplica acá.
@@ -606,10 +603,7 @@ export interface Proyecto {
   editorId: string | null;
   correctorId: string | null;
   disenadorId: string | null;
-  calidadId: string | null;
-  digitalId: string | null;
-  lanzamientoId: string | null;
-  distribucionId: string | null;
+  jefeAreaId: string | null;
   estado: EstadoProyecto;
   fechaProgramadaInicio: string;
   fechaRealInicio: string | null;

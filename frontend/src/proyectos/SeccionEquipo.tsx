@@ -7,24 +7,30 @@ import { actualizarEquipoProyecto, fetchPersonalEquipo, type DatosEquipoProyecto
 type RolKey = keyof DatosEquipoProyecto;
 
 const ROLES_EQUIPO: { key: RolKey; label: string }[] = [
-  { key: 'especialistaId', label: 'Especialista' },
-  { key: 'editorId', label: 'Editor' },
-  { key: 'correctorId', label: 'Corrector' },
-  { key: 'disenadorId', label: 'Diseñador' },
-  { key: 'calidadId', label: 'Calidad' },
-  { key: 'digitalId', label: 'Digital' },
-  { key: 'lanzamientoId', label: 'Lanzamiento' },
-  { key: 'distribucionId', label: 'Distribución' },
+  { key: 'jefeAreaId', label: 'Jefe de Área' },
+  { key: 'especialistaId', label: 'Coordinación' },
+  { key: 'editorId', label: 'Editor/a' },
+  { key: 'correctorId', label: 'Corrector/a' },
+  { key: 'disenadorId', label: 'Diseñador/a' },
 ];
 
-// "Escuadrón de Producción": las cinco columnas de asignación de
-// proyectos (server/db/schema/proyectos.ts) en un solo panel. Visible
-// para todo el equipo interno (puedeVerFicha en ProyectoDetallePage.tsx,
-// sin comercial — ver integración ahí); solo jefe_area puede reasignar
-// (puedeEditar), el resto ve las tarjetas sin el botón "Cambiar"/
-// "Asignar persona". GET /usuarios ya está autorizado para los mismos
-// roles que ven este panel, así que todos pueden resolver el nombre de
-// quien está asignado, no solo quien puede editar.
+// "Equipo asignado" (antes "Escuadrón de Producción", reducido a pedido
+// explícito del negocio): las columnas de asignación de proyectos
+// (server/db/schema/proyectos.ts) en un solo panel. Calidad/Digital/
+// Lanzamiento/Distribución salieron de acá — dejaron de tener un dueño
+// individual (ver el comentario completo en schema/proyectos.ts), esas
+// secciones ahora dependen solo del rol. jefeAreaId es nuevo: son 2
+// personas reales las que se reparten los proyectos entrantes, hacía
+// falta trackear cuál. especialistaId se re-etiquetó "Coordinación"
+// (la columna/rol siguen llamándose "especialista" en el resto del
+// código — Mis Proyectos, permisos de Edición/Corrección, etc. — esto
+// es solo el nombre que ve el usuario acá). Visible para todo el equipo
+// interno (puedeVerFicha en ProyectoDetallePage.tsx, sin comercial — ver
+// integración ahí); solo jefe_area puede reasignar (puedeEditar), el
+// resto ve las tarjetas sin el botón "Cambiar"/"Asignar persona". GET
+// /usuarios ya está autorizado para los mismos roles que ven este panel,
+// así que todos pueden resolver el nombre de quien está asignado, no
+// solo quien puede editar.
 export function SeccionEquipo({
   proyectoId,
   proyecto,
@@ -66,11 +72,11 @@ export function SeccionEquipo({
     <div className="mb-10 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
       <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50/50 px-6 py-4">
         <h3 className="flex items-center gap-2 text-base font-bold text-gray-900">
-          <span className="h-2 w-2 rounded-full bg-dorado" /> Escuadrón de Producción
+          <span className="h-2 w-2 rounded-full bg-dorado" /> Equipo asignado
         </h3>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 p-6 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-5">
         {ROLES_EQUIPO.map((rol) => {
           const usuarioId = proyecto[rol.key];
           const nombre = nombreDe(usuarioId);

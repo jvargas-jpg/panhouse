@@ -161,7 +161,7 @@ export function listarProyectosPendientesPerfil(): Promise<ProyectoPendienteSecc
 }
 
 // "Matrices de Ingreso (RRPP)" — módulo propio en el inicio de rrpp
-// (MatrizIngresoPage.tsx, fuera de la vista de detalle del proyecto,
+// (FichaTrazabilidadPage.tsx, fuera de la vista de detalle del proyecto,
 // ver el comentario de la extracción completa en
 // ProyectoDetallePage.tsx). A diferencia de listarProyectosPendientesPerfil
 // arriba (que se vacía en cuanto RRPP completa su parte), esta es un
@@ -299,9 +299,9 @@ export async function actualizarSeccionProyectoContrato(proyectoId: string, dato
   return fila;
 }
 
-// "Ficha Editorial (Completado por RRPP)" — dueño rrpp/jefe_area, no
-// comercial (a diferencia de las dos secciones de arriba). Ver el
-// comentario completo en schema/trazabilidad.ts.
+// "Ficha Editorial (Completado por RRPP)" — dueño exclusivo rrpp, no
+// comercial ni jefe_area (a diferencia de las dos secciones de arriba).
+// Ver el comentario completo en schema/trazabilidad.ts.
 export interface DatosSeccionFichaEditorial {
   fechaDeseadaCulminacion?: string | null;
   temaGeneral?: string | null;
@@ -325,7 +325,7 @@ export async function actualizarSeccionFichaEditorial(proyectoId: string, datos:
   return fila;
 }
 
-// "Matriz de Ingreso (RRPP)" — dueño rrpp/jefe_area, mismo alcance que
+// "Matriz de Ingreso (RRPP)" — dueño exclusivo rrpp, mismo alcance que
 // Ficha Editorial arriba. Solo el bloque operativo tiene columnas
 // propias (ver el comentario completo en schema/trazabilidad.ts) — el
 // bloque de datos sincronizados no pasa por acá, se arma en el frontend
@@ -390,9 +390,10 @@ export async function actualizarSeccionLanzamientoPromocion(proyectoId: string, 
   return fila;
 }
 
-// "Matriz de Asesorías con fechas" — dueño rrpp/jefe_area, mismo
-// alcance y mismo módulo que Matriz de Ingreso (/rrpp/matriz/:proyectoId,
-// ver el comentario completo en schema/trazabilidad.ts). LIBRO
+// "Matriz de Asesorías con fechas" — dueño exclusivo rrpp, mismo
+// alcance y mismo módulo que Matriz de Ingreso
+// (/proyectos/:id/ficha-trazabilidad, ver el comentario completo en
+// schema/trazabilidad.ts). LIBRO
 // (posibleTituloLibro) no se repite acá — se lee de solo lectura en el
 // frontend, ya viaja en FichaCompleta.
 export interface DatosSeccionMatrizAsesorias {

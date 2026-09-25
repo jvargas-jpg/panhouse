@@ -59,82 +59,6 @@ async function crearProyectoConFichaYDisenador(disenadorId: string) {
   return proyecto;
 }
 
-// Para PATCH /:proyectoId/calidad-control, que autoriza al analista de
-// calidad asignado en calidadId (verificarAccesoControlCalidad, no el
-// verificarAccesoAProyecto compartido — soporte_editorial mantiene
-// acceso de grupo en el resto de la Sección 5).
-async function crearProyectoConFichaYCalidad(calidadId: string) {
-  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
-  const servicio = await crearServicio({ codigo: 'EF2', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
-  const proyecto = await crearProyecto({
-    autorId: autor.id,
-    servicioId: servicio.id,
-    unidadId: unidad.id,
-    presupuestoId: presupuesto.id,
-    calidadId,
-    fechaProgramadaInicio: '2026-01-01',
-  });
-  await crearFichaTrazabilidad(proyecto.id);
-  return proyecto;
-}
-
-// Para PATCH /:proyectoId/digital-control, que autoriza al encargado
-// digital asignado en digitalId (verificarAccesoControlDigital, no el
-// verificarAccesoAProyecto compartido — soporte_digital mantiene acceso
-// de grupo en el resto de la Sección 6).
-async function crearProyectoConFichaYDigital(digitalId: string) {
-  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
-  const servicio = await crearServicio({ codigo: 'EF3', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
-  const proyecto = await crearProyecto({
-    autorId: autor.id,
-    servicioId: servicio.id,
-    unidadId: unidad.id,
-    presupuestoId: presupuesto.id,
-    digitalId,
-    fechaProgramadaInicio: '2026-01-01',
-  });
-  await crearFichaTrazabilidad(proyecto.id);
-  return proyecto;
-}
-
-// Para PATCH /:proyectoId/lanzamiento-control, que autoriza al
-// responsable de lanzamiento asignado en lanzamientoId
-// (verificarAccesoControlLanzamiento, no el verificarAccesoAProyecto
-// compartido — rrpp mantiene acceso de grupo en el resto de la Sección 7).
-async function crearProyectoConFichaYLanzamiento(lanzamientoId: string) {
-  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
-  const servicio = await crearServicio({ codigo: 'EF4', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
-  const proyecto = await crearProyecto({
-    autorId: autor.id,
-    servicioId: servicio.id,
-    unidadId: unidad.id,
-    presupuestoId: presupuesto.id,
-    lanzamientoId,
-    fechaProgramadaInicio: '2026-01-01',
-  });
-  await crearFichaTrazabilidad(proyecto.id);
-  return proyecto;
-}
-
-// Para PATCH /:proyectoId/distribucion-control, que autoriza al
-// responsable logístico asignado en distribucionId
-// (verificarAccesoControlDistribucion, no el verificarAccesoAProyecto
-// compartido — rrpp mantiene acceso de grupo en el resto de la Sección 9).
-async function crearProyectoConFichaYDistribucion(distribucionId: string) {
-  const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
-  const servicio = await crearServicio({ codigo: 'EF5', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
-  const proyecto = await crearProyecto({
-    autorId: autor.id,
-    servicioId: servicio.id,
-    unidadId: unidad.id,
-    presupuestoId: presupuesto.id,
-    distribucionId,
-    fechaProgramadaInicio: '2026-01-01',
-  });
-  await crearFichaTrazabilidad(proyecto.id);
-  return proyecto;
-}
-
 describe('rutas de la ficha de trazabilidad', () => {
   beforeEach(async () => {
     await limpiarBaseDeDatos();
@@ -937,12 +861,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite al analista de calidad asignado editar el control de calidad', async () => {
+    it('permite a cualquier soporte_editorial editar el control de calidad (acceso de grupo, ya no hay dueño individual)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
+      const proyecto = await crearProyectoConFicha();
       const cookie = await registrarYLoguear(app, 'soporte_editorial');
-      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
-      const proyecto = await crearProyectoConFichaYCalidad(me.body.user.id);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
@@ -959,21 +882,6 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.ready();
       const proyecto = await crearProyectoConFicha(); // sin especialista asignado
       const cookie = await registrarYLoguear(app, 'especialista');
-
-      const respuesta = await request(app.server)
-        .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
-        .set('Cookie', cookie)
-        .send({ calidadEstatus: 'Pendiente' });
-
-      expect(respuesta.status).toBe(403);
-      await app.close();
-    });
-
-    it('rechaza a un analista de calidad que no es el asignado del proyecto', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-      const proyecto = await crearProyectoConFicha(); // sin calidadId asignado
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
@@ -1240,12 +1148,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite al encargado digital asignado editar el control digital', async () => {
+    it('permite a cualquier soporte_digital editar el control digital (acceso de grupo, ya no hay dueño individual)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
+      const proyecto = await crearProyectoConFicha();
       const cookie = await registrarYLoguear(app, 'soporte_digital');
-      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
-      const proyecto = await crearProyectoConFichaYDigital(me.body.user.id);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
@@ -1262,21 +1169,6 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.ready();
       const proyecto = await crearProyectoConFicha(); // sin especialista asignado
       const cookie = await registrarYLoguear(app, 'especialista');
-
-      const respuesta = await request(app.server)
-        .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
-        .set('Cookie', cookie)
-        .send({ digitalEstatus: 'Pendiente' });
-
-      expect(respuesta.status).toBe(403);
-      await app.close();
-    });
-
-    it('rechaza a un encargado digital que no es el asignado del proyecto', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-      const proyecto = await crearProyectoConFicha(); // sin digitalId asignado
-      const cookie = await registrarYLoguear(app, 'soporte_digital');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/digital-control`)
@@ -1398,12 +1290,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite al responsable de lanzamiento asignado editar el control de lanzamiento', async () => {
+    it('permite a cualquier rrpp editar el control de lanzamiento (acceso de grupo, ya no hay dueño individual)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
+      const proyecto = await crearProyectoConFicha();
       const cookie = await registrarYLoguear(app, 'rrpp');
-      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
-      const proyecto = await crearProyectoConFichaYLanzamiento(me.body.user.id);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
@@ -1420,21 +1311,6 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.ready();
       const proyecto = await crearProyectoConFicha(); // sin especialista asignado
       const cookie = await registrarYLoguear(app, 'especialista');
-
-      const respuesta = await request(app.server)
-        .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
-        .set('Cookie', cookie)
-        .send({ lanzamientoEstatus: 'Pendiente' });
-
-      expect(respuesta.status).toBe(403);
-      await app.close();
-    });
-
-    it('rechaza a un responsable de lanzamiento que no es el asignado del proyecto', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-      const proyecto = await crearProyectoConFicha(); // sin lanzamientoId asignado
-      const cookie = await registrarYLoguear(app, 'rrpp');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
@@ -1700,7 +1576,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite a jefe_area editar el control de impresión (mismo alcance amplio que el resto de la ficha)', async () => {
+    it('rechaza a jefe_area editar el control de impresión (solo puede ver, es sección exclusiva de rrpp)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
@@ -1711,8 +1587,7 @@ describe('rutas de la ficha de trazabilidad', () => {
         .set('Cookie', cookie)
         .send({ impresionEstatus: 'Completado' });
 
-      expect(respuesta.status).toBe(200);
-      expect(respuesta.body.ficha.impresionEstatus).toBe('Completado');
+      expect(respuesta.status).toBe(403);
       await app.close();
     });
 
@@ -1761,6 +1636,29 @@ describe('rutas de la ficha de trazabilidad', () => {
     });
   });
 
+  // Las 4 secciones de abajo (ficha-editorial, matriz-ingreso,
+  // lanzamiento-promocion, matriz-asesorias) son, igual que impresion
+  // arriba, propiedad exclusiva de rrpp: jefe_area las ve (GET
+  // /:proyectoId, ya cubierto en otro describe) pero no las edita. Solo
+  // se prueba el rechazo de jefe_area — no había tests de escritura para
+  // estas rutas antes de este cambio.
+  describe.each(['ficha-editorial', 'matriz-ingreso', 'lanzamiento-promocion', 'matriz-asesorias'] as const)(
+    'PATCH /api/fichas-trazabilidad/:proyectoId/%s',
+    (ruta) => {
+      it('rechaza a jefe_area (solo puede ver, es sección exclusiva de rrpp)', async () => {
+        const app = crearAppDePrueba();
+        await app.ready();
+        const proyecto = await crearProyectoConFicha();
+        const cookie = await registrarYLoguear(app, 'jefe_area');
+
+        const respuesta = await request(app.server).patch(`/api/fichas-trazabilidad/${proyecto.id}/${ruta}`).set('Cookie', cookie).send({});
+
+        expect(respuesta.status).toBe(403);
+        await app.close();
+      });
+    },
+  );
+
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/distribucion-control', () => {
     it('permite al especialista dueño del proyecto editar el control de distribución', async () => {
       const app = crearAppDePrueba();
@@ -1780,12 +1678,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite al responsable logístico asignado editar el control de distribución', async () => {
+    it('permite a cualquier rrpp editar el control de distribución (acceso de grupo, ya no hay dueño individual)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
+      const proyecto = await crearProyectoConFicha();
       const cookie = await registrarYLoguear(app, 'rrpp');
-      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
-      const proyecto = await crearProyectoConFichaYDistribucion(me.body.user.id);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
@@ -1802,21 +1699,6 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.ready();
       const proyecto = await crearProyectoConFicha(); // sin especialista asignado
       const cookie = await registrarYLoguear(app, 'especialista');
-
-      const respuesta = await request(app.server)
-        .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
-        .set('Cookie', cookie)
-        .send({ distribucionEstatus: 'Pendiente' });
-
-      expect(respuesta.status).toBe(403);
-      await app.close();
-    });
-
-    it('rechaza a un responsable logístico que no es el asignado del proyecto', async () => {
-      const app = crearAppDePrueba();
-      await app.ready();
-      const proyecto = await crearProyectoConFicha(); // sin distribucionId asignado
-      const cookie = await registrarYLoguear(app, 'rrpp');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)

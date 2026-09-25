@@ -23,8 +23,8 @@ const PARTICIPACIONES_FERIAS: ParticipacionFerias[] = ['Sí', 'No', 'Pendiente']
 const OPCIONES_ENCARGADO: PropietarioMatrizIngreso[] = ['Paola Morales', 'Daniel Valente'];
 
 // "Proceso de Lanzamiento y Promoción" — Área exclusiva de RRPP, Fase
-// 1, dueño rrpp/jefe_area (comercial ve de solo lectura, mismo patrón
-// que Ficha Editorial/Matriz de Ingreso). NO es la Sección 7
+// 1, dueño exclusivo rrpp (comercial y jefatura ven de solo lectura,
+// mismo patrón que Ficha Editorial/Matriz de Ingreso). NO es la Sección 7
 // "Lanzamiento y promoción" del stepper (pasoActivo=7, ver
 // SeccionLanzamiento.tsx) — mismo nombre de negocio, dueño y columnas
 // distintas (ver el comentario completo en server/db/schema/trazabilidad.ts).

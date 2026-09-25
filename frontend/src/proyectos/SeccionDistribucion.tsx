@@ -153,7 +153,7 @@ function ContenidoDistribucionMicro({
 
   return (
     <div className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-      <h3 className="mb-2 font-medium text-tinta">9. Distribución</h3>
+      <h3 className="mb-2 font-medium text-tinta">Distribución</h3>
 
       {ficha.distribucionPaises.length === 0 ? (
         <SinCompletar />

@@ -46,11 +46,10 @@ const ASESORIA_RESPONSABLES_DISTRIBUCION: AsesoriaResponsableDistribucion[] = ['
 const OPCIONES_ESPECIALISTA = ['Manuela Traettino'] as const;
 
 // "Matriz de Asesorías con fechas" — módulo de RRPP, se renderiza en
-// MatrizIngresoPage.tsx justo debajo de SeccionMatrizIngreso. Mismo
-// dueño (rrpp/jefe_area) — esa página ya bloquea el acceso completo a
-// cualquier otro rol, así que puedeEditar acá es más por consistencia
-// con el resto de la familia Seccion*.tsx que por necesidad real de un
-// modo lectura hoy.
+// FichaTrazabilidadPage.tsx justo debajo de SeccionMatrizIngreso. Dueño
+// exclusivo rrpp: esa página deja entrar a jefe_area para ver (mismo
+// alcance que el GET del backend), pero puedeEditar ahí ya resuelve
+// false para jefatura — el modo lectura de esta sección sí se usa.
 export function SeccionMatrizAsesorias({
   proyectoId,
   ficha,

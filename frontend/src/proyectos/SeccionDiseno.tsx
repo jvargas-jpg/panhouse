@@ -23,7 +23,10 @@ const TIPO_PORTADA_LABEL: Record<TipoPortada, string> = {
 // AsignarEspecialistaCard/AsignarEditorCard (select con carga + botón
 // Asignar), pero la mutación invalida ['proyecto', proyectoId] (no
 // ['ficha', ...]): lo que cambia es proyectos.disenadorId, que viaja en
-// el proyecto, no en la ficha.
+// el proyecto, no en la ficha. La usan tanto SeccionDisenoBrief como
+// SeccionDiseno (abajo) — un especialista puede caer en cualquiera de
+// las dos pestañas del stepper (Proceso creativo / Diseño gráfico) sin
+// haber asignado disenador todavía.
 function AsignarDisenadorForm({ proyectoId }: { proyectoId: string }) {
   const cargaQuery = useQuery({ queryKey: ['disenadores', 'carga'], queryFn: fetchDisenadoresCarga });
   const [disenadorId, setDisenadorId] = useState('');
@@ -44,7 +47,7 @@ function AsignarDisenadorForm({ proyectoId }: { proyectoId: string }) {
   return (
     <div className="w-full rounded-xl border-2 border-dashed border-dorado/30 bg-dorado/5 p-6 text-center">
       <p className="text-base font-semibold text-tinta">Falta asignar Dirección Creativa</p>
-      <p className="mb-4 text-sm text-tinta/60">Elige un diseñador para habilitar la Sección 4.</p>
+      <p className="mb-4 text-sm text-tinta/60">Elige un diseñador para habilitar esta sección.</p>
 
       {cargaQuery.isLoading && <p className="text-sm text-tinta/70">Cargando diseñadores…</p>}
       {cargaQuery.isError && (
@@ -253,16 +256,16 @@ function PropuestaRow({
   );
 }
 
-// Vista "Micro" de la Sección 4 (brief creativo + propuestas de
-// portada) — código previo, sin cambios, solo dejó de exportarse
-// directo: ahora SeccionDiseno (más abajo) la monta debajo del panel
-// "Macro" (SeccionDisenoControl). Dueño disenador o lider_creativo — a
-// diferencia de la sección 1, no está partida por campo: los mismos dos
-// roles escriben tanto el brief como las propuestas. rolUsuario/proyecto
-// solo hacen falta para el caso especial de abajo (especialista sin
-// disenador asignado todavía) — el resto de la sección sigue guiándose
-// por puedeEditar, como las demás secciones de la ficha.
-function ContenidoDisenoMicro({
+// "Proceso creativo" (Fase 6 del stepper de 10) — antes vivía junto con
+// las propuestas de portada dentro de una sola "Sección 4: Diseño"; se
+// separó a pedido explícito del negocio, para que el stepper de
+// ProyectoDetallePage.tsx tenga una pestaña propia para el brief
+// creativo (antes de que exista ninguna propuesta) y otra para la
+// ejecución (SeccionDiseno, más abajo — propuestas + control). Mismos
+// campos/mutación de siempre (actualizarBriefDiseno), solo se movió de
+// archivo/posición. Dueño disenador o lider_creativo, mismo criterio que
+// SeccionDiseno.
+export function SeccionDisenoBrief({
   proyectoId,
   proyecto,
   ficha,
@@ -283,10 +286,6 @@ function ContenidoDisenoMicro({
   const [fechaReunionCreativa, setFechaReunionCreativa] = useState(ficha.disenoFechaReunionCreativa ?? '');
   const [fechaEntregaBrief, setFechaEntregaBrief] = useState(ficha.disenoFechaEntregaBrief ?? '');
   const [briefAprobadoFecha, setBriefAprobadoFecha] = useState(ficha.disenoBriefAprobadoFecha ?? '');
-
-  const [fechaEnviadaEspecialista, setFechaEnviadaEspecialista] = useState('');
-  const [descripcion, setDescripcion] = useState('');
-  const [enlace, setEnlace] = useState('');
   const queryClient = useQueryClient();
 
   const mutacionBrief = useMutation({
@@ -303,28 +302,9 @@ function ContenidoDisenoMicro({
     },
   });
 
-  const mutacionPropuesta = useMutation({
-    mutationFn: () =>
-      agregarPropuestaDiseno(proyectoId, {
-        fechaEnviadaEspecialista: fechaEnviadaEspecialista || null,
-        descripcion: descripcion || null,
-        enlace: enlace || null,
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
-      setDescripcion('');
-      setEnlace('');
-    },
-  });
-
   function handleSubmitBrief(event: FormEvent) {
     event.preventDefault();
     mutacionBrief.mutate();
-  }
-
-  function handleSubmitPropuesta(event: FormEvent) {
-    event.preventDefault();
-    mutacionPropuesta.mutate();
   }
 
   if (rolUsuario === 'especialista' && !proyecto.disenadorId) {
@@ -337,11 +317,10 @@ function ContenidoDisenoMicro({
       !ficha.disenoTipoPortada &&
       !ficha.disenoFechaReunionCreativa &&
       !ficha.disenoFechaEntregaBrief &&
-      !ficha.disenoBriefAprobadoFecha &&
-      ficha.disenoPropuestas.length === 0;
+      !ficha.disenoBriefAprobadoFecha;
     return (
       <div className="w-full rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-        <h3 className="mb-2 font-medium text-tinta">4. Diseño</h3>
+        <h3 className="mb-2 font-medium text-tinta">6. Proceso creativo</h3>
         {sinNada ? (
           <SinCompletar />
         ) : (
@@ -376,11 +355,6 @@ function ContenidoDisenoMicro({
                 {formatearFecha(ficha.disenoBriefAprobadoFecha)}
               </p>
             )}
-            <ul className="space-y-1">
-              {ficha.disenoPropuestas.map((propuesta) => (
-                <PropuestaRow key={propuesta.id} proyectoId={proyectoId} propuesta={propuesta} puedeEditar={false} />
-              ))}
-            </ul>
           </div>
         )}
       </div>
@@ -389,7 +363,7 @@ function ContenidoDisenoMicro({
 
   return (
     <div className="w-full rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-      <h3 className="mb-2 font-medium text-tinta">4. Diseño</h3>
+      <h3 className="mb-2 font-medium text-tinta">6. Proceso creativo</h3>
 
       <form onSubmit={handleSubmitBrief} className="space-y-3">
         <div>
@@ -482,16 +456,88 @@ function ContenidoDisenoMicro({
           )}
         </div>
       </form>
+    </div>
+  );
+}
+
+// Vista "Micro" de "Diseño gráfico" (Fase 7 del stepper de 10): solo
+// propuestas de portada — el brief creativo se separó a
+// SeccionDisenoBrief de arriba (Fase 6, "Proceso creativo"). Dueño
+// disenador o lider_creativo. rolUsuario/proyecto solo hacen falta para
+// el caso especial de abajo (especialista sin disenador asignado
+// todavía) — el resto de la sección sigue guiándose por puedeEditar,
+// como las demás secciones de la ficha.
+function ContenidoDisenoPropuestas({
+  proyectoId,
+  proyecto,
+  ficha,
+  puedeEditar,
+  rolUsuario,
+}: {
+  proyectoId: string;
+  proyecto: Omit<ProyectoConRiesgo, 'autor'>;
+  ficha: FichaCompleta;
+  puedeEditar: boolean;
+  rolUsuario?: Rol;
+}) {
+  const [fechaEnviadaEspecialista, setFechaEnviadaEspecialista] = useState('');
+  const [descripcion, setDescripcion] = useState('');
+  const [enlace, setEnlace] = useState('');
+  const queryClient = useQueryClient();
+
+  const mutacionPropuesta = useMutation({
+    mutationFn: () =>
+      agregarPropuestaDiseno(proyectoId, {
+        fechaEnviadaEspecialista: fechaEnviadaEspecialista || null,
+        descripcion: descripcion || null,
+        enlace: enlace || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      setDescripcion('');
+      setEnlace('');
+    },
+  });
+
+  function handleSubmitPropuesta(event: FormEvent) {
+    event.preventDefault();
+    mutacionPropuesta.mutate();
+  }
+
+  if (rolUsuario === 'especialista' && !proyecto.disenadorId) {
+    return <AsignarDisenadorForm proyectoId={proyectoId} />;
+  }
+
+  if (!puedeEditar) {
+    return (
+      <div className="w-full rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
+        <h3 className="mb-2 font-medium text-tinta">7. Diseño gráfico</h3>
+        {ficha.disenoPropuestas.length === 0 ? (
+          <SinCompletar />
+        ) : (
+          <ul className="space-y-1 text-sm">
+            {ficha.disenoPropuestas.map((propuesta) => (
+              <PropuestaRow key={propuesta.id} proyectoId={proyectoId} propuesta={propuesta} puedeEditar={false} />
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
+      <h3 className="mb-2 font-medium text-tinta">7. Diseño gráfico</h3>
 
       {ficha.disenoPropuestas.length > 0 && (
-        <ul className="mt-3 space-y-1 border-t border-tinta/10 pt-3 text-sm text-tinta">
+        <ul className="space-y-1 border-b border-tinta/10 pb-3 text-sm text-tinta">
           {ficha.disenoPropuestas.map((propuesta) => (
             <PropuestaRow key={propuesta.id} proyectoId={proyectoId} propuesta={propuesta} puedeEditar />
           ))}
         </ul>
       )}
 
-      <form onSubmit={handleSubmitPropuesta} className="mt-3 space-y-2 border-t border-tinta/10 pt-3">
+      <form onSubmit={handleSubmitPropuesta} className="mt-3 space-y-2">
         <p className="text-sm font-medium text-tinta">Agregar propuesta de portada</p>
         <div className="flex gap-3">
           <div className="flex-1">
@@ -551,10 +597,11 @@ function ContenidoDisenoMicro({
   );
 }
 
-// Sección 4 completa: panel "Macro" (estatus agregado, dueño doble —
-// especialista dueño del proyecto o disenador asignado) arriba, vista
-// "Micro" (brief + propuestas, código previo sin cambios) debajo.
-// puedeEditarControl llega resuelto desde ProyectoDetallePage.tsx
+// "Diseño gráfico" (Fase 7 del stepper de 10, antes "Sección 4: Diseño"
+// completa): panel "Macro" (estatus agregado, dueño doble — especialista
+// dueño del proyecto o disenador asignado) arriba, vista "Micro"
+// (propuestas de portada, el brief se separó a SeccionDisenoBrief)
+// debajo. puedeEditarControl llega resuelto desde ProyectoDetallePage.tsx
 // porque para decidirlo hace falta el id del usuario logueado, no solo
 // su rol (a diferencia de puedeEditar, que sigue siendo solo por rol).
 export function SeccionDiseno({
@@ -578,7 +625,7 @@ export function SeccionDiseno({
   return (
     <div className="flex w-full flex-col gap-6">
       <SeccionDisenoControl proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditarControl} />
-      <ContenidoDisenoMicro proyectoId={proyectoId} proyecto={proyecto} ficha={ficha} puedeEditar={puedeEditar} rolUsuario={rolUsuario} />
+      <ContenidoDisenoPropuestas proyectoId={proyectoId} proyecto={proyecto} ficha={ficha} puedeEditar={puedeEditar} rolUsuario={rolUsuario} />
     </div>
   );
 }

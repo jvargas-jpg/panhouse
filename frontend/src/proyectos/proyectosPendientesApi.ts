@@ -7,7 +7,7 @@ export function fetchProyectosPendientesPerfil() {
 }
 
 // "Matrices de Ingreso (RRPP)" — módulo propio en el inicio de rrpp,
-// ver MatrizIngresoPage.tsx. A diferencia de fetchProyectosPendientesPerfil
+// ver FichaTrazabilidadPage.tsx. A diferencia de fetchProyectosPendientesPerfil
 // arriba, es un archivo persistente (todo proyecto ya enviado a rrpp),
 // no solo lo pendiente — ver listarProyectosEnviadosARrpp en
 // server/helpers/trazabilidad.ts.

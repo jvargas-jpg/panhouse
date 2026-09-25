@@ -187,7 +187,7 @@ function ContenidoCalidadMicro({
 
   return (
     <div className="rounded-lg border border-tinta/10 bg-white p-4 shadow-sm">
-      <h3 className="mb-2 font-medium text-tinta">5. Calidad</h3>
+      <h3 className="mb-2 font-medium text-tinta">8. Tripa diagramada</h3>
 
       {ficha.calidadFases.length === 0 ? (
         <SinCompletar />

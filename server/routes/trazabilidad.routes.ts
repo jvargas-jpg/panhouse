@@ -138,8 +138,8 @@ const seccionProyectoContratoSchema = z.object({
   condicionesEspeciales: z.array(z.enum(CONDICIONES_ESPECIALES)).nullable().optional(),
 });
 
-// "Ficha Editorial (Completado por RRPP)" — dueño rrpp/jefe_area, no
-// comercial (a diferencia de los dos schemas de arriba). publicoEdad/
+// "Ficha Editorial (Completado por RRPP)" — dueño exclusivo rrpp, no
+// comercial ni jefe_area (a diferencia de los dos schemas de arriba). publicoEdad/
 // tonoEstilo: string libre, no z.enum() — <select> de sugerencias en el
 // frontend, no un catálogo cerrado confirmado todavía (mismo criterio
 // que capitulosPactados/paginasPactadas arriba).
@@ -158,7 +158,7 @@ const seccionFichaEditorialSchema = z.object({
   objetivoComercial: z.array(z.string()).nullable().optional(),
 });
 
-// "Matriz de Ingreso (RRPP)" — dueño rrpp/jefe_area, mismo alcance que
+// "Matriz de Ingreso (RRPP)" — dueño exclusivo rrpp, mismo alcance que
 // seccionFichaEditorialSchema arriba.
 const seccionMatrizIngresoSchema = z.object({
   matrizCiudadResidencia: z.string().nullable().optional(),
@@ -199,7 +199,7 @@ const seccionLanzamientoPromocionSchema = z.object({
   lanzamientoPromocionLinkMinuta: z.string().nullable().optional(),
 });
 
-// "Matriz de Asesorías con fechas" — dueño rrpp/jefe_area, mismo alcance
+// "Matriz de Asesorías con fechas" — dueño exclusivo rrpp, mismo alcance
 // que seccionMatrizIngresoSchema arriba.
 const seccionMatrizAsesoriasSchema = z.object({
   asesoriaEstado: z.enum(ASESORIA_ESTADOS).nullable().optional(),
@@ -419,7 +419,7 @@ const distribucionControlSchema = z
 // Sección 8 — Impresión. Incluye el estatus agregado (macro, parte 2):
 // sin dueño individual (no existe impresionId en proyectos), sigue
 // usando verificarAccesoAProyecto compartido — mismo alcance de rol
-// (rrpp/jefe_area) para ambas partes de la sección.
+// (rrpp exclusivamente para editar) para ambas partes de la sección.
 const seccionImpresionSchema = z
   .object({
     impresionDeseaCotizacion: z.boolean().nullable().optional(),
@@ -559,14 +559,14 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
-  // Dueño rrpp/jefe_area, no comercial — a diferencia de las dos rutas
-  // de arriba (proyecto-perfil, proyecto-contrato). "(y Comercial si lo
-  // deseas)" del pedido original NO se aplicó acá a propósito: el pedido
-  // es explícito en que Comercial ve esta sección en modo lectura, no
-  // que pueda editarla.
+  // Dueño exclusivo rrpp, no comercial ni jefe_area — jefatura solo la ve
+  // (GET /:proyectoId, arriba, sigue incluyendo jefe_area para lectura).
+  // "(y Comercial si lo deseas)" del pedido original NO se aplicó acá a
+  // propósito: el pedido es explícito en que Comercial ve esta sección
+  // en modo lectura, no que pueda editarla.
   app.patch(
     '/:proyectoId/ficha-editorial',
-    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    { preHandler: [requireAuth, requireRole('rrpp')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -578,9 +578,11 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Dueño exclusivo rrpp — jefatura solo la ve (ver comentario de
+  // /ficha-editorial arriba, mismo criterio).
   app.patch(
     '/:proyectoId/matriz-ingreso',
-    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    { preHandler: [requireAuth, requireRole('rrpp')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -593,11 +595,10 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
   );
 
   // "Proceso de Lanzamiento y Promoción" — mismo alcance que PATCH
-  // .../matriz-ingreso arriba (rrpp/jefe_area, ver el comentario
-  // completo en schema/trazabilidad.ts).
+  // .../matriz-ingreso arriba: dueño exclusivo rrpp, jefatura solo ve.
   app.patch(
     '/:proyectoId/lanzamiento-promocion',
-    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    { preHandler: [requireAuth, requireRole('rrpp')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -610,11 +611,10 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
   );
 
   // "Matriz de Asesorías con fechas" — mismo alcance que PATCH
-  // .../matriz-ingreso arriba (rrpp/jefe_area, ver el comentario
-  // completo en schema/trazabilidad.ts).
+  // .../matriz-ingreso arriba: dueño exclusivo rrpp, jefatura solo ve.
   app.patch(
     '/:proyectoId/matriz-asesorias',
-    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    { preHandler: [requireAuth, requireRole('rrpp')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -991,9 +991,14 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Dueño exclusivo rrpp — jefatura solo la ve (mismo criterio que
+  // /ficha-editorial, /matriz-ingreso, etc. arriba; antes tenía un
+  // alcance más amplio que las secciones equivalentes de producción
+  // como /lanzamiento/general o /distribucion-control, que ya eran
+  // rrpp-only).
   app.patch(
     '/:proyectoId/impresion',
-    { preHandler: [requireAuth, requireRole('rrpp', 'jefe_area')] },
+    { preHandler: [requireAuth, requireRole('rrpp')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
