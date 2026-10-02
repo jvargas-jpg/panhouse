@@ -51,8 +51,17 @@ export function RegistroSeguimientoForm({
   const personalQuery = useQuery({ queryKey: ['usuarios'], queryFn: fetchPersonalEquipo });
   const queryClient = useQueryClient();
 
-  const [proyecto, setProyecto] = useState<ProyectoResumen | null>(
-    registro ? { id: registro.proyecto.id, titulo: null, estado: 'en_proceso', autor: { id: '', nombre: registro.proyecto.autorNombre }, servicio: { id: '', codigo: '', nombre: '' } } : null,
+  const [proyecto, setProyecto] = useState<Pick<ProyectoResumen, 'id' | 'titulo' | 'codigo' | 'estado' | 'autor' | 'servicio'> | null>(
+    registro
+      ? {
+          id: registro.proyecto.id,
+          titulo: null,
+          codigo: registro.proyecto.codigo,
+          estado: 'en_proceso',
+          autor: { id: '', nombre: registro.proyecto.autorNombre },
+          servicio: { id: '', codigo: '', nombre: '' },
+        }
+      : null,
   );
   const [analistaId, setAnalistaId] = useState(registro?.analista?.id ?? '');
   const [especialistaId, setEspecialistaId] = useState(registro?.especialista?.id ?? '');

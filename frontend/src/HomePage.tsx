@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { AutoresPage } from './autores/AutoresPage';
 import { useMe } from './auth/useAuth';
 import { AuditoriaPagosPage } from './cobranzas/AuditoriaPagosPage';
+import { ComercialDashboardPage } from './comercial/ComercialDashboardPage';
 import { DisenadorHomePage } from './disenador/DisenadorHomePage';
 import { EditorHomePage } from './editor/EditorHomePage';
 import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
@@ -25,7 +26,18 @@ export function HomePage() {
     return <PanelJefaturaPage />;
   }
 
-  if (user?.rol === 'comercial' || user?.rol === 'direccion') {
+  // Separados a pedido explícito del negocio: comercial tiene su propio
+  // Inicio/Dashboard (ComercialDashboardPage.tsx) con lo que necesita
+  // resolver día a día ("¿qué proyectos necesitan una acción mía?");
+  // dirección sigue exactamente igual que siempre, en AutoresPage.tsx —
+  // no se le tocó ni un píxel. El CRM de Autores/Proyectos que antes
+  // era el Inicio de comercial no desapareció, sigue siendo AutoresPage.tsx,
+  // ahora accesible en rutas propias (/autores, /proyectos, ver App.tsx).
+  if (user?.rol === 'comercial') {
+    return <ComercialDashboardPage />;
+  }
+
+  if (user?.rol === 'direccion') {
     return <AutoresPage />;
   }
 

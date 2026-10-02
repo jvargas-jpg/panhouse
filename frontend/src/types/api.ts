@@ -238,6 +238,8 @@ export type ProyectoDetalleConAutores = Omit<ProyectoConRiesgo, 'autor'> & {
 // GET /proyectos/sin-editor reutiliza esta misma forma pero sale de una
 // consulta distinta (listarProyectosSinEditor) que no los incluye.
 export interface ProyectoPendienteSeccion1 {
+  listoParaRrpp?: boolean;
+  faltantesComercial?: FaltanteComercial[];
   id: string;
   titulo: string | null;
   // Igual que unidadId/presupuestoId/fechaProgramadaInicio abajo:
@@ -333,7 +335,10 @@ export interface FichaDistribucionPais {
   porcentajeRegalias: string | null;
 }
 
-export interface FichaCompleta {
+export type FaltanteComercial = 'autores' | 'servicioId' | 'unidadId' | 'presupuestoId' | 'ingresoFechaIngreso' | 'ingresoServicioEjecucion' | 'ingresoServicioAlianza' | 'capitulosPactados' | 'paginasPactadas';
+export interface PreparacionComercial { listoParaRrpp: boolean; faltantesComercial: FaltanteComercial[] }
+
+export interface FichaCompleta extends PreparacionComercial {
   proyectoId: string;
   // sección 1. perfilAutor/objetivosComerciales ("Resumen y Objetivos")
   // se eliminaron a pedido explícito del negocio: texto libre de una
@@ -560,6 +565,12 @@ export interface Autor {
   telefono: string | null;
   pais: string | null;
   categoria: CategoriaCliente;
+  // El backend ya lo devuelve (GET /autores hace db.select() sin lista
+  // de columnas, trae la fila completa) — no se había declarado acá
+  // porque nadie lo necesitaba todavía. Lo usa RecentAuthors.tsx
+  // (ComercialDashboardPage) para la columna "Fecha" — sin este campo,
+  // esa columna tendría que inventar un dato.
+  createdAt: string;
 }
 
 // GET /api/catalogos — para el formulario de creación de proyecto.
@@ -633,9 +644,18 @@ export interface Proyecto {
 
 // GET /api/proyectos/activos — selector del módulo de pagos
 // (RegistrarPagoPage.tsx). Mismo shape que server/helpers/proyectos.ts:ProyectoResumen.
-export interface ProyectoResumen {
+export interface ProyectoResumen extends PreparacionComercial {
+  autores: { id: string; nombre: string; nombreArtistico: string | null }[];
+  unidadId: string;
+  presupuestoId: string;
+  fechaProgramadaInicio: string;
   id: string;
   titulo: string | null;
+  // El backend ya lo devuelve (listarProyectosActivosResumen mapea
+  // codigo explícitamente) — no se había declarado acá porque
+  // RegistrarPagoPage.tsx no lo necesitaba. Lo usa ComercialKpis/
+  // ComercialDashboardPage para el conteo de "Proyectos activos".
+  codigo: string;
   estado: EstadoProyecto;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };

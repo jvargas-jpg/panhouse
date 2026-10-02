@@ -1,17 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type FormEvent } from 'react';
-import type { Autor, CategoriaCliente, RedesSociales } from '../types/api';
+import type { Autor, CategoriaCliente } from '../types/api';
+import { AuthorFormSectionNav } from './AuthorFormSectionNav';
+import { AuthorProfileSection } from './AuthorProfileSection';
+import { ContactSection } from './ContactSection';
+import { PersonalInfoSection } from './PersonalInfoSection';
+import { SocialNetworksSection } from './SocialNetworksSection';
+import type { SeccionAutorForm } from './authorFormSecciones';
 import { crearAutor, editarAutor } from './autoresApi';
 import { CODIGOS_UNICOS } from './codigosTelefonicos';
-import { EtiquetasCorreos } from './EtiquetasCorreos';
-import { EtiquetasPersonalidad } from './EtiquetasPersonalidad';
-import { PAISES } from './paises';
-import { SelectorCodigoTelefonico } from './SelectorCodigoTelefonico';
-import { SelectorMultipleNacionalidades } from './SelectorMultipleNacionalidades';
-
-const LABEL_CLASS = 'mb-1.5 mt-4 block text-[11px] font-bold uppercase tracking-wide text-gray-500';
-const INPUT_CLASS =
-  'w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-dorado focus:bg-white focus:ring-2 focus:ring-dorado/40';
+import { filasDesdeRedesSociales, redesSocialesDesdeFilas, type FilaRedSocial } from './redesSocialesForm';
 
 const CODIGO_POR_DEFECTO = '+58';
 
@@ -46,124 +44,117 @@ function parseTelefono(telefono: string | null): { codigo: string; numero: strin
   return { codigo: CODIGO_POR_DEFECTO, numero: telefono.replace(/[^0-9]/g, '') };
 }
 
-interface CamposRedes {
-  instagram: string;
-  x: string;
-  facebook: string;
-  linkedin: string;
-  tiktok: string;
-  youtube: string;
+// Estado centralizado del formulario — un solo objeto en vez de una
+// docena de useState sueltos, para que las 4 secciones (Personal/
+// Contacto/Redes/Perfil) puedan vivir en componentes aparte sin
+// arrastrar 12 pares value/onChange cada una: cada sección recibe su
+// porción y un único `onCambiar(patch)` que hace merge sobre este objeto.
+interface EstadoFormularioAutor {
+  nombre: string;
+  nombreArtistico: string;
+  categoria: CategoriaCliente;
+  email: string[];
+  telefonoCodigo: string;
+  telefonoNumero: string;
+  pais: string;
+  nacionalidad: string[];
+  fechaNacimiento: string;
+  redesFilas: FilaRedSocial[];
+  personalidad: string[];
+  ocupacion: string;
 }
 
-const REDES_VACIAS: CamposRedes = { instagram: '', x: '', facebook: '', linkedin: '', tiktok: '', youtube: '' };
+const ESTADO_VACIO: EstadoFormularioAutor = {
+  nombre: '',
+  nombreArtistico: '',
+  categoria: 'Estándar',
+  email: [],
+  telefonoCodigo: CODIGO_POR_DEFECTO,
+  telefonoNumero: '',
+  pais: '',
+  nacionalidad: [],
+  fechaNacimiento: '',
+  redesFilas: [],
+  personalidad: [],
+  ocupacion: '',
+};
 
-// Solo incluye las plataformas con algo escrito — mismo criterio que el
-// resto del formulario (los campos vacíos se omiten al crear, o se
-// mandan explícitamente en null al editar, nunca como string vacío).
-function construirRedesSociales(campos: CamposRedes): RedesSociales | undefined {
-  const entradas = Object.entries(campos).filter(([, valor]) => valor.trim() !== '');
-  if (entradas.length === 0) return undefined;
-  return Object.fromEntries(entradas.map(([clave, valor]) => [clave, valor.trim()])) as RedesSociales;
-}
-
-function redesDesdeAutor(redesSociales: RedesSociales | null): CamposRedes {
+function estadoDesdeAutor(autor: Autor | null): EstadoFormularioAutor {
+  if (!autor) return ESTADO_VACIO;
+  const telefonoParseado = parseTelefono(autor.telefono);
   return {
-    instagram: redesSociales?.instagram ?? '',
-    x: redesSociales?.x ?? '',
-    facebook: redesSociales?.facebook ?? '',
-    linkedin: redesSociales?.linkedin ?? '',
-    tiktok: redesSociales?.tiktok ?? '',
-    youtube: redesSociales?.youtube ?? '',
+    nombre: autor.nombre,
+    nombreArtistico: autor.nombreArtistico ?? '',
+    categoria: autor.categoria,
+    email: autor.email ?? [],
+    telefonoCodigo: telefonoParseado.codigo,
+    telefonoNumero: telefonoParseado.numero,
+    pais: autor.pais ?? '',
+    nacionalidad: autor.nacionalidad ?? [],
+    fechaNacimiento: autor.fechaNacimiento ?? '',
+    redesFilas: filasDesdeRedesSociales(autor.redesSociales),
+    personalidad: autor.personalidad ?? [],
+    ocupacion: autor.ocupacion ?? '',
   };
 }
 
 // Alta y edición de autor. comercial y dirección son los únicos roles
 // con permiso de escritura (ver ROLES_ESCRITURA_AUTORES en
 // server/routes/autores.routes.ts). Vive dentro del modal "Registrar/
-// Editar Autor" de AutoresPage.tsx — el título y la tarjeta ya los pone
-// <Modal/>, este componente solo devuelve el <form>.
+// Editar Autor" de AutoresPage.tsx y CommercialAuthorsView.tsx — mismo
+// componente para ambos roles, el título/subtítulo y la tarjeta ya los
+// pone <Modal/>, este componente arma la navegación interna (sidebar en
+// desktop, tabs en mobile, ver AuthorFormSectionNav.tsx) + el panel de
+// la sección activa + el footer.
 //
 // autorEnEdicion === null → crear (POST); autorEnEdicion !== null →
 // editar (PATCH /autores/:id) precargado con sus datos actuales.
-// AutoresPage.tsx remonta este modal cada vez que se abre (no cambia
-// autorEnEdicion en caliente con el modal ya abierto), pero el useEffect
-// deja el pre-llenado explícito igual, en vez de depender solo del
-// useState inicial.
+// AutoresPage.tsx/CommercialAuthorsView.tsx remontan este modal cada vez
+// que se abre (no cambian autorEnEdicion en caliente con el modal ya
+// abierto), pero el useEffect deja el pre-llenado explícito igual, en
+// vez de depender solo del useState inicial.
 export function CrearAutorForm({
   autorEnEdicion,
   onGuardado,
+  onCancelar,
 }: {
   autorEnEdicion: Autor | null;
   onGuardado: (mensaje: string) => void;
+  onCancelar: () => void;
 }) {
-  const [nombre, setNombre] = useState('');
-  const [nombreArtistico, setNombreArtistico] = useState('');
-  const [categoria, setCategoria] = useState<CategoriaCliente>('Estándar');
-  const [email, setEmail] = useState<string[]>([]);
-  const [telefonoCodigo, setTelefonoCodigo] = useState(CODIGO_POR_DEFECTO);
-  const [telefonoNumero, setTelefonoNumero] = useState('');
-  const [pais, setPais] = useState('');
-  const [nacionalidad, setNacionalidad] = useState<string[]>([]);
-  const [fechaNacimiento, setFechaNacimiento] = useState('');
-  const [redes, setRedes] = useState<CamposRedes>(REDES_VACIAS);
-  const [personalidad, setPersonalidad] = useState<string[]>([]);
-  const [ocupacion, setOcupacion] = useState('');
+  const [form, setForm] = useState<EstadoFormularioAutor>(ESTADO_VACIO);
+  const [seccionActiva, setSeccionActiva] = useState<SeccionAutorForm>('personal');
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    setNombre(autorEnEdicion?.nombre ?? '');
-    setNombreArtistico(autorEnEdicion?.nombreArtistico ?? '');
-    setCategoria(autorEnEdicion?.categoria ?? 'Estándar');
-    setEmail(autorEnEdicion?.email ?? []);
-    const telefonoParseado = parseTelefono(autorEnEdicion?.telefono ?? null);
-    setTelefonoCodigo(telefonoParseado.codigo);
-    setTelefonoNumero(telefonoParseado.numero);
-    setPais(autorEnEdicion?.pais ?? '');
-    setNacionalidad(autorEnEdicion?.nacionalidad ?? []);
-    setFechaNacimiento(autorEnEdicion?.fechaNacimiento ?? '');
-    setRedes(redesDesdeAutor(autorEnEdicion?.redesSociales ?? null));
-    setPersonalidad(autorEnEdicion?.personalidad ?? []);
-    setOcupacion(autorEnEdicion?.ocupacion ?? '');
+    setForm(estadoDesdeAutor(autorEnEdicion));
+    setSeccionActiva('personal');
   }, [autorEnEdicion]);
 
-  function limpiarFormulario() {
-    setNombre('');
-    setNombreArtistico('');
-    setCategoria('Estándar');
-    setEmail([]);
-    setTelefonoCodigo(CODIGO_POR_DEFECTO);
-    setTelefonoNumero('');
-    setPais('');
-    setNacionalidad([]);
-    setFechaNacimiento('');
-    setRedes(REDES_VACIAS);
-    setPersonalidad([]);
-    setOcupacion('');
-  }
-
-  function actualizarRed(campo: keyof CamposRedes, valor: string) {
-    setRedes((actual) => ({ ...actual, [campo]: valor }));
+  function actualizar(cambios: Partial<EstadoFormularioAutor>) {
+    setForm((actual) => ({ ...actual, ...cambios }));
     mutacion.reset();
   }
 
   const mutacionCrear = useMutation({
     mutationFn: () =>
       crearAutor({
-        nombre,
-        nombreArtistico: nombreArtistico || undefined,
-        categoria,
-        email: email.length > 0 ? email : undefined,
-        telefono: construirTelefono(telefonoCodigo, telefonoNumero),
-        pais: pais || undefined,
-        nacionalidad: nacionalidad.length > 0 ? nacionalidad : undefined,
-        fechaNacimiento: fechaNacimiento || undefined,
-        redesSociales: construirRedesSociales(redes),
-        personalidad: personalidad.length > 0 ? personalidad : undefined,
-        ocupacion: ocupacion || undefined,
+        nombre: form.nombre,
+        nombreArtistico: form.nombreArtistico || undefined,
+        categoria: form.categoria,
+        email: form.email.length > 0 ? form.email : undefined,
+        telefono: construirTelefono(form.telefonoCodigo, form.telefonoNumero),
+        pais: form.pais || undefined,
+        nacionalidad: form.nacionalidad.length > 0 ? form.nacionalidad : undefined,
+        fechaNacimiento: form.fechaNacimiento || undefined,
+        redesSociales: redesSocialesDesdeFilas(form.redesFilas),
+        personalidad: form.personalidad.length > 0 ? form.personalidad : undefined,
+        ocupacion: form.ocupacion || undefined,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['autores'] });
-      limpiarFormulario();
+      setForm(ESTADO_VACIO);
+      setSeccionActiva('personal');
       onGuardado('Autor creado exitosamente');
     },
   });
@@ -171,17 +162,17 @@ export function CrearAutorForm({
   const mutacionEditar = useMutation({
     mutationFn: () =>
       editarAutor(autorEnEdicion!.id, {
-        nombre,
-        nombreArtistico: nombreArtistico || null,
-        categoria,
-        email: email.length > 0 ? email : null,
-        telefono: construirTelefono(telefonoCodigo, telefonoNumero) ?? null,
-        pais: pais || null,
-        nacionalidad: nacionalidad.length > 0 ? nacionalidad : null,
-        fechaNacimiento: fechaNacimiento || null,
-        redesSociales: construirRedesSociales(redes) ?? null,
-        personalidad: personalidad.length > 0 ? personalidad : null,
-        ocupacion: ocupacion || null,
+        nombre: form.nombre,
+        nombreArtistico: form.nombreArtistico || null,
+        categoria: form.categoria,
+        email: form.email.length > 0 ? form.email : null,
+        telefono: construirTelefono(form.telefonoCodigo, form.telefonoNumero) ?? null,
+        pais: form.pais || null,
+        nacionalidad: form.nacionalidad.length > 0 ? form.nacionalidad : null,
+        fechaNacimiento: form.fechaNacimiento || null,
+        redesSociales: redesSocialesDesdeFilas(form.redesFilas) ?? null,
+        personalidad: form.personalidad.length > 0 ? form.personalidad : null,
+        ocupacion: form.ocupacion || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['autores'] });
@@ -196,291 +187,83 @@ export function CrearAutorForm({
     mutacion.mutate();
   }
 
+  // Solo feedback visual en la navegación (check/círculo, ver
+  // AuthorFormSectionNav.tsx) — nunca bloquea el submit ni valida nada;
+  // por eso el criterio de "tiene datos" es deliberadamente laxo (basta
+  // con un campo, no hace falta la sección completa).
+  const seccionesConDatos: Record<SeccionAutorForm, boolean> = {
+    personal: form.nombre.trim() !== '',
+    contacto: form.email.length > 0 || form.telefonoNumero.trim() !== '',
+    redes: form.redesFilas.some((f) => f.valor.trim() !== ''),
+    perfil: form.personalidad.length > 0 || form.ocupacion.trim() !== '',
+  };
+
   return (
-    // flex-col de tres pisos, sin sticky: Modal.tsx ya entrega un slot
-    // acotado en alto (flex-1 min-h-0, sin su propio scroll) — este
-    // <form> se estira para llenarlo (flex-1 min-h-0, mismo criterio) y
-    // reparte adentro cuerpo scrolleable + footer fijo. Ver el
-    // comentario de Modal.tsx para el porqué del cambio (sticky
-    // bottom-0 flotaba a mitad del formulario en la práctica, en vez de
-    // quedar anclado abajo).
     <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto p-6">
-        <div>
-          <label htmlFor="autor-nombre" className={LABEL_CLASS}>
-            Nombre Completo
-          </label>
-          <input
-            id="autor-nombre"
-            type="text"
-            required
-            value={nombre}
-            onChange={(event) => {
-              setNombre(event.target.value);
-              mutacion.reset();
-            }}
-            className={INPUT_CLASS}
-          />
+      {/* Tabs — solo mobile (< md). En desktop la navegación vive en el
+          sidebar de la izquierda, ver más abajo. */}
+      <div className="shrink-0 border-b border-gray-100 px-4 py-3 md:hidden">
+        <AuthorFormSectionNav variant="tabs" activa={seccionActiva} onCambiar={setSeccionActiva} seccionesConDatos={seccionesConDatos} />
+      </div>
+
+      <div className="flex min-h-0 flex-1">
+        {/* Sidebar — solo desktop (md+). */}
+        <div className="hidden shrink-0 border-r border-gray-100 bg-gray-50/60 px-3 py-5 md:block md:w-[200px]">
+          <AuthorFormSectionNav variant="sidebar" activa={seccionActiva} onCambiar={setSeccionActiva} seccionesConDatos={seccionesConDatos} />
         </div>
 
-        <div>
-          <label htmlFor="autor-categoria" className={LABEL_CLASS}>
-            Categoría
-          </label>
-          <select
-            id="autor-categoria"
-            value={categoria}
-            onChange={(event) => {
-              setCategoria(event.target.value as CategoriaCliente);
-              mutacion.reset();
-            }}
-            className={INPUT_CLASS}
-          >
-            <option value="Estándar">Estándar</option>
-            <option value="VIP">VIP</option>
-          </select>
-        </div>
-
-        <div>
-          <label htmlFor="autor-email-entrada" className={LABEL_CLASS}>
-            Correo
-          </label>
-          <EtiquetasCorreos
-            value={email}
-            onChange={(correos) => {
-              setEmail(correos);
-              mutacion.reset();
-            }}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="autor-telefono-numero" className={LABEL_CLASS}>
-            Teléfono
-          </label>
-          <div className="flex gap-2">
-            <SelectorCodigoTelefonico
-              value={telefonoCodigo}
-              onChange={(codigo) => {
-                setTelefonoCodigo(codigo);
-                mutacion.reset();
-              }}
+        <div
+          id="autor-form-panel"
+          role="tabpanel"
+          aria-labelledby={`autor-form-tab-sidebar-${seccionActiva} autor-form-tab-tabs-${seccionActiva}`}
+          className="min-h-0 flex-1 overflow-y-auto px-6 py-6"
+        >
+          {seccionActiva === 'personal' && (
+            <PersonalInfoSection
+              nombre={form.nombre}
+              nombreArtistico={form.nombreArtistico}
+              categoria={form.categoria}
+              pais={form.pais}
+              nacionalidad={form.nacionalidad}
+              fechaNacimiento={form.fechaNacimiento}
+              onCambiar={actualizar}
             />
-            <input
-              id="autor-telefono-numero"
-              type="tel"
-              inputMode="tel"
-              placeholder="424-1495423"
-              value={telefonoNumero}
-              onChange={(event) => {
-                // Bloqueo activo: cualquier carácter que no sea dígito,
-                // guion o espacio se descarta antes de llegar al estado —
-                // cubre teclado, autocompletar y pegar (a diferencia de
-                // interceptar onKeyDown, que solo detiene teclas
-                // físicas). El "+" ya no aplica acá (vive en el select de
-                // código); construirTelefono limpia guiones/espacios al
-                // armar el payload.
-                setTelefonoNumero(event.target.value.replace(/[^0-9\-\s]/g, ''));
-                mutacion.reset();
-              }}
-              className={`${INPUT_CLASS} flex-1`}
-            />
-          </div>
-          <p className="mt-1 text-xs text-gray-500">Omite el 0 inicial de tu operadora</p>
-        </div>
-
-        <div>
-          <label htmlFor="autor-nombre-artistico" className={LABEL_CLASS}>
-            Nombre artístico
-          </label>
-          <input
-            id="autor-nombre-artistico"
-            type="text"
-            value={nombreArtistico}
-            onChange={(event) => {
-              setNombreArtistico(event.target.value);
-              mutacion.reset();
-            }}
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="autor-pais" className={LABEL_CLASS}>
-              País de ubicación
-            </label>
-            <select
-              id="autor-pais"
-              value={pais}
-              onChange={(event) => {
-                setPais(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            >
-              <option value="">Sin definir</option>
-              {PAISES.map((nombrePais) => (
-                <option key={nombrePais} value={nombrePais}>
-                  {nombrePais}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="autor-nacionalidad" className={LABEL_CLASS}>
-              Nacionalidad
-            </label>
-            <SelectorMultipleNacionalidades
-              value={nacionalidad}
-              onChange={(nacionalidades) => {
-                setNacionalidad(nacionalidades);
-                mutacion.reset();
-              }}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="autor-fecha-nacimiento" className={LABEL_CLASS}>
-            Fecha de nacimiento
-          </label>
-          <input
-            id="autor-fecha-nacimiento"
-            type="date"
-            value={fechaNacimiento}
-            onChange={(event) => {
-              setFechaNacimiento(event.target.value);
-              mutacion.reset();
-            }}
-            className={INPUT_CLASS}
-          />
-        </div>
-
-        <p className={LABEL_CLASS}>Redes sociales</p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div>
-            <label htmlFor="autor-red-x" className="mb-1.5 block text-xs text-gray-500">
-              X (Twitter)
-            </label>
-            <input
-              id="autor-red-x"
-              type="text"
-              placeholder="@usuario"
-              value={redes.x}
-              onChange={(event) => actualizarRed('x', event.target.value)}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div>
-            <label htmlFor="autor-red-instagram" className="mb-1.5 block text-xs text-gray-500">
-              Instagram
-            </label>
-            <input
-              id="autor-red-instagram"
-              type="text"
-              placeholder="@usuario"
-              value={redes.instagram}
-              onChange={(event) => actualizarRed('instagram', event.target.value)}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div>
-            <label htmlFor="autor-red-facebook" className="mb-1.5 block text-xs text-gray-500">
-              Facebook
-            </label>
-            <input
-              id="autor-red-facebook"
-              type="text"
-              value={redes.facebook}
-              onChange={(event) => actualizarRed('facebook', event.target.value)}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div>
-            <label htmlFor="autor-red-linkedin" className="mb-1.5 block text-xs text-gray-500">
-              LinkedIn
-            </label>
-            <input
-              id="autor-red-linkedin"
-              type="text"
-              value={redes.linkedin}
-              onChange={(event) => actualizarRed('linkedin', event.target.value)}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div>
-            <label htmlFor="autor-red-tiktok" className="mb-1.5 block text-xs text-gray-500">
-              TikTok
-            </label>
-            <input
-              id="autor-red-tiktok"
-              type="text"
-              placeholder="@usuario"
-              value={redes.tiktok}
-              onChange={(event) => actualizarRed('tiktok', event.target.value)}
-              className={INPUT_CLASS}
-            />
-          </div>
-          <div>
-            <label htmlFor="autor-red-youtube" className="mb-1.5 block text-xs text-gray-500">
-              YouTube
-            </label>
-            <input
-              id="autor-red-youtube"
-              type="text"
-              value={redes.youtube}
-              onChange={(event) => actualizarRed('youtube', event.target.value)}
-              className={INPUT_CLASS}
-            />
-          </div>
-        </div>
-
-        <div>
-          <label htmlFor="autor-personalidad-entrada" className={LABEL_CLASS}>
-            Personalidad
-          </label>
-          <EtiquetasPersonalidad
-            value={personalidad}
-            onChange={(etiquetas) => {
-              setPersonalidad(etiquetas);
-              mutacion.reset();
-            }}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="autor-ocupacion" className={LABEL_CLASS}>
-            ¿A qué se dedica?
-          </label>
-          <textarea
-            id="autor-ocupacion"
-            rows={3}
-            value={ocupacion}
-            onChange={(event) => {
-              setOcupacion(event.target.value);
-              mutacion.reset();
-            }}
-            className={INPUT_CLASS}
-          />
+          )}
+          {seccionActiva === 'contacto' && (
+            <ContactSection email={form.email} telefonoCodigo={form.telefonoCodigo} telefonoNumero={form.telefonoNumero} onCambiar={actualizar} />
+          )}
+          {seccionActiva === 'redes' && (
+            <SocialNetworksSection filas={form.redesFilas} onChange={(redesFilas) => actualizar({ redesFilas })} />
+          )}
+          {seccionActiva === 'perfil' && (
+            <AuthorProfileSection personalidad={form.personalidad} ocupacion={form.ocupacion} onCambiar={actualizar} />
+          )}
         </div>
       </div>
 
-      {/* flex-none: fuera del <div> scrolleable de arriba, así que nunca
-          se mueve con el contenido ni depende de sticky para quedar
-          anclado — siempre es lo último pintado, a ras del fondo de la
-          tarjeta del modal. */}
-      <div className="flex-none border-t border-gray-200 bg-white p-4">
-        <button
-          type="submit"
-          disabled={mutacion.isPending}
-          className="w-full rounded-lg bg-tinta py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-gray-800 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100"
-        >
-          {mutacion.isPending ? 'Guardando…' : autorEnEdicion ? 'Guardar Cambios' : 'Crear Autor'}
-        </button>
+      {/* flex-none: fuera del panel scrolleable de arriba, así que nunca
+          se mueve con el contenido — siempre a ras del fondo de la
+          tarjeta del modal. Botones de ancho contenido (no una barra
+          completa) alineados a la derecha. */}
+      <div className="flex-none border-t border-gray-200 bg-white px-6 py-4">
+        <div className="flex items-center justify-end gap-3">
+          <button
+            type="button"
+            onClick={onCancelar}
+            className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-600 shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dorado/40"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={mutacion.isPending}
+            className="rounded-lg bg-dorado px-6 py-2.5 text-sm font-semibold text-tinta shadow-sm transition-all hover:brightness-95 active:scale-[0.98] disabled:opacity-60 disabled:hover:brightness-100 disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dorado/40"
+          >
+            {mutacion.isPending ? 'Guardando…' : autorEnEdicion ? 'Guardar cambios' : 'Crear autor'}
+          </button>
+        </div>
         {mutacion.isError && (
-          <p role="alert" className="mt-3 text-sm text-red-600">
+          <p role="alert" className="mt-3 text-right text-sm text-red-600">
             No se pudo guardar{mutacion.error instanceof Error ? `: ${mutacion.error.message}` : ''}.
           </p>
         )}

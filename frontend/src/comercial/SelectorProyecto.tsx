@@ -15,7 +15,7 @@ export function SelectorProyecto({
   onSeleccionar,
 }: {
   proyectos: ProyectoResumen[];
-  proyectoSeleccionado: ProyectoResumen | null;
+  proyectoSeleccionado: Pick<ProyectoResumen, 'id' | 'titulo' | 'autor' | 'servicio'> | null;
   onSeleccionar: (proyecto: ProyectoResumen | null) => void;
 }) {
   const [busqueda, setBusqueda] = useState('');

@@ -2236,6 +2236,7 @@ describe('rutas de la ficha de trazabilidad', () => {
 
       const proyectoPendiente = await crearProyectoConFicha();
       const proyectoCompleto = await crearProyectoConFicha();
+      await actualizarSeccionProyectoPerfil(proyectoCompleto.id, { ingresoFechaIngreso: proyectoCompleto.fechaProgramadaInicio });
       await actualizarSeccionProyectoContrato(proyectoCompleto.id, { capitulosPactados: '6 a 10', paginasPactadas: '200' });
 
       const cookie = await registrarYLoguear(app, 'comercial');

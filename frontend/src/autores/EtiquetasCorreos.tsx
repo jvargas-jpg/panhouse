@@ -9,11 +9,13 @@ const INPUT_CLASS =
 // mandar la petición; el backend sigue siendo la fuente de verdad.
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Campo "Correo" de CrearAutorForm.tsx: un autor puede tener varios
-// correos de contacto (personal, representante, editorial) — mismo
-// patrón de chips que EtiquetasPersonalidad.tsx, pero acá cada etiqueta
-// se valida como email antes de agregarse, y además de Enter, una coma
-// también cierra la etiqueta (común al pegar una lista "a@x.com, b@x.com").
+// Campo "Correo" de ContactSection.tsx (CrearAutorForm.tsx): un autor
+// puede tener varios correos de contacto (personal, representante,
+// editorial) — se listan como filas limpias (no chips, a diferencia de
+// EtiquetasPersonalidad.tsx) para que se lean como una lista de
+// contacto. Cada entrada se valida como email antes de agregarse, y
+// además de Enter, una coma también la cierra (común al pegar una lista
+// "a@x.com, b@x.com").
 export function EtiquetasCorreos({ value, onChange }: { value: string[]; onChange: (correos: string[]) => void }) {
   const [entrada, setEntrada] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +57,24 @@ export function EtiquetasCorreos({ value, onChange }: { value: string[]; onChang
 
   return (
     <div>
+      {value.length > 0 && (
+        <div className="mb-2 divide-y divide-gray-100 rounded-lg border border-gray-100">
+          {value.map((correo) => (
+            <div key={correo} className="flex items-center justify-between gap-2 px-3.5 py-2 text-sm text-gray-700">
+              <span className="truncate">{correo}</span>
+              <button
+                type="button"
+                onClick={() => quitarEtiqueta(correo)}
+                aria-label={`Quitar ${correo}`}
+                className="shrink-0 rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dorado/40"
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="flex gap-2">
         <input
           id="autor-email-entrada"
@@ -74,31 +94,13 @@ export function EtiquetasCorreos({ value, onChange }: { value: string[]; onChang
           onClick={() => agregarEtiqueta(entrada)}
           disabled={!entrada.trim()}
           aria-label="Agregar correo"
-          className="flex w-11 flex-shrink-0 items-center justify-center rounded-lg bg-tinta text-lg font-medium text-white shadow-sm transition-all hover:bg-gray-800 disabled:opacity-60"
+          className="flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-gray-200 px-3.5 text-xs font-semibold text-gray-600 transition-colors hover:border-dorado hover:text-dorado disabled:opacity-50 disabled:hover:border-gray-200 disabled:hover:text-gray-600"
         >
-          +
+          + Añadir
         </button>
       </div>
 
       {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
-
-      {value.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {value.map((correo) => (
-            <span key={correo} className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 py-1 pl-3 pr-2 text-sm text-gray-800">
-              {correo}
-              <button
-                type="button"
-                onClick={() => quitarEtiqueta(correo)}
-                aria-label={`Quitar ${correo}`}
-                className="rounded-full p-0.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

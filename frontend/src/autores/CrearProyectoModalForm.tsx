@@ -6,7 +6,7 @@ import { crearProyecto, eliminarProyecto, fetchCatalogos, reasignarProyecto } fr
 import { fetchAutores } from './autoresApi';
 import { SelectorMultipleAutores } from './SelectorMultipleAutores';
 
-const LABEL_CLASS = 'mb-1.5 mt-4 block text-[11px] font-bold uppercase tracking-wide text-gray-500';
+const LABEL_CLASS = 'mb-1.5 block text-xs font-medium text-gray-600';
 const INPUT_CLASS =
   'w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-900 outline-none transition-all placeholder:text-gray-400 focus:border-dorado focus:bg-white focus:ring-2 focus:ring-dorado/40';
 
@@ -46,9 +46,13 @@ const CODIGOS_SERVICIO_ALTA = ['SE', 'EF', 'CR'];
 export function CrearProyectoModalForm({
   proyectoEnEdicion,
   onGuardado,
+  onCancelar,
+  onCreado,
 }: {
   proyectoEnEdicion: ProyectoPendienteSeccion1 | null;
   onGuardado: (mensaje: string) => void;
+  onCancelar?: () => void;
+  onCreado?: (id: string) => void;
 }) {
   const autoresQuery = useQuery({ queryKey: ['autores'], queryFn: fetchAutores });
   const catalogosQuery = useQuery({ queryKey: ['catalogos'], queryFn: fetchCatalogos });
@@ -79,6 +83,7 @@ export function CrearProyectoModalForm({
   function invalidarProyectos() {
     queryClient.invalidateQueries({ queryKey: ['fichas-trazabilidad', 'pendientes', 'contrato'] });
     queryClient.invalidateQueries({ queryKey: ['proyectos'] });
+    queryClient.invalidateQueries({ queryKey: ['metricas', 'comercial'] });
   }
 
   const servicioId = catalogosQuery.data?.servicios.find((servicio) => servicio.codigo === servicioCodigo)?.id;
@@ -89,9 +94,10 @@ export function CrearProyectoModalForm({
       if (!servicioId) throw new Error('Selecciona un servicio válido');
       return crearProyecto({ autorIds, servicioId, unidadId, presupuestoId, fechaProgramadaInicio });
     },
-    onSuccess: () => {
+    onSuccess: (resultado) => {
       invalidarProyectos();
-      onGuardado('Proyecto creado exitosamente');
+      if (onCreado) onCreado(resultado.proyecto.id);
+      else onGuardado('Proyecto creado exitosamente');
     },
   });
 
@@ -138,17 +144,12 @@ export function CrearProyectoModalForm({
   }
 
   return (
-    // p-6: Modal.tsx daba este padding gratis antes (lo tenía en su
-    // propio wrapper de children); ahora ese wrapper es un slot desnudo
-    // sin padding propio (ver el comentario de Modal.tsx), así que cada
-    // formulario lo pone por su cuenta. Este formulario es corto y
-    // nunca necesitó scroll propio, así que un <form> normal con
-    // padding alcanza — no hace falta el split cuerpo/footer de
-    // CrearAutorForm.tsx.
-    <form onSubmit={handleSubmit} className="min-h-0 flex-1 overflow-y-auto p-6">
+    <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+      <div className="min-h-0 flex-1 space-y-6 overflow-y-auto px-6 py-5">
+        {(autoresQuery.isError || catalogosQuery.isError) && <div role="alert" className="rounded-lg bg-amber-50 p-3 text-xs text-amber-900">No se pudieron cargar las opciones. <button type="button" onClick={() => { if (autoresQuery.isError) void autoresQuery.refetch(); if (catalogosQuery.isError) void catalogosQuery.refetch(); }} className="font-semibold underline">Reintentar</button></div>}
       <div>
         <label htmlFor="proyecto-autores-buscador" className={LABEL_CLASS}>
-          Autores (coautoría)
+          Autoría
         </label>
         <SelectorMultipleAutores
           autoresDisponibles={autoresQuery.data?.autores ?? []}
@@ -158,8 +159,12 @@ export function CrearProyectoModalForm({
             mutacion.reset();
           }}
         />
+        <p className="mt-2 text-xs text-gray-500">Selecciona uno o varios autores para este proyecto.</p>
       </div>
 
+        <div role="group" aria-labelledby="project-initial-data" className="border-t border-gray-100 pt-4">
+          <h4 id="project-initial-data" className="mb-4 text-sm font-semibold text-gray-900">Información del proyecto</h4>
+          <div className="grid grid-cols-1 gap-x-5 gap-y-4 sm:grid-cols-2">
       <div>
         <label htmlFor="proyecto-servicio" className={LABEL_CLASS}>
           Tipo de servicio
@@ -250,36 +255,17 @@ export function CrearProyectoModalForm({
         />
       </div>
 
-      <button
-        type="submit"
-        disabled={mutacion.isPending}
-        className="mt-8 w-full rounded-lg bg-tinta py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-gray-800 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:hover:scale-100"
-      >
-        {mutacion.isPending ? 'Guardando…' : proyectoEnEdicion ? 'Guardar Cambios' : 'Crear Proyecto'}
-      </button>
-      {mutacion.isError && (
-        <p role="alert" className="mt-3 text-sm text-red-600">
-          No se pudo guardar{mutacion.error instanceof Error ? `: ${mutacion.error.message}` : ''}.
-        </p>
-      )}
-
-      {proyectoEnEdicion && (
-        <>
-          <button
-            type="button"
-            onClick={handleEliminar}
-            disabled={mutacionEliminar.isPending}
-            className="mt-3 w-full rounded-lg py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-60"
-          >
-            {mutacionEliminar.isPending ? 'Eliminando…' : 'Eliminar Proyecto'}
-          </button>
-          {mutacionEliminar.isError && (
-            <p role="alert" className="mt-3 text-sm text-red-600">
-              No se pudo eliminar{mutacionEliminar.error instanceof Error ? `: ${mutacionEliminar.error.message}` : ''}.
-            </p>
-          )}
-        </>
-      )}
+          </div>
+        </div>
+        {proyectoEnEdicion && <details className="text-xs text-gray-500"><summary className="cursor-pointer">Más opciones</summary><button type="button" onClick={handleEliminar} disabled={mutacionEliminar.isPending} className="mt-2 rounded-lg px-3 py-2 text-red-700 hover:bg-red-50">{mutacionEliminar.isPending ? 'Eliminando…' : 'Eliminar proyecto'}</button></details>}
+      </div>
+      <footer className="shrink-0 border-t border-gray-100 bg-white px-6 py-4">
+        {(mutacion.isError || mutacionEliminar.isError) && <p role="alert" className="mb-3 break-words text-sm text-red-600">No se pudo guardar{(mutacion.error ?? mutacionEliminar.error) instanceof Error ? `: ${((mutacion.error ?? mutacionEliminar.error) as Error).message}` : '.'}</p>}
+        <div className="flex flex-wrap justify-end gap-3">
+          {onCancelar && <button type="button" onClick={onCancelar} disabled={mutacion.isPending} className="min-h-11 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-dorado disabled:opacity-60">Cancelar</button>}
+          <button type="submit" disabled={mutacion.isPending || mutacionEliminar.isPending || autoresQuery.isLoading || catalogosQuery.isLoading || autoresQuery.isError || catalogosQuery.isError} className="min-h-11 rounded-lg bg-dorado px-4 py-2.5 text-sm font-semibold text-tinta transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2 disabled:opacity-60">{mutacion.isPending ? 'Guardando…' : proyectoEnEdicion ? 'Guardar cambios' : onCreado ? 'Crear y completar ficha' : 'Crear proyecto'}</button>
+        </div>
+      </footer>
     </form>
   );
 }

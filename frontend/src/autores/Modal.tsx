@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 
 // Overlay Clean SaaS compartido por los dos modales de esta pantalla
 // (Autor y Proyecto) — mismo fondo difuminado + tarjeta + botón cerrar
@@ -30,22 +30,71 @@ import type { ReactNode } from 'react';
 // modales angostos de un solo campo) — los formularios largos de varias
 // columnas (ej. RegistroSeguimientoForm.tsx) necesitan más aire que
 // max-w-md, donde un grid de 2-3 columnas nunca llega a activarse.
-const ANCHOS = { md: 'max-w-md', '3xl': 'max-w-3xl' } as const;
+// '4xl' (max-w-4xl, 896px): usado por el modal de Autor, que reparte su
+// contenido en navegación lateral + panel (AuthorFormSectionNav.tsx) —
+// necesita más aire que '3xl' para que esa composición de dos columnas
+// no se sienta apretada.
+const ANCHOS = { proyecto: 'max-w-[720px]', md: 'max-w-md', '3xl': 'max-w-3xl', '4xl': 'max-w-4xl' } as const;
 
 export function Modal({
   titulo,
+  subtitulo,
   onClose,
   children,
   ancho = 'md',
 }: {
   titulo: string;
+  subtitulo?: string;
   onClose: () => void;
   children: ReactNode;
   ancho?: keyof typeof ANCHOS;
 }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const tituloId = useId();
+
+  // Esc para cerrar + trampa de foco manual (Tab/Shift+Tab no se
+  // escapan del modal) — sin sumar una librería de modal nueva, solo
+  // DOM estándar. El panel recibe el foco inicial al montar (en vez de
+  // adivinar cuál sería "el primer campo útil" entre los distintos
+  // formularios que usan este componente).
+  useEffect(() => {
+    panelRef.current?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (event.key !== 'Tab' || !panelRef.current) return;
+      const focusables = panelRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const primero = focusables[0]!;
+      const ultimo = focusables[focusables.length - 1]!;
+      if (event.shiftKey && document.activeElement === primero) {
+        event.preventDefault();
+        ultimo.focus();
+      } else if (!event.shiftKey && document.activeElement === ultimo) {
+        event.preventDefault();
+        primero.focus();
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-gray-900/40 p-4 backdrop-blur-sm">
-      <div className={`relative flex max-h-[90vh] w-full ${ANCHOS[ancho]} flex-col overflow-hidden rounded-2xl bg-white shadow-xl`}>
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        className={`relative flex max-h-[90vh] w-full ${ANCHOS[ancho]} flex-col overflow-hidden rounded-2xl bg-white shadow-xl outline-none`}
+      >
         <button
           type="button"
           onClick={onClose}
@@ -54,7 +103,12 @@ export function Modal({
         >
           ✕
         </button>
-        <h3 className="shrink-0 border-b border-gray-100 px-6 pb-4 pt-6 text-lg font-semibold text-gray-900">{titulo}</h3>
+        <div className="shrink-0 border-b border-gray-100 px-6 pb-4 pt-6">
+          <h3 id={tituloId} className="pr-6 text-lg font-semibold text-gray-900">
+            {titulo}
+          </h3>
+          {subtitulo && <p className="mt-1 pr-6 text-sm text-gray-500">{subtitulo}</p>}
+        </div>
         <div className="flex min-h-0 flex-1 flex-col">{children}</div>
       </div>
     </div>

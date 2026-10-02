@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { AutoresPage } from './autores/AutoresPage';
 import { LoginPage } from './auth/LoginPage';
 import { RequireAuth } from './auth/RequireAuth';
 import { RegistrarPagoPage } from './comercial/RegistrarPagoPage';
@@ -26,6 +27,16 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          {/* Rutas explícitas del CRM que antes solo se veía como pestaña
+              interna de AutoresPage.tsx en "/" — a pedido explícito del
+              negocio, ahora que comercial tiene su propio Inicio
+              (ComercialDashboardPage.tsx, ver HomePage.tsx), "Autores" y
+              "Proyectos" necesitan un link real al que apuntar desde su
+              sidebar. Mismo componente que ya existía, con la pestaña
+              inicial fijada por prop — dirección sigue entrando por "/"
+              exactamente igual que siempre, sin pasar por acá. */}
+          <Route path="/autores" element={<AutoresPage vistaInicial="clientes" />} />
+          <Route path="/proyectos" element={<AutoresPage vistaInicial="proyectos" />} />
           <Route path="/comercial/pagos" element={<RegistrarPagoPage />} />
           <Route
             path="/comercial/metricas"

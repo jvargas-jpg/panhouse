@@ -540,6 +540,10 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(seccionProyectoPerfilSchema, request.body, reply);
       if (!body) return;
 
+      // RRPP es el único dueño del subtipo, incluso para null o un valor idéntico.
+      if (body.ingresoServicioSubtipoCrudo !== undefined && request.user?.rol !== 'rrpp') {
+        return reply.code(403).send({ error: 'La especificación de Crudo corresponde a RRPP' });
+      }
       const ficha = await actualizarSeccionProyectoPerfil(params.proyectoId, body);
       return reply.send({ ficha });
     },

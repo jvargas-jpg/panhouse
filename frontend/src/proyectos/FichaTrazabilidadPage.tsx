@@ -1,3 +1,4 @@
+import { TraceabilityWorkspace } from '../trazabilidad/TraceabilityWorkspace';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
@@ -33,6 +34,13 @@ const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen';
 // significa ensanchar ese permiso, que fue una decisión aparte del
 // negocio.
 export function FichaTrazabilidadPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: usuario } = useMe();
+  if (usuario?.rol === 'comercial' && id) return <TraceabilityWorkspace key={id} proyectoId={id} />;
+  return <LegacyFichaTrazabilidadPage />;
+}
+
+function LegacyFichaTrazabilidadPage() {
   const { id } = useParams<{ id: string }>();
   if (!id) throw new Error('Falta el id del proyecto en la ruta');
 

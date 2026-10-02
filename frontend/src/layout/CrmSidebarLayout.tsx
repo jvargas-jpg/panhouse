@@ -38,20 +38,51 @@ export const NAV_INACTIVO =
 // nav: contenido de <nav> (los botones de navegación, con estilo
 // NAV_ACTIVO/NAV_INACTIVO de arriba) — cada página decide sus propios
 // enlaces. children: panel de contenido a la derecha, con scroll propio
-// y el mismo ancho máximo (max-w-5xl) que ya usaba AutoresPage.tsx.
-// overlays (opcional): modales/toasts — siblings del panel de
-// contenido, no adentro (para no quedar recortados por su overflow).
-export function CrmSidebarLayout({ nav, children, overlays }: { nav: ReactNode; children: ReactNode; overlays?: ReactNode }) {
+// y un ancho máximo configurable (default max-w-5xl, el que ya usaba
+// AutoresPage.tsx). overlays (opcional): modales/toasts — siblings del
+// panel de contenido, no adentro (para no quedar recortados por su
+// overflow).
+//
+// logo/contentMaxWidth/footer: los tres opcionales, con default =
+// exactamente el comportamiento que ya tenía este componente antes de
+// agregarlos — AutoresPage.tsx/RrppHomePage.tsx/RrppMetricasPage.tsx (los
+// tres consumidores existentes) no los pasan, así que no cambian ni un
+// píxel. Se agregaron para que ComercialDashboardPage.tsx pudiera
+// reutilizar este mismo shell (logo real en vez del wordmark de texto,
+// más ancho de contenido, un pie de página) sin duplicar el sidebar.
+export function CrmSidebarLayout({
+  nav,
+  children,
+  overlays,
+  logo,
+  contentMaxWidth = 'max-w-5xl',
+  footer,
+  contexto = 'app',
+  contentClassName = 'px-6 py-10',
+}: {
+  nav: ReactNode;
+  children: ReactNode;
+  overlays?: ReactNode;
+  logo?: ReactNode;
+  contentMaxWidth?: string;
+  footer?: ReactNode;
+  contexto?: 'app' | 'fullscreen';
+  contentClassName?: string;
+}) {
   return (
-    <div className={`${FULL_BLEED} ${ALTO_LLENO_MAIN} flex overflow-hidden bg-[#F8F9FA]`}>
+    <div className={`${contexto === 'fullscreen' ? 'h-full w-full' : `${FULL_BLEED} ${ALTO_LLENO_MAIN}`} flex overflow-hidden bg-[#F8F9FA]`}>
       <aside className="z-20 hidden h-full w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
         <div className="flex h-20 items-center border-b border-gray-800 px-6">
-          <h1 className="text-xl font-light uppercase tracking-widest text-white">
-            Pan<span className="font-bold text-dorado">House</span>
-          </h1>
+          {logo ?? (
+            <h1 className="text-xl font-light uppercase tracking-widest text-white">
+              Pan<span className="font-bold text-dorado">House</span>
+            </h1>
+          )}
         </div>
 
         <nav className="flex-1 space-y-2 px-4 py-8">{nav}</nav>
+
+        {footer}
       </aside>
 
       {/* AppLayout.tsx ya envuelve el Outlet en un <main> — dos <main>
@@ -63,7 +94,7 @@ export function CrmSidebarLayout({ nav, children, overlays }: { nav: ReactNode; 
           overflow-hidden, así que <main> nunca ve contenido de sobra y
           nunca muestra su propio scrollbar. */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="mx-auto w-full max-w-5xl px-6 py-10">{children}</div>
+        <div className={`mx-auto w-full ${contentMaxWidth} ${contentClassName}`}>{children}</div>
       </div>
 
       {overlays}

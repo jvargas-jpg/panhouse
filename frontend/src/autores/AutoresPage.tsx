@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
 import { eliminarProyecto } from '../jefatura/jefaturaApi';
+import { CommercialAuthorsView } from '../comercial/autores/CommercialAuthorsView';
+import { CommercialProjectsView } from '../comercial/proyectos/CommercialProjectsView';
 import { CrmSidebarLayout, NAV_ACTIVO, NAV_INACTIVO } from '../layout/CrmSidebarLayout';
 import { fetchProyectosPendientesContrato } from '../proyectos/proyectosPendientesApi';
 import type { Autor, ProyectoPendienteSeccion1 } from '../types/api';
@@ -23,15 +25,33 @@ type Vista = 'proyectos' | 'clientes';
 // nunca tuvo acceso a "proyectos pendientes de contrato" (esa lista es
 // exclusiva de comercial en el backend), así que mostrarle una pestaña
 // "Proyectos" vacía habría sido peor que no mostrarla.
-export function AutoresPage() {
+//
+// vistaInicial (opcional): App.tsx monta este mismo componente en dos
+// rutas nuevas, /autores y /proyectos (ver el comentario ahí), cada una
+// pasando la pestaña que le corresponde por nombre — así "Autores" y
+// "Proyectos" son enlaces reales, no un solo botón con estado interno
+// invisible desde afuera. Sin este prop (el caso de dirección en "/",
+// sin cambios) se sigue calculando igual que siempre.
+// El selector de rol no comparte hooks con la vista antigua. Dirección
+// conserva su CRM; Comercial monta una vista propia por cada ruta.
+export function AutoresPage({ vistaInicial }: { vistaInicial?: Vista } = {}) {
+  const { data: usuario } = useMe();
+  if (usuario?.rol === 'comercial') {
+    return vistaInicial === 'proyectos' ? <CommercialProjectsView /> : <CommercialAuthorsView />;
+  }
+  return <LegacyAutoresPage vistaInicial={vistaInicial} />;
+}
+
+function LegacyAutoresPage({ vistaInicial }: { vistaInicial?: Vista }) {
   const { data: usuario } = useMe();
   const esComercial = usuario?.rol === 'comercial';
+
   const navigate = useNavigate();
 
   const autoresQuery = useQuery({ queryKey: ['autores'], queryFn: fetchAutores });
   const queryClient = useQueryClient();
 
-  const [vistaActiva, setVistaActiva] = useState<Vista>(esComercial ? 'proyectos' : 'clientes');
+  const [vistaActiva, setVistaActiva] = useState<Vista>(vistaInicial ?? (esComercial ? 'proyectos' : 'clientes'));
   const [searchTerm, setSearchTerm] = useState('');
 
   const [autorEnEdicion, setAutorEnEdicion] = useState<Autor | null>(null);
@@ -143,13 +163,19 @@ export function AutoresPage() {
       overlays={
         <>
           {modalAutorOpen && (
-            <Modal titulo={autorEnEdicion ? 'Editar Autor' : 'Registrar Nuevo Autor'} onClose={() => setModalAutorOpen(false)}>
+            <Modal
+              titulo={autorEnEdicion ? 'Editar autor' : 'Registrar nuevo autor'}
+              subtitulo="Crea el perfil del autor. Sus proyectos se registran posteriormente."
+              onClose={() => setModalAutorOpen(false)}
+              ancho="4xl"
+            >
               <CrearAutorForm
                 autorEnEdicion={autorEnEdicion}
                 onGuardado={(mensaje) => {
                   setModalAutorOpen(false);
                   setToastMensaje(mensaje);
                 }}
+                onCancelar={() => setModalAutorOpen(false)}
               />
             </Modal>
           )}

@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
 import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios } from '../db/schema/index.js';
+import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 
@@ -569,7 +570,11 @@ export async function listarProyectosSinEditor(): Promise<ProyectoSinEditor[]> {
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
   }));
 }
-export interface ProyectoResumen {
+export interface ProyectoResumen extends PreparacionComercial {
+  autores: AutorDeProyecto[];
+  unidadId: string;
+  presupuestoId: string;
+  fechaProgramadaInicio: string;
   id: string;
   titulo: string | null;
   codigo: string;
@@ -578,11 +583,8 @@ export interface ProyectoResumen {
   servicio: { id: string; codigo: string; nombre: string };
 }
 
-// Distinto de ProyectoResumen a propósito: solo GET /api/proyectos (esta
-// función) migró a `autores: []` — GET /api/proyectos/activos
-// (listarProyectosActivosResumen, más abajo) sigue devolviendo `autor`
-// singular sin tocar, es la etapa aditiva de la migración a coautoría
-// (ver proyectos_autores en schema/proyectos.ts y helpers/proyectosAutores.ts).
+// GET /api/proyectos conserva su DTO. /activos añade coautores y preparación
+// comercial sin retirar autor singular, usado por consumidores existentes.
 export interface ProyectoResumenConAutores {
   id: string;
   titulo: string | null;
@@ -641,6 +643,16 @@ export async function listarProyectosActivosResumen(): Promise<ProyectoResumen[]
       titulo: proyectos.titulo,
       codigo: proyectos.codigo,
       estado: proyectos.estado,
+      unidadId: proyectos.unidadId,
+      presupuestoId: proyectos.presupuestoId,
+      fechaProgramadaInicio: proyectos.fechaProgramadaInicio,
+      ficha: {
+        ingresoFechaIngreso: fichasTrazabilidad.ingresoFechaIngreso,
+        ingresoServicioEjecucion: fichasTrazabilidad.ingresoServicioEjecucion,
+        ingresoServicioAlianza: fichasTrazabilidad.ingresoServicioAlianza,
+        capitulosPactados: fichasTrazabilidad.capitulosPactados,
+        paginasPactadas: fichasTrazabilidad.paginasPactadas,
+      },
       autorId: autores.id,
       autorNombre: autores.nombre,
       servicioId: servicios.id,
@@ -648,17 +660,31 @@ export async function listarProyectosActivosResumen(): Promise<ProyectoResumen[]
       servicioNombre: servicios.nombre,
     })
     .from(proyectos)
+    .leftJoin(fichasTrazabilidad, eq(fichasTrazabilidad.proyectoId, proyectos.id))
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
     .where(inArray(proyectos.estado, ESTADOS_ACTIVOS))
     .orderBy(desc(proyectos.createdAt));
 
-  return filas.map((fila) => ({
-    id: fila.id,
-    titulo: fila.titulo,
-    codigo: fila.codigo,
-    estado: fila.estado,
-    autor: { id: fila.autorId, nombre: fila.autorNombre },
-    servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
-  }));
+  const autoresPorProyecto = await obtenerAutoresPorProyectos(filas.map((fila) => fila.id));
+  return filas.map((fila) => {
+    const coautores = autoresPorProyecto.get(fila.id) ?? [{ id: fila.autorId, nombre: fila.autorNombre, nombreArtistico: null }];
+    return {
+      ...evaluarPreparacionComercial({ ...fila, autores: coautores,
+        ingresoFechaIngreso: fila.ficha?.ingresoFechaIngreso,
+        ingresoServicioEjecucion: fila.ficha?.ingresoServicioEjecucion,
+        ingresoServicioAlianza: fila.ficha?.ingresoServicioAlianza,
+        capitulosPactados: fila.ficha?.capitulosPactados,
+        paginasPactadas: fila.ficha?.paginasPactadas,
+      }),
+      autores: coautores,
+      unidadId: fila.unidadId, presupuestoId: fila.presupuestoId, fechaProgramadaInicio: fila.fechaProgramadaInicio,
+      id: fila.id,
+      titulo: fila.titulo,
+      codigo: fila.codigo,
+      estado: fila.estado,
+      autor: { id: fila.autorId, nombre: fila.autorNombre },
+      servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
+    };
+  });
 }

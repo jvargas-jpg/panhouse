@@ -1,4 +1,6 @@
 import { and, desc, eq, inArray, isNull, notInArray, type SQL } from 'drizzle-orm';
+import { evaluarPreparacionComercial } from './preparacionComercial.js';
+import { listarProyectosActivosResumen } from './proyectos.js';
 import { db } from '../db/client.js';
 import {
   autores,
@@ -65,7 +67,13 @@ export async function obtenerFichaCompleta(proyectoId: string) {
     db.select().from(fichaDistribucionPaises).where(eq(fichaDistribucionPaises.fichaId, ficha.id)),
   ]);
 
-  return { ...ficha, calidadFases, disenoPropuestas, lanzamientoReuniones, distribucionPaises };
+  const [proyecto] = await db.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+  if (!proyecto) return undefined;
+  const autoresPorProyecto = await obtenerAutoresPorProyectos([proyectoId]);
+  const preparacion = evaluarPreparacionComercial({ ...proyecto, ...ficha,
+    autores: autoresPorProyecto.get(proyectoId) ?? [{ id: proyecto.autorId }],
+  });
+  return { ...ficha, ...preparacion, calidadFases, disenoPropuestas, lanzamientoReuniones, distribucionPaises };
 }
 
 export interface ProyectoPendienteSeccion1 {
@@ -176,8 +184,9 @@ export function listarProyectosEnviadosARrpp(): Promise<ProyectoPendienteSeccion
 
 // "Proyectos pendientes de lo contractual" — sección extra en la
 // pantalla de comercial, junto al formulario de crear autor.
-export function listarProyectosPendientesContrato(): Promise<ProyectoPendienteSeccion1[]> {
-  return listarProyectosPendientesSeccion1(and(isNull(fichasTrazabilidad.capitulosPactados), isNull(fichasTrazabilidad.paginasPactadas)));
+// Misma evaluación que /proyectos/activos y el detalle; incluye faltantes parciales.
+export async function listarProyectosPendientesContrato() {
+  return (await listarProyectosActivosResumen()).filter((proyecto) => !proyecto.listoParaRrpp);
 }
 
 // "Proyectos pendientes de soporte digital" — mismo criterio que
