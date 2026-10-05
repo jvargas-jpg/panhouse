@@ -15,7 +15,7 @@ export async function notificacionesRoutes(app: FastifyInstance) {
     if (!request.user) {
       return reply.code(401).send({ error: 'No autenticado' });
     }
-    const notificaciones = await listarNotificacionesPorRol(request.user.rol);
+    const notificaciones = await listarNotificacionesPorRol(request.user.rol, request.user.id);
     return reply.send({ notificaciones });
   });
 
@@ -26,7 +26,7 @@ export async function notificacionesRoutes(app: FastifyInstance) {
     if (!request.user) {
       return reply.code(401).send({ error: 'No autenticado' });
     }
-    const notificacion = await marcarNotificacionLeida(params.id, request.user.rol);
+    const notificacion = await marcarNotificacionLeida(params.id, request.user.rol, request.user.id);
     if (!notificacion) {
       return reply.code(404).send({ error: 'Notificación no encontrada' });
     }

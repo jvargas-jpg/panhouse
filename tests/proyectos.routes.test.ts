@@ -995,12 +995,13 @@ describe('rutas de proyectos', () => {
   });
 
   describe('PATCH /api/proyectos/:id', () => {
-    it('permite a un especialista actualizar las especificaciones del proyecto', async () => {
+    it('permite al especialista asignado actualizar las especificaciones del proyecto', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
-      const proyecto = await crearProyectoDePrueba();
       const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
 
       const respuesta = await request(app.server)
         .patch(`/api/proyectos/${proyecto.id}`)
@@ -1009,6 +1010,29 @@ describe('rutas de proyectos', () => {
 
       expect(respuesta.status).toBe(200);
       expect(respuesta.body.proyecto.fechaDeseadaAutor).toBe('2026-06-01');
+
+      await app.close();
+    });
+
+    // Fase 3 (RBAC/seguridad) — regresión del IDOR real encontrado en la
+    // auditoría: esta ruta solo exigía el rol 'especialista', no que
+    // fuera el especialista asignado a ESTE proyecto. Cualquier cuenta
+    // especialista podía reescribir proyectos ajenos.
+    it('rechaza (403) a un especialista que no está asignado a este proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      // Proyecto con OTRO especialista asignado (no el que inicia sesión).
+      const especialistaDueno = await crearUsuario('especialista');
+      const proyecto = await crearProyectoDePrueba({ especialistaId: especialistaDueno.id });
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/proyectos/${proyecto.id}`)
+        .set('Cookie', cookie)
+        .send({ fechaDeseadaAutor: '2026-06-01' });
+
+      expect(respuesta.status).toBe(403);
 
       await app.close();
     });
@@ -1043,12 +1067,13 @@ describe('rutas de proyectos', () => {
       await app.close();
     });
 
-    it('rechaza cambiar el estado a pausado por esta ruta, aunque sea un especialista con permiso', async () => {
+    it('rechaza cambiar el estado a pausado por esta ruta, aunque sea el especialista asignado', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
-      const proyecto = await crearProyectoDePrueba();
       const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
 
       const respuesta = await request(app.server)
         .patch(`/api/proyectos/${proyecto.id}`)
@@ -1061,12 +1086,13 @@ describe('rutas de proyectos', () => {
       await app.close();
     });
 
-    it('permite al mismo especialista cambiar el estado a otro valor sin problema', async () => {
+    it('permite al mismo especialista asignado cambiar el estado a otro valor sin problema', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
-      const proyecto = await crearProyectoDePrueba();
       const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
 
       const respuesta = await request(app.server)
         .patch(`/api/proyectos/${proyecto.id}`)

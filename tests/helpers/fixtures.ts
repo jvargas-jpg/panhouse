@@ -175,13 +175,20 @@ export async function crearPagoDePrueba(datos: { proyectoId: string; monto?: str
 // notificación real cuando el creador es comercial): los tests de
 // GET /api/notificaciones y PATCH /:id/leer (tests/notificaciones.routes.test.ts)
 // solo necesitan una fila ya existente, no probar de nuevo el disparador.
-export async function crearNotificacionDePrueba(datos: { proyectoId?: string; rolDestino?: string; mensaje?: string; leido?: boolean }) {
+export async function crearNotificacionDePrueba(datos: {
+  proyectoId?: string;
+  rolDestino?: string;
+  usuarioDestinoId?: string;
+  mensaje?: string;
+  leido?: boolean;
+}) {
   return unaFila(
     await db
       .insert(notificaciones)
       .values({
         proyectoId: datos.proyectoId,
         rolDestino: datos.rolDestino ?? 'jefe_area',
+        usuarioDestinoId: datos.usuarioDestinoId,
         mensaje: datos.mensaje ?? 'Notificación de prueba',
         leido: datos.leido ?? false,
       })

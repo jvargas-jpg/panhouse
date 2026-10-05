@@ -471,8 +471,18 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
     .$onUpdate(() => new Date()),
 });
 
-// Sección 5 — Calidad: cuatro fases de validación fijas, cada una con
-// su propia versión de PDF.
+// Sección 5 — Calidad: cuatro fases de validación fijas (1=V1, 2=ciclo
+// de ajustes, 3=Revisión Final, 4=ajustes finales), cada una con N
+// rondas iterativas dentro de sí (Manual del Especialista documenta
+// F2.1..F2.5 y F4.1..F4.5 — ver 02-business-flow.md §3.6). `ronda`
+// (Fase 2, Foundation) es la columna que faltaba para representar esas
+// sub-iteraciones: antes el UNIQUE(fichaId, numeroFase) solo permitía
+// UNA fila por fase en total, bloqueando exactamente el flujo iterativo
+// que el negocio documenta (ver docs/arquitectura/
+// 11-fase2-modelo-canonico.md §H). Modelo explícito fase+ronda, no
+// strings decimales ("2.1"/"2.2") — pdfVersion sigue existiendo para el
+// identificador de archivo que ya usa el negocio, pero ya no es lo que
+// distingue una ronda de otra a nivel de esquema.
 export const fichaCalidadFases = pgTable(
   'ficha_calidad_fases',
   {
@@ -481,6 +491,10 @@ export const fichaCalidadFases = pgTable(
       .notNull()
       .references(() => fichasTrazabilidad.id, { onDelete: 'cascade' }),
     numeroFase: integer('numero_fase').notNull(),
+    // Default 1: toda fila histórica (previa a esta columna) representa,
+    // por definición, la primera y única ronda registrada de su fase —
+    // backfill seguro sin inventar un valor.
+    ronda: integer('ronda').notNull().default(1),
     pdfUrl: text('pdf_url'),
     pdfVersion: text('pdf_version'),
     fecha: date('fecha'),
@@ -492,8 +506,13 @@ export const fichaCalidadFases = pgTable(
       .$onUpdate(() => new Date()),
   },
   (table) => ({
-    fichaFaseUnica: unique('ficha_calidad_fases_ficha_numero_unique').on(table.fichaId, table.numeroFase),
+    fichaFaseRondaUnica: unique('ficha_calidad_fases_ficha_numero_ronda_unique').on(
+      table.fichaId,
+      table.numeroFase,
+      table.ronda,
+    ),
     numeroFaseValido: check('ficha_calidad_fases_numero_valido', sql`${table.numeroFase} between 1 and 4`),
+    rondaValida: check('ficha_calidad_fases_ronda_valida', sql`${table.ronda} >= 1`),
   }),
 );
 

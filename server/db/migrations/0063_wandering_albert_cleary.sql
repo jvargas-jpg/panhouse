@@ -1,0 +1,3 @@
+ALTER TABLE "notificaciones" ADD COLUMN "usuario_destino_id" uuid;--> statement-breakpoint
+ALTER TABLE "notificaciones" ADD CONSTRAINT "notificaciones_usuario_destino_id_usuarios_id_fk" FOREIGN KEY ("usuario_destino_id") REFERENCES "public"."usuarios"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "notificaciones_rol_usuario_idx" ON "notificaciones" USING btree ("rol_destino","usuario_destino_id");

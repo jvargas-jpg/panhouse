@@ -186,8 +186,11 @@ export async function proyectosRoutes(app: FastifyInstance) {
   app.post('/:id/notificar-rrpp', { preHandler: [requireAuth, requireRole('comercial')] }, async (request, reply) => {
     const params = parseOrReply(idParamSchema, request.params, reply);
     if (!params) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
 
-    const resultado = await notificarRrppProyectoBase(params.id);
+    const resultado = await notificarRrppProyectoBase(params.id, request.user.id);
     if (!resultado.ok) {
       return reply.code(resultado.status).send({ error: resultado.error });
     }
@@ -203,8 +206,11 @@ export async function proyectosRoutes(app: FastifyInstance) {
   app.post('/:id/notificar-jefatura', { preHandler: [requireAuth, requireRole('rrpp')] }, async (request, reply) => {
     const params = parseOrReply(idParamSchema, request.params, reply);
     if (!params) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
 
-    const resultado = await notificarJefaturaFichaCompletada(params.id);
+    const resultado = await notificarJefaturaFichaCompletada(params.id, request.user.id);
     if (!resultado.ok) {
       return reply.code(resultado.status).send({ error: resultado.error });
     }
@@ -357,8 +363,11 @@ export async function proyectosRoutes(app: FastifyInstance) {
     if (!params) return;
     const body = parseOrReply(asignarEspecialistaSchema, request.body, reply);
     if (!body) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
 
-    await asignarEspecialista(params.id, body.especialistaId);
+    await asignarEspecialista(params.id, body.especialistaId, request.user.id);
     return reply.send({ ok: true });
   });
 
@@ -369,8 +378,11 @@ export async function proyectosRoutes(app: FastifyInstance) {
     if (!params) return;
     const body = parseOrReply(asignarEditorSchema, request.body, reply);
     if (!body) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
 
-    await asignarEditor(params.id, body.editorId);
+    await asignarEditor(params.id, body.editorId, request.user.id);
     return reply.send({ ok: true });
   });
 
@@ -394,7 +406,7 @@ export async function proyectosRoutes(app: FastifyInstance) {
       return reply.code(acceso.status).send({ error: acceso.error });
     }
 
-    await asignarDisenador(params.id, body.disenadorId);
+    await asignarDisenador(params.id, body.disenadorId, request.user.id);
     const proyecto = await obtenerProyecto(params.id);
     return reply.send({ proyecto });
   });
@@ -427,11 +439,26 @@ export async function proyectosRoutes(app: FastifyInstance) {
     },
   );
 
+  // Fase 3 (RBAC/seguridad) — corrección de un IDOR real encontrado en
+  // la auditoría: esta ruta solo exigía el rol 'especialista', sin
+  // verificar que fuera EL especialista asignado a este proyecto en
+  // particular. Cualquier cuenta especialista podía reescribir
+  // estado/servicioId/unidadId/presupuestoId/etc. de un proyecto ajeno.
+  // verificarAccesoAProyecto es el mismo guardia que ya usa
+  // /:id/propuesta-portada para el mismo rol.
   app.patch('/:id', { preHandler: [requireAuth, requireRole('especialista')] }, async (request, reply) => {
     const params = parseOrReply(idParamSchema, request.params, reply);
     if (!params) return;
     const body = parseOrReply(actualizarProyectoSchema, request.body, reply);
     if (!body) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
+
+    const acceso = await verificarAccesoAProyecto(params.id, request.user);
+    if (!acceso.ok) {
+      return reply.code(acceso.status).send({ error: acceso.error });
+    }
 
     try {
       validarCambioEstadoProyecto(body.estado);

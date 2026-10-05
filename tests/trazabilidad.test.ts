@@ -94,6 +94,49 @@ describe('ficha de trazabilidad (integración con base de datos)', () => {
     await expect(agregarFaseCalidad(proyecto.id, { numeroFase: 5 })).rejects.toThrow();
   });
 
+  // Fase 2 (Foundation) — ver docs/arquitectura/11-fase2-modelo-canonico.md
+  // §H: el UNIQUE(fichaId, numeroFase) anterior bloqueaba exactamente el
+  // flujo iterativo real (F2.1..F2.5) que documenta el Manual del
+  // Especialista. §25 del master prompt: "múltiples rondas permitidas;
+  // no sobrescribir rondas anteriores".
+  it('calidad soporta múltiples rondas dentro de la misma fase sin sobrescribir las anteriores', async () => {
+    const proyecto = await crearProyectoDePrueba();
+    await crearFichaTrazabilidad(proyecto.id);
+
+    const ronda1 = await agregarFaseCalidad(proyecto.id, { numeroFase: 2, ronda: 1, pdfVersion: 'V2.1', aprobado: false });
+    const ronda2 = await agregarFaseCalidad(proyecto.id, { numeroFase: 2, ronda: 2, pdfVersion: 'V2.2', aprobado: false });
+    const ronda3 = await agregarFaseCalidad(proyecto.id, { numeroFase: 2, ronda: 3, pdfVersion: 'V2.3', aprobado: true });
+
+    const ficha = await obtenerFichaCompleta(proyecto.id);
+    const fasesDos = ficha?.calidadFases.filter((f) => f.numeroFase === 2) ?? [];
+    expect(fasesDos).toHaveLength(3);
+
+    // La ronda 1 sigue existiendo tal cual quedó — agregar la ronda 2 no
+    // la tocó ni la sobrescribió.
+    const [ronda1Persistida] = await db.select().from(fichaCalidadFases).where(eq(fichaCalidadFases.id, ronda1.id));
+    expect(ronda1Persistida?.pdfVersion).toBe('V2.1');
+    expect(ronda1Persistida?.aprobado).toBe(false);
+
+    expect(ronda2.ronda).toBe(2);
+    expect(ronda3.aprobado).toBe(true);
+  });
+
+  it('calidad rechaza repetir la misma (fase, ronda) dos veces', async () => {
+    const proyecto = await crearProyectoDePrueba();
+    await crearFichaTrazabilidad(proyecto.id);
+
+    await agregarFaseCalidad(proyecto.id, { numeroFase: 2, ronda: 1 });
+    await expect(agregarFaseCalidad(proyecto.id, { numeroFase: 2, ronda: 1 })).rejects.toThrow();
+  });
+
+  it('calidad: omitir ronda usa el default (1) — compatible con el caso de una sola ronda por fase', async () => {
+    const proyecto = await crearProyectoDePrueba();
+    await crearFichaTrazabilidad(proyecto.id);
+
+    const fase = await agregarFaseCalidad(proyecto.id, { numeroFase: 1, pdfVersion: 'V1.0' });
+    expect(fase.ronda).toBe(1);
+  });
+
   it('actualizar la sección de Edición no afecta ni borra nada de las otras ocho secciones', async () => {
     const proyecto = await crearProyectoDePrueba();
     await crearFichaTrazabilidad(proyecto.id);

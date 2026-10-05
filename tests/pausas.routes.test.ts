@@ -19,12 +19,13 @@ describe('rutas de pausas', () => {
   });
 
   describe('POST /api/pausas (pausa normal)', () => {
-    it('permite a un especialista crear una pausa normal', async () => {
+    it('permite al especialista asignado crear una pausa normal', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
-      const proyecto = await crearProyectoDePrueba();
       const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
 
       const respuesta = await request(app.server)
         .post('/api/pausas')
@@ -33,6 +34,26 @@ describe('rutas de pausas', () => {
 
       expect(respuesta.status).toBe(201);
       expect(respuesta.body.pausa.causa).toBe('autor');
+
+      await app.close();
+    });
+
+    // Fase 3 (RBAC/seguridad) — regresión del IDOR real encontrado en la
+    // auditoría: POST /api/pausas recibía proyectoId en el body sin
+    // verificar que el especialista estuviera asignado a ese proyecto.
+    it('rechaza (403) a un especialista que no está asignado al proyecto de la pausa', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const proyecto = await crearProyectoDePrueba(); // sin especialista asignado
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .post('/api/pausas')
+        .set('Cookie', cookie)
+        .send({ proyectoId: proyecto.id, causa: 'autor', fechaInicio: '2026-01-10T00:00:00Z' });
+
+      expect(respuesta.status).toBe(403);
 
       await app.close();
     });
@@ -101,8 +122,9 @@ describe('rutas de pausas', () => {
       const app = crearAppDePrueba();
       await app.ready();
 
-      const proyecto = await crearProyectoDePrueba();
       const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
 
       const respuesta = await request(app.server)
         .post('/api/pausas')

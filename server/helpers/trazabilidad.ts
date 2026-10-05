@@ -609,6 +609,11 @@ export async function eliminarPropuestaDiseno(proyectoId: string, propuestaId: s
 
 export interface DatosFaseCalidad {
   numeroFase: number;
+  // Opcional — omitirla usa el default de la columna (1). Ver
+  // docs/arquitectura/11-fase2-modelo-canonico.md §H: distingue rondas
+  // iterativas dentro de la misma fase (F2.1, F2.2...), no reemplaza a
+  // numeroFase.
+  ronda?: number;
   pdfUrl?: string | null;
   pdfVersion?: string | null;
   fecha?: string | null;

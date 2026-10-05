@@ -89,13 +89,18 @@ flowchart TD
 - **Actores:** Jefa de Área (`jefe_area` — Mariángely Romero / Sthephania Silva).
 - **Acciones:**
   1. Monitorea la bandeja de proyectos pendientes de asignación.
-  2. Consulta el tablero de **Carga Ponderada de Especialistas**, evaluando la complejidad acumulada según el tipo de servicio:
+  2. Consulta el tablero de **Carga Ponderada de Especialistas** (`server/helpers/carga.ts`, `servicios.pesoComplejidad`), evaluando la complejidad acumulada según el tipo de servicio activo:
      - `EF` (Escritura Fantasma): Peso 4 (180 días)
-     - `EEC` (Edición Estilo por Capítulo): Peso 3 (150 días)
-     - `EET` (Edición Estilo Tripa Completa): Peso 2 (150 días)
+     - `CR` (Crudo — categoría general que Comercial elige hoy; subsume `EEC`/`EET`, ver más abajo): Peso 3 (150 días)
      - `SE` (Sello Editorial): Peso 1 (60 días internos / 90 comerciales)
+
+     > **CORRECCIÓN (auditoría post Fase 1):** `EEC` y `EET` existen en el catálogo `servicios` con pesos 3 y 2 respectivamente, pero están **retiradas (`activo = false`)** desde antes de esta rearquitectura — `CR` las reemplazó como categoría de alta. La tabla anterior (EF=4/EEC=3/EET=2/SE=1) describía un estado que ya no es el vigente.
+     >
+     > Estos pesos **SÍ existen realmente** en `server/db/seed.ts` y alimentan hoy el cálculo real de carga — no son una invención de esta documentación. Pero el propio comentario de origen en el código (`server/db/schema/servicios.ts`) ya los marca como provisionales: *"el orden EF>EEC>EET>SE [hoy EF>CR>SE] está confirmado por el negocio, pero la magnitud exacta de la diferencia no"*. El mecanismo de configuración ya es correcto (columna `peso_complejidad` en DB, leída vía `JOIN`, nunca hardcodeada en React) — lo pendiente es solo la **magnitud exacta** de cada peso.
+     >
+     > Estado: `PENDIENTE_DEFINICION_PESOS_CARGA` (magnitud). El **orden** de complejidad sí está confirmado por el negocio.
   3. Asigna formalmente el proyecto a un Especialista Editorial (`especialistaId`) y designa a la Jefa de Área responsable del seguimiento (`jefeAreaId`).
-  4. La asignación es una transacción atómica que registra el hecho en el log de auditoría histórico y notifica al Especialista.
+  4. **[TARGET — no implementado todavía]** La asignación debería ser una transacción atómica que registre el hecho en un log de auditoría histórico y notifique al Especialista. **Estado real verificado:** `asignarEspecialista` (`server/helpers/proyectos.ts`) hoy es un `UPDATE` simple sin ninguna escritura de auditoría — no existe tabla `audit_logs` en el schema actual. La notificación al Especialista tampoco se dispara en este paso. Ver `07-target-data-model.md` (tabla `audit_logs`, propuesta) y `08-migration-plan.md` (Fase 1: ADD).
 
 ---
 
@@ -169,7 +174,7 @@ flowchart TD
 ---
 
 ### 3.7 Subpipeline de Soporte Digital (Amazon KDP) — Rama Paralela Activada por Hito
-- **Disparador:** **Se activa automáticamente cuando la tripa diagramada entra en Fase 1 de Calidad.** No espera al cierre del diseño.
+- **Disparador (REGLA OPERATIVA PROVISIONAL, ver `docs/auditoria/contradicciones-negocio.md` §2):** Se activa cuando la tripa diagramada entra en Fase 1 de Calidad, según el Manual del Especialista. No espera al cierre del diseño. Existe tensión histórica con una interpretación alterna (activación solo al cierre de diseño/paquete final) que **no se da por cerrada** — se avanza con esta regla por ser la fuente documental más fuerte y específica, pendiente de validación final si aparece una fuente posterior más concreta.
 - **Acciones:**
   1. Soporte Digital (`soporte_digital`) recibe la notificación y contacta al autor para enviar formularios de registro.
   2. Crea la cuenta en Amazon KDP y coordina la reunión de criterios (tapa blanda, tipo de papel, precios Kindle y físico, fecha de lanzamiento).

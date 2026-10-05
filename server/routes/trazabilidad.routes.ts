@@ -332,9 +332,14 @@ const calidadControlSchema = z
     message: 'No se recibió ningún campo válido para actualizar',
   });
 
-// Sección 5 — Calidad.
+// Sección 5 — Calidad. ronda (Fase 2, Foundation) es opcional — omitirla
+// usa el default de la base (1), que sigue siendo correcto para el caso
+// de siempre (una sola ronda por fase). Solo hace falta pasarla
+// explícita cuando una fase ya tuvo una ronda anterior (F2.1, F2.2...
+// ver docs/arquitectura/11-fase2-modelo-canonico.md §H).
 const calidadFaseSchema = z.object({
   numeroFase: z.number().int().min(1).max(4),
+  ronda: z.number().int().min(1).optional(),
   pdfUrl: z.string().nullable().optional(),
   pdfVersion: z.string().nullable().optional(),
   fecha: z.string().nullable().optional(),
@@ -630,12 +635,26 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Fase 3 (RBAC/seguridad) — IDOR real encontrado en la auditoría:
+  // esta ruta exigía el rol 'especialista' pero nunca llamaba a
+  // verificarAccesoAProyecto, a diferencia de /diseno-control,
+  // /calidad-control, /digital-control etc. un poco más abajo en este
+  // mismo archivo, que sí lo hacen. Cualquier cuenta especialista podía
+  // editar la sección de Edición de un proyecto ajeno.
   app.patch(
     '/:proyectoId/edicion',
     { preHandler: [requireAuth, requireRole('especialista')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      const acceso = await verificarAccesoAProyecto(params.proyectoId, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
       const body = parseOrReply(seccionEdicionSchema, request.body, reply);
       if (!body) return;
 
@@ -644,12 +663,21 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
+  // Mismo IDOR y misma corrección que /edicion arriba.
   app.patch(
     '/:proyectoId/correccion',
     { preHandler: [requireAuth, requireRole('especialista')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      const acceso = await verificarAccesoAProyecto(params.proyectoId, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
       const body = parseOrReply(seccionCorreccionSchema, request.body, reply);
       if (!body) return;
 

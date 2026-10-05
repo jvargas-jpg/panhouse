@@ -41,11 +41,12 @@ describe('asignarEspecialista (integración con base de datos)', () => {
   });
 
   it('asignarEspecialista es el paso explícito que hace que el proyecto cuente en la carga del especialista', async () => {
-    const [autor, unidad, presupuesto, especialista] = await Promise.all([
+    const [autor, unidad, presupuesto, especialista, jefeArea] = await Promise.all([
       crearAutor(),
       crearUnidad(),
       crearPresupuesto(),
       crearUsuario('especialista'),
+      crearUsuario('jefe_area'),
     ]);
     const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
 
@@ -57,18 +58,19 @@ describe('asignarEspecialista (integración con base de datos)', () => {
       fechaProgramadaInicio: '2026-01-01',
     });
 
-    await asignarEspecialista(proyecto.id, especialista.id);
+    await asignarEspecialista(proyecto.id, especialista.id, jefeArea.id);
 
     expect(await obtenerCargaEspecialista(especialista.id)).toBe(4);
   });
 
   it('reasignar a otro especialista mueve la carga del anterior al nuevo', async () => {
-    const [autor, unidad, presupuesto, especialistaA, especialistaB] = await Promise.all([
+    const [autor, unidad, presupuesto, especialistaA, especialistaB, jefeArea] = await Promise.all([
       crearAutor(),
       crearUnidad(),
       crearPresupuesto(),
       crearUsuario('especialista'),
       crearUsuario('especialista'),
+      crearUsuario('jefe_area'),
     ]);
     const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
 
@@ -80,25 +82,26 @@ describe('asignarEspecialista (integración con base de datos)', () => {
       fechaProgramadaInicio: '2026-01-01',
     });
 
-    await asignarEspecialista(proyecto.id, especialistaA.id);
-    await asignarEspecialista(proyecto.id, especialistaB.id);
+    await asignarEspecialista(proyecto.id, especialistaA.id, jefeArea.id);
+    await asignarEspecialista(proyecto.id, especialistaB.id, jefeArea.id);
 
     expect(await obtenerCargaEspecialista(especialistaA.id)).toBe(0);
     expect(await obtenerCargaEspecialista(especialistaB.id)).toBe(4);
   });
 
   it('lanza un error si el proyecto no existe', async () => {
-    const especialista = await crearUsuario('especialista');
+    const [especialista, jefeArea] = await Promise.all([crearUsuario('especialista'), crearUsuario('jefe_area')]);
 
-    await expect(asignarEspecialista('00000000-0000-0000-0000-000000000000', especialista.id)).rejects.toThrow();
+    await expect(asignarEspecialista('00000000-0000-0000-0000-000000000000', especialista.id, jefeArea.id)).rejects.toThrow();
   });
 
   it('actualiza updatedAt automáticamente al asignar especialista, sin fijarlo a mano', async () => {
-    const [autor, unidad, presupuesto, especialista] = await Promise.all([
+    const [autor, unidad, presupuesto, especialista, jefeArea] = await Promise.all([
       crearAutor(),
       crearUnidad(),
       crearPresupuesto(),
       crearUsuario('especialista'),
+      crearUsuario('jefe_area'),
     ]);
     const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
 
@@ -115,7 +118,7 @@ describe('asignarEspecialista (integración con base de datos)', () => {
     // reloj del servidor de Postgres, y comparar relojes distintos es
     // una fuente real de flakiness si llegan a desincronizarse.
     const antesDeActualizar = Date.now();
-    await asignarEspecialista(proyecto.id, especialista.id);
+    await asignarEspecialista(proyecto.id, especialista.id, jefeArea.id);
 
     const [actualizado] = await db.select().from(proyectos).where(eq(proyectos.id, proyecto.id));
     expect(actualizado?.updatedAt.getTime()).toBeGreaterThanOrEqual(antesDeActualizar);

@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import type { FastifyInstance } from 'fastify';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../server/db/client.js';
@@ -42,6 +43,17 @@ async function crearProyectoConFichaYEspecialista(especialistaId: string) {
   const proyecto = await crearProyectoDePrueba({ especialistaId });
   await crearFichaTrazabilidad(proyecto.id);
   return proyecto;
+}
+
+// Fase 3 (RBAC/seguridad): /edicion y /correccion ahora exigen
+// verificarAccesoAProyecto (ver server/routes/trazabilidad.routes.ts),
+// así que sus tests de "caso feliz" necesitan loguearse como EL
+// especialista realmente asignado, no uno cualquiera con el rol.
+async function loguearEspecialistaDueno(app: FastifyInstance) {
+  const cookie = await registrarYLoguear(app, 'especialista');
+  const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+  const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
+  return { cookie, proyecto };
 }
 
 async function crearProyectoConFichaYDisenador(disenadorId: string) {
@@ -108,6 +120,41 @@ describe('rutas de la ficha de trazabilidad', () => {
       expect(respuesta.status).toBe(403);
       await app.close();
     });
+
+    // §14 del master prompt de rearquitectura ("CRUDO"): Comercial NO
+    // decide Crudo Tripa/Capítulo — es decisión exclusiva de RRPP, ni
+    // siquiera jefe_area (que sí tiene acceso de escritura al resto de
+    // esta sección) puede tocar este campo específico.
+    it.each(['comercial', 'jefe_area'] as const)('rechaza a %s definir el subtipo de Crudo', async (rol) => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, rol);
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/proyecto-perfil`)
+        .set('Cookie', cookie)
+        .send({ ingresoServicioSubtipoCrudo: 'Tripa' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    it('permite a rrpp definir el subtipo de Crudo', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha();
+      const cookie = await registrarYLoguear(app, 'rrpp');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/proyecto-perfil`)
+        .set('Cookie', cookie)
+        .send({ ingresoServicioSubtipoCrudo: 'Tripa' });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body.ficha.ingresoServicioSubtipoCrudo).toBe('Tripa');
+      await app.close();
+    });
   });
 
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/proyecto-contrato', () => {
@@ -157,11 +204,10 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/edicion', () => {
-    it('permite a un especialista editar la sección de Edición', async () => {
+    it('permite al especialista asignado editar la sección de Edición', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'especialista');
+      const { cookie, proyecto } = await loguearEspecialistaDueno(app);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/edicion`)
@@ -185,8 +231,7 @@ describe('rutas de la ficha de trazabilidad', () => {
     it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'especialista');
+      const { cookie, proyecto } = await loguearEspecialistaDueno(app);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/edicion`)
@@ -225,14 +270,31 @@ describe('rutas de la ficha de trazabilidad', () => {
       expect(respuesta.status).toBe(403);
       await app.close();
     });
+
+    // Fase 3 (RBAC/seguridad) — regresión del IDOR real encontrado en la
+    // auditoría: esta ruta exigía el rol 'especialista' sin verificar
+    // que fuera el especialista asignado a ESTE proyecto.
+    it('rechaza (403) a un especialista que no está asignado a este proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin especialista asignado
+      const cookie = await registrarYLoguear(app, 'especialista');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/edicion`)
+        .set('Cookie', cookie)
+        .send({ edicionEstatus: 'Pendiente' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
   });
 
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/correccion', () => {
-    it('permite a un especialista editar la sección de Corrección', async () => {
+    it('permite al especialista asignado editar la sección de Corrección', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'especialista');
+      const { cookie, proyecto } = await loguearEspecialistaDueno(app);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)
@@ -247,8 +309,7 @@ describe('rutas de la ficha de trazabilidad', () => {
     it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'especialista');
+      const { cookie, proyecto } = await loguearEspecialistaDueno(app);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)
@@ -263,8 +324,7 @@ describe('rutas de la ficha de trazabilidad', () => {
     it('permite guardar el estatus agregado que conecta con la matriz de tiempos de jefatura', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'especialista');
+      const { cookie, proyecto } = await loguearEspecialistaDueno(app);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)
@@ -289,8 +349,7 @@ describe('rutas de la ficha de trazabilidad', () => {
     it('permite guardar fecha de entrega y aprobado por cada una de las tres categorías', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'especialista');
+      const { cookie, proyecto } = await loguearEspecialistaDueno(app);
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)
@@ -332,6 +391,22 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.ready();
       const proyecto = await crearProyectoConFicha();
       const cookie = await registrarYLoguear(app, 'soporte_editorial');
+
+      const respuesta = await request(app.server)
+        .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)
+        .set('Cookie', cookie)
+        .send({ correccionTripaCompleta: 'Aprobado' });
+
+      expect(respuesta.status).toBe(403);
+      await app.close();
+    });
+
+    // Fase 3 (RBAC/seguridad) — misma regresión de IDOR que /edicion.
+    it('rechaza (403) a un especialista que no está asignado a este proyecto', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const proyecto = await crearProyectoConFicha(); // sin especialista asignado
+      const cookie = await registrarYLoguear(app, 'especialista');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)

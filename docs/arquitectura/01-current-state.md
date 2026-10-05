@@ -5,6 +5,30 @@
 
 ---
 
+## 0. Leyenda de Estado (aplica a todos los documentos de `docs/arquitectura/` y `docs/auditoria/`)
+
+- **CURRENT:** existe y funciona hoy en el código/DB real, verificado directamente (no asumido).
+- **TARGET:** diseño propuesto para la rearquitectura; todavía no existe en código/DB.
+- **IMPLEMENTED (durante esta rearquitectura):** se usa solo a partir del momento en que algo propuesto en TARGET pasa a código real, con fecha/commit de referencia.
+- **PENDING / PENDIENTE_*:** dato, fórmula o regla sin fuente autorizada suficiente; no se inventa, se marca explícitamente y se construye el mecanismo de forma configurable mientras se resuelve.
+
+Ninguna sección de esta documentación debe describir algo como ya existente si solo fue propuesto.
+
+## 0.1 Registro de Auditoría y Correcciones (Fase 0/1 → Fase 2, Claude Code)
+
+Esta rearquitectura fue auditada y continuada por Claude Code tras el cierre formal de Fase 0 (Baseline y Seguridad) y Fase 1 (Auditoría y documentación) realizado por Antigravity. Antes de iniciar Fase 2 se verificaron directamente contra el código/DB reales los números reportados y se corrigieron 3 imprecisiones concretas encontradas en los documentos:
+
+1. **Pesos de carga ponderada (`02-business-flow.md`, `09-metrics-map.md`):** los documentos presentaban `EF=4/EEC=3/EET=2/SE=1` como una tabla vigente y cerrada. Verificado: estos pesos **sí son reales** (`server/db/seed.ts`, columna `servicios.peso_complejidad`, ya usados por `server/helpers/carga.ts`), no una invención de la documentación — pero `EEC` y `EET` están **retiradas** (`activo = false`) desde antes de esta rearquitectura, reemplazadas por `CR` (peso 3). El propio comentario de origen en `server/db/schema/servicios.ts` ya marcaba la **magnitud** de los pesos como provisional (el **orden** EF>CR>SE sí está confirmado). Se corrigió la tabla y se marcó `PENDIENTE_DEFINICION_PESOS_CARGA` (magnitud únicamente).
+2. **Log de auditoría de asignaciones (`02-business-flow.md`, `07-target-data-model.md`):** el documento afirmaba que asignar un especialista "registra el hecho en el log de auditoría histórico". Verificado contra `server/helpers/proyectos.ts`: `asignarEspecialista`/`asignarEditor`/`asignarDisenador` son hoy `UPDATE` simples, **sin ninguna escritura de auditoría**; la tabla `audit_logs` no existe en el schema actual. Se corrigió a **TARGET** explícito y se documentó la decisión A (FK de asignación actual) + B (historial vía `audit_logs`, no una tabla dedicada) en `07-target-data-model.md §2.7.1`.
+3. **Activación de Soporte Digital (`02-business-flow.md`, `docs/auditoria/contradicciones-negocio.md §2`):** la decisión de negocio se presentaba como cerrada. Se mantiene la regla (Manual del Especialista, Fuente A, es la fuente más fuerte) pero se marcó explícitamente como **REGLA OPERATIVA PROVISIONAL**, sin bloquear el desarrollo, pendiente de validación final si llega una fuente posterior más específica.
+
+**Verificado y SIN hallazgo de corrección necesaria:**
+- Baseline numérico de Antigravity (0 errores TypeScript backend/frontend, 531 tests, 18 usuarios, 6 proyectos activos) — confirmado exacto por ejecución directa, no solo leído.
+- Lenguaje "backend impenetrable" y afirmaciones de responsive "verificado 375px–1920px" para interfaces nuevas que el master prompt de rearquitectura señaló como problemáticas — **no aparecen literalmente en ningún documento de `docs/`** (`grep` exhaustivo sin resultados). Es posible que se hayan comunicado solo de forma conversacional, no por escrito. Se deja esta nota para que no se reintroduzcan.
+- Frases como "Matriz IA convertida en Project Command Center" — los documentos usan "Project Command Center" consistentemente como nombre del diseño TARGET, no como algo ya implementado; no se encontró el verbo "convertida" aplicado a una matriz real.
+
+---
+
 ## 1. Resumen Ejecutivo del Estado Actual
 
 PanHouse Gestor Editorial es una aplicación web empresarial concebida para reemplazar el manejo manual de hojas de cálculo y formularios en el proceso de producción editorial de Grupo PanHouse. 

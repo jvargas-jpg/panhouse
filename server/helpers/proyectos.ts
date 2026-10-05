@@ -3,9 +3,12 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
 import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios } from '../db/schema/index.js';
+import { registrarEvento } from './auditLog.js';
+import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
+import { crearWorkItemSiNoExiste, transicionarWorkItem } from './workItems.js';
 
 // Reexportadas desde alertas.ts: comparten el join autor/servicio/riesgo
 // con listarRiesgoProyectosActivos (jefe_area/dirección) en vez de
@@ -160,7 +163,14 @@ export type ResultadoTransicionFase1 =
 // criterio que notificarJefaturaFichaCompletada de abajo (el paso 2 de
 // esta misma cascada): sin ella, dos clics generarían dos alertas para
 // el mismo proyecto, y el botón no sabría que ya se envió al recargar.
-export async function notificarRrppProyectoBase(proyectoId: string): Promise<ResultadoTransicionFase1> {
+//
+// Fase 2 (Foundation) / Fase 4 (Workflow Core): este es el hecho
+// histórico "ENTREGADO a RRPP" — distinto de "LISTO para RRPP"
+// (listoParaRrpp, derivado en tiempo real por evaluarPreparacionComercial,
+// nunca persistido). Deja rastro en audit_logs (quién lo disparó) y crea
+// el work item 'intake_rrpp' en 'pendiente' — el trabajo real de RRPP
+// empieza acá, no antes.
+export async function notificarRrppProyectoBase(proyectoId: string, actorId: string): Promise<ResultadoTransicionFase1> {
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
     if (!proyecto) {
@@ -181,6 +191,14 @@ export async function notificarRrppProyectoBase(proyectoId: string): Promise<Res
       rolDestino: 'rrpp',
       mensaje: `Nuevo proyecto base registrado, pendiente de Ficha de Trazabilidad: #${proyecto.codigo} — ${servicio?.nombre ?? 'servicio sin especificar'}`,
     });
+    await registrarEvento(tx, {
+      actorId,
+      accion: 'RRPP_NOTIFICADO',
+      entityType: 'proyecto',
+      entityId: proyectoId,
+      proyectoId,
+    });
+    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'intake_rrpp' });
 
     return { ok: true };
   });
@@ -200,7 +218,11 @@ export async function notificarRrppProyectoBase(proyectoId: string): Promise<Res
 // una ruta paralela cuando el negocio lo volvió a pedir: ya hacía
 // exactamente lo pedido (transacción con el update de notificadoJefatura
 // + el insert en notificaciones), solo cambió el texto del mensaje.
-export async function notificarJefaturaFichaCompletada(proyectoId: string): Promise<ResultadoTransicionFase1> {
+// Fase 2/4: cierra el work item 'intake_rrpp' (el trabajo de RRPP
+// terminó) y abre 'asignacion_especialista' en 'pendiente' — lo que
+// Jefatura resuelve al asignar (ver asignarEspecialista, que lo
+// transiciona a 'completado'). Deja rastro en audit_logs.
+export async function notificarJefaturaFichaCompletada(proyectoId: string, actorId: string): Promise<ResultadoTransicionFase1> {
   return db.transaction(async (tx) => {
     const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
     if (!proyecto) {
@@ -223,6 +245,17 @@ export async function notificarJefaturaFichaCompletada(proyectoId: string): Prom
       rolDestino: 'jefe_area',
       mensaje: `RRPP ha completado la Ficha Editorial del proyecto ${nombresAutores} - #${proyecto.codigo}. Listo para asignación al escuadrón.`,
     });
+    await registrarEvento(tx, {
+      actorId,
+      accion: 'JEFATURA_NOTIFICADA',
+      entityType: 'proyecto',
+      entityId: proyectoId,
+      proyectoId,
+    });
+
+    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'intake_rrpp' });
+    await transicionarWorkItem(tx, { proyectoId, tipo: 'intake_rrpp', estado: 'completado' });
+    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'asignacion_especialista' });
 
     return { ok: true };
   });
@@ -511,31 +544,123 @@ export async function actualizarPropuestaPortada(proyectoId: string, propuestaPo
 // esto, asignar especialista a un proyecto marcado 'pausado' antes de
 // tener especialista (caso hoy imposible, no garantizado a futuro) lo
 // dejaría con un especialista pero sin volver a 'en_proceso'.
-export async function asignarEspecialista(proyectoId: string, especialistaId: string): Promise<void> {
-  const [fila] = await db
-    .update(proyectos)
-    .set({ especialistaId, estado: 'en_proceso' })
-    .where(eq(proyectos.id, proyectoId))
-    .returning({ id: proyectos.id });
+// Fase 2 (Foundation): además del puntero en `proyectos` (lectura
+// rápida para carga.ts/ownership), ahora deja historial formal en
+// project_assignments + evento en audit_logs, dentro de la misma
+// transacción — ver docs/arquitectura/11-fase2-modelo-canonico.md §E.
+// Idempotente: reasignar al MISMO especialista que ya está activo no
+// crea una fila nueva ni un evento falso de reasignación (asignarConHistorial
+// ya lo resuelve). Crea/completa el work item 'asignacion_especialista'
+// (el que RRPP→Jefatura deja 'pendiente', ver notificarJefaturaFichaCompletada)
+// y notifica puntualmente al especialista asignado (no a todo el rol).
+export async function asignarEspecialista(proyectoId: string, especialistaId: string, asignadoPorId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
 
-  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    const { cambio, asignacionId, anteriorUsuarioId } = await asignarConHistorial(tx, {
+      proyectoId,
+      tipo: 'especialista',
+      usuarioId: especialistaId,
+      asignadoPorId,
+    });
+
+    await tx.update(proyectos).set({ especialistaId, estado: 'en_proceso' }).where(eq(proyectos.id, proyectoId));
+
+    if (!cambio) return;
+
+    await registrarEvento(tx, {
+      actorId: asignadoPorId,
+      accion: anteriorUsuarioId ? 'ESPECIALISTA_REASIGNADO' : 'ESPECIALISTA_ASIGNADO',
+      entityType: 'project_assignment',
+      entityId: asignacionId,
+      proyectoId,
+      detalles: { anterior: anteriorUsuarioId, nuevo: especialistaId },
+    });
+
+    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'asignacion_especialista' });
+    await transicionarWorkItem(tx, { proyectoId, tipo: 'asignacion_especialista', estado: 'completado' });
+
+    await tx.insert(notificaciones).values({
+      proyectoId,
+      rolDestino: 'especialista',
+      usuarioDestinoId: especialistaId,
+      mensaje: `Se te asignó el proyecto #${proyecto.codigo}.`,
+    });
+  });
 }
 
 // Mismo patrón que asignarEspecialista, pero lo decide jefe_edicion:
 // paso propio, separado de la creación del proyecto.
-export async function asignarEditor(proyectoId: string, editorId: string): Promise<void> {
-  const [fila] = await db.update(proyectos).set({ editorId }).where(eq(proyectos.id, proyectoId)).returning({ id: proyectos.id });
+export async function asignarEditor(proyectoId: string, editorId: string, asignadoPorId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
 
-  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    const { cambio, asignacionId, anteriorUsuarioId } = await asignarConHistorial(tx, {
+      proyectoId,
+      tipo: 'editor',
+      usuarioId: editorId,
+      asignadoPorId,
+    });
+
+    await tx.update(proyectos).set({ editorId }).where(eq(proyectos.id, proyectoId));
+
+    if (!cambio) return;
+
+    await registrarEvento(tx, {
+      actorId: asignadoPorId,
+      accion: anteriorUsuarioId ? 'EDITOR_REASIGNADO' : 'EDITOR_ASIGNADO',
+      entityType: 'project_assignment',
+      entityId: asignacionId,
+      proyectoId,
+      detalles: { anterior: anteriorUsuarioId, nuevo: editorId },
+    });
+
+    await tx.insert(notificaciones).values({
+      proyectoId,
+      rolDestino: 'editor',
+      usuarioDestinoId: editorId,
+      mensaje: `Se te asignó el proyecto #${proyecto.codigo}.`,
+    });
+  });
 }
 
 // Mismo patrón que asignarEditor, pero lo decide el propio especialista
 // dueño del proyecto (no una jefatura): la ruta que la llama verifica
 // esa pertenencia con verificarAccesoAProyecto antes de invocarla.
-export async function asignarDisenador(proyectoId: string, disenadorId: string): Promise<void> {
-  const [fila] = await db.update(proyectos).set({ disenadorId }).where(eq(proyectos.id, proyectoId)).returning({ id: proyectos.id });
+export async function asignarDisenador(proyectoId: string, disenadorId: string, asignadoPorId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
 
-  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    const { cambio, asignacionId, anteriorUsuarioId } = await asignarConHistorial(tx, {
+      proyectoId,
+      tipo: 'disenador',
+      usuarioId: disenadorId,
+      asignadoPorId,
+    });
+
+    await tx.update(proyectos).set({ disenadorId }).where(eq(proyectos.id, proyectoId));
+
+    if (!cambio) return;
+
+    await registrarEvento(tx, {
+      actorId: asignadoPorId,
+      accion: anteriorUsuarioId ? 'DISENADOR_REASIGNADO' : 'DISENADOR_ASIGNADO',
+      entityType: 'project_assignment',
+      entityId: asignacionId,
+      proyectoId,
+      detalles: { anterior: anteriorUsuarioId, nuevo: disenadorId },
+    });
+
+    await tx.insert(notificaciones).values({
+      proyectoId,
+      rolDestino: 'disenador',
+      usuarioDestinoId: disenadorId,
+      mensaje: `Se te asignó el proyecto #${proyecto.codigo}.`,
+    });
+  });
 }
 
 export interface ProyectoSinEditor {

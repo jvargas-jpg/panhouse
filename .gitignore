@@ -4,3 +4,7 @@ dist/
 *.log
 *.tsbuildinfo
 .claude/settings.local.json
+
+# Documentos internos de negocio (Excel/Word reales, pueden contener
+# datos personales de autores/equipo) — nunca deben entrar a git.
+fuentes-negocio/

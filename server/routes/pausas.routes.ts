@@ -51,6 +51,18 @@ export async function pausasRoutes(app: FastifyInstance) {
       return reply.code(401).send({ error: 'No autenticado' });
     }
 
+    // Fase 3 (RBAC/seguridad) — mismo IDOR que PATCH /api/proyectos/:id:
+    // proyectoId viaja en el body (arbitrario, controlado por el
+    // cliente); sin este chequeo, cualquier cuenta especialista podía
+    // crear pausas en proyectos ajenos. jefe_area no lo necesita (acceso
+    // global ya documentado en 05-role-capability-matrix.md).
+    if (request.user.rol === 'especialista') {
+      const acceso = await verificarAccesoAProyecto(body.proyectoId, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+    }
+
     if (body.esPausadoFormal && request.user.rol !== 'jefe_area') {
       // TODO: confirmar con negocio quién puede marcar pago_confirmado
       // — hoy restringido a jefe de área como default provisional.

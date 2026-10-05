@@ -301,4 +301,44 @@ export const asesoriaResponsableDistribucionEnum = pgEnum('asesoria_responsable_
 // server/routes/proyectos.routes.ts y server/helpers/portalAutor.ts).
 export const DECISIONES_PORTADA = ['pendiente', 'aprobada', 'rechazada'] as const;
 
+// --- Fase 2 (Foundation): project_assignments ---------------------------
+//
+// Deliberadamente NO reutiliza `rolEnum` (roles de login/RBAC): un
+// "corrector" o "validador" acá es un propósito de asignación, no
+// necesariamente alguien con cuenta de sistema con ese rol — hoy
+// `corrector` ni siquiera existe en ROLES, y `soporte_editorial` es el
+// rol de login de quien valida, pero la asignación puntual a una ronda
+// de calidad es un concepto distinto (quién validó ESTA ronda, no quién
+// tiene el rol en general). Mantenerlos separados evita que un cambio
+// futuro en RBAC arrastre sin querer la semántica de asignaciones.
+export const TIPOS_ASIGNACION = [
+  'especialista',
+  'jefe_area',
+  'editor',
+  'disenador',
+  'corrector',
+  'lider_creativo',
+  'validador',
+] as const;
+
+export type TipoAsignacion = (typeof TIPOS_ASIGNACION)[number];
+
+export const tipoAsignacionEnum = pgEnum('tipo_asignacion', TIPOS_ASIGNACION);
+
+// work_items.tipo NO es un pgEnum (Fase 5, checkpoint): es `text` plano
+// en el schema (ver server/db/schema/workItems.ts) para que agregar un
+// tipo de trabajo nuevo sea un cambio de código, no un ALTER TYPE. El
+// catálogo de valores conocidos (TipoWorkItem) vive como union type en
+// server/helpers/workItems.ts, junto a la lógica que lo usa — no acá.
+
+// Mismo catálogo de estados que ya proponía 06-workflow-model.md — un
+// work item nunca sustituye a `proyectos.estado` (macro) ni a
+// `project_assignments` (quién): solo responde "en qué estado está esta
+// pieza de trabajo".
+export const ESTADOS_WORK_ITEM = ['pendiente', 'en_progreso', 'bloqueado', 'completado', 'cancelado'] as const;
+
+export type EstadoWorkItem = (typeof ESTADOS_WORK_ITEM)[number];
+
+export const estadoWorkItemEnum = pgEnum('estado_work_item', ESTADOS_WORK_ITEM);
+
 export type DecisionPortada = (typeof DECISIONES_PORTADA)[number];

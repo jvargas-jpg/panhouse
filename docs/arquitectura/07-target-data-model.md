@@ -173,6 +173,8 @@ Consolida las especificaciones contractuales, editoriales y parámetros técnico
 ---
 
 ### 2.7 Entidades de Auditoría y Tareas (`audit_logs`)
+**Estado: TARGET — no implementado todavía.** Verificado contra el schema real (`server/db/schema/`): esta tabla NO existe hoy. `asignarEspecialista`/`asignarEditor`/`asignarDisenador` (`server/helpers/proyectos.ts`) son hoy `UPDATE` simples sin ninguna escritura de auditoría — quién tenía el proyecto asignado antes de un cambio **se pierde hoy**, no hay forma de reconstruirlo.
+
 Registra cada cambio crítico (quién, qué, cuándo, proyecto) asegurando trazabilidad formal sin acoplarse a las notificaciones de usuario.
 
 ```typescript
@@ -185,6 +187,13 @@ export const auditLogs = pgTable('audit_logs', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 ```
+
+#### 2.7.1 Decisión explícita: asignación actual (FK) vs. historial (`audit_logs`)
+Para resolver sin ambigüedad la distinción que pide la rearquitectura (asignación actual que acelera consultas, vs. historial que nunca debe perderse):
+
+- **A. Asignación actual (`proyectos.especialistaId`/`editorId`/`correctorId`/`disenadorId`):** se mantiene como FK directa en `proyectos` — es correcto como optimización, porque "¿quién tiene esto asignado AHORA?" es la consulta más frecuente del sistema (carga, "mis proyectos", ownership guard) y no debe pagar el costo de un `JOIN`/subquery contra una tabla de historial en cada lectura.
+- **B. Historial de asignaciones:** se resuelve con `audit_logs`, **no** con una tabla dedicada `asignaciones_historial`. Cada cambio de `especialistaId`/`editorId`/`correctorId`/`disenadorId` escribe una fila con `accion: 'ESPECIALISTA_REASIGNADO'` (etc.) y `detalles: { anterior: <uuid|null>, nuevo: <uuid>, usuarioQueReasigna: <uuid> }`. Esto evita una segunda abstracción redundante (B no es más que "A + un evento" cada vez que A cambia) sin perder nunca quién estuvo asignado antes ni cuándo cambió.
+- **Implicación de implementación (Fase 4 de `08-migration-plan.md`, MIGRATE WRITES):** `asignarEspecialista`/`asignarEditor`/`asignarDisenador`/reasignación de corrector deben pasar a escribir en `audit_logs` dentro de la misma transacción que el `UPDATE`, no como paso separado — si la escritura de auditoría falla, la reasignación tampoco debe persistir.
 
 ---
 
