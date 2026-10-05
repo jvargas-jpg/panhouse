@@ -1,4 +1,4 @@
-import { date, integer, jsonb, pgTable, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import { date, integer, jsonb, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 import { proyectos } from './proyectos.js';
 
 // Un capítulo es una sola fila en todo el sistema, no una por cada
@@ -21,6 +21,12 @@ export const capitulos = pgTable(
     fechaPautadaFeedback: date('fecha_pautada_feedback'),
     fechaRespuestaReal: date('fecha_respuesta_real'),
     enlaces: jsonb('enlaces'), // lista de URLs a los documentos de esa vuelta
+    // Fase 5 (auditoría diferencial — Ficha real, hoja "EDICIÓN"): cada
+    // capítulo trae "Observaciones del editor sobre el feedback" y
+    // "Observaciones" como dos campos de texto libre distintos, no uno
+    // solo — confirmado campo por campo contra la hoja real, no inventado.
+    observacionesEditor: text('observaciones_editor'),
+    observaciones: text('observaciones'),
 
     // Cara al editor — columnas listas, sin llenar todavía.
     fechaInicioEditor: date('fecha_inicio_editor'),

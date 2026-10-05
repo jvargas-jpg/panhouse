@@ -84,6 +84,14 @@ export const seguimientoFases = pgTable('seguimiento_fases', {
   // Texto libre — ver el comentario de tiempoCorrecto más arriba, mismo
   // motivo: el Excel real llegaba vacío en la mayoría de las filas.
   cumplimiento: text('cumplimiento'),
+  // Fase 5 (auditoría diferencial — Seguimiento Corrección - Innovación
+  // Editorial.xlsx, columnas AE "Listado de correctores" / AF
+  // "Observaciones F1"): confirmadas en el archivo real de julio 2026,
+  // poco usadas (la mayoría de filas las dejan vacías, igual que
+  // tiempoCorrecto/cumplimiento) pero sí existen como columnas propias
+  // distintas de `observaciones` general.
+  listadoCorrectores: text('listado_correctores'),
+  observacionesFase1: text('observaciones_fase_1'),
 
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true })

@@ -4,30 +4,38 @@
 // (para rechazar la acción si el gate no está desbloqueado) como,
 // potencialmente, por el frontend — nunca duplicar la regla en React.
 //
-// Alcance de esta ronda: solo GATE-02 y GATE-03 (documentados abajo,
-// con tests en tests/gates.test.ts). GATE-04 a GATE-08 (Título/Creativa,
-// Portada/RRPP, Muestra de diagramación, Cierre de Calidad, Solvencia)
-// se difieren a propósito — dependen de campos que o no existen
-// todavía (ej. `solvenciaAdministrativa`, flags de aprobación de
-// portada) o pertenecen a Corrección/Dirección Creativa. No se
-// inventan esos campos solo para completar la lista de 8 gates; se
-// documentan con fuente real en cuanto el pipeline correspondiente de
-// Fase 5 los implemente.
+// Alcance de esta ronda (Fase 5, tras auditoría diferencial contra las
+// 7 fuentes reales en fuentes-negocio/): GATE-02, GATE-03, GATE-04 y
+// GATE-05, cada uno con campo real confirmado y tests en
+// tests/gates.test.ts. GATE-06 a GATE-08 (Muestra de diagramación,
+// Cierre de Calidad, Solvencia) siguen diferidos — sus campos
+// (aprobación de muestra, cierre formal de iteraciones, solvencia
+// administrativa) todavía no tienen una columna real confirmada; no se
+// inventan solo para completar la lista de 8.
 //
-// ┌─────────┬──────────────────────────┬───────────────────────────────────┬──────────────────────────────┬───────────────────────────────────────────┐
-// │ Gate    │ Qué habilita             │ Campos requeridos                  │ Fuente documental              │ Tests                                      │
-// ├─────────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────┼───────────────────────────────────────────┤
-// │ GATE-02 │ Cálculo de Fecha de      │ servicioCodigo (proyectos.servicioId│ docs/auditoria/contradicciones-│ tests/gates.test.ts                        │
-// │         │ Cierre; Jefatura puede   │ → servicios.codigo),               │ negocio.md §1 (Instructivo     │ "GATE-02"                                  │
-// │         │ asignar especialista     │ ingresoServicioSubtipoCrudo         │ PED-INS-001)                   │                                             │
-// │         │ (ver GATE-03, depende de │ (fichas_trazabilidad)               │                                 │                                             │
-// │         │ este)                    │                                     │                                 │                                             │
-// ├─────────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────┼───────────────────────────────────────────┤
-// │ GATE-03 │ Primer contacto del      │ especialistaId (proyectos)         │ 02-business-flow.md Etapa 4     │ tests/gates.test.ts                        │
-// │         │ Especialista con el      │                                     │ ("Primer Contacto Obligatorio") │ "GATE-03"                                  │
-// │         │ autor; activación de     │                                     │                                 │                                             │
-// │         │ subpipelines internos    │                                     │                                 │                                             │
-// └─────────┴──────────────────────────┴───────────────────────────────────┴──────────────────────────────┴───────────────────────────────────────────┘
+// ┌─────────┬──────────────────────────┬───────────────────────────────────┬──────────────────────────────────┬───────────────────────────────────────────┐
+// │ Gate    │ Qué habilita             │ Campos requeridos                  │ Fuente documental                  │ Tests                                      │
+// ├─────────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────────┼───────────────────────────────────────────┤
+// │ GATE-02 │ Cálculo de Fecha de      │ servicioCodigo (proyectos.servicioId│ docs/auditoria/contradicciones-    │ tests/gates.test.ts                        │
+// │         │ Cierre; Jefatura puede   │ → servicios.codigo),               │ negocio.md §1 (Instructivo         │ "GATE-02"                                  │
+// │         │ asignar especialista     │ ingresoServicioSubtipoCrudo         │ PED-INS-001)                       │                                             │
+// │         │ (ver GATE-03, depende de │ (fichas_trazabilidad)               │                                    │                                             │
+// │         │ este)                    │                                     │                                    │                                             │
+// ├─────────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────────┼───────────────────────────────────────────┤
+// │ GATE-03 │ Primer contacto del      │ especialistaId (proyectos)         │ 02-business-flow.md Etapa 4        │ tests/gates.test.ts                        │
+// │         │ Especialista con el      │                                     │ ("Primer Contacto Obligatorio")    │ "GATE-03"                                  │
+// │         │ autor; activación de     │                                     │                                    │                                             │
+// │         │ subpipelines internos    │                                     │                                    │                                             │
+// ├─────────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────────┼───────────────────────────────────────────┤
+// │ GATE-04 │ Solicitud/agendamiento   │ tituloDefinitivo, subtituloDefinitivo│ Manual del Especialista §2.3.3 y   │ tests/gates.test.ts                        │
+// │         │ de la Reunión Creativa   │ (proyectos)                         │ §4.1; DIRECCIÓN CREATIVA.xlsx      │ "GATE-04"                                  │
+// │         │                          │                                     │ (columna TÍTULO)                   │                                             │
+// ├─────────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────────┼───────────────────────────────────────────┤
+// │ GATE-05 │ Envío de una propuesta   │ fechaAprobadaRrpp                  │ Manual del Especialista §4.1.2;    │ tests/gates.test.ts                        │
+// │         │ de portada al autor      │ (ficha_diseno_propuestas, por fila) │ DIRECCIÓN CREATIVA.xlsx            │ "GATE-05"                                  │
+// │         │                          │                                     │ ("PROPUESTAS ENVIADAS AL           │                                             │
+// │         │                          │                                     │ ESPECIALISTA")                     │                                             │
+// └─────────┴──────────────────────────┴───────────────────────────────────┴──────────────────────────────────┴───────────────────────────────────────────┘
 
 export interface DatosGateDefinicionCrudo {
   servicioCodigo: string | null | undefined;
@@ -62,6 +70,40 @@ export interface DatosGateAsignacionFormal {
 export function evaluarGateAsignacionFormal(datos: DatosGateAsignacionFormal): ResultadoGate {
   if (!datos.especialistaId) {
     return { desbloqueado: false, motivo: 'Jefatura todavía no asignó un especialista a este proyecto' };
+  }
+  return { desbloqueado: true };
+}
+
+export interface DatosGateTituloAprobado {
+  tituloDefinitivo: string | null | undefined;
+  subtituloDefinitivo: string | null | undefined;
+}
+
+// GATE-04 — Título y Subtítulo Aprobados: "Sin título no hay reunión
+// creativa" (confirmado por 3 fuentes independientes — ver el
+// comentario de proyectos.tituloDefinitivo en server/db/schema/proyectos.ts).
+// Subtítulo se trata igual de estricto que título: el Manual no admite
+// una reunión creativa con solo uno de los dos cerrados.
+export function evaluarGateTituloAprobado(datos: DatosGateTituloAprobado): ResultadoGate {
+  if (!datos.tituloDefinitivo?.trim() || !datos.subtituloDefinitivo?.trim()) {
+    return { desbloqueado: false, motivo: 'El título y subtítulo definitivos todavía no están cerrados' };
+  }
+  return { desbloqueado: true };
+}
+
+export interface DatosGateAprobacionPortadaRrpp {
+  fechaAprobadaRrpp: string | null | undefined;
+}
+
+// GATE-05 — Aprobación Interna de Portada: las propuestas del Líder
+// Creativo NO van directo al autor — RRPP (Paola Morales) debe
+// aprobarlas primero (Manual del Especialista §4.1.2, confirmado
+// también en DIRECCIÓN CREATIVA.xlsx). Opera por PROPUESTA individual
+// (ficha_diseno_propuestas), no a nivel de proyecto — cada fila de
+// propuesta tiene su propia fechaAprobadaRrpp.
+export function evaluarGateAprobacionPortadaRrpp(datos: DatosGateAprobacionPortadaRrpp): ResultadoGate {
+  if (!datos.fechaAprobadaRrpp) {
+    return { desbloqueado: false, motivo: 'RRPP todavía no aprobó internamente esta propuesta de portada' };
   }
   return { desbloqueado: true };
 }

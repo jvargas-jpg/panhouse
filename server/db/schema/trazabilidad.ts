@@ -499,6 +499,30 @@ export const fichaCalidadFases = pgTable(
     pdfVersion: text('pdf_version'),
     fecha: date('fecha'),
     aprobado: boolean('aprobado'),
+
+    // Fase 5 (auditoría diferencial contra fuentes reales — ver
+    // MIREYA JOSEFINA OLIVEROS SEQUERA - FICHA DE TRAZABILIDAD.xlsx,
+    // hoja "CALIDAD EDITORIAL"): cada fase/ronda real registra "Nombre
+    // de quien recibe" (el validador de soporte_editorial que hizo ESA
+    // ronda) y "Cantidad de páginas". Texto libre, no FK a `usuarios` a
+    // propósito — hoy `soporte_editorial` es acceso por rol, no
+    // asignación individual (ver docs/arquitectura/
+    // 11-fase2-modelo-canonico.md §E); forzar una FK inventaría una
+    // asignación formal que el negocio no pidió todavía. Resuelve
+    // parcialmente el PENDIENTE de `validadorId` marcado en esa misma
+    // sección — queda como texto, no como asignación formal, hasta que
+    // el negocio confirme que lo necesita como tal.
+    nombreQuienRecibe: text('nombre_quien_recibe'),
+    cantidadPaginas: integer('cantidad_paginas'),
+    // "Cambios por verificar" / "Cambios pendientes por aplicar" /
+    // "Cambios nuevos sugeridos" — tres contadores reales distintos de
+    // `cantidadComentarios` genérico (ese no existe en este archivo,
+    // ver abajo en seguimiento_fases, que sí lo tiene). Nombres
+    // exactos de la hoja real, columnas separadas porque el negocio ya
+    // las distingue operativamente, no son tres sinónimos del mismo dato.
+    cambiosPorVerificar: integer('cambios_por_verificar'),
+    cambiosPendientesPorAplicar: integer('cambios_pendientes_por_aplicar'),
+    cambiosNuevosSugeridos: integer('cambios_nuevos_sugeridos'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true })
       .notNull()
@@ -527,6 +551,16 @@ export const fichaDisenoPropuestas = pgTable('ficha_diseno_propuestas', {
     .notNull()
     .references(() => fichasTrazabilidad.id, { onDelete: 'cascade' }),
   fechaEnviadaEspecialista: date('fecha_enviada_especialista'),
+  // Fase 5 (auditoría diferencial — DIRECCIÓN CREATIVA.xlsx, hoja
+  // "GENERAL 25-26", columna "PROPUESTAS ENVIADAS AL ESPECIALISTA" +
+  // Manual del Especialista §4.1.2: "debemos esperar que sean
+  // aprobadas por el equipo de relaciones públicas... Luego de
+  // aprobadas se envían al autor"). Campo real confirmado que faltaba
+  // para poder implementar GATE-05 (Aprobación Interna de Portada,
+  // ver server/helpers/gates.ts) — sin esta fecha no había forma de
+  // distinguir "RRPP ya aprobó" de "RRPP todavía no ha visto los
+  // conceptos", y el gate quedaba sin poder implementarse de verdad.
+  fechaAprobadaRrpp: date('fecha_aprobada_rrpp'),
   fechaEnviadaAutor: date('fecha_enviada_autor'),
   fechaAprobadaAutor: date('fecha_aprobada_autor'),
   estado: text('estado'),

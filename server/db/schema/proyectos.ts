@@ -60,6 +60,19 @@ export const proyectos = pgTable('proyectos', {
   // ya inerte para cualquier fila nueva.
   titulo: text('titulo'),
 
+  // Fase 5 (auditoría diferencial): título/subtítulo DEFINITIVOS —
+  // distintos de fichas_trazabilidad.posible_titulo_libro (tentativo,
+  // intake de RRPP). Confirmado real y necesario por 3 fuentes
+  // independientes: Manual del Especialista §2.3.3 ("Antes de diseño:
+  // Título y subtítulo deben quedar cerrados. Permite activar reunión
+  // creativa"), DIRECCIÓN CREATIVA.xlsx (columna TÍTULO) y
+  // docs/arquitectura/03-data-dictionary.md (ya marcado "Por
+  // consolidar"). Habilita GATE-04 (ver server/helpers/gates.ts) — no
+  // existía ningún campo real donde aterrizara el título ya cerrado
+  // antes de esta ronda.
+  tituloDefinitivo: text('titulo_definitivo'),
+  subtituloDefinitivo: text('subtitulo_definitivo'),
+
   // Código corto único que identifica al proyecto visualmente en toda
   // la app (listas, detalle) junto con los autores — reemplaza a
   // `titulo` como identificador legible. Se genera en el momento de
