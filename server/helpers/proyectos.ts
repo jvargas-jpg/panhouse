@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios } from '../db/schema/index.js';
+import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, workItems } from '../db/schema/index.js';
 import { registrarEvento } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
@@ -592,6 +592,12 @@ export async function asignarEspecialista(proyectoId: string, especialistaId: st
 
 // Mismo patrón que asignarEspecialista, pero lo decide jefe_edicion:
 // paso propio, separado de la creación del proyecto.
+//
+// Fase 5 (5A Edición): además transiciona el work item 'edicion' a
+// 'en_progreso' — si todavía no existía (ej. jefe_edicion asignó sin
+// que el especialista pasara por /solicitar-editor primero, caso
+// legítimo hoy), lo crea directo en progreso: nunca deja un work item
+// fantasma en 'pendiente' después de que ya hay editor trabajando.
 export async function asignarEditor(proyectoId: string, editorId: string, asignadoPorId: string): Promise<void> {
   await db.transaction(async (tx) => {
     const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
@@ -617,11 +623,81 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
       detalles: { anterior: anteriorUsuarioId, nuevo: editorId },
     });
 
+    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
+    await transicionarWorkItem(tx, { proyectoId, tipo: 'edicion', estado: 'en_progreso' });
+
     await tx.insert(notificaciones).values({
       proyectoId,
       rolDestino: 'editor',
       usuarioDestinoId: editorId,
       mensaje: `Se te asignó el proyecto #${proyecto.codigo}.`,
+    });
+  });
+}
+
+// Fase 5 (5A Edición) — paso 1 del flujo documentado (Manual §2.1/§2.3.1):
+// "Se le solicita a la jefa de edición un editor". Antes de esta ronda,
+// jefe_edicion solo podía DESCUBRIR proyectos sin editor navegando una
+// lista (listarProyectosSinEditor) — sin ningún rastro de cuándo
+// exactamente el especialista pidió uno. Ahora deja un work item
+// 'edicion' en 'pendiente' (con fecha real) + notifica a jefe_edicion.
+// Idempotente: pedir dos veces no duplica el work item ni la notificación
+// (ver existeNotificacionNoLeida, mismo guardián que manuscritoUrl).
+export async function solicitarEditor(proyectoId: string, actorId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo, editorId: proyectos.editorId }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    if (proyecto.editorId) return; // Ya tiene editor — pedir de nuevo no tiene efecto.
+
+    const workItemId = await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
+
+    const [yaNotificado] = await tx
+      .select({ id: notificaciones.id })
+      .from(notificaciones)
+      .where(and(eq(notificaciones.proyectoId, proyectoId), eq(notificaciones.rolDestino, 'jefe_edicion'), eq(notificaciones.leido, false)))
+      .limit(1);
+    if (yaNotificado) return;
+
+    await registrarEvento(tx, {
+      actorId,
+      accion: 'EDITOR_SOLICITADO',
+      entityType: 'work_item',
+      entityId: workItemId,
+      proyectoId,
+    });
+
+    await tx.insert(notificaciones).values({
+      proyectoId,
+      rolDestino: 'jefe_edicion',
+      mensaje: `Se solicitó un editor para el proyecto #${proyecto.codigo}.`,
+    });
+  });
+}
+
+// Fase 5 (5A Edición) — cierre del subpipeline (Manual, "Cuando ya se
+// arme tripa completa"): el editor aplicó el feedback de tripa completa
+// del autor y entregó el archivo definitivo. Lo registra el
+// especialista (dueño del proyecto, verificado por verificarAccesoAProyecto
+// en la ruta) porque es quien recibe esa entrega del editor por correo,
+// no el editor directamente. Completa el work item 'edicion' — el
+// subpipeline de Corrección puede empezar después de esto.
+export async function registrarFeedbackTripa(proyectoId: string, fecha: string, actorId: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    const [proyecto] = await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+
+    await tx.update(proyectos).set({ fechaFeedbackTripa: fecha }).where(eq(proyectos.id, proyectoId));
+
+    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
+    await transicionarWorkItem(tx, { proyectoId, tipo: 'edicion', estado: 'completado' });
+
+    await registrarEvento(tx, {
+      actorId,
+      accion: 'FEEDBACK_TRIPA_REGISTRADO',
+      entityType: 'proyecto',
+      entityId: proyectoId,
+      proyectoId,
+      detalles: { fechaFeedbackTripa: fecha },
     });
   });
 }
@@ -667,6 +743,13 @@ export interface ProyectoSinEditor {
   id: string;
   autor: { id: string; nombre: string };
   servicio: { id: string; codigo: string; nombre: string };
+  // Fase 5 (5A Edición) — createdAt del work_item 'edicion' si el
+  // especialista ya lo pidió con POST /:id/solicitar-editor (ver
+  // solicitarEditor más arriba). null = todavía nadie lo pidió, el
+  // proyecto solo aparece acá porque no tiene editorId. Permite que la
+  // bandeja de jefe_edicion distinga "me lo pidieron" de "simplemente
+  // no tiene editor todavía", sin inventar un estado nuevo.
+  solicitadoEn: string | null;
 }
 
 // Para la pantalla de jefe_edicion "Proyectos sin editor asignado":
@@ -683,16 +766,19 @@ export async function listarProyectosSinEditor(): Promise<ProyectoSinEditor[]> {
       servicioId: servicios.id,
       servicioCodigo: servicios.codigo,
       servicioNombre: servicios.nombre,
+      solicitadoEn: workItems.createdAt,
     })
     .from(proyectos)
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
+    .leftJoin(workItems, and(eq(workItems.proyectoId, proyectos.id), eq(workItems.tipo, 'edicion'), eq(workItems.businessKey, 'default')))
     .where(and(isNull(proyectos.editorId), inArray(proyectos.estado, ESTADOS_ACTIVOS)));
 
   return filas.map((fila) => ({
     id: fila.id,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
+    solicitadoEn: fila.solicitadoEn ? fila.solicitadoEn.toISOString() : null,
   }));
 }
 export interface ProyectoResumen extends PreparacionComercial {

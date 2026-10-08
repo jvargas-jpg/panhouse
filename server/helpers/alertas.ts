@@ -101,6 +101,13 @@ export interface ProyectoConRiesgo {
   // tras recargar la página.
   notificadoRrpp: boolean;
   notificadoJefatura: boolean;
+  // Fase 5 (5A Edición) — cierre del subpipeline de edición
+  // (registrarFeedbackTripa, ver server/helpers/proyectos.ts): la fecha
+  // real en que el editor entregó la tripa completa con el feedback del
+  // autor ya aplicado. Viaja acá (no solo en la fila cruda) para que
+  // ProyectoDetallePage.tsx pueda mostrar/gatear el control sin un
+  // segundo fetch, mismo criterio que el resto de estas columnas.
+  fechaFeedbackTripa: string | null;
   // `autor` (singular, legacy) se mantiene sin tocar por compatibilidad
   // — MisProyectosPage.tsx (especialista/editor) y otros consumidores de
   // este mismo tipo todavía lo usan tal cual. `autores` (coautoría, todos
@@ -138,6 +145,7 @@ const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   jefeAreaId: proyectos.jefeAreaId,
   notificadoRrpp: proyectos.notificadoRrpp,
   notificadoJefatura: proyectos.notificadoJefatura,
+  fechaFeedbackTripa: proyectos.fechaFeedbackTripa,
   autorId: autores.id,
   autorNombre: autores.nombre,
   servicioId: servicios.id,
@@ -160,6 +168,7 @@ type FilaProyectoConAutorYServicio = {
   jefeAreaId: string | null;
   notificadoRrpp: boolean;
   notificadoJefatura: boolean;
+  fechaFeedbackTripa: string | null;
   autorId: string;
   autorNombre: string;
   servicioId: string;
@@ -191,6 +200,7 @@ async function mapearFilaConRiesgo(
     jefeAreaId: fila.jefeAreaId,
     notificadoRrpp: fila.notificadoRrpp,
     notificadoJefatura: fila.notificadoJefatura,
+    fechaFeedbackTripa: fila.fechaFeedbackTripa,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
     autores: autoresPorProyecto.get(fila.id) ?? [{ id: fila.autorId, nombre: fila.autorNombre, nombreArtistico: null }],
     servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },

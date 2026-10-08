@@ -5,7 +5,8 @@ import { asignarEditor, fetchCargaEditores } from './jefeEdicionApi';
 // Mismo patrón exacto que AsignarEspecialistaCard (jefatura): reutiliza
 // la carga ponderada de editores (GET /editores/carga), no duplica esa
 // lógica. A diferencia de ese flujo, acá el proyecto ya existe — se
-// abre por fila desde ProyectosSinEditor, no después de crear nada.
+// abre por fila desde JefeEdicionHomePage (dentro de un Modal), no
+// después de crear nada.
 export function AsignarEditorCard({
   proyectoId,
   autorNombre,

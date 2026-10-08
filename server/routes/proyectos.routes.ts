@@ -22,6 +22,8 @@ import {
   notificarRrppProyectoBase,
   obtenerProyecto,
   reasignarProyecto,
+  registrarFeedbackTripa,
+  solicitarEditor,
   validarCambioEstadoProyecto,
   verificarAccesoAProyecto,
 } from '../helpers/proyectos.js';
@@ -100,6 +102,14 @@ const asignarEditorSchema = z.object({
 
 const asignarDisenadorSchema = z.object({
   disenadorId: z.string().uuid(),
+});
+
+// Fase 5 (5A Edición) — fecha real en que el editor entregó la tripa
+// completa con el feedback del autor ya aplicado (Manual: "Cuando ya
+// se arme tripa completa... el editor deberá aplicar todo esos
+// feedbacks y entregarle el archivo con todo aplicado al especialista").
+const registrarFeedbackTripaSchema = z.object({
+  fecha: z.string().min(1),
 });
 
 // Portal del Autor: sin .url() a propósito — mismo criterio laxo que el
@@ -383,6 +393,47 @@ export async function proyectosRoutes(app: FastifyInstance) {
     }
 
     await asignarEditor(params.id, body.editorId, request.user.id);
+    return reply.send({ ok: true });
+  });
+
+  // Fase 5 (5A Edición) — paso 1 del flujo real: el especialista dueño
+  // del proyecto pide editor a jefe_edicion (Manual §2.1/§2.3.1). Deja
+  // rastro (work item + audit) de cuándo se pidió, a diferencia de que
+  // jefe_edicion simplemente "descubra" el proyecto sin editor.
+  app.post('/:id/solicitar-editor', { preHandler: [requireAuth, requireRole('especialista')] }, async (request, reply) => {
+    const params = parseOrReply(idParamSchema, request.params, reply);
+    if (!params) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
+
+    const acceso = await verificarAccesoAProyecto(params.id, request.user);
+    if (!acceso.ok) {
+      return reply.code(acceso.status).send({ error: acceso.error });
+    }
+
+    await solicitarEditor(params.id, request.user.id);
+    return reply.code(201).send({ ok: true });
+  });
+
+  // Fase 5 (5A Edición) — cierre del subpipeline: completa el work item
+  // 'edicion'. Lo registra el especialista (dueño del proyecto), no el
+  // editor — es quien recibe la entrega final por correo según el Manual.
+  app.patch('/:id/feedback-tripa', { preHandler: [requireAuth, requireRole('especialista')] }, async (request, reply) => {
+    const params = parseOrReply(idParamSchema, request.params, reply);
+    if (!params) return;
+    const body = parseOrReply(registrarFeedbackTripaSchema, request.body, reply);
+    if (!body) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
+
+    const acceso = await verificarAccesoAProyecto(params.id, request.user);
+    if (!acceso.ok) {
+      return reply.code(acceso.status).send({ error: acceso.error });
+    }
+
+    await registrarFeedbackTripa(params.id, body.fecha, request.user.id);
     return reply.send({ ok: true });
   });
 

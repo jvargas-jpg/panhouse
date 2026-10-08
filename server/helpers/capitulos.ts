@@ -1,6 +1,8 @@
-import { and, count, eq, isNotNull } from 'drizzle-orm';
+import { and, count, eq, inArray, isNotNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { capitulos } from '../db/schema/index.js';
+import { autores, capitulos, proyectos, servicios } from '../db/schema/index.js';
+import { calcularFechaPautadaFeedbackCapitulo } from './edicionSla.js';
+import { ESTADOS_ACTIVOS } from './carga.js';
 
 // El capítulo nace cuando alguien lo crea por primera vez (típicamente
 // el editor, al arrancar su parte), con los campos de contenido
@@ -22,10 +24,21 @@ export interface DatosCapituloAutor {
 // "cara al autor" del capítulo, nunca las "cara al editor" (paginas,
 // fechaInicioEditor, fechaEntregaEditor) — esas pertenecen a un futuro
 // flujo de edición operativa, no a la ficha.
+//
+// Fase 5 (5A Edición): si se registra fechaEnvioAutor y el caller NO
+// trae ya una fechaPautadaFeedback explícita en el mismo payload, se
+// calcula el default (3 días hábiles, ver server/helpers/edicionSla.ts)
+// en vez de dejarlo en blanco esperando que alguien lo calcule a mano.
+// Nunca pisa un valor que el caller sí envió explícitamente.
 export async function actualizarCapituloAutor(proyectoId: string, numero: number, datos: DatosCapituloAutor) {
+  const datosConPlazo = { ...datos };
+  if (datos.fechaEnvioAutor && datos.fechaPautadaFeedback === undefined) {
+    datosConPlazo.fechaPautadaFeedback = calcularFechaPautadaFeedbackCapitulo(datos.fechaEnvioAutor);
+  }
+
   const [fila] = await db
     .update(capitulos)
-    .set(datos)
+    .set(datosConPlazo)
     .where(and(eq(capitulos.proyectoId, proyectoId), eq(capitulos.numero, numero)))
     .returning();
 
@@ -69,3 +82,70 @@ export async function contarCapitulosEntregados(proyectoId: string): Promise<num
 
   return fila?.total ?? 0;
 }
+
+export type EstadoTrabajoCapitulo = 'feedback_para_aplicar' | 'esperando_autor' | 'por_iniciar' | 'entregado';
+
+export interface TrabajoEditorCapitulo {
+  proyectoId: string;
+  proyectoCodigo: string;
+  autorNombre: string;
+  servicioCodigo: string;
+  numero: number;
+  fechaEnvioAutor: string | null;
+  fechaPautadaFeedback: string | null;
+  fechaRespuestaReal: string | null;
+  fechaInicioEditor: string | null;
+  fechaEntregaEditor: string | null;
+  estado: EstadoTrabajoCapitulo;
+}
+
+// "Mis Trabajos de Edición" (Fase 5, §38 — Editor): a diferencia de
+// listarProyectosEditor (alertas.ts, nivel proyecto), esto resuelve a
+// nivel de CAPÍTULO — lo que el editor realmente necesita saber: qué
+// capítulo tiene feedback del autor esperando ser aplicado (prioridad
+// más alta), cuál está esperando que el autor responda, cuál no ha
+// arrancado, cuál ya se entregó. Nunca expone capítulos de proyectos
+// ajenos (editorId filtra al dueño real, mismo criterio que
+// verificarAccesoAProyecto en server/helpers/proyectos.ts).
+function estadoTrabajoCapitulo(fila: {
+  fechaRespuestaReal: string | null;
+  fechaEntregaEditor: string | null;
+  fechaEnvioAutor: string | null;
+}): EstadoTrabajoCapitulo {
+  if (fila.fechaEntregaEditor) return 'entregado';
+  if (fila.fechaRespuestaReal) return 'feedback_para_aplicar';
+  if (fila.fechaEnvioAutor) return 'esperando_autor';
+  return 'por_iniciar';
+}
+
+export async function listarTrabajosEditor(editorId: string): Promise<TrabajoEditorCapitulo[]> {
+  const filas = await db
+    .select({
+      proyectoId: proyectos.id,
+      proyectoCodigo: proyectos.codigo,
+      autorNombre: autores.nombre,
+      servicioCodigo: servicios.codigo,
+      numero: capitulos.numero,
+      fechaEnvioAutor: capitulos.fechaEnvioAutor,
+      fechaPautadaFeedback: capitulos.fechaPautadaFeedback,
+      fechaRespuestaReal: capitulos.fechaRespuestaReal,
+      fechaInicioEditor: capitulos.fechaInicioEditor,
+      fechaEntregaEditor: capitulos.fechaEntregaEditor,
+    })
+    .from(capitulos)
+    .innerJoin(proyectos, eq(capitulos.proyectoId, proyectos.id))
+    .innerJoin(autores, eq(proyectos.autorId, autores.id))
+    .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
+    .where(and(eq(proyectos.editorId, editorId), inArray(proyectos.estado, ESTADOS_ACTIVOS)));
+
+  return filas
+    .map((fila) => ({ ...fila, estado: estadoTrabajoCapitulo(fila) }))
+    .sort((a, b) => ORDEN_PRIORIDAD[a.estado] - ORDEN_PRIORIDAD[b.estado]);
+}
+
+const ORDEN_PRIORIDAD: Record<EstadoTrabajoCapitulo, number> = {
+  feedback_para_aplicar: 0,
+  por_iniciar: 1,
+  esperando_autor: 2,
+  entregado: 3,
+};

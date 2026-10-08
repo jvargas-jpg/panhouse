@@ -13,7 +13,9 @@ export type AccionAuditoria =
   | 'DISENADOR_ASIGNADO'
   | 'DISENADOR_REASIGNADO'
   | 'RRPP_NOTIFICADO'
-  | 'JEFATURA_NOTIFICADA';
+  | 'JEFATURA_NOTIFICADA'
+  | 'EDITOR_SOLICITADO'
+  | 'FEEDBACK_TRIPA_REGISTRADO';
 
 export interface RegistrarEventoInput {
   actorId: string | null;

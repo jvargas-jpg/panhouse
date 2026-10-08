@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { actualizarCapituloAutor, actualizarCapituloEditor, crearCapitulo, obtenerCapitulosProyecto } from '../helpers/capitulos.js';
+import { actualizarCapituloAutor, actualizarCapituloEditor, crearCapitulo, listarTrabajosEditor, obtenerCapitulosProyecto } from '../helpers/capitulos.js';
 import { verificarAccesoAProyecto } from '../helpers/proyectos.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
@@ -31,6 +31,20 @@ const actualizarCapituloEditorSchema = z.object({
 });
 
 export async function capitulosRoutes(app: FastifyInstance) {
+  // Fase 5 (5A Edición, §38) — "Mis Trabajos de Edición": a nivel de
+  // CAPÍTULO, no de proyecto (a diferencia de GET /proyectos/mios). Sin
+  // :id en la URL — el propio editorId sale de la sesión, mismo
+  // criterio que GET /proyectos/mios (alertas.ts), así que no hace
+  // falta un chequeo de pertenencia aparte: listarTrabajosEditor ya
+  // filtra internamente por `proyectos.editorId = editorId`.
+  app.get('/mios', { preHandler: [requireAuth, requireRole('editor')] }, async (request, reply) => {
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
+    const trabajos = await listarTrabajosEditor(request.user.id);
+    return reply.send({ trabajos });
+  });
+
   // Lista de capítulos del proyecto (sección Edición de la ficha, más
   // las columnas cara al editor): el especialista dueño, jefe_area, y
   // editor — necesita verla para encontrar el capítulo que va a marcar

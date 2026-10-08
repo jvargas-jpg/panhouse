@@ -287,7 +287,12 @@ export function ProyectoDetallePage() {
           rrpp. */}
       {proyectoQuery.data && puedeVerFicha && rol !== 'comercial' && rol !== 'rrpp' && (
         <div className="mx-auto w-full max-w-7xl px-6 pt-12 md:px-16">
-          <SeccionEquipo proyectoId={id} proyecto={proyectoQuery.data.proyecto} puedeEditar={rol === 'jefe_area'} />
+          <SeccionEquipo
+            proyectoId={id}
+            proyecto={proyectoQuery.data.proyecto}
+            puedeEditar={rol === 'jefe_area'}
+            puedeSolicitarEditor={rol === 'especialista'}
+          />
         </div>
       )}
 
@@ -316,7 +321,13 @@ export function ProyectoDetallePage() {
                   no hace falta una key extra acá. */}
               {(pasoActivo === 2 || pasoActivo === 3 || pasoActivo === 4) && (
                 <div className="w-full">
-                  <SeccionEdicion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
+                  <SeccionEdicion
+                    proyectoId={id}
+                    ficha={fichaQuery.data.ficha}
+                    puedeEditar={rol === 'especialista'}
+                    editorId={proyectoQuery.data.proyecto.editorId}
+                    fechaFeedbackTripa={proyectoQuery.data.proyecto.fechaFeedbackTripa}
+                  />
                 </div>
               )}
 

@@ -192,6 +192,9 @@ export interface ProyectoConRiesgo {
   // POST /:id/notificar-jefatura, los dos pasos de la cascada.
   notificadoRrpp: boolean;
   notificadoJefatura: boolean;
+  // Fase 5 (5A Edición) — cierre del subpipeline de edición
+  // (PATCH /:id/feedback-tripa, ver server/helpers/proyectos.ts).
+  fechaFeedbackTripa: string | null;
   // autor (singular, legacy) se mantiene por compatibilidad —
   // MisProyectosPage.tsx y otros consumidores de este mismo tipo lo
   // siguen usando tal cual. autores (coautoría) es aditivo, para
@@ -258,6 +261,12 @@ export interface ProyectoPendienteSeccion1 {
   unidadId?: string;
   presupuestoId?: string;
   fechaProgramadaInicio?: string;
+  // Fase 5 (5A Edición) — solo en GET /proyectos/sin-editor: createdAt
+  // del work_item 'edicion' si el especialista ya lo pidió con
+  // POST /:id/solicitar-editor (ver server/helpers/proyectos.ts:ProyectoSinEditor).
+  // null = nadie lo pidió todavía. Ausente (undefined) en las listas
+  // "pendientes/*", que no tienen este concepto.
+  solicitadoEn?: string | null;
 }
 
 // GET /api/especialistas/carga y GET /api/editores/carga — misma forma
@@ -285,6 +294,26 @@ export interface Capitulo {
   fechaInicioEditor: string | null;
   paginas: number | null;
   fechaEntregaEditor: string | null;
+}
+
+// GET /api/capitulos/mios — server/helpers/capitulos.ts:TrabajoEditorCapitulo.
+// "Mis Trabajos de Edición" del editor, a nivel de CAPÍTULO (no de
+// proyecto, a diferencia de ProyectoConRiesgo) — estado ya viene
+// clasificado y priorizado desde el backend, no se recalcula en React.
+export type EstadoTrabajoCapitulo = 'feedback_para_aplicar' | 'esperando_autor' | 'por_iniciar' | 'entregado';
+
+export interface TrabajoEditorCapitulo {
+  proyectoId: string;
+  proyectoCodigo: string;
+  autorNombre: string;
+  servicioCodigo: string;
+  numero: number;
+  fechaEnvioAutor: string | null;
+  fechaPautadaFeedback: string | null;
+  fechaRespuestaReal: string | null;
+  fechaInicioEditor: string | null;
+  fechaEntregaEditor: string | null;
+  estado: EstadoTrabajoCapitulo;
 }
 
 export type CausaPausa = 'autor' | 'otro_departamento';

@@ -1590,6 +1590,28 @@ describe('rutas de proyectos', () => {
       expect(ids).not.toContain(proyectoConEditor.id);
       expect(ids).not.toContain(proyectoCulminadoSinEditor.id);
 
+      const filaSinEditor = respuesta.body.proyectos.find((p: { id: string }) => p.id === proyectoSinEditor.id);
+      expect(filaSinEditor.solicitadoEn).toBeNull();
+
+      await app.close();
+    });
+
+    it('marca solicitadoEn cuando el especialista ya pidió editor (POST /:id/solicitar-editor)', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+
+      const cookieEspecialista = await registrarYLoguear(app, 'especialista');
+      const meEspecialista = await request(app.server).get('/api/auth/me').set('Cookie', cookieEspecialista);
+      const proyecto = await crearProyectoDePrueba({ especialistaId: meEspecialista.body.user.id });
+
+      await request(app.server).post(`/api/proyectos/${proyecto.id}/solicitar-editor`).set('Cookie', cookieEspecialista);
+
+      const cookieJefeEdicion = await registrarYLoguear(app, 'jefe_edicion');
+      const respuesta = await request(app.server).get('/api/proyectos/sin-editor').set('Cookie', cookieJefeEdicion);
+
+      const fila = respuesta.body.proyectos.find((p: { id: string }) => p.id === proyecto.id);
+      expect(fila.solicitadoEn).not.toBeNull();
+
       await app.close();
     });
 

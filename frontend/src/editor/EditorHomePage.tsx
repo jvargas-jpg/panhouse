@@ -1,9 +1,10 @@
-import { MisProyectosPage } from '../proyectos/MisProyectosPage';
+import { MisTrabajosEdicionPage } from './MisTrabajosEdicionPage';
 
-// GET /proyectos/mios ya está generalizado por rol (especialista o
-// editor, ver server/helpers/alertas.ts) — MisProyectosPage no tiene
-// nada específico de especialista, así que se reutiliza tal cual en
-// vez de duplicar la misma pantalla.
+// Fase 5 (5A Edición): antes reutilizaba MisProyectosPage tal cual
+// (el Kanban por PROYECTO del especialista) — no reflejaba lo que el
+// editor realmente necesita saber ("qué capítulo debo trabajar ahora").
+// GET /capitulos/mios (ver MisTrabajosEdicionPage.tsx) resuelve eso a
+// nivel de capítulo, priorizado por el backend.
 export function EditorHomePage() {
-  return <MisProyectosPage />;
+  return <MisTrabajosEdicionPage />;
 }

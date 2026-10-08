@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Modal } from '../autores/Modal';
 import type { ProyectoConRiesgo } from '../types/api';
-import { actualizarEquipoProyecto, fetchPersonalEquipo, type DatosEquipoProyecto } from './proyectoDetalleApi';
+import { actualizarEquipoProyecto, fetchPersonalEquipo, solicitarEditor, type DatosEquipoProyecto } from './proyectoDetalleApi';
 
 type RolKey = keyof DatosEquipoProyecto;
 
@@ -35,6 +35,7 @@ export function SeccionEquipo({
   proyectoId,
   proyecto,
   puedeEditar,
+  puedeSolicitarEditor = false,
 }: {
   proyectoId: string;
   // Omit<'autor'>: este panel no lee el autor, solo las columnas de
@@ -43,6 +44,13 @@ export function SeccionEquipo({
   // trae `autor` singular.
   proyecto: Omit<ProyectoConRiesgo, 'autor'>;
   puedeEditar: boolean;
+  // Fase 5 (5A Edición) — el especialista dueño del proyecto no puede
+  // reasignar el equipo (puedeEditar sigue siendo exclusivo de
+  // jefe_area), pero sí puede pedirle un editor a jefe_edicion
+  // (POST /:id/solicitar-editor) cuando la tarjeta de Editor/a está
+  // vacía. Default false: todos los demás roles que ven este panel
+  // (jefe_area, rrpp vía ficha, etc.) no ganan esta acción sin pedirla.
+  puedeSolicitarEditor?: boolean;
 }) {
   const personalQuery = useQuery({ queryKey: ['usuarios'], queryFn: fetchPersonalEquipo });
   const queryClient = useQueryClient();
@@ -55,6 +63,13 @@ export function SeccionEquipo({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proyecto', proyectoId] });
       setRolEnEdicion(null);
+    },
+  });
+
+  const solicitudMutacion = useMutation({
+    mutationFn: () => solicitarEditor(proyectoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['proyecto', proyectoId] });
     },
   });
 
@@ -104,6 +119,8 @@ export function SeccionEquipo({
             );
           }
 
+          const puedeSolicitarEstaTarjeta = rol.key === 'editorId' && puedeSolicitarEditor;
+
           return (
             <div
               key={rol.key}
@@ -115,6 +132,28 @@ export function SeccionEquipo({
               <span className="mb-2 text-[10px] font-bold uppercase tracking-widest text-gray-400">{rol.label}</span>
               <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 text-gray-400">+</div>
               <span className="text-xs font-medium text-gray-500">{puedeEditar ? 'Asignar persona' : 'Sin asignar'}</span>
+
+              {puedeSolicitarEstaTarjeta && (
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    solicitudMutacion.mutate();
+                  }}
+                  disabled={solicitudMutacion.isPending}
+                  className="mt-3 rounded-md bg-dorado px-3 py-1.5 text-xs font-semibold text-tinta transition hover:brightness-95 disabled:opacity-60"
+                >
+                  {solicitudMutacion.isPending ? 'Solicitando…' : 'Solicitar editor'}
+                </button>
+              )}
+              {puedeSolicitarEstaTarjeta && solicitudMutacion.isSuccess && (
+                <span className="mt-2 text-xs font-medium text-green-700">Solicitado ✓</span>
+              )}
+              {puedeSolicitarEstaTarjeta && solicitudMutacion.isError && (
+                <span role="alert" className="mt-2 text-xs text-red-600">
+                  No se pudo solicitar.
+                </span>
+              )}
             </div>
           );
         })}

@@ -268,6 +268,25 @@ export function actualizarCapituloAutor(proyectoId: string, numero: number, dato
   });
 }
 
+// Fase 5 (5A Edición) — paso 1 del flujo real: el especialista dueño
+// del proyecto pide editor a jefe_edicion (ver POST /:id/solicitar-editor,
+// server/routes/proyectos.routes.ts). Idempotente en el backend: pedir
+// dos veces no duplica nada, así que no hace falta deshabilitar el
+// botón a mano más allá de mientras la mutación está en curso.
+export function solicitarEditor(proyectoId: string) {
+  return apiFetch<{ ok: true }>(`/proyectos/${proyectoId}/solicitar-editor`, { method: 'POST' });
+}
+
+// Fase 5 (5A Edición) — cierre del subpipeline: fecha real en que el
+// editor entregó la tripa completa con el feedback del autor ya
+// aplicado (ver PATCH /:id/feedback-tripa, mismo archivo de rutas).
+export function registrarFeedbackTripa(proyectoId: string, fecha: string) {
+  return apiFetch<{ ok: true }>(`/proyectos/${proyectoId}/feedback-tripa`, {
+    method: 'PATCH',
+    body: JSON.stringify({ fecha }),
+  });
+}
+
 // Sección 2, dueño especialista (mismo dueño que Corrección) — vista de
 // conjunto de la sección, coexiste con el detalle por capítulo en
 // capitulos.ts.
