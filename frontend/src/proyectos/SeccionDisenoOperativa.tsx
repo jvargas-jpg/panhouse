@@ -23,7 +23,7 @@ export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: Tra
   const esDisenador = user?.rol === 'disenador';
   const carga = useQuery({ queryKey: ['disenadores', 'carga'], queryFn: fetchDisenadoresCarga, enabled: esEspecialista });
   const v = t.versiones[0];
-  const accion = useMutation({ mutationFn: (fn: () => Promise<unknown>) => fn(), onSuccess: () => { qc.invalidateQueries({ queryKey: ['diseno'] }); qc.invalidateQueries({ queryKey: ['direcciones-creativas'] }); } });
+  const accion = useMutation({ mutationFn: (fn: () => Promise<unknown>) => fn(), onSuccess: () => { qc.invalidateQueries({ queryKey: ['diseno'] }); qc.invalidateQueries({ queryKey: ['direcciones-creativas'] }); qc.invalidateQueries({ queryKey: ['calidad'] }); qc.invalidateQueries({ queryKey: ['proyecto', t.proyectoId] }); } });
   const enviar = () => accion.mutate(async () => { await entregarDiseno(t.id, enlace, key); setKey(crypto.randomUUID()); setEnlace(''); });
   return <article className="min-w-0 rounded-xl border border-tinta/10 bg-white p-4 shadow-sm sm:p-5">
     <header className="flex flex-wrap items-start justify-between gap-3">
@@ -37,6 +37,7 @@ export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: Tra
     </nav>
     {v && <div className="mt-4 border-t border-gray-100 pt-3 text-sm"><a href={v.enlace} target="_blank" rel="noreferrer" className="font-medium text-tinta underline">Abrir entrega V{v.numero}</a>
       {v.feedback && <p className="mt-2 whitespace-pre-wrap break-words rounded-lg bg-amber-50 p-3">{v.feedback}{v.cantidadComentarios !== null ? ` (${v.cantidadComentarios} comentarios)` : ''}</p>}
+      {v.feedbackArchivoUrl && <a href={v.feedbackArchivoUrl} target="_blank" rel="noreferrer" className="mt-2 block text-tinta underline">Abrir PDF con comentarios</a>}
       {t.tipo === 'cubierta_extendida' && <p className="mt-2 text-xs text-gray-500">Creativa: {t.revisionCreativaResultado ?? 'Pendiente'} · Interna: {v.aprobadaInternaEn ? 'Aprobada' : 'Pendiente'} · Autor: {v.aprobadaAutorEn ? 'Aprobada' : v.enviadaAutorEn ? 'En revisión' : 'Sin enviar'}</p>}
       {v.handoffEn && <p className="mt-2 text-green-700">Entregada a Calidad · {fechaHora(v.handoffEn)}</p>}
     </div>}
@@ -78,5 +79,6 @@ export function SeccionDisenoOperativa({ proyectoId }: { proyectoId: string }) {
 }
 export function RevisionesCubiertaPanel({ interna = false }: { interna?: boolean }) {
   const q = useQuery({ queryKey: ['diseno', 'revisiones', interna], queryFn: () => fetchDisenos(undefined, true) });
-  return <section className="mb-6 min-w-0"><h2 className="mb-4 text-xl font-bold text-tinta">{interna ? 'Corrección interna de cubiertas' : 'Revisiones de cubierta'}</h2><ErrorAccion error={q.error} />{q.isLoading && <p>Cargando revisiones…</p>}<div className="space-y-4">{q.data?.trabajos.filter(t => t.versiones.length && !t.cerradoEn && !t.versiones[0].feedbackEn).map(t => <TarjetaDiseno key={t.id} trabajo={t} modo={interna ? 'interna' : 'creativa'} />)}</div>{q.data?.trabajos.length === 0 && <p className="text-sm text-gray-500">Sin revisiones de cubierta.</p>}</section>;
+  const pendientes = q.data?.trabajos.filter(t => t.versiones.length && !t.cerradoEn && !t.versiones[0].feedbackEn && (interna ? !t.versiones[0].aprobadaInternaEn : !t.revisionCreativaResultado)) ?? [];
+  return <section className="mb-6 min-w-0"><h2 className="mb-4 text-xl font-bold text-tinta">{interna ? 'Corrección interna de cubiertas' : 'Revisiones de cubierta'}</h2><ErrorAccion error={q.error} />{q.isLoading && <p>Cargando revisiones…</p>}<div className="space-y-4">{pendientes.map(t => <TarjetaDiseno key={t.id} trabajo={t} modo={interna ? 'interna' : 'creativa'} />)}</div>{q.data && pendientes.length === 0 && <p className="text-sm text-gray-500">Sin revisiones de cubierta.</p>}</section>;
 }

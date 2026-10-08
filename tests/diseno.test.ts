@@ -168,6 +168,9 @@ describe('5D Diseño — workflow y aislamiento de roles', () => {
     expect((await call('PATCH', `/diseno/${d.body.id}/versiones/${v.body.id}/revision-creativa`, { aprobar: true }, otro)).status).toBe(403);
     expect((await call('PATCH', `/diseno/${d.body.id}/versiones/${v.body.id}/revision-interna`, { aprobar: true }, cookies.disenador)).status).toBe(403);
     expect((await call('GET', '/diseno/revisiones', undefined, cookies.lider)).body.trabajos).toHaveLength(1);
+    const [revision] = await db.select().from(disenoVersiones).where(eq(disenoVersiones.id, v.body.id));
+    const ajeno = await crearUsuario('lider_creativo'); const ajenoCookie = await login(ajeno);
+    expect((await call('PATCH', `/direccion-creativa/${revision!.revisionCreativaId}/asignar`, { liderCreativoId: ajeno.id }, ajenoCookie)).status).toBe(403);
   });
   it('rechazo creativo abre ajustes, revisión por nueva versión y preserva resultado histórico', async () => {
     const d = await solicitar('cubierta_extendida'); const v = await entregar(d.body.id);

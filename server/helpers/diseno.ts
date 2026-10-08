@@ -184,14 +184,20 @@ export async function coordinarVersion(id: string, versionId: string, datos: { a
       const ficha = f ?? (await tx.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, p.id)))[0];
       exigir(ficha, 'Ficha no encontrada');
       const anteriores = await tx.select().from(fichaCalidadFases).where(eq(fichaCalidadFases.fichaId, ficha.id));
-      // 5D entrega la diagramación inicial a Fase 1 (Manual §5.1).
-      // El número de registros históricos no define una transición de Calidad.
-      const numeroFase = 1;
+      // 5E: la fase procede de la revisión real de ESTE trabajo/versiones,
+      // nunca del número de filas legacy del proyecto.
+      const [anterior] = await tx.select({ fase: fichaCalidadFases, comentariosVersion: disenoVersiones.cantidadComentarios })
+        .from(fichaCalidadFases).innerJoin(disenoVersiones, eq(fichaCalidadFases.disenoVersionId, disenoVersiones.id))
+        .where(eq(disenoVersiones.disenoId, d.id)).orderBy(desc(fichaCalidadFases.solicitadoEn)).limit(1);
+      const numeroFase = anterior ? (anterior.fase.numeroFase >= 3 ? 4 : 2) : 1;
+      if (anterior) exigir(anterior.fase.revisadoEn, 'La revisión anterior aún no se ha resuelto');
       const ronda = Math.max(0, ...anteriores.filter(x => x.numeroFase === numeroFase).map(x => x.ronda)) + 1;
       const wi = await crearWorkItemSiNoExiste(tx, { proyectoId: p.id, tipo: 'calidad', businessKey: `diseno-version:${v.id}` });
       const contexto = { disenoId: d.id, versionId: v.id, fuenteUrl: d.fuenteUrl, correccionId: d.correccionId, aprobacionEdicionUrl: d.aprobacionEdicionUrl };
       await tx.update(workItems).set({ observaciones: JSON.stringify(contexto) }).where(eq(workItems.id, wi));
-      const [q] = await tx.insert(fichaCalidadFases).values({ fichaId: ficha.id, numeroFase, ronda, pdfUrl: v.enlace, pdfVersion: `V${v.numero}`, fecha: ahora.toISOString().slice(0, 10) }).returning();
+      const [q] = await tx.insert(fichaCalidadFases).values({ fichaId: ficha.id, numeroFase, ronda, pdfUrl: v.enlace, pdfVersion: `V${v.numero}`, fecha: ahora.toISOString().slice(0, 10), workItemId: wi, disenoVersionId: v.id, solicitadoEn: ahora,
+        cambiosPorVerificar: anterior ? anterior.comentariosVersion ?? anterior.fase.cantidadComentarios : null,
+      }).returning();
       exigir(q, 'No se pudo crear la ronda');
       await tx.update(disenoVersiones).set({ handoffEn: ahora, calidadWorkItemId: wi, calidadFaseId: q.id }).where(eq(disenoVersiones.id, v.id));
       await tx.update(disenos).set({ cerradoEn: ahora }).where(eq(disenos.id, d.id));

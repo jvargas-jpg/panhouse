@@ -2,7 +2,7 @@ import { apiFetch } from '../lib/api';
 export type TipoDiseno = 'muestra_diagramacion' | 'diagramacion' | 'cubierta_extendida';
 export interface VersionDiseno {
   id: string; numero: number; enlace: string; entregadoPorId: string; entregadoEn: string;
-  feedback: string | null; feedbackEn: string | null; cantidadComentarios: number | null;
+  feedback: string | null; feedbackArchivoUrl: string | null; feedbackEn: string | null; cantidadComentarios: number | null;
   enviadaAutorEn: string | null; feedbackAutorDueAt: string | null; aprobadaAutorEn: string | null;
   revisionCreativaId: string | null; aprobadaInternaEn: string | null; handoffEn: string | null;
   calidadWorkItemId: string | null; calidadFaseId: string | null;

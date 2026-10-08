@@ -635,7 +635,7 @@ export async function actualizarFaseCalidad(proyectoId: string, faseId: string, 
   const [fila] = await db
     .update(fichaCalidadFases)
     .set(datos)
-    .where(and(eq(fichaCalidadFases.id, faseId), eq(fichaCalidadFases.fichaId, ficha.id)))
+    .where(and(eq(fichaCalidadFases.id, faseId), eq(fichaCalidadFases.fichaId, ficha.id), isNull(fichaCalidadFases.workItemId)))
     .returning();
   return fila;
 }
@@ -644,7 +644,7 @@ export async function eliminarFaseCalidad(proyectoId: string, faseId: string) {
   const ficha = await obtenerFichaPorProyecto(proyectoId);
   const [fila] = await db
     .delete(fichaCalidadFases)
-    .where(and(eq(fichaCalidadFases.id, faseId), eq(fichaCalidadFases.fichaId, ficha.id)))
+    .where(and(eq(fichaCalidadFases.id, faseId), eq(fichaCalidadFases.fichaId, ficha.id), isNull(fichaCalidadFases.workItemId)))
     .returning();
   return fila;
 }

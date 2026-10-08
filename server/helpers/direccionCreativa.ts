@@ -9,6 +9,7 @@ import {
   projectAssignments,
   proyectos,
   servicios,
+  users,
   workItems as workItemsTable,
 } from '../db/schema/index.js';
 import { asignarConHistorial } from './assignments.js';
@@ -23,7 +24,7 @@ async function obtenerDireccionCreativa(tx: Tx, id: string) {
   return fila;
 }
 
-export type ResultadoAccion = { ok: true } | { ok: false; status: 400 | 403 | 404; error: string };
+export type ResultadoAccion = { ok: true } | { ok: false; status: 400 | 403 | 404 | 409; error: string };
 
 // Paso 0 (Manual §2.3.3/§4.1 + update "Solicitud de reunión creativa"):
 // el Especialista solicita. Idempotente: una solicitud 'concepto_portada'
@@ -105,13 +106,26 @@ export async function asignarLiderCreativo(direccionCreativaId: string, liderCre
     const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
     if (!direccion) return { ok: false, status: 404, error: 'Dirección creativa no encontrada' };
 
-    await asignarConHistorial(tx, {
+    // Dependencia 5D/5E: reclamar una revisión de cubierta no permite
+    // apropiarse de la revisión de otro líder ni reabrir una ya resuelta.
+    if (direccion.tipo === 'revision_cubierta') {
+      await tx.select().from(proyectos).where(eq(proyectos.id, direccion.proyectoId)).for('update');
+      const [actor] = await tx.select().from(users).where(eq(users.id, actorId));
+      const [destino] = await tx.select().from(users).where(eq(users.id, liderCreativoId));
+      if (!destino?.activo || destino.rol !== 'lider_creativo') return { ok: false, status: 400, error: 'Líder creativo activo requerido' };
+      const [wi] = await tx.select().from(workItemsTable).where(eq(workItemsTable.id, direccion.workItemId));
+      if (wi?.estado === 'completado' || wi?.estado === 'cancelado') return { ok: false, status: 409, error: 'Revisión ya resuelta o histórica' };
+      const activo = await obtenerLiderCreativoActivo(tx, direccion.workItemId);
+      if (actor?.rol === 'lider_creativo' && activo && activo !== actorId) return { ok: false, status: 403, error: 'Revisión de otro líder creativo' };
+    }
+    const asignacion = await asignarConHistorial(tx, {
       proyectoId: direccion.proyectoId,
       workItemId: direccion.workItemId,
       tipo: 'lider_creativo',
       usuarioId: liderCreativoId,
       asignadoPorId: actorId,
     });
+    if (direccion.tipo === 'revision_cubierta' && !asignacion.cambio) return { ok: true };
 
     await transicionarWorkItemPorId(tx, direccion.workItemId, 'en_progreso');
 

@@ -4,6 +4,7 @@ import type { FichaCalidadFase, FichaCompleta } from '../types/api';
 import { SinCompletar } from './campos';
 import { actualizarFaseCalidad, agregarFaseCalidad, eliminarFaseCalidad } from './proyectoDetalleApi';
 import { SeccionCalidadControl } from './SeccionCalidadControl';
+import { SeccionCalidadOperativa } from './SeccionCalidadOperativa';
 
 type AprobadoOpcion = 'pendiente' | 'aprobada' | 'rechazada';
 
@@ -290,7 +291,7 @@ function ContenidoCalidadMicro({
 // ProyectoDetallePage.tsx porque para decidirlo hace falta el id del
 // usuario logueado, no solo su rol (a diferencia de puedeEditar, que
 // sigue siendo solo por rol).
-export function SeccionCalidad({
+function SeccionCalidadLegacy({
   proyectoId,
   ficha,
   puedeEditar,
@@ -307,4 +308,8 @@ export function SeccionCalidad({
       <ContenidoCalidadMicro proyectoId={proyectoId} ficha={ficha} puedeEditar={puedeEditar} />
     </div>
   );
+}
+
+export function SeccionCalidad(props: Parameters<typeof SeccionCalidadLegacy>[0]) {
+  return <div className="min-w-0 space-y-4"><SeccionCalidadOperativa proyectoId={props.proyectoId} /><details className="rounded-lg border border-gray-200 p-3"><summary className="cursor-pointer text-sm text-gray-500">Registros históricos de Calidad</summary><SeccionCalidadLegacy {...props} puedeEditar={false} puedeEditarControl={false} /></details></div>;
 }

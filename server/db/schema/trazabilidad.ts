@@ -1,5 +1,8 @@
-import { boolean, check, date, integer, numeric, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, date, integer, jsonb, numeric, pgTable, text, timestamp, unique, uuid, type AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import { disenoVersiones } from './diseno.js';
+import { workItems } from './workItems.js';
+import { users } from './users.js';
 import { direccionesCreativas } from './direccionCreativa.js';
 import { proyectos } from './proyectos.js';
 import {
@@ -500,6 +503,21 @@ export const fichaCalidadFases = pgTable(
     pdfVersion: text('pdf_version'),
     fecha: date('fecha'),
     aprobado: boolean('aprobado'),
+    // 5E: runtime de la MISMA fase/ronda; nullable para conservar históricos.
+    // Bandeja compartida del rol soporte_editorial (decisión 8/10/2026).
+    // revisadoPorId registra el hecho de revisión, no una asignación.
+    workItemId: uuid('work_item_id').unique().references(() => workItems.id, { onDelete: 'cascade' }),
+    disenoVersionId: uuid('diseno_version_id').references((): AnyPgColumn => disenoVersiones.id),
+    solicitadoEn: timestamp('solicitado_en', { withTimezone: true }),
+    dueAt: timestamp('due_at', { withTimezone: true }),
+    iniciadoEn: timestamp('iniciado_en', { withTimezone: true }),
+    revisadoEn: timestamp('revisado_en', { withTimezone: true }),
+    revisadoPorId: uuid('revisado_por_id').references(() => users.id),
+    comentariosUrl: text('comentarios_url'),
+    cantidadComentarios: integer('cantidad_comentarios'),
+    observaciones: text('observaciones'),
+    numerosLegalesUrl: text('numeros_legales_url'),
+    checklist: jsonb('checklist').$type<Record<string, { cumple: boolean | null; observaciones?: string }>>(),
 
     // Fase 5 (auditoría diferencial contra fuentes reales — ver
     // MIREYA JOSEFINA OLIVEROS SEQUERA - FICHA DE TRAZABILIDAD.xlsx,

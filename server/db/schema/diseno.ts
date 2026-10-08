@@ -37,6 +37,7 @@ export const disenoVersiones = pgTable('diseno_versiones', {
   entregadoPorId: uuid('entregado_por_id').notNull().references(() => users.id),
   entregadoEn: timestamp('entregado_en', { withTimezone: true }).notNull().defaultNow(),
   feedback: text('feedback'),
+  feedbackArchivoUrl: text('feedback_archivo_url'),
   feedbackEn: timestamp('feedback_en', { withTimezone: true }),
   cantidadComentarios: integer('cantidad_comentarios'),
   enviadaAutorEn: timestamp('enviada_autor_en', { withTimezone: true }),
