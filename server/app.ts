@@ -5,6 +5,7 @@ import { authRoutes } from './routes/auth.routes.js';
 import { capitulosRoutes } from './routes/capitulos.routes.js';
 import { catalogosRoutes } from './routes/catalogos.routes.js';
 import { correccionesRoutes } from './routes/correcciones.routes.js';
+import { direccionCreativaRoutes } from './routes/direccionCreativa.routes.js';
 import { disenadoresRoutes } from './routes/disenadores.routes.js';
 import { editoresRoutes } from './routes/editores.routes.js';
 import { especialistasRoutes } from './routes/especialistas.routes.js';
@@ -35,6 +36,7 @@ export function buildApp() {
   app.register(pausasRoutes, { prefix: '/api/pausas' });
   app.register(capitulosRoutes, { prefix: '/api/capitulos' });
   app.register(correccionesRoutes, { prefix: '/api/correcciones' });
+  app.register(direccionCreativaRoutes, { prefix: '/api/direccion-creativa' });
   app.register(trazabilidadRoutes, { prefix: '/api/fichas-trazabilidad' });
   app.register(portalRoutes, { prefix: '/api/portal' });
   app.register(usuariosRoutes, { prefix: '/api/usuarios' });

@@ -258,6 +258,55 @@ describe('Fase 5B — Corrección', () => {
       await app.close();
     });
 
+    // Checkpoint 5B §0.2: el assignment vive a nivel de work_item/
+    // intervención (projectAssignments.workItemId), no de proyecto —
+    // dos intervenciones repetibles del MISMO proyecto deben poder
+    // tener correctores distintos a la vez, sin que asignar el segundo
+    // toque o cierre el assignment del primero.
+    it('dos intervenciones del mismo proyecto pueden tener corrector distinto cada una, en simultáneo', async () => {
+      const app = crearAppDePrueba();
+      await app.ready();
+      const cookie = await registrarYLoguear(app, 'especialista');
+      const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
+      const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
+      const correctorA = await crearUsuario('corrector');
+      const correctorB = await crearUsuario('corrector');
+
+      const correccion1Id = await solicitarCorreccionDePrueba(app, cookie, proyecto.id, 'tripa_completa');
+      const correccion2Id = await solicitarCorreccionDePrueba(app, cookie, proyecto.id, 'preliminares');
+
+      await request(app.server)
+        .patch(`/api/correcciones/${correccion1Id}/asignar`)
+        .set('Cookie', cookie)
+        .send({ correctorId: correctorA.id, freelance: false, contratoConfirmado: true });
+      await request(app.server)
+        .patch(`/api/correcciones/${correccion2Id}/asignar`)
+        .set('Cookie', cookie)
+        .send({ correctorId: correctorB.id, freelance: false, contratoConfirmado: true });
+
+      const [correccion1] = await db.select().from(correcciones).where(eq(correcciones.id, correccion1Id));
+      const [correccion2] = await db.select().from(correcciones).where(eq(correcciones.id, correccion2Id));
+      expect(correccion1?.correctorId).toBe(correctorA.id);
+      expect(correccion2?.correctorId).toBe(correctorB.id);
+
+      // El assignment de la corrección 1 sigue activo e intacto — no lo
+      // tocó asignar la corrección 2 a otro corrector.
+      const asignacion1 = await db
+        .select()
+        .from(projectAssignments)
+        .where(and(eq(projectAssignments.workItemId, correccion1!.workItemId), eq(projectAssignments.usuarioId, correctorA.id)));
+      expect(asignacion1).toHaveLength(1);
+      expect(asignacion1[0]?.finalizadoEn).toBeNull();
+
+      // Cada corrector ve solo SU propia intervención en "Mis Correcciones".
+      const loginA = await request(app.server).post('/api/auth/login').send({ email: correctorA.email, password: 'password123' });
+      const trabajosA = await request(app.server).get('/api/correcciones/mias').set('Cookie', obtenerCookie(loginA));
+      expect(trabajosA.body.trabajos).toHaveLength(1);
+      expect(trabajosA.body.trabajos[0].id).toBe(correccion1Id);
+
+      await app.close();
+    });
+
     it('rechaza a un rol distinto de especialista (ej. corrector)', async () => {
       const app = crearAppDePrueba();
       await app.ready();

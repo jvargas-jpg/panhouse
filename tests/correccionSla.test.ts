@@ -3,7 +3,7 @@ import {
   calcularDueAtCorreccion,
   evaluarPlazoCorreccion,
   requiereRevisionPreviaPorPaginas,
-  sumarDiasContinuos,
+  sumarHorasContinuas,
   UMBRAL_PAGINAS_REVISION_PREVIA,
 } from '../server/helpers/correccionSla.js';
 
@@ -11,31 +11,34 @@ import {
 // entrega: 5 días continuos" (confirmado idéntico contra la columna
 // "Máximo días"/"Tiempo Correcto" de TRIPA COMPLETA en la Matriz real,
 // ver Seguimiento Corrección - Innovación Editorial). Preliminares y
-// Cubierta Extendida: 0.5 días reales en la Matriz, redondeados a 1 día
-// de calendario (sin granularidad de horas en este schema).
-describe('correccionSla — días continuos (no hábiles)', () => {
-  it('sumarDiasContinuos NO salta fines de semana (a diferencia de sumarDiasHabiles de edicionSla)', () => {
-    // Viernes 2026-01-02 + 3 días continuos -> lunes 2026-01-05 (cuenta
-    // sábado y domingo, no los salta).
-    expect(sumarDiasContinuos('2026-01-02', 3)).toBe('2026-01-05');
+// Cubierta Extendida: ~0.5 día real en la Matriz — representado en
+// HORAS (checkpoint 5B §0.1: no se redondea a 1 día de calendario,
+// perdiendo la mitad del plazo real).
+describe('correccionSla — horas continuas (no hábiles), sin redondeo de sub-día', () => {
+  it('sumarHorasContinuas NO salta fines de semana (a diferencia de sumarDiasHabiles de edicionSla)', () => {
+    // Viernes 2026-01-02T10:00Z + 72h (3 días) -> lunes 2026-01-05T10:00Z,
+    // cuenta sábado y domingo, no los salta.
+    expect(sumarHorasContinuas('2026-01-02T10:00:00.000Z', 72)).toBe('2026-01-05T10:00:00.000Z');
   });
 
-  it('sumarDiasContinuos redondea hacia arriba un alcance de medio día', () => {
-    expect(sumarDiasContinuos('2026-01-05', 0.5)).toBe(sumarDiasContinuos('2026-01-05', 1));
+  it('sumarHorasContinuas preserva exactamente medio día (12h), sin redondear a 1 día', () => {
+    expect(sumarHorasContinuas('2026-01-05T08:00:00.000Z', 12)).toBe('2026-01-05T20:00:00.000Z');
   });
 
-  it('calcularDueAtCorreccion usa 5 días continuos para tripa_completa', () => {
-    expect(calcularDueAtCorreccion('2026-01-05', 'tripa_completa')).toBe(sumarDiasContinuos('2026-01-05', 5));
+  it('calcularDueAtCorreccion usa 120h (5 días) para tripa_completa', () => {
+    expect(calcularDueAtCorreccion('2026-01-05T08:00:00.000Z', 'tripa_completa')).toBe(sumarHorasContinuas('2026-01-05T08:00:00.000Z', 120));
   });
 
-  it('calcularDueAtCorreccion usa un plazo distinto (más corto) para preliminares', () => {
-    const tripa = calcularDueAtCorreccion('2026-01-05', 'tripa_completa');
-    const preliminares = calcularDueAtCorreccion('2026-01-05', 'preliminares');
-    expect(preliminares).not.toBe(tripa);
+  it('calcularDueAtCorreccion usa 12h para preliminares — mitad de día real, no un día completo', () => {
+    const dueAt = calcularDueAtCorreccion('2026-01-05T08:00:00.000Z', 'preliminares');
+    expect(dueAt).toBe('2026-01-05T20:00:00.000Z');
+    expect(dueAt).not.toBe(sumarHorasContinuas('2026-01-05T08:00:00.000Z', 24));
   });
 
   it('calcularDueAtCorreccion da el mismo plazo para cubierta_extendida que para preliminares', () => {
-    expect(calcularDueAtCorreccion('2026-01-05', 'cubierta_extendida')).toBe(calcularDueAtCorreccion('2026-01-05', 'preliminares'));
+    expect(calcularDueAtCorreccion('2026-01-05T08:00:00.000Z', 'cubierta_extendida')).toBe(
+      calcularDueAtCorreccion('2026-01-05T08:00:00.000Z', 'preliminares'),
+    );
   });
 });
 
@@ -62,27 +65,32 @@ describe('evaluarPlazoCorreccion — en tiempo / próximo a vencer / vencido', (
     expect(evaluarPlazoCorreccion(null, null)).toBeNull();
   });
 
-  it('en_tiempo cuando faltan varios días y no hay entrega', () => {
+  it('en_tiempo cuando faltan más de 24h y no hay entrega', () => {
     const ahora = new Date('2026-01-05T12:00:00.000Z');
-    expect(evaluarPlazoCorreccion('2026-01-10', null, ahora)).toBe('en_tiempo');
+    expect(evaluarPlazoCorreccion('2026-01-08T12:00:00.000Z', null, ahora)).toBe('en_tiempo');
   });
 
-  it('proximo_a_vencer cuando queda un día o menos y no hay entrega', () => {
-    const ahora = new Date('2026-01-10T12:00:00.000Z');
-    expect(evaluarPlazoCorreccion('2026-01-10', null, ahora)).toBe('proximo_a_vencer');
+  it('proximo_a_vencer cuando quedan 24h o menos y no hay entrega — incluye SLAs de 12h (preliminares/cubierta)', () => {
+    const ahora = new Date('2026-01-05T12:00:00.000Z');
+    // dueAt a solo 6h de "ahora" — un SLA de 12h ya está cerca de vencer,
+    // no solo los de varios días.
+    expect(evaluarPlazoCorreccion('2026-01-05T18:00:00.000Z', null, ahora)).toBe('proximo_a_vencer');
   });
 
-  it('vencido cuando ya pasó la fecha límite sin entrega', () => {
+  it('vencido cuando ya pasó el instante límite sin entrega', () => {
     const ahora = new Date('2026-01-12T12:00:00.000Z');
-    expect(evaluarPlazoCorreccion('2026-01-10', null, ahora)).toBe('vencido');
+    expect(evaluarPlazoCorreccion('2026-01-10T12:00:00.000Z', null, ahora)).toBe('vencido');
   });
 
-  it('en_tiempo si se entregó antes o en la fecha límite', () => {
-    expect(evaluarPlazoCorreccion('2026-01-10', '2026-01-09')).toBe('en_tiempo');
-    expect(evaluarPlazoCorreccion('2026-01-10', '2026-01-10')).toBe('en_tiempo');
+  it('en_tiempo si se entregó el mismo día calendario del vencimiento (sin hora registrada en la entrega)', () => {
+    // dueAt cae a las 20:00 de un SLA de 12h; la entrega solo registra
+    // el DÍA (nadie guarda la hora real de entrega) — comparar a nivel
+    // de día evita marcar "vencido" un trabajo entregado a tiempo solo
+    // porque la entrega no tiene hora.
+    expect(evaluarPlazoCorreccion('2026-01-05T20:00:00.000Z', '2026-01-05')).toBe('en_tiempo');
   });
 
-  it('vencido si se entregó después de la fecha límite (cumplimiento real, no se sobreescribe)', () => {
-    expect(evaluarPlazoCorreccion('2026-01-10', '2026-01-12')).toBe('vencido');
+  it('vencido si la entrega es de un día calendario posterior al vencimiento', () => {
+    expect(evaluarPlazoCorreccion('2026-01-05T20:00:00.000Z', '2026-01-06')).toBe('vencido');
   });
 });

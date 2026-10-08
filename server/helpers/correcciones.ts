@@ -136,9 +136,13 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
     });
     if (!gate.desbloqueado) return { ok: false, status: 400, error: gate.motivo ?? 'Gate bloqueado' };
 
-    const fechaAsignada = new Date().toISOString().slice(0, 10);
+    const ahora = new Date();
+    const fechaAsignada = ahora.toISOString().slice(0, 10);
     const alcance = correccion.alcance as AlcanceCorreccion;
-    const dueAt = calcularDueAtCorreccion(fechaAsignada, alcance);
+    // Instante real de la asignación (no solo la fecha) como base del
+    // cálculo — ver el comentario de calcularDueAtCorreccion: un SLA de
+    // 12h necesita saber la hora exacta, no solo el día.
+    const dueAt = new Date(calcularDueAtCorreccion(ahora.toISOString(), alcance));
 
     await tx
       .update(correcciones)
@@ -324,7 +328,7 @@ export interface CorreccionDeProyecto {
   freelance: boolean | null;
   contratoConfirmado: boolean;
   fechaAsignada: string | null;
-  dueAt: string | null;
+  dueAt: Date | null;
   fechaInicio: string | null;
   fechaEntrega: string | null;
   controlCambiosUrl: string | null;
@@ -337,7 +341,7 @@ export interface CorreccionDeProyecto {
   plazo: EstadoPlazoCorreccion | null;
 }
 
-function conPlazo<T extends { dueAt: string | null; fechaEntrega: string | null }>(fila: T): T & { plazo: EstadoPlazoCorreccion | null } {
+function conPlazo<T extends { dueAt: Date | null; fechaEntrega: string | null }>(fila: T): T & { plazo: EstadoPlazoCorreccion | null } {
   return { ...fila, plazo: evaluarPlazoCorreccion(fila.dueAt, fila.fechaEntrega) };
 }
 

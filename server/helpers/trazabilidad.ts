@@ -45,7 +45,7 @@ export async function crearFichaTrazabilidad(proyectoId: string) {
   return fila;
 }
 
-async function obtenerFichaPorProyecto(proyectoId: string) {
+export async function obtenerFichaPorProyecto(proyectoId: string) {
   const [ficha] = await db.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).limit(1);
   if (!ficha) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
   return ficha;

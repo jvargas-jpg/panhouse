@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { CATEGORIAS_STAND_BY, ESTADOS_PROYECTO } from '../db/schema/index.js';
 import { listarRiesgoProyectosActivos, obtenerProyectoConRiesgo } from '../helpers/alertas.js';
 import { listarCorreccionesDeProyecto, solicitarCorreccion } from '../helpers/correcciones.js';
+import { listarDireccionesCreativasDeProyecto, solicitarDireccionCreativa } from '../helpers/direccionCreativa.js';
 import { ALCANCES_CORRECCION } from '../helpers/correccionSla.js';
 import { actualizarDecisionPortada, actualizarManuscrito, listarMisLibros, verificarAccesoLibroAutor } from '../helpers/portalAutor.js';
 import { obtenerAutoresDeProyecto } from '../helpers/proyectosAutores.js';
@@ -486,6 +487,48 @@ export async function proyectosRoutes(app: FastifyInstance) {
 
       const correcciones = await listarCorreccionesDeProyecto(params.id);
       return reply.send({ correcciones });
+    },
+  );
+
+  // Fase 5 (5C Dirección Creativa) — el Especialista solicita (GATE-07:
+  // título + momento según servicio, reutiliza GATE-04 adentro).
+  // Idempotente por ciclo 'concepto_portada' abierto.
+  app.post('/:id/direccion-creativa', { preHandler: [requireAuth, requireRole('especialista')] }, async (request, reply) => {
+    const params = parseOrReply(idParamSchema, request.params, reply);
+    if (!params) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
+
+    const acceso = await verificarAccesoAProyecto(params.id, request.user);
+    if (!acceso.ok) {
+      return reply.code(acceso.status).send({ error: acceso.error });
+    }
+
+    const resultado = await solicitarDireccionCreativa(params.id, request.user.id);
+    if (!resultado.ok) {
+      return reply.code(resultado.status).send({ error: resultado.error });
+    }
+    return reply.code(201).send({ id: resultado.id });
+  });
+
+  app.get(
+    '/:id/direccion-creativa',
+    { preHandler: [requireAuth, requireRole('jefe_area', 'especialista', 'lider_creativo', 'rrpp')] },
+    async (request, reply) => {
+      const params = parseOrReply(idParamSchema, request.params, reply);
+      if (!params) return;
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+
+      const acceso = await verificarAccesoAProyecto(params.id, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      const direcciones = await listarDireccionesCreativasDeProyecto(params.id);
+      return reply.send({ direcciones });
     },
   );
 

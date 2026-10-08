@@ -20,9 +20,12 @@ const PLAZO_INFO: Record<EstadoPlazoCorreccion, { etiqueta: string; badge: strin
   en_tiempo: { etiqueta: 'En tiempo', badge: 'bg-green-100 text-green-800' },
 };
 
-function formatearFechaCorta(fecha: string | null): string {
-  if (!fecha) return '—';
-  return new Date(`${fecha}T00:00:00`).toLocaleDateString('es');
+// dueAt es timestamp completo (checkpoint 5B §0.1 — SLAs de 12h, no
+// solo de días enteros), a diferencia de un `date` plano — se muestra
+// con hora para no esconder esa precisión.
+function formatearFechaHora(fechaHora: string | null): string {
+  if (!fechaHora) return '—';
+  return new Date(fechaHora).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 // "Seguimiento de Corrección" (master prompt §18/§21) — la Matriz real
@@ -100,7 +103,7 @@ export function SeguimientoCorreccionPage() {
                   <td className="px-4 py-3 text-gray-700">{ETIQUETA_ALCANCE[correccion.alcance] ?? correccion.alcance}</td>
                   <td className="px-4 py-3 text-gray-700">{correccion.correctorNombre ?? '—'}</td>
                   <td className="px-4 py-3 text-gray-700">{ESTADO_ETIQUETA[correccion.estado] ?? correccion.estado}</td>
-                  <td className="px-4 py-3 text-gray-700">{formatearFechaCorta(correccion.dueAt)}</td>
+                  <td className="px-4 py-3 text-gray-700">{formatearFechaHora(correccion.dueAt)}</td>
                   <td className="px-4 py-3">
                     {correccion.estado !== 'completado' && correccion.plazo && (
                       <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${PLAZO_INFO[correccion.plazo].badge}`}>

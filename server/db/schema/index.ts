@@ -9,6 +9,7 @@ export * from './proyectos.js';
 export * from './pausas.js';
 export * from './capitulos.js';
 export * from './correcciones.js';
+export * from './direccionCreativa.js';
 export * from './trazabilidad.js';
 export * from './seguimiento.js';
 export * from './pagos.js';

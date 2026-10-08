@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   evaluarGateAprobacionPortadaRrpp,
   evaluarGateAsignacionFormal,
+  evaluarGateBriefAprobadoParaConceptos,
   evaluarGateDefinicionCrudo,
+  evaluarGateMomentoReunionCreativa,
   evaluarGateRevisionPreviaCorreccion,
   evaluarGateTituloAprobado,
 } from '../server/helpers/gates.js';
@@ -87,6 +89,60 @@ describe('GATE-06 — Revisión Previa de Tripas Extensas (5B Corrección)', () 
 
   it('desbloqueado una vez el Especialista confirma la revisión previa', () => {
     const resultado = evaluarGateRevisionPreviaCorreccion({ requiereRevisionPrevia: true, revisionPreviaConfirmada: true });
+    expect(resultado.desbloqueado).toBe(true);
+  });
+});
+
+describe('GATE-07 — Momento de Activación de la Reunión Creativa (5C)', () => {
+  it('bloqueado sin título, sin importar el servicio', () => {
+    const resultado = evaluarGateMomentoReunionCreativa({
+      tituloDefinitivo: null,
+      subtituloDefinitivo: null,
+      servicioCodigo: 'SE',
+      fechaFeedbackTripa: null,
+    });
+    expect(resultado.desbloqueado).toBe(false);
+  });
+
+  it('Sello (SE): desbloqueado con título, sin depender de fechaFeedbackTripa', () => {
+    const resultado = evaluarGateMomentoReunionCreativa({
+      tituloDefinitivo: 'Título',
+      subtituloDefinitivo: 'Subtítulo',
+      servicioCodigo: 'SE',
+      fechaFeedbackTripa: null,
+    });
+    expect(resultado.desbloqueado).toBe(true);
+  });
+
+  it('Crudo (CR): bloqueado con título pero sin feedback de tripa completa', () => {
+    const resultado = evaluarGateMomentoReunionCreativa({
+      tituloDefinitivo: 'Título',
+      subtituloDefinitivo: 'Subtítulo',
+      servicioCodigo: 'CR',
+      fechaFeedbackTripa: null,
+    });
+    expect(resultado.desbloqueado).toBe(false);
+  });
+
+  it('Ghost (EF): desbloqueado con título y feedback de tripa completa ya registrado', () => {
+    const resultado = evaluarGateMomentoReunionCreativa({
+      tituloDefinitivo: 'Título',
+      subtituloDefinitivo: 'Subtítulo',
+      servicioCodigo: 'EF',
+      fechaFeedbackTripa: '2026-02-01',
+    });
+    expect(resultado.desbloqueado).toBe(true);
+  });
+});
+
+describe('GATE-08 — Brief Aprobado Requerido para Conceptos (5C)', () => {
+  it('bloqueado sin aprobación del autor sobre el brief', () => {
+    const resultado = evaluarGateBriefAprobadoParaConceptos({ fechaBriefAprobadoAutor: null });
+    expect(resultado.desbloqueado).toBe(false);
+  });
+
+  it('desbloqueado una vez el autor aprueba el brief', () => {
+    const resultado = evaluarGateBriefAprobadoParaConceptos({ fechaBriefAprobadoAutor: '2026-02-05' });
     expect(resultado.desbloqueado).toBe(true);
   });
 });

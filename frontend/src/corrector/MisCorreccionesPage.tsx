@@ -27,6 +27,14 @@ function formatearFechaCorta(fecha: string | null): string {
   return new Date(`${fecha}T00:00:00`).toLocaleDateString('es');
 }
 
+// dueAt es timestamp completo (checkpoint 5B §0.1 — SLAs de 12h, no
+// solo de días enteros) — ver el mismo comentario en
+// SeccionCorreccionOperativa.tsx.
+function formatearFechaHora(fechaHora: string | null): string {
+  if (!fechaHora) return '—';
+  return new Date(fechaHora).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
+}
+
 // Prioridad: vencido primero, luego próximo a vencer, luego en tiempo
 // sin entregar, luego entregadas — misma intención que ORDEN_PRIORIDAD
 // de listarTrabajosEditor (capitulos.ts), pero acá no hace falta
@@ -131,7 +139,7 @@ function FilaCorreccion({ trabajo }: { trabajo: TrabajoCorrector }) {
         </div>
         <div>
           <dt className="text-gray-400">Vence</dt>
-          <dd className="font-medium text-gray-800">{formatearFechaCorta(trabajo.dueAt)}</dd>
+          <dd className="font-medium text-gray-800">{formatearFechaHora(trabajo.dueAt)}</dd>
         </div>
         <div>
           <dt className="text-gray-400">Inicio</dt>

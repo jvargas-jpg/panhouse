@@ -8,6 +8,7 @@ import { DisenadorHomePage } from './disenador/DisenadorHomePage';
 import { EditorHomePage } from './editor/EditorHomePage';
 import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
 import { PanelJefaturaPage } from './jefatura/PanelJefaturaPage';
+import { MisDireccionesCreativasPage } from './liderCreativo/MisDireccionesCreativasPage';
 import { MisProyectosPage } from './proyectos/MisProyectosPage';
 import { RrppHomePage } from './rrpp/RrppHomePage';
 import { SoporteDigitalHomePage } from './soporteDigital/SoporteDigitalHomePage';
@@ -58,9 +59,16 @@ export function HomePage() {
     return <MisCorreccionesPage />;
   }
 
-  // AQUÍ ESTÁ EL CAMBIO: Agregamos al lider_creativo a esta vista
-  if (user?.rol === 'disenador' || user?.rol === 'lider_creativo') {
+  if (user?.rol === 'disenador') {
     return <DisenadorHomePage />;
+  }
+
+  // Fase 5 (5C Dirección Creativa) — pantalla propia, ya no comparte
+  // DisenadorHomePage.tsx con 'disenador' (violaba la separación de
+  // responsabilidades del master prompt 5C §19: Dirección Creativa no
+  // es Diseñador).
+  if (user?.rol === 'lider_creativo') {
+    return <MisDireccionesCreativasPage />;
   }
 
   if (user?.rol === 'soporte_editorial') {

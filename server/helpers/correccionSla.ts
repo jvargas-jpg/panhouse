@@ -2,19 +2,20 @@ export const ALCANCES_CORRECCION = ['tripa_completa', 'preliminares', 'cubierta_
 
 export type AlcanceCorreccion = (typeof ALCANCES_CORRECCION)[number];
 
-// Días CONTINUOS (no hábiles) por alcance — confirmados cruzando la
+// Horas CONTINUAS (no hábiles) por alcance — confirmadas cruzando la
 // columna real "Máximo días"/"Tiempo Correcto" de la Matriz
 // (Seguimiento Corrección - Innovación Editorial) contra el Manual del
 // Especialista §3.1 ("Plazo de entrega: 5 días continuos", que aplica
 // exactamente a TRIPA COMPLETA — coincide con el valor real de la
-// columna, no hay contradicción). Preliminares y Cubierta Extendida
-// corren casi siempre el mismo día en la Matriz (0.125/0.3/0.5 días
-// reales observados) — se redondean hacia arriba a 1 día de calendario
-// porque esta tabla no tiene granularidad de horas; ver sumarDiasContinuos.
-const DIAS_CONTINUOS_POR_ALCANCE: Record<AlcanceCorreccion, number> = {
-  tripa_completa: 5,
-  preliminares: 0.5,
-  cubierta_extendida: 0.5,
+// columna). Horas, no días, a propósito (checkpoint 5B §0.1): Preliminares
+// y Cubierta Extendida corren en ~0.5 día real en la Matriz
+// (0.125/0.3/0.5 días observados) — redondear eso a 1 día de calendario
+// perdía la mitad del plazo real. 1 día continuo = 24h exactas, 5 días
+// continuos = 120h exactas; 0.5 día = 12h exactas, sin redondeo.
+const HORAS_CONTINUAS_POR_ALCANCE: Record<AlcanceCorreccion, number> = {
+  tripa_completa: 120,
+  preliminares: 12,
+  cubierta_extendida: 12,
 };
 
 // Manual del Especialista — actualización "Proceso de Corrección -
@@ -30,37 +31,58 @@ export function requiereRevisionPreviaPorPaginas(paginas: number | null | undefi
   return typeof paginas === 'number' && paginas > UMBRAL_PAGINAS_REVISION_PREVIA;
 }
 
-// A diferencia de sumarDiasHabiles (edicionSla.ts), Corrección corre en
-// días CONTINUOS — el Manual lo dice explícitamente ("5 días
+// Suma horas exactas sobre un INSTANTE completo (no una fecha sin hora)
+// — a diferencia de sumarDiasHabiles (edicionSla.ts), Corrección corre
+// en tiempo continuo: el Manual lo dice explícitamente ("5 días
 // continuos") y los datos reales de la Matriz confirman entregas en
-// fin de semana. Sin granularidad de horas en este schema, los alcances
-// de medio día (0.5) se redondean hacia arriba a 1 día de calendario —
-// decisión de traducción documentada acá, no un cambio silencioso del
-// SLA real.
-export function sumarDiasContinuos(fechaIso: string, diasContinuos: number): string {
-  const fecha = new Date(`${fechaIso}T00:00:00.000Z`);
-  fecha.setUTCDate(fecha.getUTCDate() + Math.ceil(diasContinuos));
-  return fecha.toISOString().slice(0, 10);
+// fin de semana. `correcciones.dueAt` es timestamp (no date, ver
+// server/db/schema/correcciones.ts) precisamente para poder cargar esta
+// precisión sin redondear.
+export function sumarHorasContinuas(instanteIso: string, horas: number): string {
+  const instante = new Date(instanteIso);
+  return new Date(instante.getTime() + horas * 60 * 60 * 1000).toISOString();
 }
 
-export function calcularDueAtCorreccion(fechaAsignada: string, alcance: AlcanceCorreccion): string {
-  return sumarDiasContinuos(fechaAsignada, DIAS_CONTINUOS_POR_ALCANCE[alcance]);
+// `instanteAsignacion`: el momento REAL de la asignación formal
+// (new Date().toISOString(), no solo la fecha) — una base de medio día
+// sin hora sería ambigua para un SLA de 12h. correcciones.fechaAsignada
+// (columna `date`, el día que ve la UI) es independiente de este cálculo.
+export function calcularDueAtCorreccion(instanteAsignacion: string, alcance: AlcanceCorreccion): string {
+  return sumarHorasContinuas(instanteAsignacion, HORAS_CONTINUAS_POR_ALCANCE[alcance]);
 }
 
 // "En tiempo" / "vencido" / "próximo a vencer" — se deriva, nunca se
 // guarda (mismo criterio que evaluarRiesgoProyecto en alertas.ts).
 export type EstadoPlazoCorreccion = 'en_tiempo' | 'proximo_a_vencer' | 'vencido';
 
-const UMBRAL_PROXIMO_A_VENCER_DIAS = 1;
+const UMBRAL_PROXIMO_A_VENCER_HORAS = 24;
 
-export function evaluarPlazoCorreccion(dueAt: string | null, fechaEntrega: string | null, ahora: Date = new Date()): EstadoPlazoCorreccion | null {
+// dueAt es un timestamp preciso (ver calcularDueAtCorreccion); fechaEntrega
+// sigue siendo solo FECHA (sin hora: nadie registra la hora exacta de
+// entrega, ni el corrector interno ni el especialista en nombre del
+// freelance) — comparar un timestamp exacto contra una fecha sin hora
+// marcaría "vencido" un SLA de 12h entregado el mismo día, solo por no
+// tener la hora real. Mientras no haya entrega, sí se compara contra
+// `ahora` con precisión completa (vale para el contador en vivo de
+// "próximo a vencer"); una vez hay entrega, la comparación cae a nivel
+// de DÍA calendario — decisión de precisión documentada, no un redondeo
+// silencioso del SLA (el SLA en sí, dueAt, nunca se redondea).
+export function evaluarPlazoCorreccion(
+  dueAt: string | Date | null,
+  fechaEntrega: string | null,
+  ahora: Date = new Date(),
+): EstadoPlazoCorreccion | null {
   if (!dueAt) return null;
-  const limite = new Date(`${dueAt}T23:59:59.999Z`);
-  const referencia = fechaEntrega ? new Date(`${fechaEntrega}T00:00:00.000Z`) : ahora;
+  const limite = new Date(dueAt);
 
-  if (referencia.getTime() > limite.getTime()) return 'vencido';
+  if (fechaEntrega) {
+    const diaLimite = limite.toISOString().slice(0, 10);
+    return fechaEntrega > diaLimite ? 'vencido' : 'en_tiempo';
+  }
 
-  const diasRestantes = (limite.getTime() - referencia.getTime()) / (1000 * 60 * 60 * 24);
-  if (!fechaEntrega && diasRestantes <= UMBRAL_PROXIMO_A_VENCER_DIAS) return 'proximo_a_vencer';
+  if (ahora.getTime() > limite.getTime()) return 'vencido';
+
+  const horasRestantes = (limite.getTime() - ahora.getTime()) / (1000 * 60 * 60);
+  if (horasRestantes <= UMBRAL_PROXIMO_A_VENCER_HORAS) return 'proximo_a_vencer';
   return 'en_tiempo';
 }

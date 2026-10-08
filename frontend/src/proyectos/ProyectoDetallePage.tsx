@@ -11,6 +11,7 @@ import { SeccionCorreccion } from './SeccionCorreccion';
 import { SeccionCorreccionControl } from './SeccionCorreccionControl';
 import { SeccionCorreccionOperativa } from './SeccionCorreccionOperativa';
 import { SeccionDiseno, SeccionDisenoBrief } from './SeccionDiseno';
+import { SeccionDireccionCreativaOperativa } from './SeccionDireccionCreativaOperativa';
 import { SeccionDistribucion } from './SeccionDistribucion';
 import { SeccionEdicion } from './SeccionEdicion';
 import { SeccionEquipo } from './SeccionEquipo';
@@ -341,13 +342,16 @@ export function ProyectoDetallePage() {
               )}
 
               {pasoActivo === 6 && (
-                <SeccionDisenoBrief
-                  proyectoId={id}
-                  proyecto={proyectoQuery.data.proyecto}
-                  ficha={fichaQuery.data.ficha}
-                  puedeEditar={rol === 'disenador' || rol === 'lider_creativo'}
-                  rolUsuario={rol}
-                />
+                <div className="flex w-full flex-col">
+                  <SeccionDireccionCreativaOperativa proyectoId={id} puedeOperar={rol === 'especialista'} />
+                  <SeccionDisenoBrief
+                    proyectoId={id}
+                    proyecto={proyectoQuery.data.proyecto}
+                    ficha={fichaQuery.data.ficha}
+                    puedeEditar={rol === 'disenador' || rol === 'lider_creativo'}
+                    rolUsuario={rol}
+                  />
+                </div>
               )}
 
               {pasoActivo === 7 && (

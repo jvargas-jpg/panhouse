@@ -17,7 +17,24 @@ import type { Tx } from './tx.js';
 // nunca especulativamente.
 export const TIPOS_WORK_ITEM_SINGLETON = ['intake_rrpp', 'asignacion_especialista'] as const;
 
-export const TIPOS_WORK_ITEM_REPEATABLE = ['edicion', 'correccion', 'diseno', 'calidad', 'soporte_digital', 'lanzamiento', 'impresion', 'distribucion'] as const;
+// 'direccion_creativa' (Fase 5, 5C) es deliberadamente distinto de
+// 'diseno': Fase 4 del Manual agrupa Dirección Creativa (4.1 — reunión,
+// brief, conceptos, responsable Líder Creativo) y Diseño (4.2 —
+// ejecución de diagramación/portada, responsable Diseñador) bajo el
+// mismo título "DISEÑO", pero son responsable+acción+SLA reales
+// distintos (master prompt 5C §17/§19) — 'diseno' queda reservado para
+// cuando se implemente el pipeline de ejecución (5D), sin reusarlo acá.
+export const TIPOS_WORK_ITEM_REPEATABLE = [
+  'edicion',
+  'correccion',
+  'direccion_creativa',
+  'diseno',
+  'calidad',
+  'soporte_digital',
+  'lanzamiento',
+  'impresion',
+  'distribucion',
+] as const;
 
 export const TIPOS_WORK_ITEM = [...TIPOS_WORK_ITEM_SINGLETON, ...TIPOS_WORK_ITEM_REPEATABLE] as const;
 

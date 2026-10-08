@@ -1,5 +1,6 @@
 import { boolean, check, date, integer, numeric, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
+import { direccionesCreativas } from './direccionCreativa.js';
 import { proyectos } from './proyectos.js';
 import {
   asesoriaEstadoEnum,
@@ -550,6 +551,14 @@ export const fichaDisenoPropuestas = pgTable('ficha_diseno_propuestas', {
   fichaId: uuid('ficha_id')
     .notNull()
     .references(() => fichasTrazabilidad.id, { onDelete: 'cascade' }),
+  // Fase 5 (5C) — nullable y aditivo: las propuestas creadas por el
+  // flujo LEGACY (SeccionDiseno.tsx, sin tocar) no tienen una
+  // intervención real detrás y siguen con esto en null. Las propuestas
+  // creadas por el pipeline real de 5C (ver server/helpers/direccionCreativa.ts)
+  // siempre lo traen — así "Mis Correcciones"-equivalente de RRPP
+  // (pendientes de aprobación) puede distinguir una propuesta real de
+  // una de la ficha vieja sin otro campo.
+  direccionCreativaId: uuid('direccion_creativa_id').references(() => direccionesCreativas.id, { onDelete: 'cascade' }),
   fechaEnviadaEspecialista: date('fecha_enviada_especialista'),
   // Fase 5 (auditoría diferencial — DIRECCIÓN CREATIVA.xlsx, hoja
   // "GENERAL 25-26", columna "PROPUESTAS ENVIADAS AL ESPECIALISTA" +

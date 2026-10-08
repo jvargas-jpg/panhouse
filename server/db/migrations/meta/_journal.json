@@ -470,6 +470,20 @@
       "when": 1791464777588,
       "tag": "0066_yielding_phalanx",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1791467285578,
+      "tag": "0067_careless_sabretooth",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1791468102495,
+      "tag": "0068_aromatic_nick_fury",
+      "breakpoints": true
     }
   ]
 }

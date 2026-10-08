@@ -69,10 +69,13 @@ export const correcciones = pgTable('correcciones', {
   contratoConfirmado: boolean('contrato_confirmado').notNull().default(false),
 
   fechaAsignada: date('fecha_asignada'),
-  // Derivado centralmente del SLA por `alcance` al momento de asignar
-  // (ver server/helpers/correccionSla.ts) — nunca en el frontend, nunca
+  // timestamp, no date (checkpoint 5B §0.1): algunos alcances tienen
+  // SLA de 12h (medio día), no 1 día completo — un `date` solo puede
+  // representar el día, perdiendo esa mitad. Derivado centralmente del
+  // SLA por `alcance` al momento de asignar (ver
+  // server/helpers/correccionSla.ts) — nunca en el frontend, nunca
   // recalculado después si el SLA de referencia cambia.
-  dueAt: date('due_at'),
+  dueAt: timestamp('due_at', { withTimezone: true }),
   fechaInicio: date('fecha_inicio'),
   fechaEntrega: date('fecha_entrega'),
 

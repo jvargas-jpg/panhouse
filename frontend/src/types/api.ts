@@ -370,6 +370,58 @@ export interface CorreccionSeguimiento extends TrabajoCorrector {
   especialistaId: string | null;
 }
 
+// Fase 5 (5C Dirección Creativa) — server/helpers/direccionCreativa.ts.
+export interface DireccionCreativa {
+  id: string;
+  tipo: string;
+  fechaSolicitud: string | null;
+  fechaReunion: string | null;
+  reunionRealizada: boolean;
+  enlaceGrabacion: string | null;
+  briefEnlace: string | null;
+  fechaBriefEnviadoEspecialista: string | null;
+  fechaBriefEnviadoAutor: string | null;
+  fechaBriefAprobadoAutor: string | null;
+  recursoImagenUrl: string | null;
+  recursoConceptoPdfUrl: string | null;
+  resultadoFinal: string | null;
+  fechaCierre: string | null;
+  observaciones: string | null;
+  estado: string;
+  liderCreativoId: string | null;
+}
+
+// REUTILIZA ficha_diseno_propuestas (master prompt 5C §10) — forma
+// angosta propia de esta pantalla, no el objeto completo de
+// FichaDisenoPropuesta (que incluye campos que acá no hacen falta).
+export interface PropuestaCreativa {
+  id: string;
+  descripcion: string | null;
+  enlace: string | null;
+  estado: string | null;
+  fechaAprobadaRrpp: string | null;
+  fechaEnviadaAutor: string | null;
+  fechaAprobadaAutor: string | null;
+  createdAt: string;
+}
+
+export interface TrabajoLiderCreativo extends DireccionCreativa {
+  proyectoId: string;
+  proyectoCodigo: string;
+  autorNombre: string;
+}
+
+export interface PropuestaPendienteRrpp {
+  propuestaId: string;
+  direccionCreativaId: string;
+  proyectoId: string;
+  proyectoCodigo: string;
+  autorNombre: string;
+  descripcion: string | null;
+  enlace: string | null;
+  createdAt: string;
+}
+
 export type CausaPausa = 'autor' | 'otro_departamento';
 
 // GET /api/pausas/:proyectoId — fila completa de server/db/schema/pausas.ts.

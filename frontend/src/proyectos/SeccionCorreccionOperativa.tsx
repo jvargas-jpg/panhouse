@@ -52,6 +52,17 @@ function formatearFechaCorta(fecha: string | null): string {
   return new Date(`${fecha}T00:00:00`).toLocaleDateString('es');
 }
 
+// dueAt es timestamp completo (checkpoint 5B §0.1 — algunos alcances
+// tienen SLA de 12h, no de 1 día), a diferencia de fechaAsignada/
+// fechaInicio/fechaEntrega (solo `date`) — formatearFechaCorta le
+// agregaría "T00:00:00" a un string que YA tiene su propia hora,
+// produciendo una fecha inválida. Se muestra con hora para no esconder
+// esa precisión.
+function formatearFechaHora(fechaHora: string | null): string {
+  if (!fechaHora) return '—';
+  return new Date(fechaHora).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' });
+}
+
 function FormularioSolicitar({ proyectoId, onCerrar }: { proyectoId: string; onCerrar: () => void }) {
   const [alcance, setAlcance] = useState<AlcanceCorreccion>('tripa_completa');
   const [paginas, setPaginas] = useState('');
@@ -432,7 +443,7 @@ function TarjetaCorreccion({ correccion, proyectoId, puedeOperar }: { correccion
           </div>
           <div>
             <dt className="text-gray-400">Vence</dt>
-            <dd className="font-medium text-gray-800">{formatearFechaCorta(correccion.dueAt)}</dd>
+            <dd className="font-medium text-gray-800">{formatearFechaHora(correccion.dueAt)}</dd>
           </div>
           <div>
             <dt className="text-gray-400">Inicio</dt>

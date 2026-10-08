@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { CrmSidebarLayout, NAV_ACTIVO, NAV_INACTIVO } from '../layout/CrmSidebarLayout';
 import { ListaProyectosPendientes } from '../proyectos/ListaProyectosPendientes';
 import { fetchProyectosEnviadosARrpp } from '../proyectos/proyectosPendientesApi';
+import { PendientesAprobacionCreativaPanel } from './PendientesAprobacionCreativaPanel';
 
-type Vista = 'proyectos' | 'matrices';
+type Vista = 'proyectos' | 'matrices' | 'aprobacion-creativa';
 
 // Primera pantalla de inicio propia de rrpp — antes caía en el mensaje
 // genérico de HomePage.tsx.
@@ -48,6 +49,17 @@ export function RrppHomePage() {
             Matrices de Ingreso
           </button>
 
+          {/* Fase 5 (5C Dirección Creativa) — contexto deliberadamente
+              separado del intake inicial (master prompt §27: "RRPP tiene
+              dos contextos distintos y la UI debe preservarlo"). */}
+          <button
+            onClick={() => setVistaActiva('aprobacion-creativa')}
+            className={vistaActiva === 'aprobacion-creativa' ? NAV_ACTIVO : NAV_INACTIVO}
+          >
+            {vistaActiva === 'aprobacion-creativa' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
+            Aprobación Creativa
+          </button>
+
           <div className="my-4 border-t border-gray-800" />
 
           <button onClick={() => navigate('/rrpp/metricas')} className={NAV_INACTIVO}>
@@ -73,6 +85,7 @@ export function RrppHomePage() {
           linkTo={(proyecto) => `/proyectos/${proyecto.id}/ficha-trazabilidad`}
         />
       )}
+      {vistaActiva === 'aprobacion-creativa' && <PendientesAprobacionCreativaPanel />}
     </CrmSidebarLayout>
   );
 }
