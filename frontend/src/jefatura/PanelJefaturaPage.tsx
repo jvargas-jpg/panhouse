@@ -5,6 +5,7 @@ import type { ProyectoConRiesgo } from '../types/api';
 import { AsignarEspecialistaCard } from './AsignarEspecialistaCard';
 import { fetchCargaEquipo, fetchProyectosRiesgo, fetchTodosLosProyectos } from './jefaturaApi';
 import { ProyectoFilaJefatura } from './ProyectoFilaJefatura';
+import { SeguimientoCorreccionPage } from './SeguimientoCorreccionPage';
 import { SeguimientoPage } from './SeguimientoPage';
 
 // Mismo criterio de búsqueda que ProyectosPendientesCrmList.tsx
@@ -39,7 +40,7 @@ const NAV_ACTIVO =
 const NAV_INACTIVO =
   'w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-medium text-sm transition-all text-left';
 
-type Vista = 'dashboard' | 'seguimiento';
+type Vista = 'dashboard' | 'seguimiento' | 'correccion';
 
 // Regla de negocio confirmada: jefe_area NUNCA crea proyectos — solo
 // los recibe ya creados por comercial (ver AutoresPage.tsx) y reparte
@@ -105,6 +106,11 @@ export function PanelJefaturaPage() {
             {vistaActiva === 'seguimiento' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
             Control de Tiempos
           </button>
+
+          <button onClick={() => setVistaActiva('correccion')} className={vistaActiva === 'correccion' ? NAV_ACTIVO : NAV_INACTIVO}>
+            {vistaActiva === 'correccion' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
+            Seguimiento de Corrección
+          </button>
         </nav>
       </aside>
 
@@ -113,6 +119,7 @@ export function PanelJefaturaPage() {
           scroll independiente es un <div> con las mismas clases. */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden">
         {vistaActiva === 'seguimiento' && <SeguimientoPage />}
+        {vistaActiva === 'correccion' && <SeguimientoCorreccionPage />}
 
         {vistaActiva === 'dashboard' && (
           <div className="animate-in fade-in space-y-8 p-6 duration-500 md:p-10">

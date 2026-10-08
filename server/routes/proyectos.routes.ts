@@ -2,6 +2,8 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { CATEGORIAS_STAND_BY, ESTADOS_PROYECTO } from '../db/schema/index.js';
 import { listarRiesgoProyectosActivos, obtenerProyectoConRiesgo } from '../helpers/alertas.js';
+import { listarCorreccionesDeProyecto, solicitarCorreccion } from '../helpers/correcciones.js';
+import { ALCANCES_CORRECCION } from '../helpers/correccionSla.js';
 import { actualizarDecisionPortada, actualizarManuscrito, listarMisLibros, verificarAccesoLibroAutor } from '../helpers/portalAutor.js';
 import { obtenerAutoresDeProyecto } from '../helpers/proyectosAutores.js';
 import {
@@ -110,6 +112,11 @@ const asignarDisenadorSchema = z.object({
 // feedbacks y entregarle el archivo con todo aplicado al especialista").
 const registrarFeedbackTripaSchema = z.object({
   fecha: z.string().min(1),
+});
+
+const solicitarCorreccionSchema = z.object({
+  alcance: z.enum(ALCANCES_CORRECCION),
+  paginas: z.number().int().nonnegative().nullable().optional(),
 });
 
 // Portal del Autor: sin .url() a propósito — mismo criterio laxo que el
@@ -436,6 +443,51 @@ export async function proyectosRoutes(app: FastifyInstance) {
     await registrarFeedbackTripa(params.id, body.fecha, request.user.id);
     return reply.send({ ok: true });
   });
+
+  // Fase 5 (5B Corrección) — paso 1 del flujo real (Manual §3.1 "Se
+  // ubica un corrector en la base de datos"): el Especialista identifica
+  // la necesidad. Idempotente por alcance abierto (ver
+  // server/helpers/correcciones.ts:siguienteBusinessKeyCorreccion).
+  app.post('/:id/correcciones', { preHandler: [requireAuth, requireRole('especialista')] }, async (request, reply) => {
+    const params = parseOrReply(idParamSchema, request.params, reply);
+    if (!params) return;
+    const body = parseOrReply(solicitarCorreccionSchema, request.body, reply);
+    if (!body) return;
+    if (!request.user) {
+      return reply.code(401).send({ error: 'No autenticado' });
+    }
+
+    const acceso = await verificarAccesoAProyecto(params.id, request.user);
+    if (!acceso.ok) {
+      return reply.code(acceso.status).send({ error: acceso.error });
+    }
+
+    const resultado = await solicitarCorreccion(params.id, body, request.user.id);
+    return reply.code(resultado.nueva ? 201 : 200).send(resultado);
+  });
+
+  // Lista de intervenciones de Corrección del proyecto (Especialista
+  // dueño, o jefe_area/lider_creativo de auditoría — mismo criterio de
+  // acceso que el resto de las secciones del proyecto).
+  app.get(
+    '/:id/correcciones',
+    { preHandler: [requireAuth, requireRole('jefe_area', 'especialista', 'lider_creativo')] },
+    async (request, reply) => {
+      const params = parseOrReply(idParamSchema, request.params, reply);
+      if (!params) return;
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+
+      const acceso = await verificarAccesoAProyecto(params.id, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+
+      const correcciones = await listarCorreccionesDeProyecto(params.id);
+      return reply.send({ correcciones });
+    },
+  );
 
   // A diferencia de /especialista y /editor (que las decide jefatura),
   // el disenador lo asigna el propio especialista dueño del proyecto —

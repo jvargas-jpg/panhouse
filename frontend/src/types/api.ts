@@ -11,6 +11,7 @@ export const ROLES = [
   'editor',
   'lider_creativo',
   'disenador',
+  'corrector',
   'soporte_editorial',
   'soporte_digital',
   'impresion',
@@ -314,6 +315,59 @@ export interface TrabajoEditorCapitulo {
   fechaInicioEditor: string | null;
   fechaEntregaEditor: string | null;
   estado: EstadoTrabajoCapitulo;
+}
+
+// Fase 5 (5B Corrección) — server/db/schema/correcciones.ts /
+// server/helpers/correcciones.ts. `alcance` confirmado contra 17 meses
+// reales de la Matriz "Seguimiento Corrección - Innovación Editorial":
+// solo estos 3 llevan "Tipo de servicio" = "Corrección " ahí
+// ("TRIPA DIAGRAMADA" existe en la Matriz pero siempre bajo Calidad/
+// Revisión Final, pipeline de 5E — no acá).
+export type AlcanceCorreccion = 'tripa_completa' | 'preliminares' | 'cubierta_extendida';
+
+export type ResultadoCorreccion = 'buena' | 'regular' | 'deficiente';
+
+// Derivado en el backend (server/helpers/correccionSla.ts), nunca
+// recalculado en React — mismo criterio que RiesgoProyecto.
+export type EstadoPlazoCorreccion = 'en_tiempo' | 'proximo_a_vencer' | 'vencido';
+
+// GET /api/proyectos/:id/correcciones — server/helpers/correcciones.ts:CorreccionDeProyecto.
+export interface Correccion {
+  id: string;
+  workItemId: string;
+  alcance: string;
+  paginas: number | null;
+  requiereRevisionPrevia: boolean;
+  revisionPreviaConfirmada: boolean;
+  correctorId: string | null;
+  correctorNombre: string | null;
+  freelance: boolean | null;
+  contratoConfirmado: boolean;
+  fechaAsignada: string | null;
+  dueAt: string | null;
+  fechaInicio: string | null;
+  fechaEntrega: string | null;
+  controlCambiosUrl: string | null;
+  informeTecnicoUrl: string | null;
+  resultado: string | null;
+  observaciones: string | null;
+  estado: string;
+  plazo: EstadoPlazoCorreccion | null;
+}
+
+// GET /api/correcciones/mias y /api/correcciones/seguimiento — mismo
+// shape que Correccion + el contexto de proyecto/autor que esas dos
+// vistas necesitan (cruzan varios proyectos, a diferencia de
+// GET /proyectos/:id/correcciones).
+export interface TrabajoCorrector extends Correccion {
+  proyectoId: string;
+  proyectoCodigo: string;
+  autorNombre: string;
+  servicioCodigo: string;
+}
+
+export interface CorreccionSeguimiento extends TrabajoCorrector {
+  especialistaId: string | null;
 }
 
 export type CausaPausa = 'autor' | 'otro_departamento';

@@ -95,3 +95,23 @@ export async function transicionarWorkItem(
     .set({ estado: input.estado, ...(fechaFinReal ? { fechaFinReal } : {}) })
     .where(eq(workItems.id, fila.id));
 }
+
+// Misma transición que transicionarWorkItem, pero por id directo — para
+// callers que YA resolvieron su work_item (ej. correcciones.ts, que
+// guarda workItemId en su propia fila) y cuyo businessKey real puede
+// llevar un sufijo de ronda (`tripa_completa-2`) que el caller no tiene
+// por qué reconstruir solo para esta transición.
+export async function transicionarWorkItemPorId(
+  tx: Tx,
+  workItemId: string,
+  estado: 'en_progreso' | 'bloqueado' | 'completado' | 'cancelado',
+): Promise<void> {
+  const [fila] = await tx.select({ estado: workItems.estado }).from(workItems).where(eq(workItems.id, workItemId)).limit(1);
+  if (!fila || fila.estado === estado) return;
+
+  const fechaFinReal = estado === 'completado' ? new Date().toISOString().slice(0, 10) : undefined;
+  await tx
+    .update(workItems)
+    .set({ estado, ...(fechaFinReal ? { fechaFinReal } : {}) })
+    .where(eq(workItems.id, workItemId));
+}

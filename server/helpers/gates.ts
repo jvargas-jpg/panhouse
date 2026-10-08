@@ -4,14 +4,12 @@
 // (para rechazar la acción si el gate no está desbloqueado) como,
 // potencialmente, por el frontend — nunca duplicar la regla en React.
 //
-// Alcance de esta ronda (Fase 5, tras auditoría diferencial contra las
-// 7 fuentes reales en fuentes-negocio/): GATE-02, GATE-03, GATE-04 y
-// GATE-05, cada uno con campo real confirmado y tests en
-// tests/gates.test.ts. GATE-06 a GATE-08 (Muestra de diagramación,
-// Cierre de Calidad, Solvencia) siguen diferidos — sus campos
-// (aprobación de muestra, cierre formal de iteraciones, solvencia
-// administrativa) todavía no tienen una columna real confirmada; no se
-// inventan solo para completar la lista de 8.
+// Alcance acumulado (Fase 5): GATE-02 a GATE-06, cada uno con campo
+// real confirmado y tests en tests/gates.test.ts. "Muestra de
+// diagramación", "Cierre de Calidad" y "Solvencia" (candidatos
+// originales a GATE-06/07/08 de la ronda anterior) siguen diferidos —
+// sus campos todavía no tienen una columna real confirmada; no se
+// inventan solo para completar una numeración.
 //
 // ┌─────────┬──────────────────────────┬───────────────────────────────────┬──────────────────────────────────┬───────────────────────────────────────────┐
 // │ Gate    │ Qué habilita             │ Campos requeridos                  │ Fuente documental                  │ Tests                                      │
@@ -35,6 +33,10 @@
 // │         │ de portada al autor      │ (ficha_diseno_propuestas, por fila) │ DIRECCIÓN CREATIVA.xlsx            │ "GATE-05"                                  │
 // │         │                          │                                     │ ("PROPUESTAS ENVIADAS AL           │                                             │
 // │         │                          │                                     │ ESPECIALISTA")                     │                                             │
+// ├─────────┼──────────────────────────┼───────────────────────────────────┼──────────────────────────────────┼───────────────────────────────────────────┤
+// │ GATE-06 │ Asignación de corrector  │ requiereRevisionPrevia,            │ Manual del Especialista,           │ tests/gates.test.ts                        │
+// │         │ (Fase 5, 5B Corrección)  │ revisionPreviaConfirmada            │ "Proceso de Corrección - Equipo    │ "GATE-06"                                  │
+// │         │ cuando paginas > 120     │ (correcciones)                     │ Freelance" (tripas > 120 páginas)  │                                             │
 // └─────────┴──────────────────────────┴───────────────────────────────────┴──────────────────────────────────┴───────────────────────────────────────────┘
 
 export interface DatosGateDefinicionCrudo {
@@ -104,6 +106,27 @@ export interface DatosGateAprobacionPortadaRrpp {
 export function evaluarGateAprobacionPortadaRrpp(datos: DatosGateAprobacionPortadaRrpp): ResultadoGate {
   if (!datos.fechaAprobadaRrpp) {
     return { desbloqueado: false, motivo: 'RRPP todavía no aprobó internamente esta propuesta de portada' };
+  }
+  return { desbloqueado: true };
+}
+
+export interface DatosGateRevisionPreviaCorreccion {
+  requiereRevisionPrevia: boolean;
+  revisionPreviaConfirmada: boolean;
+}
+
+// GATE-06 — Revisión Previa de Tripas Extensas (Fase 5, 5B Corrección):
+// "toda tripa que exceda las 120 páginas en Word deberá ser revisada
+// previamente antes de su asignación a corrección" (Manual del
+// Especialista, actualización "Proceso de Corrección - Equipo
+// Freelance"). requiereRevisionPrevia es un snapshot fijado al
+// solicitar la corrección (paginas > 120 en ese momento, ver
+// server/helpers/correccionSla.ts) — este gate solo exige la
+// confirmación explícita del Especialista, nunca recalcula el costo
+// (el Manual no lo define con una fórmula).
+export function evaluarGateRevisionPreviaCorreccion(datos: DatosGateRevisionPreviaCorreccion): ResultadoGate {
+  if (datos.requiereRevisionPrevia && !datos.revisionPreviaConfirmada) {
+    return { desbloqueado: false, motivo: 'Esta tripa supera las 120 páginas — requiere revisión previa antes de asignar corrector' };
   }
   return { desbloqueado: true };
 }

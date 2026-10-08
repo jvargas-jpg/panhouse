@@ -3,6 +3,7 @@ import {
   evaluarGateAprobacionPortadaRrpp,
   evaluarGateAsignacionFormal,
   evaluarGateDefinicionCrudo,
+  evaluarGateRevisionPreviaCorreccion,
   evaluarGateTituloAprobado,
 } from '../server/helpers/gates.js';
 
@@ -68,6 +69,24 @@ describe('GATE-05 — Aprobación Interna de Portada (RRPP)', () => {
 
   it('desbloqueado una vez RRPP aprueba', () => {
     const resultado = evaluarGateAprobacionPortadaRrpp({ fechaAprobadaRrpp: '2026-02-04' });
+    expect(resultado.desbloqueado).toBe(true);
+  });
+});
+
+describe('GATE-06 — Revisión Previa de Tripas Extensas (5B Corrección)', () => {
+  it('desbloqueado trivialmente cuando no se requiere revisión previa', () => {
+    const resultado = evaluarGateRevisionPreviaCorreccion({ requiereRevisionPrevia: false, revisionPreviaConfirmada: false });
+    expect(resultado.desbloqueado).toBe(true);
+  });
+
+  it('bloqueado si se requiere revisión previa y todavía no se confirmó', () => {
+    const resultado = evaluarGateRevisionPreviaCorreccion({ requiereRevisionPrevia: true, revisionPreviaConfirmada: false });
+    expect(resultado.desbloqueado).toBe(false);
+    expect(resultado.motivo).toBeTruthy();
+  });
+
+  it('desbloqueado una vez el Especialista confirma la revisión previa', () => {
+    const resultado = evaluarGateRevisionPreviaCorreccion({ requiereRevisionPrevia: true, revisionPreviaConfirmada: true });
     expect(resultado.desbloqueado).toBe(true);
   });
 });

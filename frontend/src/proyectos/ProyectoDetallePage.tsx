@@ -9,6 +9,7 @@ import { RiesgoBadge } from './RiesgoBadge';
 import { SeccionCalidad } from './SeccionCalidad';
 import { SeccionCorreccion } from './SeccionCorreccion';
 import { SeccionCorreccionControl } from './SeccionCorreccionControl';
+import { SeccionCorreccionOperativa } from './SeccionCorreccionOperativa';
 import { SeccionDiseno, SeccionDisenoBrief } from './SeccionDiseno';
 import { SeccionDistribucion } from './SeccionDistribucion';
 import { SeccionEdicion } from './SeccionEdicion';
@@ -333,6 +334,7 @@ export function ProyectoDetallePage() {
 
               {pasoActivo === 5 && (
                 <div className="flex w-full flex-col">
+                  <SeccionCorreccionOperativa proyectoId={id} puedeOperar={rol === 'especialista'} />
                   <SeccionCorreccionControl proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
                   <SeccionCorreccion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'especialista'} />
                 </div>

@@ -9,6 +9,16 @@ export const ROLES = [
   'editor',
   'lider_creativo',
   'disenador',
+  // Fase 5 (5B Corrección) — rol de login para correctores INTERNOS
+  // (ver comentario de `correcciones.correctorId`/`freelance` en
+  // server/db/schema/correcciones.ts): un corrector freelance real
+  // nunca tiene cuenta, así que este rol solo lo usa el roster corto de
+  // correctores internos (Matriz: Francis/Paola/Carolina/etc.) que sí
+  // necesitan "Mis Correcciones". No existía como rol de login hasta
+  // ahora — ya existía como `proposito` de project_assignments (ver el
+  // comentario ahí), que es un concepto distinto (quién corrigió ESTA
+  // ronda, con o sin cuenta).
+  'corrector',
   'soporte_editorial',
   'soporte_digital',
   'impresion',
