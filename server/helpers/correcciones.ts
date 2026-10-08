@@ -215,18 +215,22 @@ export async function marcarInicioCorreccion(correccionId: string, fecha: string
 
 export interface DatosEntregaCorreccion {
   fecha: string;
+  entregadoEn?: string;
   controlCambiosUrl?: string | null;
   informeTecnicoUrl?: string | null;
 }
 
 export async function registrarEntregaCorreccion(correccionId: string, datos: DatosEntregaCorreccion, actorId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    const correccion = await obtenerCorreccion(tx, correccionId);
+    const [correccion] = await tx.select().from(correcciones).where(eq(correcciones.id, correccionId)).for('update');
     if (!correccion) throw new Error(`Corrección no encontrada: ${correccionId}`);
+    if (correccion.fechaEntrega) return; // Retry no modifica el hecho histórico ni duplica avisos.
+    const entregadoEn = datos.entregadoEn ? new Date(datos.entregadoEn) : new Date();
 
     await tx
       .update(correcciones)
       .set({
+        entregadoEn,
         fechaEntrega: datos.fecha,
         controlCambiosUrl: datos.controlCambiosUrl ?? correccion.controlCambiosUrl,
         informeTecnicoUrl: datos.informeTecnicoUrl ?? correccion.informeTecnicoUrl,
@@ -241,7 +245,7 @@ export async function registrarEntregaCorreccion(correccionId: string, datos: Da
       entityType: 'work_item',
       entityId: correccion.workItemId,
       proyectoId: correccion.proyectoId,
-      detalles: { fechaEntrega: datos.fecha },
+      detalles: { fechaEntrega: datos.fecha, entregadoEn: entregadoEn.toISOString() },
     });
 
     const [proyecto] = await tx.select({ especialistaId: proyectos.especialistaId }).from(proyectos).where(eq(proyectos.id, correccion.proyectoId)).limit(1);
@@ -331,6 +335,7 @@ export interface CorreccionDeProyecto {
   dueAt: Date | null;
   fechaInicio: string | null;
   fechaEntrega: string | null;
+  entregadoEn: Date | null;
   controlCambiosUrl: string | null;
   informeTecnicoUrl: string | null;
   resultado: string | null;
@@ -341,8 +346,8 @@ export interface CorreccionDeProyecto {
   plazo: EstadoPlazoCorreccion | null;
 }
 
-function conPlazo<T extends { dueAt: Date | null; fechaEntrega: string | null }>(fila: T): T & { plazo: EstadoPlazoCorreccion | null } {
-  return { ...fila, plazo: evaluarPlazoCorreccion(fila.dueAt, fila.fechaEntrega) };
+function conPlazo<T extends { dueAt: Date | null; fechaEntrega: string | null; entregadoEn: Date | null }>(fila: T): T & { plazo: EstadoPlazoCorreccion | null } {
+  return { ...fila, plazo: evaluarPlazoCorreccion(fila.dueAt, fila.fechaEntrega, new Date(), fila.entregadoEn) };
 }
 
 export async function listarCorreccionesDeProyecto(proyectoId: string): Promise<CorreccionDeProyecto[]> {
@@ -362,6 +367,7 @@ export async function listarCorreccionesDeProyecto(proyectoId: string): Promise<
       dueAt: correcciones.dueAt,
       fechaInicio: correcciones.fechaInicio,
       fechaEntrega: correcciones.fechaEntrega,
+      entregadoEn: correcciones.entregadoEn,
       controlCambiosUrl: correcciones.controlCambiosUrl,
       informeTecnicoUrl: correcciones.informeTecnicoUrl,
       resultado: correcciones.resultado,
@@ -406,6 +412,7 @@ export async function listarMisCorrecciones(correctorId: string): Promise<Trabaj
       dueAt: correcciones.dueAt,
       fechaInicio: correcciones.fechaInicio,
       fechaEntrega: correcciones.fechaEntrega,
+      entregadoEn: correcciones.entregadoEn,
       controlCambiosUrl: correcciones.controlCambiosUrl,
       informeTecnicoUrl: correcciones.informeTecnicoUrl,
       resultado: correcciones.resultado,
@@ -453,6 +460,7 @@ export async function listarSeguimientoCorreccion(): Promise<CorreccionSeguimien
       dueAt: correcciones.dueAt,
       fechaInicio: correcciones.fechaInicio,
       fechaEntrega: correcciones.fechaEntrega,
+      entregadoEn: correcciones.entregadoEn,
       controlCambiosUrl: correcciones.controlCambiosUrl,
       informeTecnicoUrl: correcciones.informeTecnicoUrl,
       resultado: correcciones.resultado,

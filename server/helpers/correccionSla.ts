@@ -57,23 +57,20 @@ export type EstadoPlazoCorreccion = 'en_tiempo' | 'proximo_a_vencer' | 'vencido'
 
 const UMBRAL_PROXIMO_A_VENCER_HORAS = 24;
 
-// dueAt es un timestamp preciso (ver calcularDueAtCorreccion); fechaEntrega
-// sigue siendo solo FECHA (sin hora: nadie registra la hora exacta de
-// entrega, ni el corrector interno ni el especialista en nombre del
-// freelance) — comparar un timestamp exacto contra una fecha sin hora
-// marcaría "vencido" un SLA de 12h entregado el mismo día, solo por no
-// tener la hora real. Mientras no haya entrega, sí se compara contra
-// `ahora` con precisión completa (vale para el contador en vivo de
-// "próximo a vencer"); una vez hay entrega, la comparación cae a nivel
-// de DÍA calendario — decisión de precisión documentada, no un redondeo
-// silencioso del SLA (el SLA en sí, dueAt, nunca se redondea).
+// Nuevas entregas: comparar instantes exactos. Históricos sin hora conservan
+// su comparación por día; nunca se inventa la hora de un DATE legacy.
 export function evaluarPlazoCorreccion(
   dueAt: string | Date | null,
   fechaEntrega: string | null,
   ahora: Date = new Date(),
+  entregadoEn: string | Date | null = null,
 ): EstadoPlazoCorreccion | null {
   if (!dueAt) return null;
   const limite = new Date(dueAt);
+
+  if (entregadoEn) {
+    return new Date(entregadoEn).getTime() > limite.getTime() ? 'vencido' : 'en_tiempo';
+  }
 
   if (fechaEntrega) {
     const diaLimite = limite.toISOString().slice(0, 10);

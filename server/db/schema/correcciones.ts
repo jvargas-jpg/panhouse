@@ -77,7 +77,8 @@ export const correcciones = pgTable('correcciones', {
   // recalculado después si el SLA de referencia cambia.
   dueAt: timestamp('due_at', { withTimezone: true }),
   fechaInicio: date('fecha_inicio'),
-  fechaEntrega: date('fecha_entrega'),
+  fechaEntrega: date('fecha_entrega'), // Compatibilidad legacy, sin backfill de horas ficticias.
+  entregadoEn: timestamp('entregado_en', { withTimezone: true }),
 
   // PanHouse no es almacenamiento documental — Drive sigue siendo el
   // storage real, acá solo el enlace (mismo criterio que manuscritoUrl,

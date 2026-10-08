@@ -17,3 +17,5 @@ export * from './notificaciones.js';
 export * from './workItems.js';
 export * from './assignments.js';
 export * from './auditLogs.js';
+
+export * from './diseno.js';

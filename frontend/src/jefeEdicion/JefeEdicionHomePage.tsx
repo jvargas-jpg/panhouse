@@ -1,3 +1,4 @@
+import { RevisionesCubiertaPanel } from '../proyectos/SeccionDisenoOperativa';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Modal } from '../autores/Modal';
@@ -137,6 +138,7 @@ export function JefeEdicionHomePage() {
             className="w-full max-w-md rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm outline-none transition-all focus:border-dorado focus:ring-2 focus:ring-dorado/40"
           />
 
+          <RevisionesCubiertaPanel interna />
           {proyectosQuery.isLoading && <p className="animate-pulse text-sm text-tinta/70">Cargando proyectos…</p>}
           {proyectosQuery.isError && (
             <p role="alert" className="text-sm text-red-600">

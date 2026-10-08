@@ -94,3 +94,16 @@ describe('evaluarPlazoCorreccion — en tiempo / próximo a vencer / vencido', (
     expect(evaluarPlazoCorreccion('2026-01-05T20:00:00.000Z', '2026-01-06')).toBe('vencido');
   });
 });
+
+
+describe('entregas con precisión temporal real', () => {
+  it('vence a las 10:00 y entrega a las 20:00 del mismo día: vencido', () => {
+    expect(evaluarPlazoCorreccion('2026-01-05T10:00:00Z', '2026-01-05', new Date(), '2026-01-05T20:00:00Z')).toBe('vencido');
+  });
+  it('igual al límite: en tiempo, incluso con offset horario', () => {
+    expect(evaluarPlazoCorreccion('2026-01-05T10:00:00Z', '2026-01-05', new Date(), '2026-01-05T06:00:00-04:00')).toBe('en_tiempo');
+  });
+  it('entrega temprana no se vuelve vencida al consultar días después', () => {
+    expect(evaluarPlazoCorreccion('2026-01-05T10:00:00Z', '2026-01-05', new Date('2026-02-01'), '2026-01-05T09:59:59Z')).toBe('en_tiempo');
+  });
+});

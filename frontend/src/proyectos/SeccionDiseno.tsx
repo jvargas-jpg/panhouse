@@ -1,3 +1,4 @@
+import { SeccionDisenoOperativa } from './SeccionDisenoOperativa';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import type { FichaCompleta, FichaDisenoPropuesta, ProyectoConRiesgo, Rol, TipoPortada } from '../types/api';
@@ -604,7 +605,7 @@ function ContenidoDisenoPropuestas({
 // debajo. puedeEditarControl llega resuelto desde ProyectoDetallePage.tsx
 // porque para decidirlo hace falta el id del usuario logueado, no solo
 // su rol (a diferencia de puedeEditar, que sigue siendo solo por rol).
-export function SeccionDiseno({
+function SeccionDisenoLegacy({
   proyectoId,
   proyecto,
   ficha,
@@ -628,4 +629,8 @@ export function SeccionDiseno({
       <ContenidoDisenoPropuestas proyectoId={proyectoId} proyecto={proyecto} ficha={ficha} puedeEditar={puedeEditar} rolUsuario={rolUsuario} />
     </div>
   );
+}
+
+export function SeccionDiseno(props: Parameters<typeof SeccionDisenoLegacy>[0]) {
+  return <div className="min-w-0 w-full"><SeccionDisenoOperativa proyectoId={props.proyectoId} /><details className="m-4 rounded-lg border border-gray-200"><summary className="cursor-pointer p-3 text-sm text-gray-500">Registros históricos de la ficha</summary><SeccionDisenoLegacy {...props} rolUsuario={undefined} puedeEditar={false} puedeEditarControl={false} /></details></div>;
 }

@@ -333,6 +333,7 @@ export type EstadoPlazoCorreccion = 'en_tiempo' | 'proximo_a_vencer' | 'vencido'
 
 // GET /api/proyectos/:id/correcciones — server/helpers/correcciones.ts:CorreccionDeProyecto.
 export interface Correccion {
+  entregadoEn: string | null;
   id: string;
   workItemId: string;
   alcance: string;

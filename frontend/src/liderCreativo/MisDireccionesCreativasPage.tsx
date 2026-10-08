@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
+import { RevisionesCubiertaPanel } from '../proyectos/SeccionDisenoOperativa';
 import { hoyISO } from '../proyectos/campos';
 import {
   agregarConceptoPortada,
@@ -270,7 +271,7 @@ function TarjetaDireccionCreativa({ trabajo }: { trabajo: TrabajoLiderCreativo }
 // existiendo tal cual para disenador, sin tocar).
 export function MisDireccionesCreativasPage() {
   const trabajosQuery = useQuery({ queryKey: ['direcciones-creativas', 'mias'], queryFn: fetchMisDireccionesCreativas });
-  const trabajos = [...(trabajosQuery.data?.trabajos ?? [])].sort((a, b) => ORDEN_ETAPA[calcularEtapa(a)] - ORDEN_ETAPA[calcularEtapa(b)]);
+  const trabajos = [...(trabajosQuery.data?.trabajos ?? []).filter(t => t.tipo !== 'revision_cubierta')].sort((a, b) => ORDEN_ETAPA[calcularEtapa(a)] - ORDEN_ETAPA[calcularEtapa(b)]);
 
   const totales = trabajos.reduce<Record<Etapa, number>>(
     (acc, trabajo) => {
@@ -301,6 +302,7 @@ export function MisDireccionesCreativasPage() {
             <span className="h-2 w-2 rounded-full bg-dorado" /> ¿Qué necesita mi atención hoy?
           </h2>
 
+          <RevisionesCubiertaPanel />
           {trabajosQuery.isLoading && (
             <div className="flex flex-1 items-center justify-center">
               <p className="text-sm text-tinta/70">Cargando tus direcciones creativas…</p>

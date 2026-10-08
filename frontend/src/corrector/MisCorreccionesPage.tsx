@@ -49,6 +49,7 @@ function ordenPrioridad(trabajo: TrabajoCorrector): number {
 
 function AccionesEntrega({ trabajo }: { trabajo: TrabajoCorrector }) {
   const [fecha, setFecha] = useState(hoyISO());
+  const [entregaEn, setEntregaEn] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   const [controlCambiosUrl, setControlCambiosUrl] = useState('');
   const [informeTecnicoUrl, setInformeTecnicoUrl] = useState('');
   const queryClient = useQueryClient();
@@ -60,7 +61,7 @@ function AccionesEntrega({ trabajo }: { trabajo: TrabajoCorrector }) {
 
   const entregaMutacion = useMutation({
     mutationFn: () =>
-      registrarEntregaCorreccion(trabajo.id, { fecha, controlCambiosUrl: controlCambiosUrl || null, informeTecnicoUrl: informeTecnicoUrl || null }),
+      registrarEntregaCorreccion(trabajo.id, { fecha: entregaEn.slice(0, 10), entregadoEn: new Date(entregaEn).toISOString(), controlCambiosUrl: controlCambiosUrl || null, informeTecnicoUrl: informeTecnicoUrl || null }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['correcciones', 'mias'] }),
   });
 
@@ -83,7 +84,7 @@ function AccionesEntrega({ trabajo }: { trabajo: TrabajoCorrector }) {
   return (
     <div className="mt-3 flex flex-col gap-2 rounded-lg bg-gray-50 p-3">
       <div className="flex gap-2">
-        <input type="date" value={fecha} onChange={(event) => setFecha(event.target.value)} className="rounded-md border border-gray-200 px-2 py-1.5 text-sm" />
+        <input aria-label="Fecha y hora real de entrega" type="datetime-local" value={entregaEn} onChange={(event) => setEntregaEn(event.target.value)} className="rounded-md border border-gray-200 px-2 py-1.5 text-sm" />
         <input
           type="text"
           placeholder="Enlace control de cambios"
@@ -147,7 +148,7 @@ function FilaCorreccion({ trabajo }: { trabajo: TrabajoCorrector }) {
         </div>
         <div>
           <dt className="text-gray-400">Entrega</dt>
-          <dd className="font-medium text-gray-800">{formatearFechaCorta(trabajo.fechaEntrega)}</dd>
+          <dd className="font-medium text-gray-800">{trabajo.entregadoEn ? formatearFechaHora(trabajo.entregadoEn) : formatearFechaCorta(trabajo.fechaEntrega)}</dd>
         </div>
       </dl>
 

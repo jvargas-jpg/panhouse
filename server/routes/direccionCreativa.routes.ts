@@ -91,6 +91,17 @@ async function verificarAccesoAPropuesta(
 }
 
 export async function direccionCreativaRoutes(app: FastifyInstance) {
+  app.addHook('preHandler', async (request, reply) => {
+    if (request.method === 'GET') return;
+    await requireAuth(request, reply);
+    if (reply.sent) return;
+    const params = request.params as { id?: string };
+    if (!params.id || !z.string().uuid().safeParse(params.id).success) return;
+    const [dc] = await db.select().from(direccionesCreativas).where(eq(direccionesCreativas.id, params.id));
+    if (dc?.tipo === 'revision_cubierta' && !request.url.endsWith('/asignar')) {
+      return reply.code(403).send({ error: 'Las revisiones de cubierta se resuelven mediante Diseño, por versión y responsable' });
+    }
+  });
   // "¿Qué necesita mi atención hoy?" (master prompt 5C §24).
   app.get('/mias', { preHandler: [requireAuth, requireRole('lider_creativo')] }, async (request, reply) => {
     if (!request.user) return reply.code(401).send({ error: 'No autenticado' });

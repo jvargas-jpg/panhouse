@@ -28,7 +28,8 @@ const asignarCorrectorSchema = z.object({
 const fechaSchema = z.object({ fecha: z.string().min(1) });
 
 const entregaSchema = z.object({
-  fecha: z.string().min(1),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  entregadoEn: z.string().datetime({ offset: true }).refine((s) => new Date(s).getTime() <= Date.now(), 'La entrega no puede estar en el futuro').optional(),
   controlCambiosUrl: z.string().nullable().optional(),
   informeTecnicoUrl: z.string().nullable().optional(),
 });

@@ -4,7 +4,7 @@ import { useMe } from './auth/useAuth';
 import { AuditoriaPagosPage } from './cobranzas/AuditoriaPagosPage';
 import { ComercialDashboardPage } from './comercial/ComercialDashboardPage';
 import { MisCorreccionesPage } from './corrector/MisCorreccionesPage';
-import { DisenadorHomePage } from './disenador/DisenadorHomePage';
+import { MisTrabajosDisenoPage } from './disenador/MisTrabajosDisenoPage';
 import { EditorHomePage } from './editor/EditorHomePage';
 import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
 import { PanelJefaturaPage } from './jefatura/PanelJefaturaPage';
@@ -60,7 +60,7 @@ export function HomePage() {
   }
 
   if (user?.rol === 'disenador') {
-    return <DisenadorHomePage />;
+    return <MisTrabajosDisenoPage />;
   }
 
   // Fase 5 (5C Dirección Creativa) — pantalla propia, ya no comparte

@@ -555,3 +555,29 @@ describe('Fase 5B — Corrección', () => {
     });
   });
 });
+
+
+describe('5B entrega exacta aditiva y retry', () => {
+  beforeEach(limpiarBaseDeDatos);
+  it('guarda instante real, conserva fecha legacy y calcula atraso del mismo día; retry no pisa historia ni duplica avisos', async () => {
+    const app = crearAppDePrueba(); await app.ready();
+    const corrector = await crearUsuario('corrector');
+    const cookie = obtenerCookie(await request(app.server).post('/api/auth/login').send({ email: corrector.email, password: 'password123' }));
+    const especialista = await crearUsuario('especialista');
+    const p = await crearProyectoDePrueba({ especialistaId: especialista.id });
+    const [wi] = await db.insert(workItems).values({ proyectoId: p.id, tipo: 'correccion', estado: 'en_progreso' }).returning();
+    const [c] = await db.insert(correcciones).values({ proyectoId: p.id, workItemId: wi!.id, alcance: 'preliminares', correctorId: corrector.id, dueAt: new Date('2026-01-05T10:00:00Z') }).returning();
+    const body = { fecha: '2026-01-05', entregadoEn: '2026-01-05T20:00:00Z' };
+    const url = `/api/correcciones/${c!.id}/entrega`;
+    expect((await request(app.server).patch(url).set('Cookie', cookie).send(body)).status).toBe(200);
+    expect((await request(app.server).patch(url).set('Cookie', cookie).send({ ...body, entregadoEn: '2026-01-06T20:00:00Z' })).status).toBe(200);
+    const [fila] = await db.select().from(correcciones).where(eq(correcciones.id, c!.id));
+    expect(fila?.fechaEntrega).toBe('2026-01-05'); expect(fila?.entregadoEn?.toISOString()).toBe('2026-01-05T20:00:00.000Z');
+    expect(await db.select().from(auditLogs).where(eq(auditLogs.accion, 'CORRECCION_ENTREGADA'))).toHaveLength(1);
+    expect(await db.select().from(notificaciones).where(eq(notificaciones.rolDestino, 'especialista'))).toHaveLength(1);
+    const mias = await request(app.server).get('/api/correcciones/mias').set('Cookie', cookie);
+    expect(mias.body.trabajos[0].plazo).toBe('vencido');
+    expect((await request(app.server).patch(url).set('Cookie', cookie).send({ ...body, entregadoEn: 'invalid' })).status).toBe(400);
+    await app.close();
+  });
+});

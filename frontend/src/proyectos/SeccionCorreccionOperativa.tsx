@@ -331,7 +331,7 @@ function ModalCerrar({ correccion, proyectoId, onClose }: { correccion: Correcci
 // corrector, no acá (mismo 403 que ya aplica el backend).
 function AccionesEjecucionFreelance({ correccion, proyectoId }: { correccion: Correccion; proyectoId: string }) {
   const [fechaInicio, setFechaInicio] = useState(hoyISO());
-  const [fechaEntrega, setFechaEntrega] = useState(hoyISO());
+  const [fechaEntrega, setFechaEntrega] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   const [controlCambiosUrl, setControlCambiosUrl] = useState('');
   const [informeTecnicoUrl, setInformeTecnicoUrl] = useState('');
   const queryClient = useQueryClient();
@@ -342,7 +342,7 @@ function AccionesEjecucionFreelance({ correccion, proyectoId }: { correccion: Co
   });
 
   const entregaMutacion = useMutation({
-    mutationFn: () => registrarEntregaCorreccion(correccion.id, { fecha: fechaEntrega, controlCambiosUrl: controlCambiosUrl || null, informeTecnicoUrl: informeTecnicoUrl || null }),
+    mutationFn: () => registrarEntregaCorreccion(correccion.id, { fecha: fechaEntrega.slice(0, 10), entregadoEn: new Date(fechaEntrega).toISOString(), controlCambiosUrl: controlCambiosUrl || null, informeTecnicoUrl: informeTecnicoUrl || null }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['correcciones', proyectoId] }),
   });
 
@@ -372,7 +372,8 @@ function AccionesEjecucionFreelance({ correccion, proyectoId }: { correccion: Co
       <div className="mt-3 flex flex-col gap-2 rounded-lg bg-gray-50 p-3">
         <div className="flex gap-2">
           <input
-            type="date"
+            type="datetime-local"
+            aria-label="Fecha y hora real de entrega"
             value={fechaEntrega}
             onChange={(event) => setFechaEntrega(event.target.value)}
             className="rounded-md border border-gray-200 px-2 py-1.5 text-sm"
@@ -451,7 +452,7 @@ function TarjetaCorreccion({ correccion, proyectoId, puedeOperar }: { correccion
           </div>
           <div>
             <dt className="text-gray-400">Entrega</dt>
-            <dd className="font-medium text-gray-800">{formatearFechaCorta(correccion.fechaEntrega)}</dd>
+            <dd className="font-medium text-gray-800">{correccion.entregadoEn ? formatearFechaHora(correccion.entregadoEn) : formatearFechaCorta(correccion.fechaEntrega)}</dd>
           </div>
         </dl>
       )}

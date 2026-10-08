@@ -36,7 +36,7 @@ export function marcarInicioCorreccion(correccionId: string, fecha: string) {
 
 export function registrarEntregaCorreccion(
   correccionId: string,
-  datos: { fecha: string; controlCambiosUrl?: string | null; informeTecnicoUrl?: string | null },
+  datos: { fecha: string; entregadoEn?: string; controlCambiosUrl?: string | null; informeTecnicoUrl?: string | null },
 ) {
   return apiFetch<{ ok: true }>(`/correcciones/${correccionId}/entrega`, {
     method: 'PATCH',
