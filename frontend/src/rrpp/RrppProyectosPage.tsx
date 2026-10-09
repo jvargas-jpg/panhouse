@@ -119,7 +119,7 @@ export function RrppProyectosPage() {
             <Link to="/rrpp/proyectos" aria-current="page">
               Proyectos
             </Link>
-            <Link to="/?vista=lanzamientos">Lanzamientos y eventos</Link>
+            <Link to="/rrpp/lanzamientos">Lanzamientos y eventos</Link>
             <Link to="/rrpp/metricas">Indicadores</Link>
           </nav>
         </header>

@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { auditLogs, proyectos } from '../db/schema/index.js';
 import type { Tx } from './tx.js';
+import type { EVENTOS_LANZAMIENTO_RRPP } from './rrppLanzamientoCatalogos.js';
 
 // Fecha real del primer handoff, sin inventar fechas para flags legacy.
 // Proyección SQL: no genera consultas adicionales por proyecto.
@@ -13,6 +14,7 @@ export const rrppEnviadoAtSql = sql<string | null>`(select min(evento.created_at
 // Mantener este tipo sincronizado es responsabilidad de quien agrega un
 // evento nuevo; no es una validación de runtime.
 export type AccionAuditoria =
+  | keyof typeof EVENTOS_LANZAMIENTO_RRPP
   | 'ESPECIALISTA_ASIGNADO'
   | 'ESPECIALISTA_REASIGNADO'
   | 'EDITOR_ASIGNADO'
@@ -51,7 +53,7 @@ export type AccionAuditoria =
 export interface RegistrarEventoInput {
   actorId: string | null;
   accion: AccionAuditoria;
-  entityType: 'proyecto' | 'project_assignment' | 'work_item';
+  entityType: 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento';
   entityId: string;
   proyectoId?: string | null;
   detalles?: Record<string, unknown>;

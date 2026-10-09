@@ -369,7 +369,7 @@ const distribucionPaisSchema = z.object({
 });
 
 // Sección 9 (parte 2) — Distribución, estatus agregado (macro). Dueño
-// doble (especialista o responsable logístico asignado) — ver PATCH
+// doble (especialista dueño o grupo de Distribución) — ver PATCH
 // /:proyectoId/distribucion-control.
 const distribucionControlSchema = z
   .object({
@@ -386,7 +386,7 @@ const distribucionControlSchema = z
 // Sección 8 — Impresión. Incluye el estatus agregado (macro, parte 2):
 // sin dueño individual (no existe impresionId en proyectos), sigue
 // usando verificarAccesoAProyecto compartido — mismo alcance de rol
-// (rrpp exclusivamente para editar) para ambas partes de la sección.
+// (impresion exclusivamente para editar) para ambas partes de la sección.
 const seccionImpresionSchema = z
   .object({
     impresionDeseaCotizacion: z.boolean().nullable().optional(),
@@ -422,6 +422,8 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
           'lider_creativo',
           'soporte_editorial',
           'soporte_digital',
+          'impresion',
+          'distribucion',
         ),
       ],
     },
@@ -580,7 +582,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(seccionLanzamientoPromocionSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionLanzamientoPromocion(params.proyectoId, body);
+      const ficha = await actualizarSeccionLanzamientoPromocion(params.proyectoId, body, request.user?.id);
       return reply.send({ ficha });
     },
   );
@@ -591,12 +593,14 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     '/:proyectoId/matriz-asesorias',
     { preHandler: [requireAuth, requireRole('rrpp')] },
     async (request, reply) => {
+      const ajenos = ['asesoriaResponsableImpresion', 'asesoriaFechaCotizacionEnviada', 'asesoriaCotizacionAceptada', 'asesoriaDistribucionAceptada', 'asesoriaResponsableDistribucion', 'asesoriaFechaContratoEnviado', 'asesoriaContratoRecibidoFirmado'];
+      if (Object.keys((request.body ?? {}) as object).some(k => ajenos.includes(k))) return reply.code(403).send({ error: 'RRPP registra intereses y derivaciones; el estado especializado pertenece a Impresión o Distribución' });
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
       const body = parseOrReply(seccionMatrizAsesoriasSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionMatrizAsesorias(params.proyectoId, body);
+      const ficha = await actualizarSeccionMatrizAsesorias(params.proyectoId, body, request.user?.id);
       return reply.send({ ficha });
     },
   );
@@ -624,7 +628,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(seccionEdicionSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionEdicion(params.proyectoId, body);
+      const ficha = await actualizarSeccionEdicion(params.proyectoId, body, request.user?.id);
       return reply.send({ ficha });
     },
   );
@@ -952,7 +956,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(lanzamientoReunionSchema, request.body, reply);
       if (!body) return;
 
-      const reunion = await agregarReunionLanzamiento(params.proyectoId, body);
+      const reunion = await agregarReunionLanzamiento(params.proyectoId, body, request.user?.id);
       return reply.code(201).send({ reunion });
     },
   );
@@ -966,7 +970,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(lanzamientoReunionSchema, request.body, reply);
       if (!body) return;
 
-      const reunion = await actualizarReunionLanzamiento(params.proyectoId, params.reunionId, body);
+      const reunion = await actualizarReunionLanzamiento(params.proyectoId, params.reunionId, body, request.user?.id);
       if (!reunion) {
         return reply.code(404).send({ error: 'Reunión de lanzamiento no encontrada' });
       }
@@ -981,7 +985,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const params = parseOrReply(lanzamientoReunionParamsSchema, request.params, reply);
       if (!params) return;
 
-      const reunion = await eliminarReunionLanzamiento(params.proyectoId, params.reunionId);
+      const reunion = await eliminarReunionLanzamiento(params.proyectoId, params.reunionId, request.user?.id);
       if (!reunion) {
         return reply.code(404).send({ error: 'Reunión de lanzamiento no encontrada' });
       }
@@ -989,14 +993,11 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
-  // Dueño exclusivo rrpp — jefatura solo la ve (mismo criterio que
-  // /ficha-editorial, /matriz-ingreso, etc. arriba; antes tenía un
-  // alcance más amplio que las secciones equivalentes de producción
-  // como /lanzamiento/general o /distribucion-control, que ya eran
-  // rrpp-only).
+  // Impresión opera su sección; RRPP consulta y deriva el interés
+  // comercial desde la Matriz de Asesorías, sin actualizar su avance.
   app.patch(
     '/:proyectoId/impresion',
-    { preHandler: [requireAuth, requireRole('rrpp')] },
+    { preHandler: [requireAuth, requireRole('impresion')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -1018,14 +1019,14 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
   );
 
   // Dueño doble (a diferencia del resto de la Sección 9): el
-  // especialista dueño del proyecto O el responsable logístico asignado
+  // especialista dueño del proyecto O el grupo de Distribución
   // — usa verificarAccesoControlDistribucion (no el
   // verificarAccesoAProyecto compartido, ver el comentario en
-  // helpers/proyectos.ts) porque rrpp mantiene acceso de grupo en el
+  // helpers/proyectos.ts) porque distribucion mantiene acceso de grupo en el
   // resto de esta sección.
   app.patch(
     '/:proyectoId/distribucion-control',
-    { preHandler: [requireAuth, requireRole('especialista', 'rrpp')] },
+    { preHandler: [requireAuth, requireRole('especialista', 'distribucion')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -1048,7 +1049,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.post(
     '/:proyectoId/distribucion/paises',
-    { preHandler: [requireAuth, requireRole('rrpp')] },
+    { preHandler: [requireAuth, requireRole('distribucion')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -1062,7 +1063,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.patch(
     '/:proyectoId/distribucion/paises/:paisId',
-    { preHandler: [requireAuth, requireRole('rrpp')] },
+    { preHandler: [requireAuth, requireRole('distribucion')] },
     async (request, reply) => {
       const params = parseOrReply(distribucionPaisParamsSchema, request.params, reply);
       if (!params) return;
@@ -1079,7 +1080,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.delete(
     '/:proyectoId/distribucion/paises/:paisId',
-    { preHandler: [requireAuth, requireRole('rrpp')] },
+    { preHandler: [requireAuth, requireRole('distribucion')] },
     async (request, reply) => {
       const params = parseOrReply(distribucionPaisParamsSchema, request.params, reply);
       if (!params) return;

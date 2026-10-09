@@ -34,6 +34,9 @@ import {
 } from '../db/schema/index.js';
 
 import { ESTADOS_ACTIVOS } from './carga.js';
+import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
+import { fechasLanzamientoCanonicas, guardarFichaLanzamiento } from './rrppLanzamientoFicha.js';
+import { registrarEvento } from './auditLog.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 
 // Se llama al crear el proyecto: nace vacía, cada sección se completa
@@ -49,7 +52,7 @@ export async function crearFichaTrazabilidad(proyectoId: string) {
 export async function obtenerFichaPorProyecto(proyectoId: string) {
   const [ficha] = await db.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).limit(1);
   if (!ficha) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return ficha;
+  return fechasLanzamientoCanonicas(ficha);
 }
 
 // Para la pantalla de detalle: las nueve secciones en una sola llamada
@@ -74,7 +77,7 @@ export async function obtenerFichaCompleta(proyectoId: string) {
   const preparacion = evaluarPreparacionComercial({ ...proyecto, ...ficha,
     autores: autoresPorProyecto.get(proyectoId) ?? [{ id: proyecto.autorId }],
   });
-  return { ...ficha, ...preparacion, calidadFases, disenoPropuestas, lanzamientoReuniones, distribucionPaises };
+  return { ...fechasLanzamientoCanonicas(ficha), ...preparacion, calidadFases, disenoPropuestas, lanzamientoReuniones, distribucionPaises };
 }
 
 export interface ProyectoPendienteSeccion1 {
@@ -375,14 +378,8 @@ export interface DatosSeccionLanzamientoPromocion {
   lanzamientoPromocionLinkMinuta?: string | null;
 }
 
-export async function actualizarSeccionLanzamientoPromocion(proyectoId: string, datos: DatosSeccionLanzamientoPromocion) {
-  const [fila] = await db
-    .update(fichasTrazabilidad)
-    .set(datos)
-    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
-    .returning();
-  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return fila;
+export async function actualizarSeccionLanzamientoPromocion(proyectoId: string, datos: DatosSeccionLanzamientoPromocion, actorId: string | null = null) {
+  return guardarFichaLanzamiento(proyectoId, { ...datos }, actorId);
 }
 
 // "Matriz de Asesorías con fechas" — dueño exclusivo rrpp, mismo
@@ -423,14 +420,8 @@ export interface DatosSeccionMatrizAsesorias {
   asesoriaContratoRecibidoFirmado?: boolean;
 }
 
-export async function actualizarSeccionMatrizAsesorias(proyectoId: string, datos: DatosSeccionMatrizAsesorias) {
-  const [fila] = await db
-    .update(fichasTrazabilidad)
-    .set(datos)
-    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
-    .returning();
-  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return fila;
+export async function actualizarSeccionMatrizAsesorias(proyectoId: string, datos: DatosSeccionMatrizAsesorias, actorId: string | null = null) {
+  return guardarFichaLanzamiento(proyectoId, { ...datos }, actorId);
 }
 
 // Sección 2 — Edición de estilo. Mismo dueño que Corrección
@@ -445,14 +436,18 @@ export interface DatosSeccionEdicion {
   edicionObservaciones?: string | null;
 }
 
-export async function actualizarSeccionEdicion(proyectoId: string, datos: DatosSeccionEdicion) {
-  const [fila] = await db
-    .update(fichasTrazabilidad)
-    .set(datos)
-    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
-    .returning();
-  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return fila;
+export async function actualizarSeccionEdicion(proyectoId: string, datos: DatosSeccionEdicion, actorId: string | null = null) {
+  return db.transaction(async tx => {
+    await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+    const [fila] = await tx
+      .update(fichasTrazabilidad)
+      .set(datos)
+      .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
+      .returning();
+    if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+    if (fila.edicionFechaEnvioAutor) await habilitarPlanificacionRrpp(tx, proyectoId, actorId);
+    return fila;
+  });
 }
 
 export interface DatosSeccionCorreccion {
@@ -720,44 +715,54 @@ export interface DatosReunionLanzamiento {
   acuerdos?: string | null;
 }
 
-export async function agregarReunionLanzamiento(proyectoId: string, datos: DatosReunionLanzamiento) {
-  const ficha = await obtenerFichaPorProyecto(proyectoId);
-  const [fila] = await db
-    .insert(fichaLanzamientoReuniones)
-    .values({ fichaId: ficha.id, ...datos })
-    .returning();
-  if (!fila) throw new Error('El insert de la reunión de lanzamiento no devolvió ninguna fila');
-  return fila;
+export async function agregarReunionLanzamiento(proyectoId: string, datos: DatosReunionLanzamiento, actorId: string | null = null) {
+  return db.transaction(async tx => {
+    const ficha = await obtenerFichaPorProyecto(proyectoId);
+    const [fila] = await tx
+      .insert(fichaLanzamientoReuniones)
+      .values({ fichaId: ficha.id, ...datos })
+      .returning();
+    if (!fila) throw new Error('El insert de la reunión de lanzamiento no devolvió ninguna fila');
+    await registrarEvento(tx, { actorId, accion: 'REUNION_LANZAMIENTO_REGISTRADA', entityType: 'reunion_lanzamiento', entityId: fila.id, proyectoId });
+    return fila;
+  });
 }
 
-export async function actualizarReunionLanzamiento(proyectoId: string, reunionId: string, datos: DatosReunionLanzamiento) {
-  const ficha = await obtenerFichaPorProyecto(proyectoId);
-  const [fila] = await db
-    .update(fichaLanzamientoReuniones)
-    .set(datos)
-    .where(and(eq(fichaLanzamientoReuniones.id, reunionId), eq(fichaLanzamientoReuniones.fichaId, ficha.id)))
-    .returning();
-  return fila;
+export async function actualizarReunionLanzamiento(proyectoId: string, reunionId: string, datos: DatosReunionLanzamiento, actorId: string | null = null) {
+  return db.transaction(async tx => {
+    const ficha = await obtenerFichaPorProyecto(proyectoId);
+    const [antes] = await tx.select().from(fichaLanzamientoReuniones).where(and(eq(fichaLanzamientoReuniones.id, reunionId), eq(fichaLanzamientoReuniones.fichaId, ficha.id))).for('update');
+    if (!antes || Object.entries(datos).every(([k, v]) => antes[k as keyof typeof antes] === v)) return antes;
+    const [fila] = await tx
+      .update(fichaLanzamientoReuniones)
+      .set(datos)
+      .where(and(eq(fichaLanzamientoReuniones.id, reunionId), eq(fichaLanzamientoReuniones.fichaId, ficha.id)))
+      .returning();
+    if (fila) await registrarEvento(tx, { actorId, accion: 'REUNION_LANZAMIENTO_REGISTRADA', entityType: 'reunion_lanzamiento', entityId: fila.id, proyectoId });
+    return fila;
+  });
 }
 
-export async function eliminarReunionLanzamiento(proyectoId: string, reunionId: string) {
-  const ficha = await obtenerFichaPorProyecto(proyectoId);
-  const [fila] = await db
-    .delete(fichaLanzamientoReuniones)
-    .where(and(eq(fichaLanzamientoReuniones.id, reunionId), eq(fichaLanzamientoReuniones.fichaId, ficha.id)))
-    .returning();
-  return fila;
+export async function eliminarReunionLanzamiento(proyectoId: string, reunionId: string, actorId: string | null = null) {
+  return db.transaction(async tx => {
+    const ficha = await obtenerFichaPorProyecto(proyectoId);
+    const [fila] = await tx
+      .delete(fichaLanzamientoReuniones)
+      .where(and(eq(fichaLanzamientoReuniones.id, reunionId), eq(fichaLanzamientoReuniones.fichaId, ficha.id)))
+      .returning();
+    if (fila) await registrarEvento(tx, { actorId, accion: 'REUNION_LANZAMIENTO_ELIMINADA', entityType: 'reunion_lanzamiento', entityId: fila.id, proyectoId });
+    return fila;
+  });
 }
 
-// Sección 8 — Impresión, dueño rrpp (jefe_area también puede, mismo
-// alcance amplio que ya tiene sobre el resto de la ficha).
+// Sección 8 — Impresión. La ruta reserva la escritura al rol impresion.
 export interface DatosSeccionImpresion {
   impresionDeseaCotizacion?: boolean | null;
   impresionResponsable?: string | null;
   impresionEstadoCotizacion?: EstadoCotizacionImpresion | null;
   impresionNotas?: string | null;
-  // Sección 8 (parte 2) — estatus agregado (macro), mismo dueño (rrpp/
-  // jefe_area) que el resto de esta sección — sin dueño individual, ver
+  // Sección 8 (parte 2) — estatus agregado (macro), mismo dueño (impresion)
+  // que el resto de esta sección — sin dueño individual, ver
   // el comentario en server/db/schema/trazabilidad.ts.
   impresionEstatus?: string | null;
   impresionFechaInicio?: string | null;
@@ -777,8 +782,8 @@ export async function actualizarSeccionImpresion(proyectoId: string, datos: Dato
 }
 
 // Sección 9 (parte 2) — Distribución, estatus agregado (macro). Dueño
-// doble: el especialista dueño del proyecto o el responsable logístico
-// asignado (ver verificarAccesoControlDistribucion en
+// doble: el especialista dueño del proyecto o el grupo de Distribución
+// (ver verificarAccesoControlDistribucion en
 // helpers/proyectos.ts, aislado del verificarAccesoAProyecto compartido
 // — ver el comentario ahí).
 export interface DatosSeccionDistribucionControl {
@@ -841,6 +846,7 @@ async function actualizarFichaAuditada(proyectoId: string, datos: Partial<typeof
     const [fila] = await tx.update(fichasTrazabilidad).set(datos).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).returning();
     if (!fila) throw new Error('Ficha de trazabilidad no encontrada');
     await auditarCambioFicha(tx, antes, fila, Object.keys(datos), actor);
+    if (datos.ingresoServicioSubtipoCrudo) await habilitarPlanificacionRrpp(tx, proyectoId, actor?.id);
     return fila;
   });
 }

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import {
   auditLogs,
@@ -8,12 +8,14 @@ import {
   proyectos,
   servicios,
   workItems,
+  rrppEventos,
 } from '../db/schema/index.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
 import { listarPropuestasPendientesRrpp } from './direccionCreativa.js';
 import { diagnosticoListo, tieneTrabajoRrpp } from './intakeRrpp.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos } from './proyectosAutores.js';
+import { EVENTOS_LANZAMIENTO_RRPP } from './rrppLanzamientoCatalogos.js';
 
 export interface ProyectoRrpp {
   id: string;
@@ -37,6 +39,7 @@ export interface IngresoRrpp extends ProyectoRrpp {
   };
 }
 const ACTIVIDAD = {
+  ...EVENTOS_LANZAMIENTO_RRPP,
   RRPP_NOTIFICADO: 'Nuevo proyecto recibido',
   INFORMACION_COMERCIAL_ACTUALIZADA: 'Comercial actualizó información',
   INTAKE_RRPP_INICIADO: 'Diagnóstico iniciado',
@@ -253,7 +256,7 @@ export async function obtenerDashboardRrpp(ahora = new Date()) {
     proyectoId: string,
     fecha: string | null,
     tipo: string,
-    reuniones = false,
+    _reuniones = false,
   ) {
     const base = bases.get(proyectoId);
     if (
@@ -267,7 +270,7 @@ export async function obtenerDashboardRrpp(ahora = new Date()) {
         proyecto: base.base,
         fecha,
         tipo,
-        href: `/proyectos/${proyectoId}${reuniones ? '' : '/ficha-trazabilidad'}#lanzamiento`,
+        href: `/rrpp/lanzamientos?proyecto=${proyectoId}`,
       });
   }
   for (const f of bases.values()) {
@@ -292,6 +295,13 @@ export async function obtenerDashboardRrpp(ahora = new Date()) {
   }
   for (const r of reuniones)
     agregar(r.id, r.proyectoId, r.fecha, 'Reunión de lanzamiento', true);
+  const agenda = await db.select().from(rrppEventos).where(sql`${rrppEventos.fecha} between ${desde} and ${hasta}`);
+  for (const e of agenda) {
+    if (e.estado === 'Completada') continue;
+    agregar(e.id, e.proyectoId, e.fecha, e.tipo);
+    const fila = lanzamientos.find(l => l.id === e.id);
+    if (fila) fila.href = `/rrpp/lanzamientos?tab=agenda&proyecto=${e.proyectoId}&mes=${e.fecha.slice(0,7)}&dia=${e.fecha}`;
+  }
   lanzamientos.sort(
     (a, b) => a.fecha.localeCompare(b.fecha) || a.id.localeCompare(b.id),
   );

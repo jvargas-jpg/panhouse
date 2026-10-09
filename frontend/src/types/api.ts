@@ -15,6 +15,7 @@ export const ROLES = [
   'soporte_editorial',
   'soporte_digital',
   'impresion',
+  'distribucion',
   'cobranzas',
   'talento_humano',
   'direccion',

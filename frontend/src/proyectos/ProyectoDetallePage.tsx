@@ -112,7 +112,7 @@ export function ProyectoDetallePage() {
     rol === 'disenador' ||
     rol === 'lider_creativo' ||
     rol === 'soporte_editorial' ||
-    rol === 'soporte_digital';
+    rol === 'soporte_digital' || rol === 'impresion' || rol === 'distribucion';
   const proyectoQuery = useQuery({ queryKey: ['proyecto', id], queryFn: () => fetchProyecto(id) });
   const fichaQuery = useQuery({ queryKey: ['ficha', id], queryFn: () => fetchFicha(id), enabled: puedeVerFicha });
 
@@ -407,13 +407,13 @@ export function ProyectoDetallePage() {
                       (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) || rol === 'rrpp'
                     }
                   />
-                  <SeccionImpresion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'rrpp'} />
+                  <SeccionImpresion proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={rol === 'impresion'} />
                   <SeccionDistribucion
                     proyectoId={id}
                     ficha={fichaQuery.data.ficha}
-                    puedeEditar={rol === 'rrpp'}
+                    puedeEditar={rol === 'distribucion'}
                     puedeEditarControl={
-                      (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) || rol === 'rrpp'
+                      (rol === 'especialista' && proyectoQuery.data.proyecto.especialistaId === usuario?.id) || rol === 'distribucion'
                     }
                   />
                 </div>

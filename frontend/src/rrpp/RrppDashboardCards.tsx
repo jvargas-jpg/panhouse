@@ -159,7 +159,7 @@ export function LaunchPanel({
           Lanzamientos próximos
         </h2>
         <Link
-          to="/?vista=lanzamientos"
+          to="/rrpp/lanzamientos"
           className="shrink-0 text-xs text-blue-600 hover:underline"
         >
           Ver todos

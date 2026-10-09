@@ -2,6 +2,7 @@ import { auditarCambioComercial, camposModificados, type ActorFicha } from './in
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
+import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
 import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
@@ -379,7 +380,7 @@ export async function verificarAccesoControlLanzamiento(
 }
 
 // Chequeo específico de PATCH /:proyectoId/distribucion-control
-// (especialista dueño del proyecto, o cualquier rrpp — distribucionId se
+// (especialista dueño del proyecto, o el grupo de Distribución — distribucionId se
 // dio de baja, mismo motivo y mismo acceso de grupo que los helpers
 // aislados anteriores).
 export async function verificarAccesoControlDistribucion(
@@ -713,10 +714,11 @@ export async function solicitarEditor(proyectoId: string, actorId: string): Prom
 // subpipeline de Corrección puede empezar después de esto.
 export async function registrarFeedbackTripa(proyectoId: string, fecha: string, actorId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    const [proyecto] = await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    const [proyecto] = await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
 
     await tx.update(proyectos).set({ fechaFeedbackTripa: fecha }).where(eq(proyectos.id, proyectoId));
+    await habilitarPlanificacionRrpp(tx, proyectoId, actorId);
 
     await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
     await transicionarWorkItem(tx, { proyectoId, tipo: 'edicion', estado: 'completado' });
@@ -737,7 +739,7 @@ export async function registrarFeedbackTripa(proyectoId: string, fecha: string, 
 // esa pertenencia con verificarAccesoAProyecto antes de invocarla.
 export async function asignarDisenador(proyectoId: string, disenadorId: string, asignadoPorId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
 
     const { cambio, asignacionId, anteriorUsuarioId } = await asignarConHistorial(tx, {
@@ -748,6 +750,7 @@ export async function asignarDisenador(proyectoId: string, disenadorId: string, 
     });
 
     await tx.update(proyectos).set({ disenadorId }).where(eq(proyectos.id, proyectoId));
+    await habilitarPlanificacionRrpp(tx, proyectoId, asignadoPorId);
 
     if (!cambio) return;
 

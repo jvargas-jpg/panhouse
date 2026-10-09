@@ -19,3 +19,4 @@ export * from './assignments.js';
 export * from './auditLogs.js';
 
 export * from './diseno.js';
+export * from './rrppLanzamientos.js';

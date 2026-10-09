@@ -96,6 +96,7 @@ export function RrppHomePage() {
   };
   if (vista === 'ingresos') return <Navigate to={`/rrpp/ingresos${estado ? `?estado=${estado}` : ''}`} replace />;
   if (vista === 'proyectos') return <Navigate to={`/rrpp/proyectos${params.get('proyecto') ? `?proyecto=${encodeURIComponent(params.get('proyecto')!)}` : ''}`} replace />;
+  if (vistaParam === 'lanzamientos') return <Navigate to={`/rrpp/lanzamientos${params.get('proyecto') ? `?proyecto=${encodeURIComponent(params.get('proyecto')!)}` : ''}`} replace />;
   if (usuario && usuario.rol !== 'rrpp')
     return (
       <p role="alert" className="p-6">

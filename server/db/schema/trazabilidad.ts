@@ -238,6 +238,8 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   // segunda), no una tabla de varias filas como fichaLanzamientoReuniones
   // — el negocio pidió columnas puntuales, no un registro abierto.
   lanzamientoPromocionFechaPrimeraReunion: date('lanzamiento_promocion_fecha_primera_reunion'),
+  lanzamientoPromocionPrimeraRealizada: boolean('lanzamiento_promocion_primera_realizada'),
+  lanzamientoPromocionPrimeraResponsableId: uuid('lanzamiento_promocion_primera_responsable_id').references(() => users.id, { onDelete: 'set null' }),
   // Cerrado a Paola Morales/Daniel Valente — a pedido explícito del
   // negocio, mismas dos personas y mismo enum que
   // fichasTrazabilidad.matrizPropietario (propietarioMatrizIngresoEnum,
@@ -246,6 +248,8 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   lanzamientoPromocionEncargadoPrimeraReunion: propietarioMatrizIngresoEnum('lanzamiento_promocion_encargado_primera_reunion'),
   lanzamientoPromocionPuntosTratadosPrimera: text('lanzamiento_promocion_puntos_tratados_primera'),
   lanzamientoPromocionFechaSegundaReunion: date('lanzamiento_promocion_fecha_segunda_reunion'),
+  lanzamientoPromocionSegundaRealizada: boolean('lanzamiento_promocion_segunda_realizada'),
+  lanzamientoPromocionSegundaResponsableId: uuid('lanzamiento_promocion_segunda_responsable_id').references(() => users.id, { onDelete: 'set null' }),
   lanzamientoPromocionEncargadoSegundaReunion: propietarioMatrizIngresoEnum('lanzamiento_promocion_encargado_segunda_reunion'),
   lanzamientoPromocionAcuerdosSegunda: text('lanzamiento_promocion_acuerdos_segunda'),
   lanzamientoPromocionObjetivoComercial: text('lanzamiento_promocion_objetivo_comercial'),
@@ -298,6 +302,7 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   asesoriaFechaPautadaAutor: date('asesoria_fecha_pautada_autor'),
   asesoriaFeriaProyectada: asesoriaFeriaProyectadaEnum('asesoria_feria_proyectada'),
   asesoriaNotas: text('asesoria_notas'),
+  asesoriaVentaCruzada: text('asesoria_venta_cruzada').array(),
   asesoriaLinkMinutaGerencia: text('asesoria_link_minuta_gerencia'),
   asesoriaRutaPromocionEnviada: boolean('asesoria_ruta_promocion_enviada').notNull().default(false),
   asesoriaLinkRutaPromocion: text('asesoria_link_ruta_promocion'),
@@ -442,7 +447,7 @@ export const fichasTrazabilidad = pgTable('fichas_trazabilidad', {
   // deseaCotizacion/responsable/estadoCotizacion/notas de arriba: esto
   // es la vista de conjunto de la fase, no la reemplaza. Sin dueño
   // individual (no existe impresionId en proyectos): el acceso sigue
-  // siendo por rol (rrpp para editar, rrpp/jefe_area para ver), mismo
+  // siendo por rol (impresion para editar; roles de Ficha para consultar), mismo
   // alcance que ya tenía el resto de esta sección — no hace falta un
   // helper aislado. Calidad/Digital/Lanzamiento/Distribución perdieron
   // su dueño individual (calidadId/digitalId/lanzamientoId/
@@ -605,6 +610,9 @@ export const fichaLanzamientoReuniones = pgTable('ficha_lanzamiento_reuniones', 
   fecha: date('fecha'),
   puntosTratados: text('puntos_tratados'),
   acuerdos: text('acuerdos'),
+  realizada: boolean('realizada'),
+  responsableId: uuid('responsable_id').references(() => users.id, { onDelete: 'set null' }),
+  clientKey: uuid('client_key').unique(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

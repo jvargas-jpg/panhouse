@@ -1,0 +1,51 @@
+.rrpp-launches :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 3px;
+}
+.rrpp-launches .launch-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #dbe2eb;
+  border-radius: 7px;
+  background: white;
+  padding: 9px 11px;
+  font-size: 12px;
+  color: #0f172a;
+}
+/* Los modales se montan en portal fuera del contenedor principal. */
+.launch-input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid #dbe2eb;
+  border-radius: 7px;
+  background: white;
+  padding: 9px 11px;
+  font-size: 12px;
+  color: #0f172a;
+}
+.launch-input:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.rrpp-launches .launch-workspace {
+  display: grid;
+  min-width: 0;
+  gap: 16px;
+}
+@media (min-width: 1200px) {
+  .rrpp-launches .launch-workspace {
+    grid-template-columns: minmax(0, 34fr) minmax(0, 66fr);
+    align-items: stretch;
+  }
+  .rrpp-launches .launch-scroll {
+    height: calc(100dvh - 374px);
+    min-height: 350px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+@media (max-width: 1199px) {
+  .rrpp-launches .launch-mobile-hidden {
+    display: none;
+  }
+}

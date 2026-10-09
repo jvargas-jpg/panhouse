@@ -1,8 +1,10 @@
+import { EVENTOS_LANZAMIENTO_RRPP } from './rrppLanzamientoCatalogos.js';
 // Proyección pública explícita: jamás se devuelve detalles/entityId/actorId del audit.
 export const EVENTOS_PROYECTO_RRPP: Record<
   string,
   { titulo: string; area: string; etapa?: string }
 > = {
+  ...Object.fromEntries(Object.entries(EVENTOS_LANZAMIENTO_RRPP).map(([accion, titulo]) => [accion, { titulo, area: 'RRPP', etapa: 'lanzamiento' }])),
   RRPP_NOTIFICADO: {
     titulo: 'Comercial entregó el proyecto a RRPP',
     area: 'Comercial',

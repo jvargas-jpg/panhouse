@@ -3,6 +3,7 @@ import { db } from '../db/client.js';
 import { autores, capitulos, proyectos, servicios } from '../db/schema/index.js';
 import { calcularFechaPautadaFeedbackCapitulo } from './edicionSla.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
+import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 
 // El capítulo nace cuando alguien lo crea por primera vez (típicamente
 // el editor, al arrancar su parte), con los campos de contenido
@@ -30,20 +31,24 @@ export interface DatosCapituloAutor {
 // calcula el default (3 días hábiles, ver server/helpers/edicionSla.ts)
 // en vez de dejarlo en blanco esperando que alguien lo calcule a mano.
 // Nunca pisa un valor que el caller sí envió explícitamente.
-export async function actualizarCapituloAutor(proyectoId: string, numero: number, datos: DatosCapituloAutor) {
+export async function actualizarCapituloAutor(proyectoId: string, numero: number, datos: DatosCapituloAutor, actorId: string | null = null) {
   const datosConPlazo = { ...datos };
   if (datos.fechaEnvioAutor && datos.fechaPautadaFeedback === undefined) {
     datosConPlazo.fechaPautadaFeedback = calcularFechaPautadaFeedbackCapitulo(datos.fechaEnvioAutor);
   }
 
-  const [fila] = await db
-    .update(capitulos)
-    .set(datosConPlazo)
-    .where(and(eq(capitulos.proyectoId, proyectoId), eq(capitulos.numero, numero)))
-    .returning();
+  return db.transaction(async tx => {
+    await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+    const [fila] = await tx
+      .update(capitulos)
+      .set(datosConPlazo)
+      .where(and(eq(capitulos.proyectoId, proyectoId), eq(capitulos.numero, numero)))
+      .returning();
 
-  if (!fila) throw new Error(`Capítulo no encontrado: proyecto ${proyectoId}, número ${numero}`);
-  return fila;
+    if (!fila) throw new Error(`Capítulo no encontrado: proyecto ${proyectoId}, número ${numero}`);
+    if (numero === 4 && fila.fechaEnvioAutor) await habilitarPlanificacionRrpp(tx, proyectoId, actorId);
+    return fila;
+  });
 }
 
 export interface DatosCapituloEditor {

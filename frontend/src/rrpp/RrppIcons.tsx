@@ -1,6 +1,7 @@
 // Mismo sistema SVG del CRM existente; sin dependencias ni iconos de emoji.
 const PATHS = {
   inicio: 'M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10',
+  buscar: 'M21 21l-5-5M18 10a8 8 0 11-16 0 8 8 0 0116 0',
   ingreso: 'M6 3h8l4 4v14H6zM14 3v5h5M9 12h6M9 16h4',
   proceso: 'M6 3h8l4 4v14H6zM14 3v5h5M9 12h6m-6 4 2 2 5-5',
   proyectos: 'M3 7h7l2 2h9v11H3zM3 7V4h7l2 3',

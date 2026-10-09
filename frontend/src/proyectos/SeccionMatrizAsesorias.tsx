@@ -122,15 +122,8 @@ export function SeccionMatrizAsesorias({
         asesoriaParticipacionFeria: participacionFeria,
         asesoriaFeriaAParticipar: feriaAParticipar || null,
         asesoriaCotizacionImpresion: cotizacionImpresion,
-        asesoriaResponsableImpresion: responsableImpresion || null,
         asesoriaFechaCotizacionSolicitada: fechaCotizacionSolicitada || null,
-        asesoriaFechaCotizacionEnviada: fechaCotizacionEnviada || null,
-        asesoriaCotizacionAceptada: cotizacionAceptada,
-        asesoriaDistribucionAceptada: distribucionAceptada,
-        asesoriaResponsableDistribucion: responsableDistribucion || null,
         asesoriaNotaDistribucion: notaDistribucion || null,
-        asesoriaFechaContratoEnviado: fechaContratoEnviado || null,
-        asesoriaContratoRecibidoFirmado: contratoRecibidoFirmado,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
@@ -603,6 +596,7 @@ export function SeccionMatrizAsesorias({
             <div className={CHECKBOX_ROW_CLASS}>
               <input
                 id="asesoria-cotizacion-aceptada"
+                disabled
                 type="checkbox"
                 checked={cotizacionAceptada}
                 onChange={(event) => {
@@ -622,6 +616,7 @@ export function SeccionMatrizAsesorias({
             </label>
             <select
               id="asesoria-responsable-impresion"
+                disabled
               value={responsableImpresion}
               onChange={(event) => {
                 setResponsableImpresion(event.target.value as AsesoriaResponsableImpresion);
@@ -658,6 +653,7 @@ export function SeccionMatrizAsesorias({
             </label>
             <input
               id="asesoria-fecha-cotizacion-enviada"
+                disabled
               type="date"
               value={fechaCotizacionEnviada}
               onChange={(event) => {
@@ -672,6 +668,7 @@ export function SeccionMatrizAsesorias({
             <div className={CHECKBOX_ROW_CLASS}>
               <input
                 id="asesoria-distribucion-aceptada"
+                disabled
                 type="checkbox"
                 checked={distribucionAceptada}
                 onChange={(event) => {
@@ -689,6 +686,7 @@ export function SeccionMatrizAsesorias({
             <div className={CHECKBOX_ROW_CLASS}>
               <input
                 id="asesoria-contrato-recibido-firmado"
+                disabled
                 type="checkbox"
                 checked={contratoRecibidoFirmado}
                 onChange={(event) => {
@@ -708,6 +706,7 @@ export function SeccionMatrizAsesorias({
             </label>
             <select
               id="asesoria-responsable-distribucion"
+                disabled
               value={responsableDistribucion}
               onChange={(event) => {
                 setResponsableDistribucion(event.target.value as AsesoriaResponsableDistribucion);
@@ -729,6 +728,7 @@ export function SeccionMatrizAsesorias({
             </label>
             <input
               id="asesoria-fecha-contrato-enviado"
+                disabled
               type="date"
               value={fechaContratoEnviado}
               onChange={(event) => {

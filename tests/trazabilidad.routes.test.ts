@@ -1633,11 +1633,11 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/impresion', () => {
-    it('permite a rrpp editar el control agregado (macro) junto a los campos existentes', async () => {
+    it('permite al coordinador de Impresión editar el control agregado (macro) junto a los campos existentes', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'rrpp');
+      const cookie = await registrarYLoguear(app, 'impresion');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/impresion`)
@@ -1651,7 +1651,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('rechaza a jefe_area editar el control de impresión (solo puede ver, es sección exclusiva de rrpp)', async () => {
+    it('rechaza a jefe_area editar el control de impresión (solo puede ver, es sección exclusiva de impresion)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
@@ -1670,7 +1670,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'rrpp');
+      const cookie = await registrarYLoguear(app, 'impresion');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/impresion`)
@@ -1753,11 +1753,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite a cualquier rrpp editar el control de distribución (acceso de grupo, ya no hay dueño individual)', async () => {
+    it('permite al Líder de Distribución editar el control de distribución (acceso de grupo, ya no hay dueño individual)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'rrpp');
+      const cookie = await registrarYLoguear(app, 'distribucion');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion-control`)
@@ -1831,11 +1831,11 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('POST /api/fichas-trazabilidad/:proyectoId/distribucion/paises', () => {
-    it('permite a rrpp agregar un país acordado', async () => {
+    it('permite al Líder de Distribución agregar un país acordado', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'rrpp');
+      const cookie = await registrarYLoguear(app, 'distribucion');
 
       const respuesta = await request(app.server)
         .post(`/api/fichas-trazabilidad/${proyecto.id}/distribucion/paises`)
@@ -1877,12 +1877,12 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/distribucion/paises/:paisId', () => {
-    it('permite a rrpp editar un país existente', async () => {
+    it('permite al Líder de Distribución editar un país existente', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
       const pais = await agregarPaisDistribucion(proyecto.id, { pais: 'México', porcentajeRegalias: '10.00' });
-      const cookie = await registrarYLoguear(app, 'rrpp');
+      const cookie = await registrarYLoguear(app, 'distribucion');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion/paises/${pais.id}`)
@@ -1900,7 +1900,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       const proyectoAjeno = await crearProyectoConFicha();
       const paisAjeno = await agregarPaisDistribucion(proyectoAjeno.id, { pais: 'México' });
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'rrpp');
+      const cookie = await registrarYLoguear(app, 'distribucion');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/distribucion/paises/${paisAjeno.id}`)
@@ -1959,12 +1959,12 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('DELETE /api/fichas-trazabilidad/:proyectoId/distribucion/paises/:paisId', () => {
-    it('permite a rrpp borrar un país existente', async () => {
+    it('permite al Líder de Distribución borrar un país existente', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
       const pais = await agregarPaisDistribucion(proyecto.id, { pais: 'México' });
-      const cookie = await registrarYLoguear(app, 'rrpp');
+      const cookie = await registrarYLoguear(app, 'distribucion');
 
       const respuesta = await request(app.server)
         .delete(`/api/fichas-trazabilidad/${proyecto.id}/distribucion/paises/${pais.id}`)

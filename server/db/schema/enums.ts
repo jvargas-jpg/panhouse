@@ -22,6 +22,8 @@ export const ROLES = [
   'soporte_editorial',
   'soporte_digital',
   'impresion',
+  // Dueño de la sección DISTRIBUCIÓN de la Ficha; RRPP solo deriva oportunidades.
+  'distribucion',
   'cobranzas',
   'talento_humano',
   'direccion',
@@ -329,6 +331,7 @@ export const TIPOS_ASIGNACION = [
   'corrector',
   'lider_creativo',
   'validador',
+  'rrpp',
 ] as const;
 
 export type TipoAsignacion = (typeof TIPOS_ASIGNACION)[number];

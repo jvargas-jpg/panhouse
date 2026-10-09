@@ -521,9 +521,9 @@ describe('Inicio RRPP: fuentes canónicas, lifecycle y permisos', () => {
     ]);
     expect(d.lanzamientos.every((l) => l.proyecto.id === p.id)).toBe(true);
     expect(d.lanzamientos[0]?.href).toBe(
-      `/proyectos/${p.id}/ficha-trazabilidad#lanzamiento`,
+      `/rrpp/lanzamientos?proyecto=${p.id}`,
     );
-    expect(d.lanzamientos[1]?.href).toBe(`/proyectos/${p.id}#lanzamiento`);
+    expect(d.lanzamientos[1]?.href).toBe(`/rrpp/lanzamientos?proyecto=${p.id}`);
   });
 
   it('rechaza inicio sin handoff, inactivo, cancelado, UUID inválido y proyecto inexistente', async () => {

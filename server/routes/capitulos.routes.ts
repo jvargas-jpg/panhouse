@@ -112,7 +112,7 @@ export async function capitulosRoutes(app: FastifyInstance) {
         return reply.code(acceso.status).send({ error: acceso.error });
       }
 
-      const capitulo = await actualizarCapituloAutor(params.proyectoId, params.numero, body);
+      const capitulo = await actualizarCapituloAutor(params.proyectoId, params.numero, body, request.user?.id);
       return reply.send({ capitulo });
     },
   );

@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '../db/client.js';
+import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import {
   auditLogs,
   autores,
@@ -312,6 +313,7 @@ export async function guardarIngresoRrpp(
       id: actorId,
       rol: 'rrpp',
     });
+    if (datos.ingresoServicioSubtipoCrudo) await habilitarPlanificacionRrpp(tx, id, actorId);
     return { ok: true as const };
   });
 }
