@@ -11,6 +11,8 @@ const PATHS = {
   actividad: 'M12 8v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0',
   flecha: 'm9 5 7 7-7 7',
   check: 'm5 12 4 4L19 6',
+  externo: 'M14 3h7v7m0-7L10 14M10 3H4v17h17v-6',
+  rapido: 'm13 2-9 12h7l-1 8 10-12h-7z',
 } as const;
 export function RrppIcon({
   nombre,

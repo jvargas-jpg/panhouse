@@ -210,24 +210,35 @@ export async function obtenerIngresoRrpp(id: string) {
     editable:
       !fila.proyecto.notificadoJefatura &&
       ESTADOS_ACTIVOS.includes(fila.proyecto.estado),
-    contexto: {
-      autorPrincipal: fila.autor,
-      coautores: coautores
+    contexto: contextoComercialRrpp(
+      f,
+      fila.autor,
+      coautores
         .filter((a) => a.id !== fila.proyecto.autorId)
         .map((a) => a.nombre),
-      fechaIngreso: f.ingresoFechaIngreso,
-      ejecucion: f.ingresoServicioEjecucion,
-      tiempoExpresMeses: f.ingresoTiempoExpresMeses,
-      alianza: f.ingresoServicioAlianza,
-      presupuesto: f.ingresoServicioPresupuesto,
-      capitulos: f.capitulosPactados,
-      paginas: f.paginasPactadas,
-      condiciones: f.condicionesEspeciales,
-      criterioExtra: f.criterioExtra,
-      observaciones: f.ingresoObservaciones,
-    },
+    ),
     datos: datosRrpp(f),
     fechaProyectada: fechaProyectadaIngreso(resumen.servicio.codigo, f),
+  };
+}
+export function contextoComercialRrpp(
+  f: Ficha,
+  autorPrincipal: string,
+  coautores: string[],
+) {
+  return {
+    autorPrincipal,
+    coautores,
+    fechaIngreso: f.ingresoFechaIngreso,
+    ejecucion: f.ingresoServicioEjecucion,
+    tiempoExpresMeses: f.ingresoTiempoExpresMeses,
+    alianza: f.ingresoServicioAlianza,
+    presupuesto: f.ingresoServicioPresupuesto,
+    capitulos: f.capitulosPactados,
+    paginas: f.paginasPactadas,
+    condiciones: f.condicionesEspeciales,
+    criterioExtra: f.criterioExtra,
+    observaciones: f.ingresoObservaciones,
   };
 }
 export const catalogosIngresoRrpp = {

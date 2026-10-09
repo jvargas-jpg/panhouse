@@ -95,6 +95,7 @@ export function RrppHomePage() {
     void query.refetch();
   };
   if (vista === 'ingresos') return <Navigate to={`/rrpp/ingresos${estado ? `?estado=${estado}` : ''}`} replace />;
+  if (vista === 'proyectos') return <Navigate to={`/rrpp/proyectos${params.get('proyecto') ? `?proyecto=${encodeURIComponent(params.get('proyecto')!)}` : ''}`} replace />;
   if (usuario && usuario.rol !== 'rrpp')
     return (
       <p role="alert" className="p-6">
@@ -203,7 +204,7 @@ export function RrppHomePage() {
             datos={query.data}
             tab={tab}
             estado={estado}
-            proyectos={vista === 'proyectos'}
+            proyectos={false}
             loading={query.isLoading}
             error={query.isError}
             onRetry={reintentar}

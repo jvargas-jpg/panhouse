@@ -25,7 +25,7 @@ export function ReviewConceptsModal({
     onSuccess: async (_, variables) => {
       await Promise.all(
         [
-          ['rrpp', 'dashboard'],
+          ['rrpp'],
           ['direccion-creativa'],
           ['ficha', grupo.proyecto.id],
           ['notificaciones'],

@@ -15,6 +15,7 @@ import { FichaTrazabilidadPage } from './proyectos/FichaTrazabilidadPage';
 import { ProyectoDetallePage } from './proyectos/ProyectoDetallePage';
 import { RrppMetricasPage } from './rrpp/RrppMetricasPage';
 import { RrppIngresosPage } from './rrpp/RrppIngresosPage';
+import { RrppProyectosPage } from './rrpp/RrppProyectosPage';
 
 // Carga perezosa: recharts (usado solo acá) agrega ~370kB al bundle
 // principal — nadie más que quien visita Métricas necesita pagar ese
@@ -55,6 +56,7 @@ export function App() {
               (datos estáticos, ver el comentario en RrppMetricasPage.tsx). */}
           <Route path="/rrpp/metricas" element={<RrppMetricasPage />} />
           <Route path="/rrpp/ingresos" element={<RrppIngresosPage />} />
+          <Route path="/rrpp/proyectos" element={<RrppProyectosPage />} />
         </Route>
 
         {/* Detalle de proyecto: fuera de AppLayout (sin su <main

@@ -36,7 +36,7 @@ export function RrppSidebarNav({ vista }: { vista: VistaRrpp }) {
         <div key={item.vista}>
           {index === 3 && <div className="my-4 border-t border-gray-800" />}
           <Link
-            to={item.vista === 'inicio' ? '/' : item.vista === 'ingresos' ? '/rrpp/ingresos' : `/?vista=${item.vista}`}
+            to={item.vista === 'inicio' ? '/' : item.vista === 'ingresos' ? '/rrpp/ingresos' : item.vista === 'proyectos' ? '/rrpp/proyectos' : `/?vista=${item.vista}`}
             aria-current={vista === item.vista ? 'page' : undefined}
             className={`flex w-full items-center gap-3 rounded-lg px-3.5 py-3 text-left text-sm transition-colors ${vista === item.vista ? 'border border-dorado/20 bg-dorado/10 font-semibold text-dorado' : 'font-medium text-gray-400 hover:bg-white/5 hover:text-white'}`}
           >
