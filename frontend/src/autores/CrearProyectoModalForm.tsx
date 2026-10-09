@@ -84,6 +84,7 @@ export function CrearProyectoModalForm({
     queryClient.invalidateQueries({ queryKey: ['fichas-trazabilidad', 'pendientes', 'contrato'] });
     queryClient.invalidateQueries({ queryKey: ['proyectos'] });
     queryClient.invalidateQueries({ queryKey: ['metricas', 'comercial'] });
+    queryClient.invalidateQueries({ queryKey: ['rrpp'] });
   }
 
   const servicioId = catalogosQuery.data?.servicios.find((servicio) => servicio.codigo === servicioCodigo)?.id;

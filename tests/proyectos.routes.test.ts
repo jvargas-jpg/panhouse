@@ -492,6 +492,10 @@ describe('rutas de proyectos', () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
+      await crearFichaComercialCompleta(proyecto.id);
+      const comercial = await registrarYLoguear(app, 'comercial');
+      expect((await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`).set('Cookie', comercial)).status).toBe(201);
+      await db.update(fichasTrazabilidad).set({ matrizDiagnosticoGenerado: true, matrizIngresoGenerado: true }).where(eq(fichasTrazabilidad.proyectoId, proyecto.id));
       const cookieRrpp = await registrarYLoguear(app, 'rrpp');
 
       const respuesta = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-jefatura`).set('Cookie', cookieRrpp);
@@ -516,6 +520,10 @@ describe('rutas de proyectos', () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
+      await crearFichaComercialCompleta(proyecto.id);
+      const comercial = await registrarYLoguear(app, 'comercial');
+      expect((await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`).set('Cookie', comercial)).status).toBe(201);
+      await db.update(fichasTrazabilidad).set({ matrizDiagnosticoGenerado: true, matrizIngresoGenerado: true }).where(eq(fichasTrazabilidad.proyectoId, proyecto.id));
       const cookie = await registrarYLoguear(app, 'rrpp');
 
       const primera = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-jefatura`).set('Cookie', cookie);

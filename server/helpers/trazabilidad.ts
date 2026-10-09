@@ -274,6 +274,7 @@ export interface DatosSeccionProyectoPerfil {
 // alta.
 export async function actualizarSeccionProyectoPerfil(proyectoId: string, datos: DatosSeccionProyectoPerfil, actor?: ActorFicha) {
   return db.transaction(async (tx) => {
+    await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     const [antes] = await tx.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).for('update');
     const [fila] = await tx
       .update(fichasTrazabilidad)
@@ -834,6 +835,7 @@ export async function eliminarPaisDistribucion(proyectoId: string, paisId: strin
 
 async function actualizarFichaAuditada(proyectoId: string, datos: Partial<typeof fichasTrazabilidad.$inferInsert>, actor?: ActorFicha) {
   return db.transaction(async (tx) => {
+    await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     const [antes] = await tx.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).for('update');
     if (!antes) throw new Error('Ficha de trazabilidad no encontrada para el proyecto: ' + proyectoId);
     const [fila] = await tx.update(fichasTrazabilidad).set(datos).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).returning();

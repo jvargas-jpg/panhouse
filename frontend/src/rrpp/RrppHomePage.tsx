@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
@@ -82,7 +82,7 @@ export function RrppHomePage() {
           ['proyecto', id],
         ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
-      navigate(`/proyectos/${id}/ficha-trazabilidad`);
+      navigate(`/rrpp/ingresos?proyecto=${id}`);
     },
   });
   function seleccionar(
@@ -94,6 +94,7 @@ export function RrppHomePage() {
   const reintentar = () => {
     void query.refetch();
   };
+  if (vista === 'ingresos') return <Navigate to={`/rrpp/ingresos${estado ? `?estado=${estado}` : ''}`} replace />;
   if (usuario && usuario.rol !== 'rrpp')
     return (
       <p role="alert" className="p-6">

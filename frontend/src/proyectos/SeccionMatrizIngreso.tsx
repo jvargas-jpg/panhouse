@@ -104,7 +104,7 @@ export function SeccionMatrizIngreso({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
-      queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp'] });
     },
   });
 

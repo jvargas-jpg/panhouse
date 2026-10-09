@@ -81,7 +81,7 @@ function Fila({
 }) {
   const p = tarea.proyecto;
   const destino =
-    tarea.lanzamiento?.href ?? `/proyectos/${p.id}/ficha-trazabilidad`;
+    tarea.lanzamiento?.href ?? (tarea.ingreso ? `/rrpp/ingresos?proyecto=${p.id}` : `/proyectos/${p.id}/ficha-trazabilidad`);
   const boton =
     'whitespace-nowrap rounded-lg border border-amber-400/70 px-2.5 py-2 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-60';
   return (

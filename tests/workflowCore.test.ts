@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../server/db/client.js';
-import { auditLogs, notificaciones, workItems } from '../server/db/schema/index.js';
+import { auditLogs, fichasTrazabilidad, notificaciones, workItems } from '../server/db/schema/index.js';
 import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import { crearFichaComercialCompleta, crearProyectoDePrueba, crearUsuario } from './helpers/fixtures.js';
@@ -19,6 +19,7 @@ describe('Workflow Core: Comercial → RRPP → Jefatura → Especialista', () =
   async function crearProyectoConFicha() {
     const proyecto = await crearProyectoDePrueba();
     await crearFichaComercialCompleta(proyecto.id);
+    await db.update(fichasTrazabilidad).set({ matrizDiagnosticoGenerado: true, matrizIngresoGenerado: true }).where(eq(fichasTrazabilidad.proyectoId, proyecto.id));
     return proyecto;
   }
 

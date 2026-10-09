@@ -1,3 +1,4 @@
+import { seccionFichaEditorialSchema, seccionMatrizIngresoSchema } from '../helpers/rrppIngresoSchema.js';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import {
@@ -9,15 +10,12 @@ import {
   ASESORIA_NIVELES_SATISFACCION,
   ASESORIA_RESPONSABLES_DISTRIBUCION,
   ASESORIA_RESPONSABLES_IMPRESION,
-  COLECCIONES_PANHOUSE,
   CONDICIONES_ESPECIALES,
   EJECUCIONES_SERVICIO,
   ESTADOS_COTIZACION_IMPRESION,
-  ESTADOS_REUNION,
   PARTICIPACION_FERIAS,
   PRESUPUESTOS_SERVICIO,
   PROPIETARIOS_MATRIZ_INGRESO,
-  PUBLICOS_SEXO,
   SUBTIPOS_CRUDO,
   TIPOS_PORTADA,
 } from '../db/schema/index.js';
@@ -103,6 +101,7 @@ const seccionProyectoPerfilSchema = z
     ingresoServicioPresupuesto: z.enum(PRESUPUESTOS_SERVICIO).nullable().optional(),
     ingresoObservaciones: z.string().nullable().optional(),
   })
+  .strict()
   .refine((datos) => Object.keys(datos).length > 0, {
     message: 'No se recibió ningún campo válido para actualizar',
   })
@@ -136,46 +135,9 @@ const seccionProyectoContratoSchema = z.object({
   // autores.routes.ts: selección múltiple sobre un catálogo cerrado, ver
   // SelectorMultipleCondicionesEspeciales.tsx.
   condicionesEspeciales: z.array(z.enum(CONDICIONES_ESPECIALES)).nullable().optional(),
-});
+}).strict();
 
-// "Ficha Editorial (Completado por RRPP)" — dueño exclusivo rrpp, no
-// comercial ni jefe_area (a diferencia de los dos schemas de arriba). publicoEdad/
-// tonoEstilo: string libre, no z.enum() — <select> de sugerencias en el
-// frontend, no un catálogo cerrado confirmado todavía (mismo criterio
-// que capitulosPactados/paginasPactadas arriba).
-const seccionFichaEditorialSchema = z.object({
-  fechaDeseadaCulminacion: z.string().nullable().optional(),
-  temaGeneral: z.string().nullable().optional(),
-  posibleTituloLibro: z.string().nullable().optional(),
-  coleccionPanhouse: z.enum(COLECCIONES_PANHOUSE).nullable().optional(),
-  tonoEstilo: z.string().nullable().optional(),
-  publicoSexo: z.enum(PUBLICOS_SEXO).nullable().optional(),
-  publicoEdad: z.string().nullable().optional(),
-  publicoPerfil: z.string().nullable().optional(),
-  propositoSocial: z.string().nullable().optional(),
-  // Array de texto libre — mismo criterio que nacionalidadSchema en
-  // autores.routes.ts: sin catálogo cerrado, ver EtiquetasObjetivoComercial.tsx.
-  objetivoComercial: z.array(z.string()).nullable().optional(),
-});
-
-// "Matriz de Ingreso (RRPP)" — dueño exclusivo rrpp, mismo alcance que
-// seccionFichaEditorialSchema arriba.
-const seccionMatrizIngresoSchema = z.object({
-  matrizCiudadResidencia: z.string().nullable().optional(),
-  matrizEstadoReunion: z.enum(ESTADOS_REUNION).nullable().optional(),
-  matrizPropietario: z.enum(PROPIETARIOS_MATRIZ_INGRESO).nullable().optional(),
-  matrizContratoFirmado: z.boolean().optional(),
-  matrizBienvenidaGenerada: z.boolean().optional(),
-  matrizLinkResumen: z.string().nullable().optional(),
-  matrizDiagnosticoGenerado: z.boolean().optional(),
-  matrizLinkDiagnostico: z.string().nullable().optional(),
-  matrizIngresoGenerado: z.boolean().optional(),
-  matrizFechaReunionCreativa: z.string().nullable().optional(),
-  // Array de texto libre — mismo criterio que objetivoComercial arriba.
-  matrizVentaCruzada: z.array(z.string()).nullable().optional(),
-  matrizObservacionesComerciales: z.string().nullable().optional(),
-});
-
+// Ficha editorial e ingreso reutilizan rrppIngresoSchema: dueño exclusivo RRPP.
 // "Proceso de Lanzamiento y Promoción" — dueño rrpp, mismo alcance que
 // seccionMatrizIngresoSchema arriba. No confundir con
 // seccionLanzamientoGeneralSchema/lanzamientoControlSchema más abajo
@@ -542,6 +504,10 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
+      const campos = Object.keys((request.body ?? {}) as object);
+      if (request.user?.rol === 'rrpp' && campos.some((c) => c !== 'ingresoServicioSubtipoCrudo')) {
+        return reply.code(403).send({ error: 'RRPP no puede modificar campos de Comercial' });
+      }
       const body = parseOrReply(seccionProyectoPerfilSchema, request.body, reply);
       if (!body) return;
 

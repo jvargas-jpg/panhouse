@@ -153,6 +153,7 @@ export function CrearAutorForm({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['autores'] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp'] });
       setForm(ESTADO_VACIO);
       setSeccionActiva('personal');
       onGuardado('Autor creado exitosamente');
@@ -176,6 +177,7 @@ export function CrearAutorForm({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['autores'] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp'] });
       onGuardado('Autor editado exitosamente');
     },
   });

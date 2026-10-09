@@ -88,8 +88,8 @@ describe('rutas de la ficha de trazabilidad', () => {
         .set('Cookie', cookie)
         .send({ ingresoObservaciones: 'Autor primerizo' });
 
-      expect(respuesta.status).toBe(200);
-      expect(respuesta.body.ficha.ingresoObservaciones).toBe('Autor primerizo');
+      expect(respuesta.status).toBe(rol === 'rrpp' ? 403 : 200);
+      if (rol !== 'rrpp') expect(respuesta.body.ficha.ingresoObservaciones).toBe('Autor primerizo');
       await app.close();
     });
 

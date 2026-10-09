@@ -12,6 +12,7 @@ import {
 import { ESTADOS_ACTIVOS } from './carga.js';
 import { listarPropuestasPendientesRrpp } from './direccionCreativa.js';
 import { diagnosticoListo, tieneTrabajoRrpp } from './intakeRrpp.js';
+import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos } from './proyectosAutores.js';
 
 export interface ProyectoRrpp {
@@ -167,11 +168,7 @@ export async function obtenerDashboardRrpp(ahora = new Date()) {
           ? 'CRUDO · pendiente de clasificación'
           : estado === 'nuevo'
             ? 'Pendiente de diagnóstico'
-            : !f.ficha.coleccionPanhouse
-              ? 'Colección sin definir'
-              : !f.ficha.publicoPerfil
-                ? 'Audiencia sin definir'
-                : 'Completar diagnóstico',
+            : evaluarPreparacionRrpp(f.ficha, f.servicio.codigo).faltantes[0]?.etiqueta ?? 'Completar diagnóstico',
       actualizadoAt: evento?.fecha.toISOString() ?? null,
       actualizadoPor: evento
         ? evento.accion === 'RRPP_NOTIFICADO'

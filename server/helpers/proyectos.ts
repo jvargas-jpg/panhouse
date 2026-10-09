@@ -8,6 +8,7 @@ import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
+import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItem } from './workItems.js';
 
@@ -236,12 +237,21 @@ export async function notificarRrppProyectoBase(proyectoId: string, actorId: str
 // transiciona a 'completado'). Deja rastro en audit_logs.
 export async function notificarJefaturaFichaCompletada(proyectoId: string, actorId: string): Promise<ResultadoTransicionFase1> {
   return db.transaction(async (tx) => {
-    const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     if (!proyecto) {
       return { ok: false, status: 404, error: 'Proyecto no encontrado' };
     }
     if (proyecto.notificadoJefatura) {
       return { ok: false, status: 409, error: 'La ficha de este proyecto ya fue notificada a jefatura' };
+    }
+    if (!proyecto.notificadoRrpp || !ESTADOS_ACTIVOS.includes(proyecto.estado)) {
+      return { ok: false, status: 409, error: 'El proyecto no tiene un ingreso RRPP activo' };
+    }
+    const [ficha] = await tx.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).for('update');
+    const [servicio] = await tx.select().from(servicios).where(eq(servicios.id, proyecto.servicioId));
+    const [intake] = await tx.select().from(workItems).where(and(eq(workItems.proyectoId, proyectoId), eq(workItems.tipo, 'intake_rrpp'), eq(workItems.businessKey, 'default')));
+    if (intake?.estado === 'cancelado' || !ficha || !evaluarPreparacionRrpp(ficha, servicio?.codigo ?? '').listoParaJefatura) {
+      return { ok: false, status: 409, error: 'Completa y guarda los pendientes del diagnóstico antes de enviar a Jefatura' };
     }
 
     const filasAutores = await tx

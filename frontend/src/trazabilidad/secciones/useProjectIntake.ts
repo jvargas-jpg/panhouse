@@ -194,7 +194,7 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
 
   const mutacion = useMutation({
     mutationFn: () =>
-      actualizarSeccionProyectoPerfil(proyectoId, {
+      actualizarSeccionProyectoPerfil(proyectoId, puedeEditarSubtipoCrudo ? { ingresoServicioSubtipoCrudo: ingresoServicioSubtipoCrudo || null } : {
         ingresoFechaIngreso: ingresoFechaIngreso || null,
         ingresoFechaCierre: ingresoFechaCierre || null,
         // El subtipo solo viaja desde RRPP; Comercial y jefatura no lo escriben.
@@ -212,6 +212,7 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp'] });
       queryClient.invalidateQueries({ queryKey: ['proyectos', 'activos'] });
       queryClient.invalidateQueries({ queryKey: ['fichas-trazabilidad', 'pendientes', 'contrato'] });
       queryClient.invalidateQueries({ queryKey: ['metricas', 'comercial'] });
@@ -228,6 +229,7 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp'] });
       queryClient.invalidateQueries({ queryKey: ['proyectos', 'activos'] });
       queryClient.invalidateQueries({ queryKey: ['fichas-trazabilidad', 'pendientes', 'contrato'] });
       queryClient.invalidateQueries({ queryKey: ['metricas', 'comercial'] });

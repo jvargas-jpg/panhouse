@@ -11,6 +11,7 @@ import { registrarEvento } from './auditLog.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItem } from './workItems.js';
 import type { Tx } from './tx.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
+import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 
 export type ActorFicha = { id: string; rol: Rol };
 type Ficha = typeof fichasTrazabilidad.$inferSelect;
@@ -31,10 +32,7 @@ export function diagnosticoListo(
   >,
   servicio: string,
 ) {
-  return (
-    diagnosticoGenerado(ficha) &&
-    (servicio !== 'CR' || !!ficha.ingresoServicioSubtipoCrudo)
-  );
+  return evaluarPreparacionRrpp(ficha, servicio).listoParaJefatura;
 }
 
 // Evidencia guardada en los campos propios del ingreso, también para fichas legacy.
