@@ -17,6 +17,7 @@ export type VistaRrpp =
   | 'ingresos'
   | 'proyectos'
   | 'lanzamientos'
+  | 'indicadores'
   | 'actividad';
 export function RrppSidebarNav({ vista }: { vista: VistaRrpp }) {
   return (
@@ -50,7 +51,8 @@ export function RrppSidebarNav({ vista }: { vista: VistaRrpp }) {
       ))}
       <Link
         to="/rrpp/metricas"
-        className="flex items-center gap-3 rounded-lg px-3.5 py-3 text-sm font-medium text-gray-400 hover:bg-white/5 hover:text-white"
+        aria-current={vista === 'indicadores' ? 'page' : undefined}
+        className={`flex items-center gap-3 rounded-lg px-3.5 py-3 text-sm ${vista === 'indicadores' ? 'border border-dorado/20 bg-dorado/10 font-semibold text-dorado' : 'font-medium text-gray-400 hover:bg-white/5 hover:text-white'}`}
       >
         <RrppIcon nombre="indicadores" className="h-[18px] w-[18px]" />
         Indicadores

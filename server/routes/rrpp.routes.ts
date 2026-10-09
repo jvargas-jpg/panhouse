@@ -8,8 +8,14 @@ import { obtenerDashboardRrpp } from '../helpers/rrppDashboard.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import { catalogosIngresoRrpp, guardarIngresoRrpp, ingresoRrppSchema, obtenerIngresoRrpp, obtenerIngresosRrpp } from '../helpers/rrppIngresos.js';
+import { obtenerIndicadoresRrpp, periodoRrppSchema } from '../helpers/rrppIndicadores.js';
 
 export async function rrppRoutes(app: FastifyInstance) {
+  app.get('/indicadores', { preHandler: [requireAuth, requireRole('rrpp', 'direccion')] }, async (request, reply) => {
+    const query = parseOrReply(periodoRrppSchema, request.query, reply);
+    if (!query) return;
+    return reply.send(await obtenerIndicadoresRrpp(query));
+  });
   app.get('/proyectos', { preHandler: [requireAuth, requireRole('rrpp')] }, async (request, reply) => {
     const filtros = parseOrReply(z.object({ q: z.string().trim().max(150).optional(), servicio: z.string().uuid().optional(), estado: z.enum(ESTADOS_PROYECTO).optional(), rrpp: z.enum(Object.keys(CONTEXTOS_RRPP) as [keyof typeof CONTEXTOS_RRPP, ...(keyof typeof CONTEXTOS_RRPP)[]]).optional(), orden: z.enum(['recientes', 'antiguos', 'autor']).default('recientes'), pagina: z.coerce.number().int().min(1).max(100000).default(1) }).strict(), request.query, reply);
     if (!filtros) return;

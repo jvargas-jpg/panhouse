@@ -13,15 +13,14 @@ import { AutorLayout } from './portalAutor/AutorLayout';
 import { LibroDetalleAutorPage } from './portalAutor/LibroDetalleAutorPage';
 import { FichaTrazabilidadPage } from './proyectos/FichaTrazabilidadPage';
 import { ProyectoDetallePage } from './proyectos/ProyectoDetallePage';
-import { RrppMetricasPage } from './rrpp/RrppMetricasPage';
+import { RrppIndicadoresLoading } from './rrpp/RrppIndicadoresLoading';
 import { RrppIngresosPage } from './rrpp/RrppIngresosPage';
 import { RrppProyectosPage } from './rrpp/RrppProyectosPage';
 import { RrppLanzamientosPage } from './rrpp/RrppLanzamientosPage';
 
-// Carga perezosa: recharts (usado solo acá) agrega ~370kB al bundle
-// principal — nadie más que quien visita Métricas necesita pagar ese
-// peso en el primer load de la app.
+// Los gráficos se comparten entre Indicadores Comerciales y RRPP.
 const MetricasPage = lazy(() => import('./comercial/MetricasPage').then((m) => ({ default: m.MetricasPage })));
+const RrppMetricasPage = lazy(() => import('./rrpp/RrppMetricasPage').then((m) => ({ default: m.RrppMetricasPage })));
 
 export function App() {
   return (
@@ -50,12 +49,8 @@ export function App() {
               </Suspense>
             }
           />
-          {/* "Panel de Rendimiento: Relaciones Públicas" — accesible desde
-              la barra oscura de rrpp (ver el botón "Métricas" en
-              RrppHomePage.tsx). Sin carga perezosa: a diferencia de
-              /comercial/metricas, esta pantalla no usa recharts todavía
-              (datos estáticos, ver el comentario en RrppMetricasPage.tsx). */}
-          <Route path="/rrpp/metricas" element={<RrppMetricasPage />} />
+          {/* Análisis RRPP derivado de PostgreSQL; acceso RRPP/Dirección. */}
+          <Route path="/rrpp/metricas" element={<Suspense fallback={<RrppIndicadoresLoading />}><RrppMetricasPage /></Suspense>} />
           <Route path="/rrpp/ingresos" element={<RrppIngresosPage />} />
           <Route path="/rrpp/proyectos" element={<RrppProyectosPage />} />
           <Route path="/rrpp/lanzamientos" element={<RrppLanzamientosPage />} />

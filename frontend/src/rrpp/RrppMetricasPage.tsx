@@ -1,136 +1,72 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { useRef, useState, type KeyboardEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
 import { useMe } from '../auth/useAuth';
-import { CrmSidebarLayout, NAV_ACTIVO, NAV_INACTIVO } from '../layout/CrmSidebarLayout';
-
-function TarjetaKpi({ etiqueta, valor, ayuda }: { etiqueta: string; valor: string; ayuda: string }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-      <p className="text-xs font-bold uppercase tracking-wide text-gray-500">{etiqueta}</p>
-      <p className="mt-2 text-3xl font-bold text-gray-900">{valor}</p>
-      <p className="mt-1 text-xs text-gray-400">{ayuda}</p>
-    </div>
-  );
-}
-
-function BarraProgreso({ etiqueta, porcentaje }: { etiqueta: string; porcentaje: number }) {
-  return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between text-sm">
-        <span className="font-medium text-gray-700">{etiqueta}</span>
-        <span className="font-bold text-gray-900">{porcentaje}%</span>
-      </div>
-      <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
-        <div className="h-full rounded-full bg-dorado" style={{ width: `${porcentaje}%` }} />
-      </div>
-    </div>
-  );
-}
-
-const SERVICIOS_DEMANDADOS = [
-  { etiqueta: 'Crudo — Tripa', porcentaje: 16 },
-  { etiqueta: 'Ghostwriter', porcentaje: 15 },
-  { etiqueta: 'Sello Editorial', porcentaje: 13 },
-];
-
-const FERIAS_PROYECTADAS = [
-  { feria: 'Bogotá', cantidad: 73 },
-  { feria: 'Guadalajara', cantidad: 60 },
-  { feria: 'Colombia', cantidad: 44 },
-  { feria: 'Panamá', cantidad: 17 },
-];
-
-// "Panel de Rendimiento: Relaciones Públicas" — a pedido explícito del
-// negocio, accesible desde la barra oscura de rrpp (ver el botón
-// "Métricas" en RrppHomePage.tsx). Mismo shell (CrmSidebarLayout.tsx)
-// que esa pantalla — sin él, navegar acá perdería la barra lateral,
-// mismo bug que ya se había corregido una vez para
-// comercial/MetricasPage.tsx (ver el comentario de esa pantalla).
-//
-// Datos estáticos a propósito: el pedido de este round es maquetar la
-// pantalla ("puedes usar datos estáticos por ahora"), no agregar el
-// cálculo real todavía — cuando exista, reemplazar estas constantes por
-// un fetchMetricasRrpp() + useQuery, mismo patrón que
-// comercial/metricasApi.ts + MetricasPage.tsx.
+import { RRPP_FOOTER, RRPP_LOGO, RrppSidebarNav } from './RrppSidebarNav';
+import { fetchIndicadoresRrpp, hoyIndicadoresRrpp, rangoRrpp, type IndicadoresRrpp, type PresetRrpp } from './rrppIndicadoresApi';
+import { BarrasMensualesRrpp, CardIndicadorRrpp, DonutRrpp, fechaIndicador, KpisRrpp, MiniStatsRrpp, nRrpp, RankingRrpp, TablaRrpp } from './RrppIndicadoresComponents';
+import { SkeletonRrpp } from './RrppIndicadoresLoading';
+import { RrppIcon } from './RrppIcons';
+import './rrppIndicadores.css';
+const TABS = [ ['resumen', 'Resumen'], ['lanzamientos', 'Lanzamientos'], ['eventos', 'Eventos'], ['publicaciones', 'Publicaciones'], ['reuniones', 'Reuniones y satisfacción'], ['oportunidades', 'Oportunidades'], ['historico', 'Histórico'] ] as const;
+type Tab = typeof TABS[number][0];
 export function RrppMetricasPage() {
-  const { data: usuario } = useMe();
-  const rol = usuario?.rol;
-  const navigate = useNavigate();
-  // Mismo alcance que el resto del módulo de rrpp
-  // (FichaTrazabilidadPage.tsx/RrppHomePage.tsx): rrpp y jefe_area.
-  const puedeVer = rol === 'rrpp' || rol === 'jefe_area';
-
-  if (!puedeVer) {
-    return (
-      <div className="flex min-h-screen w-full flex-col items-center justify-center gap-4 bg-crema/10 p-6 text-center">
-        <p className="text-tinta">No tenés acceso a esta sección.</p>
-        <Link to="/" className="text-sm text-dorado hover:underline">
-          ← Volver al inicio
-        </Link>
-      </div>
-    );
+  const { data: user } = useMe();
+  const permitido = user?.rol === 'rrpp' || user?.rol === 'direccion';
+  const direccion = user?.rol === 'direccion';
+  const [rango, setRango] = useState(() => rangoRrpp('ano', hoyIndicadoresRrpp()));
+  const [tab, setTab] = useState<Tab>('resumen');
+  const query = useQuery({ queryKey: ['rrpp', 'indicadores', rango.from, rango.to], queryFn: () => fetchIndicadoresRrpp(rango.from, rango.to), enabled: permitido });
+  const data = query.data;
+  function teclado(e: KeyboardEvent<HTMLButtonElement>, i: number) {
+    const offset = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0;
+    if (!offset && e.key !== 'Home' && e.key !== 'End') return;
+    e.preventDefault();
+    const next = e.key === 'Home' ? 0 : e.key === 'End' ? TABS.length - 1 : (i + offset + TABS.length) % TABS.length;
+    setTab(TABS[next]![0]);
+    e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();
   }
-
-  return (
-    <CrmSidebarLayout
-      nav={
-        <>
-          <button onClick={() => navigate('/')} className={NAV_INACTIVO}>
-            Proyectos
-          </button>
-          <button onClick={() => navigate('/')} className={NAV_INACTIVO}>
-            Matrices de Ingreso
-          </button>
-
-          <div className="my-4 border-t border-gray-800" />
-
-          <button className={NAV_ACTIVO}>
-            <span className="h-1.5 w-1.5 rounded-full bg-dorado" />
-            Métricas
-          </button>
-        </>
-      }
-    >
-      <div className="rounded-2xl bg-gray-50 p-6 sm:p-8">
-        <h1 className="mb-8 text-2xl font-bold tracking-tight text-gray-900">Panel de Rendimiento: Relaciones Públicas</h1>
-
-        <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <TarjetaKpi etiqueta="Total en Radar" valor="353" ayuda="Proyectos históricos en ingreso" />
-          <TarjetaKpi etiqueta="Carga Operativa Activa" valor="234" ayuda="Proyectos en asesoramiento y espera de lanzamiento" />
-          <TarjetaKpi etiqueta="Cuello de Botella" valor="87.5%" ayuda="Proyectos estancados en 'Reunión de Ingreso'" />
-          <TarjetaKpi etiqueta="Satisfacción General" valor="55% Excelente" ayuda="38% Bueno" />
-        </div>
-
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-5 text-base font-bold text-gray-900">Top Servicios Demandados</h2>
-            <div className="space-y-4">
-              {SERVICIOS_DEMANDADOS.map((servicio) => (
-                <BarraProgreso key={servicio.etiqueta} etiqueta={servicio.etiqueta} porcentaje={servicio.porcentaje} />
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-5 text-base font-bold text-gray-900">Proyección de Ferias</h2>
-            <ul className="divide-y divide-gray-100">
-              {FERIAS_PROYECTADAS.map((fila) => (
-                <li key={fila.feria} className="flex items-center justify-between py-2.5 text-sm">
-                  <span className="font-medium text-gray-700">{fila.feria}</span>
-                  <span className="font-bold text-gray-900">{fila.cantidad}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm lg:col-span-2">
-            <h2 className="mb-5 text-base font-bold text-gray-900">Cumplimiento Documental</h2>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <BarraProgreso etiqueta="Contrato firmado por RRPP" porcentaje={19} />
-              <BarraProgreso etiqueta="Bienvenida generada" porcentaje={53} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </CrmSidebarLayout>
-  );
+  return <CrmSidebarLayout logo={RRPP_LOGO} footer={RRPP_FOOTER} nav={<RrppSidebarNav vista="indicadores" />} contentMaxWidth="max-w-[1680px]" contentClassName="px-4 py-5 sm:px-6 sm:py-5"><div className="rrpp-indicadores">
+    <header className="rrpp-i-header"><div><h1><span aria-hidden="true" />Indicadores</h1><p>Visualiza el impacto y avance de las acciones de RRPP en los proyectos editoriales.</p></div><SelectorPeriodo rango={rango} cambiar={setRango} /></header>
+    {!permitido ? <p role="alert">No tienes acceso a Indicadores RRPP.</p> : <><div className="rrpp-i-tabs" role="tablist" aria-label="Análisis de RRPP">{TABS.map(([id, label], i) => <button key={id} type="button" role="tab" id={`rrpp-i-tab-${id}`} aria-controls="rrpp-i-panel" aria-selected={tab === id} tabIndex={tab === id ? 0 : -1} onClick={() => setTab(id)} onKeyDown={e => teclado(e, i)}>{label}</button>)}</div>
+    <div role="tabpanel" id="rrpp-i-panel" aria-labelledby={`rrpp-i-tab-${tab}`} className="rrpp-i-panel" aria-busy={query.isFetching}>{query.isLoading && <SkeletonRrpp />}{query.isError && <div role="alert" className="rrpp-i-error"><p>No se pudieron cargar los indicadores de este período.</p><button onClick={() => void query.refetch()}>Reintentar</button></div>}{data && <>
+      {tab === 'resumen' && <Resumen data={data} direccion={direccion} />}{tab === 'lanzamientos' && <Lanzamientos data={data} direccion={direccion} />}{tab === 'eventos' && <Eventos data={data} direccion={direccion} />}{tab === 'publicaciones' && <Publicaciones data={data} direccion={direccion} />}{tab === 'reuniones' && <Reuniones data={data} />}{tab === 'oportunidades' && <Oportunidades data={data} />}{tab === 'historico' && <Historico data={data} />}
+      <p className="rrpp-i-footnote">Período inclusivo: {fechaIndicador(data.periodo.from)} – {fechaIndicador(data.periodo.to)} · Caracas. Comparación: {fechaIndicador(data.periodo.anteriorFrom)} – {fechaIndicador(data.periodo.anteriorTo)} ({data.periodo.dias} días en cada intervalo).</p>
+    </>}</div></>}
+  </div></CrmSidebarLayout>;
+}
+function SelectorPeriodo({ rango, cambiar }: { rango: { from: string; to: string }; cambiar: (r: { from: string; to: string }) => void }) {
+  const [preset, setPreset] = useState<PresetRrpp>('ano'); const [draft, setDraft] = useState(rango); const [error, setError] = useState(''); const ref = useRef<HTMLDetailsElement>(null);
+  return <details className="rrpp-i-period" ref={ref}><summary aria-label="Seleccionar período de indicadores RRPP"><RrppIcon nombre="calendario" className="h-4 w-4" /><span>{fechaIndicador(rango.from)} – {fechaIndicador(rango.to)}</span><svg aria-hidden="true" viewBox="0 0 12 12" className="h-3 w-3" fill="none" stroke="currentColor"><path d="m3 4 3 3 3-3" /></svg></summary><form onSubmit={e => {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const fechas = { from: String(form.get('from') ?? ''), to: String(form.get('to') ?? '') };
+    if (!fechas.from || !fechas.to || fechas.from > fechas.to || (Date.parse(fechas.to) - Date.parse(fechas.from)) / 86400000 > 731) { setError('Selecciona un rango válido de hasta 732 días.'); return; }
+    cambiar(fechas); setDraft(fechas); setError(''); if (ref.current) ref.current.open = false;
+  }}><label>Período<select value={preset} onChange={e => { const value = e.target.value as PresetRrpp; setPreset(value); setError(''); if (value !== 'custom') setDraft(rangoRrpp(value, hoyIndicadoresRrpp())); }}><option value="mes">Mes actual</option><option value="3m">Últimos 3 meses</option><option value="6m">Últimos 6 meses</option><option value="ano">Año actual</option><option value="custom">Rango personalizado</option></select></label><div className="rrpp-i-date-fields"><label>Desde<input type="date" name="from" required value={draft.from} onChange={e => { setPreset('custom'); setDraft({ ...draft, from: e.target.value }); }} /></label><label>Hasta<input type="date" name="to" required value={draft.to} onChange={e => { setPreset('custom'); setDraft({ ...draft, to: e.target.value }); }} /></label></div>{error && <p role="alert">{error}</p>}<p>Meses calendario hasta hoy. Ambos extremos incluidos.</p><button type="submit">Aplicar período</button></form></details>;
+}
+const notaCohorte = 'Estado actual de los proyectos cuya planificación se activó en el período; incluye planes cancelados y fases sin clasificar.';
+function Resumen({ data, direccion }: { data: IndicadoresRrpp; direccion: boolean }) {
+  return <div className="rrpp-i-stack"><KpisRrpp data={data} /><div className="rrpp-i-main-grid"><CardIndicadorRrpp titulo="Lanzamientos realizados por mes" icono="ingreso"><BarrasMensualesRrpp data={data.monthly} serie="lanzamientos" nombre="Lanzamientos realizados" /><p className="rrpp-i-note">Eventos de lanzamiento completados, por fecha del evento.</p></CardIndicadorRrpp><CardIndicadorRrpp titulo="Estado actual de proyectos en planificación" icono="calendario"><DonutRrpp data={data.launches.fases} /><p className="rrpp-i-note">Cohorte activada en el período · fases actuales.</p></CardIndicadorRrpp></div><div className="rrpp-i-three-grid"><CardIndicadorRrpp titulo="Tipos de eventos registrados" icono="ingreso"><RankingRrpp data={data.events.tipos} /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Piezas registradas por tipo" icono="lanzamiento"><DonutRrpp data={data.publications.tipos} unidad="piezas" /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Estado de publicaciones" icono="lanzamiento"><RankingRrpp data={data.publications.estados} /></CardIndicadorRrpp></div><div className="rrpp-i-two-grid"><CardIndicadorRrpp titulo="Próximos lanzamientos pautados" icono="calendario" extra={!direccion && <Link to="/rrpp/lanzamientos">Ver todos</Link>}><TablaRrpp filas={data.upcoming} direccion={direccion} /><p className="rrpp-i-note">Fechas futuras pautadas por el autor · independiente del período histórico.</p></CardIndicadorRrpp><CardIndicadorRrpp titulo="Últimas piezas registradas" icono="lanzamiento" extra={!direccion && <Link to="/rrpp/lanzamientos?tab=publicaciones">Ver todas</Link>}><TablaRrpp filas={data.recent} publicaciones direccion={direccion} /><p className="rrpp-i-note">Fecha de registro y estado actual; no equivale a fecha efectiva de publicación.</p></CardIndicadorRrpp></div><p className="rrpp-i-note">Fases, satisfacción e intereses: estado actual de la cohorte activada en el período. Piezas por tipo/estado: registros creados en el período.</p></div>;
+}
+function Lanzamientos({ data, direccion }: { data: IndicadoresRrpp; direccion: boolean }) {
+  return <div className="rrpp-i-stack"><MiniStatsRrpp stats={[{ label: 'Planificaciones activadas', valor: data.summary.proyectosConPlan }, { label: 'Lanzamientos realizados', valor: data.launches.realizados, nota: 'Eventos completados de lanzamiento' }, { label: 'Planes cancelados', valor: data.launches.cancelados, nota: 'Estado actual de la cohorte' }]} /><div className="rrpp-i-main-grid"><CardIndicadorRrpp titulo="Planificaciones y lanzamientos por mes"><BarrasMensualesRrpp data={data.monthly} serie="planificaciones" nombre="Planificaciones activadas" segunda="lanzamientos" nombreSegunda="Lanzamientos realizados" /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Fases actuales"><DonutRrpp data={data.launches.fases} /></CardIndicadorRrpp></div><div className="rrpp-i-two-grid"><CardIndicadorRrpp titulo="Disponibilidad de fecha"><RankingRrpp data={data.launches.fechas} /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Ferias proyectadas"><RankingRrpp data={data.launches.ferias} /></CardIndicadorRrpp></div><CardIndicadorRrpp titulo="Próximos lanzamientos pautados" icono="calendario"><TablaRrpp filas={data.upcoming} direccion={direccion} /><p className="rrpp-i-note">Solo fecha pautada por el autor, posterior a hoy. Excluye culminados, cancelados y proyectos retirados. Independiente del período histórico.</p></CardIndicadorRrpp><p className="rrpp-i-note">{notaCohorte} Una planificación activada no implica un lanzamiento realizado.</p></div>;
+}
+function Eventos({ data, direccion }: { data: IndicadoresRrpp; direccion: boolean }) {
+  return <div className="rrpp-i-stack"><MiniStatsRrpp stats={[{ label: 'Eventos registrados', valor: data.events.total, nota: 'Por fecha del evento en el período' }, { label: 'Eventos realizados', valor: data.summary.eventosRealizados, nota: 'Completados y con fecha no futura' }, { label: 'Tipos registrados', valor: data.events.tipos.length }]} /><div className="rrpp-i-main-grid"><CardIndicadorRrpp titulo="Eventos realizados por mes"><BarrasMensualesRrpp data={data.monthly} serie="eventos" nombre="Eventos realizados" /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Estado de eventos"><DonutRrpp data={data.events.estados} unidad="eventos" /></CardIndicadorRrpp></div><CardIndicadorRrpp titulo="Tipos de eventos"><RankingRrpp data={data.events.tipos} /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Próximos eventos del período" icono="calendario"><TablaRrpp filas={data.events.proximos} eventos direccion={direccion} /></CardIndicadorRrpp><p className="rrpp-i-note">Las fechas pasadas no prueban realización: se exige estado Completada. Los lugares se conservan como texto registrado, sin geolocalización.</p></div>;
+}
+function Publicaciones({ data, direccion }: { data: IndicadoresRrpp; direccion: boolean }) {
+  return <div className="rrpp-i-stack"><MiniStatsRrpp stats={[{ label: 'Piezas registradas', valor: data.publications.total, nota: 'Creadas en el período' }, { label: 'Piezas publicadas', valor: data.summary.piezasPublicadas, nota: 'Primera confirmación auditada en el período' }, { label: 'Publicadas sin fecha verificable', valor: data.publications.publicadasSinFecha, nota: 'Base completa · excluidas del KPI temporal' }]} /><div className="rrpp-i-main-grid"><CardIndicadorRrpp titulo="Registro y publicación por mes"><BarrasMensualesRrpp data={data.monthly} serie="piezas" nombre="Piezas registradas" segunda="publicaciones" nombreSegunda="Publicación confirmada" /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Tipos de piezas"><DonutRrpp data={data.publications.tipos} unidad="piezas" /></CardIndicadorRrpp></div><CardIndicadorRrpp titulo="Estado actual de las piezas del período"><RankingRrpp data={data.publications.estados} /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Últimas piezas registradas"><TablaRrpp filas={data.recent} publicaciones direccion={direccion} /></CardIndicadorRrpp><p className="rrpp-i-note">La confirmación en PanHouse registra una publicación realizada por RRPP; su fecha no es la fecha efectiva en una red social. Sin canales registrados, no se atribuyen plataformas ni alcance.</p></div>;
+}
+function Reuniones({ data }: { data: IndicadoresRrpp }) {
+  const m = data.meetings;
+  const tipos = [{ nombre: 'Primera reunión', cantidad: m.primeras }, { nombre: 'Segunda reunión', cantidad: m.segundas }, { nombre: 'Asesoría adicional', cantidad: m.adicionales }].map(d => ({ ...d, porcentaje: m.realizadas ? Math.round(d.cantidad / m.realizadas * 1000) / 10 : 0 })).filter(d => d.cantidad > 0);
+  return <div className="rrpp-i-stack"><MiniStatsRrpp stats={[{ label: 'Reuniones realizadas', valor: m.realizadas, nota: 'Fecha del período · realización confirmada' }, { label: 'Promedio por planificación', valor: m.promedio, nota: 'Reuniones del período / planes de la cohorte' }, { label: 'Segunda reunión pendiente', valor: m.pendientesSegunda, nota: 'Planes de la cohorte sin confirmación' }, { label: 'Reuniones sin confirmación', valor: m.sinConfirmacion, nota: 'Fecha registrada · realización desconocida' }]} /><div className="rrpp-i-main-grid"><CardIndicadorRrpp titulo="Reuniones realizadas por mes" icono="calendario"><BarrasMensualesRrpp data={data.monthly} serie="reuniones" nombre="Reuniones realizadas" /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Tipos de reuniones realizadas"><RankingRrpp data={tipos} /></CardIndicadorRrpp></div><div className="rrpp-i-two-grid"><CardIndicadorRrpp titulo="Distribución de satisfacción"><DonutRrpp data={data.satisfaction} unidad="proyectos" /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Valoraciones registradas" icono="check"><p className="rrpp-i-highlight">{data.summary.satisfaccionExcelente === null ? 'Sin valoraciones' : `${nRrpp(data.summary.satisfaccionExcelente)}% Excelente`}</p><p className="rrpp-i-note">Sobre {nRrpp(data.summary.valoraciones)} valoraciones cualitativas de la cohorte. «Sin registrar» se muestra en la distribución y no entra en el denominador de satisfacción.</p></CardIndicadorRrpp></div><p className="rrpp-i-note">Solo reuniones de lanzamiento/promoción de RRPP. Fechas canónicas de primera y segunda reunión más asesorías adicionales, sin duplicar aliases históricos. No se infiere realización de registros antiguos.</p></div>;
+}
+function Oportunidades({ data }: { data: IndicadoresRrpp }) {
+  return <div className="rrpp-i-stack"><MiniStatsRrpp stats={[{ label: 'Intereses adicionales registrados', valor: data.summary.oportunidades }, { label: 'Proyectos con intereses', valor: data.opportunities.proyectos }, { label: 'Tipos de interés', valor: data.opportunities.tipos.length }]} /><div className="rrpp-i-two-grid"><CardIndicadorRrpp titulo="Intereses registrados por tipo" icono="rapido"><RankingRrpp data={data.opportunities.tipos} /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Distribución de oportunidades"><DonutRrpp data={data.opportunities.tipos} unidad="intereses" /></CardIndicadorRrpp></div><p className="rrpp-i-note">Cada combinación proyecto + interés explícito de venta cruzada cuenta una vez. Un proyecto puede registrar varios intereses. Estado actual de la cohorte: no representa ventas cerradas, servicios ejecutados ni un embudo comercial.</p></div>;
+}
+function Historico({ data }: { data: IndicadoresRrpp }) {
+  return <div className="rrpp-i-stack"><KpisRrpp data={data} /><div className="rrpp-i-two-grid"><CardIndicadorRrpp titulo="Actividad del período seleccionado"><BarrasMensualesRrpp data={data.monthly} serie="eventos" nombre="Eventos realizados" segunda="publicaciones" nombreSegunda="Piezas publicadas" /></CardIndicadorRrpp><CardIndicadorRrpp titulo="Actividad del período anterior"><BarrasMensualesRrpp data={data.previousMonthly} serie="eventos" nombre="Eventos realizados" segunda="publicaciones" nombreSegunda="Piezas publicadas" /></CardIndicadorRrpp></div><CardIndicadorRrpp titulo="Detalle mensual del período"><div className="rrpp-i-table-scroll" tabIndex={0}><table className="rrpp-i-table"><thead><tr><th>Mes</th><th>Planes activados</th><th>Lanzamientos realizados</th><th>Eventos realizados</th><th>Piezas publicadas</th><th>Reuniones realizadas</th></tr></thead><tbody>{data.monthly.map(m => <tr key={m.clave}><th scope="row">{m.mes}</th><td>{m.planificaciones}</td><td>{m.lanzamientos}</td><td>{m.eventos}</td><td>{m.publicaciones}</td><td>{m.reuniones}</td></tr>)}</tbody></table></div></CardIndicadorRrpp><p className="rrpp-i-note">Dos intervalos de {data.periodo.dias} días. Sin base previa, no se calcula variación. Satisfacción e intereses son observaciones actuales de la cohorte y no se comparan históricamente. Los originales de la Matriz histórica aún no están importados.</p></div>;
 }
