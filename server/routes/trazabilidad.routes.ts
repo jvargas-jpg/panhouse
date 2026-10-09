@@ -549,7 +549,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       if (body.ingresoServicioSubtipoCrudo !== undefined && request.user?.rol !== 'rrpp') {
         return reply.code(403).send({ error: 'La especificación de Crudo corresponde a RRPP' });
       }
-      const ficha = await actualizarSeccionProyectoPerfil(params.proyectoId, body);
+      const ficha = await actualizarSeccionProyectoPerfil(params.proyectoId, body, request.user);
       return reply.send({ ficha });
     },
   );
@@ -563,7 +563,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(seccionProyectoContratoSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionProyectoContrato(params.proyectoId, body);
+      const ficha = await actualizarSeccionProyectoContrato(params.proyectoId, body, request.user);
       return reply.send({ ficha });
     },
   );
@@ -582,7 +582,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(seccionFichaEditorialSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionFichaEditorial(params.proyectoId, body);
+      const ficha = await actualizarSeccionFichaEditorial(params.proyectoId, body, request.user);
       return reply.send({ ficha });
     },
   );
@@ -598,7 +598,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(seccionMatrizIngresoSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionMatrizIngreso(params.proyectoId, body);
+      const ficha = await actualizarSeccionMatrizIngreso(params.proyectoId, body, request.user);
       return reply.send({ ficha });
     },
   );

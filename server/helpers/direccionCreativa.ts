@@ -337,6 +337,10 @@ export async function aprobarConceptoRrpp(propuestaId: string, datos: DatosAprob
 
     const direccion = await obtenerDireccionCreativa(tx, propuesta.direccionCreativaId);
     if (!direccion) return { ok: false, status: 404, error: 'Dirección creativa no encontrada' };
+    const [item] = await tx.select({ estado: workItemsTable.estado }).from(workItemsTable).where(eq(workItemsTable.id, direccion.workItemId));
+    if (direccion.tipo !== 'concepto_portada' || direccion.fechaCierre || !item || ['completado', 'cancelado'].includes(item.estado)) {
+      return { ok: false, status: 409, error: 'Esta intervención no admite aprobación de conceptos por RRPP' };
+    }
 
     await tx
       .update(fichaDisenoPropuestas)
@@ -675,6 +679,10 @@ export async function listarMisDireccionesCreativas(liderCreativoId: string): Pr
 }
 
 export interface PropuestaPendienteRrpp {
+  workItemEstado: string;
+  estado: string | null;
+  tipo: string;
+  fechaCierre: string | null;
   propuestaId: string;
   direccionCreativaId: string;
   proyectoId: string;
@@ -693,6 +701,10 @@ export interface PropuestaPendienteRrpp {
 export async function listarPropuestasPendientesRrpp(): Promise<PropuestaPendienteRrpp[]> {
   return db
     .select({
+      estado: fichaDisenoPropuestas.estado,
+      workItemEstado: workItemsTable.estado,
+      tipo: direccionesCreativas.tipo,
+      fechaCierre: direccionesCreativas.fechaCierre,
       propuestaId: fichaDisenoPropuestas.id,
       direccionCreativaId: direccionesCreativas.id,
       proyectoId: proyectos.id,
@@ -704,6 +716,7 @@ export async function listarPropuestasPendientesRrpp(): Promise<PropuestaPendien
     })
     .from(fichaDisenoPropuestas)
     .innerJoin(direccionesCreativas, eq(fichaDisenoPropuestas.direccionCreativaId, direccionesCreativas.id))
+    .innerJoin(workItemsTable, eq(direccionesCreativas.workItemId, workItemsTable.id))
     .innerJoin(proyectos, eq(direccionesCreativas.proyectoId, proyectos.id))
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .where(isNull(fichaDisenoPropuestas.fechaAprobadaRrpp))

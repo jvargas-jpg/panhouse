@@ -38,6 +38,7 @@ function DatosGeneralesLanzamiento({
     mutationFn: () => actualizarSeccionLanzamientoGeneral(proyectoId, { nivelSatisfaccion: nivelSatisfaccion || null }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
     },
   });
 
@@ -122,6 +123,7 @@ function ReunionRow({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
       setEditando(false);
     },
   });
@@ -130,6 +132,7 @@ function ReunionRow({
     mutationFn: () => eliminarReunionLanzamiento(proyectoId, reunion.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
     },
   });
 
@@ -244,6 +247,7 @@ function ContenidoLanzamientoMicro({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
       setPuntosTratados('');
       setAcuerdos('');
     },

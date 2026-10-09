@@ -1,91 +1,244 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { CrmSidebarLayout, NAV_ACTIVO, NAV_INACTIVO } from '../layout/CrmSidebarLayout';
-import { ListaProyectosPendientes } from '../proyectos/ListaProyectosPendientes';
-import { fetchProyectosEnviadosARrpp } from '../proyectos/proyectosPendientesApi';
-import { PendientesAprobacionCreativaPanel } from './PendientesAprobacionCreativaPanel';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMe } from '../auth/useAuth';
+import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
+import {
+  fetchDashboardRrpp,
+  iniciarDiagnostico,
+  type ConceptosRrpp,
+} from './rrppDashboardApi';
+import {
+  RRPP_FOOTER,
+  RRPP_LOGO,
+  RrppSidebarNav,
+  type VistaRrpp,
+} from './RrppSidebarNav';
+import {
+  ActivityPanel,
+  ErrorRrpp,
+  fechaActividad,
+  LaunchPanel,
+  RrppKpis,
+} from './RrppDashboardCards';
+import { RrppInbox, type TabRrpp } from './RrppInbox';
+import { ReviewConceptsModal } from './ReviewConceptsModal';
 
-type Vista = 'proyectos' | 'matrices' | 'aprobacion-creativa';
-
-// Primera pantalla de inicio propia de rrpp — antes caía en el mensaje
-// genérico de HomePage.tsx.
-//
-// Mismo shell de barra lateral oscura que AutoresPage.tsx
-// (Comercial/Dirección) — CrmSidebarLayout.tsx, extraído de ahí a
-// pedido explícito del negocio: "menú lateral" se refería a esa barra
-// global (logo PanHouse + navegación), no a un submenú propio dentro de
-// la página (el grid grid-cols-12 con fondo claro de la ronda
-// anterior, ya eliminado). No se agregó "Clientes" acá: aunque rrpp
-// puede leer /api/autores (ROLES_LECTURA_AUTORES), nunca tuvo una
-// pantalla de Clientes propia y el pedido lo dejó como opcional — se
-// suma fácil más adelante si el negocio lo confirma, reutilizando
-// ClientesGrid.tsx tal cual (ya es de solo lectura para quien no puede
-// editar/eliminar, ver autoresApi.ts).
-//
-// Ambas pestañas comparten la ÚNICA consulta real de "proyectos en la
-// cancha de rrpp" (fetchProyectosEnviadosARrpp, notificadoRrpp = true,
-// mismo queryKey en las dos) — no son rutas propias (mismo patrón
-// vistaActiva que ya usaba AutoresPage.tsx para Proyectos/Clientes),
-// pero cambiar de pestaña no dispara un segundo fetch ni recarga la
-// página, solo cambia cómo se navega desde cada fila: "Proyectos" va al
-// detalle completo (/proyectos/:id), "Matrices de Ingreso" va directo a
-// la Ficha de Trazabilidad (/proyectos/:id/ficha-trazabilidad, ver
-// FichaTrazabilidadPage.tsx — ahí vive la Matriz de Ingreso desde que se
-// fusionó con el resto de la Fase 1).
 export function RrppHomePage() {
-  const [vistaActiva, setVistaActiva] = useState<Vista>('proyectos');
+  const { data: usuario } = useMe();
+  const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
-
+  const queryClient = useQueryClient();
+  const query = useQuery({
+    queryKey: ['rrpp', 'dashboard'],
+    queryFn: fetchDashboardRrpp,
+    enabled: usuario?.rol === 'rrpp',
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
+    refetchInterval: 60000,
+  });
+  const vistaParam = params.get('vista');
+  const vista: VistaRrpp =
+    vistaParam === 'ingresos' ||
+    vistaParam === 'proyectos' ||
+    vistaParam === 'lanzamientos' ||
+    vistaParam === 'actividad'
+      ? vistaParam
+      : 'inicio';
+  const tabParam = params.get('tab');
+  const tab: TabRrpp =
+    vista === 'lanzamientos'
+      ? 'lanzamientos'
+      : vista === 'ingresos'
+        ? 'ingresos'
+        : tabParam === 'conceptos' ||
+            tabParam === 'lanzamientos' ||
+            tabParam === 'todos'
+          ? tabParam
+          : 'ingresos';
+  const estadoParam = params.get('estado');
+  const estado =
+    vista !== 'proyectos' &&
+    tab === 'ingresos' &&
+    (estadoParam === 'nuevo' || estadoParam === 'diagnostico')
+      ? estadoParam
+      : undefined;
+  const [revision, setRevision] = useState<ConceptosRrpp | null>(null);
+  const [aviso, setAviso] = useState('');
+  useEffect(() => {
+    if (!aviso) return;
+    const timer = setTimeout(() => setAviso(''), 4000);
+    return () => clearTimeout(timer);
+  }, [aviso]);
+  const inicio = useMutation({
+    mutationFn: iniciarDiagnostico,
+    onSuccess: async (_, id) => {
+      await Promise.all(
+        [
+          ['rrpp', 'dashboard'],
+          ['fichas-trazabilidad', 'enviados-a-rrpp'],
+          ['ficha', id],
+          ['proyecto', id],
+        ].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
+      navigate(`/proyectos/${id}/ficha-trazabilidad`);
+    },
+  });
+  function seleccionar(
+    tabSeleccionado: TabRrpp,
+    filtro?: 'nuevo' | 'diagnostico',
+  ) {
+    setParams({ tab: tabSeleccionado, ...(filtro ? { estado: filtro } : {}) });
+  }
+  const reintentar = () => {
+    void query.refetch();
+  };
+  if (usuario && usuario.rol !== 'rrpp')
+    return (
+      <p role="alert" className="p-6">
+        No tienes acceso al inicio de RRPP.
+      </p>
+    );
   return (
     <CrmSidebarLayout
-      nav={
+      nav={<RrppSidebarNav vista={vista} />}
+      logo={RRPP_LOGO}
+      footer={RRPP_FOOTER}
+      contentMaxWidth="max-w-[1600px]"
+      contentClassName="px-4 py-8 sm:px-7"
+      overlays={
         <>
-          <button onClick={() => setVistaActiva('proyectos')} className={vistaActiva === 'proyectos' ? NAV_ACTIVO : NAV_INACTIVO}>
-            {vistaActiva === 'proyectos' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
-            Proyectos
-          </button>
-          <button onClick={() => setVistaActiva('matrices')} className={vistaActiva === 'matrices' ? NAV_ACTIVO : NAV_INACTIVO}>
-            {vistaActiva === 'matrices' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
-            Matrices de Ingreso
-          </button>
-
-          {/* Fase 5 (5C Dirección Creativa) — contexto deliberadamente
-              separado del intake inicial (master prompt §27: "RRPP tiene
-              dos contextos distintos y la UI debe preservarlo"). */}
-          <button
-            onClick={() => setVistaActiva('aprobacion-creativa')}
-            className={vistaActiva === 'aprobacion-creativa' ? NAV_ACTIVO : NAV_INACTIVO}
-          >
-            {vistaActiva === 'aprobacion-creativa' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
-            Aprobación Creativa
-          </button>
-
-          <div className="my-4 border-t border-gray-800" />
-
-          <button onClick={() => navigate('/rrpp/metricas')} className={NAV_INACTIVO}>
-            Métricas
-          </button>
+          {revision && (
+            <ReviewConceptsModal
+              grupo={revision}
+              onClose={() => setRevision(null)}
+              onGuardado={(mensaje) => {
+                setRevision(null);
+                setAviso(mensaje);
+              }}
+            />
+          )}
+          {aviso && (
+            <div
+              role="status"
+              className="fixed bottom-6 right-4 z-50 max-w-[calc(100%-2rem)] rounded-lg bg-gray-900 px-5 py-3 text-sm text-white shadow-lg"
+            >
+              {aviso}
+            </div>
+          )}
         </>
       }
     >
-      {vistaActiva === 'proyectos' && (
-        <ListaProyectosPendientes
-          titulo="Proyectos asignados a ti"
-          queryKey={['fichas-trazabilidad', 'enviados-a-rrpp']}
-          queryFn={fetchProyectosEnviadosARrpp}
-          mensajeVacio="Todavía no hay proyectos enviados a RRPP."
-        />
-      )}
-      {vistaActiva === 'matrices' && (
-        <ListaProyectosPendientes
-          titulo="Matrices de Ingreso (RRPP)"
-          queryKey={['fichas-trazabilidad', 'enviados-a-rrpp']}
-          queryFn={fetchProyectosEnviadosARrpp}
-          mensajeVacio="Todavía no hay proyectos enviados a RRPP."
-          linkTo={(proyecto) => `/proyectos/${proyecto.id}/ficha-trazabilidad`}
-        />
-      )}
-      {vistaActiva === 'aprobacion-creativa' && <PendientesAprobacionCreativaPanel />}
+      <header className="mb-5">
+        <h1 className="text-[26px] font-bold leading-8 tracking-tight text-gray-900">
+          Bienvenido, {usuario?.nombre ?? '…'}
+        </h1>
+        <p className="mt-2 text-base leading-6 text-slate-500">
+          Gestiona nuevos ingresos, aprobaciones y acciones de RRPP para los
+          proyectos editoriales.
+        </p>
+        <nav
+          aria-label="Navegación RRPP"
+          className="mt-4 flex flex-wrap gap-3 text-xs text-slate-600 md:hidden"
+        >
+          <Link to="/">Inicio</Link>
+          <Link to="/?vista=ingresos">Ingresos</Link>
+          <Link to="/?vista=proyectos">Proyectos</Link>
+          <Link to="/?vista=lanzamientos">Lanzamientos y eventos</Link>
+          <Link to="/rrpp/metricas">Indicadores</Link>
+        </nav>
+      </header>
+      <RrppKpis
+        kpis={query.data?.kpis}
+        loading={query.isLoading}
+        error={query.isError}
+        onRetry={reintentar}
+        onSelect={(t, proceso) =>
+          seleccionar(
+            t,
+            t === 'ingresos' ? (proceso ? 'diagnostico' : 'nuevo') : undefined,
+          )
+        }
+      />
+      <div className="grid min-w-0 grid-cols-1 items-start gap-5 min-[1440px]:grid-cols-[minmax(0,1fr)_300px]">
+        {vista === 'actividad' ? (
+          <section className="min-w-0 rounded-xl border border-gray-200/70 bg-white p-5 shadow-sm">
+            <h2 className="mb-4 text-base font-bold text-gray-900">
+              Actividad reciente
+            </h2>
+            {query.isLoading ? (
+              <div
+                aria-label="Cargando actividad"
+                className="h-48 animate-pulse rounded bg-gray-50"
+              />
+            ) : query.isError ? (
+              <ErrorRrpp onRetry={reintentar} />
+            ) : !query.data?.actividad.length ? (
+              <p className="text-sm text-slate-500">
+                No hay actividad reciente registrada.
+              </p>
+            ) : (
+              <ol className="divide-y divide-gray-100">
+                {query.data.actividad.map((a) => (
+                  <li key={a.id} className="py-3">
+                    <Link
+                      to={`/proyectos/${a.proyecto.id}/ficha-trazabilidad`}
+                      className="text-sm font-semibold text-gray-900 hover:underline"
+                    >
+                      {a.titulo}
+                    </Link>
+                    <p className="mt-1 break-words text-xs text-slate-500">
+                      {a.proyecto.nombre} — #{a.proyecto.codigo} ·{' '}
+                      {fechaActividad(a.fecha)}
+                    </p>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        ) : (
+          <RrppInbox
+            datos={query.data}
+            tab={tab}
+            estado={estado}
+            proyectos={vista === 'proyectos'}
+            loading={query.isLoading}
+            error={query.isError}
+            onRetry={reintentar}
+            onTab={(t) => seleccionar(t)}
+            onQuitarFiltro={() => seleccionar(tab)}
+            iniciar={(id) => inicio.mutate(id)}
+            iniciandoId={inicio.isPending ? inicio.variables : undefined}
+            errorInicio={
+              inicio.isError
+                ? {
+                    id: inicio.variables!,
+                    mensaje:
+                      inicio.error instanceof Error
+                        ? inicio.error.message
+                        : 'No se pudo iniciar el diagnóstico. Intenta de nuevo.',
+                  }
+                : undefined
+            }
+            revisar={setRevision}
+          />
+        )}
+        <aside className="grid min-w-0 gap-4 sm:grid-cols-2 min-[1440px]:grid-cols-1">
+          <LaunchPanel
+            datos={query.data?.lanzamientos ?? []}
+            loading={query.isLoading}
+            error={query.isError}
+            onRetry={reintentar}
+          />
+          <ActivityPanel
+            datos={query.data?.actividad ?? []}
+            loading={query.isLoading}
+            error={query.isError}
+            onRetry={reintentar}
+          />
+        </aside>
+      </div>
     </CrmSidebarLayout>
   );
 }

@@ -1,3 +1,4 @@
+import { auditarCambioFicha, type ActorFicha } from './intakeRrpp.js';
 import { and, desc, eq, inArray, isNull, notInArray, type SQL } from 'drizzle-orm';
 import { evaluarPreparacionComercial } from './preparacionComercial.js';
 import { listarProyectosActivosResumen } from './proyectos.js';
@@ -271,8 +272,9 @@ export interface DatosSeccionProyectoPerfil {
 // fechaProgramadaInicio, nunca la ficha) sigan viendo el valor real que
 // el usuario corrigió acá, en vez de quedarse con la fecha original del
 // alta.
-export async function actualizarSeccionProyectoPerfil(proyectoId: string, datos: DatosSeccionProyectoPerfil) {
+export async function actualizarSeccionProyectoPerfil(proyectoId: string, datos: DatosSeccionProyectoPerfil, actor?: ActorFicha) {
   return db.transaction(async (tx) => {
+    const [antes] = await tx.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).for('update');
     const [fila] = await tx
       .update(fichasTrazabilidad)
       .set(datos)
@@ -284,6 +286,7 @@ export async function actualizarSeccionProyectoPerfil(proyectoId: string, datos:
       await tx.update(proyectos).set({ fechaProgramadaInicio: datos.ingresoFechaIngreso }).where(eq(proyectos.id, proyectoId));
     }
 
+    if (antes) await auditarCambioFicha(tx, antes, fila, Object.keys(datos), actor);
     return fila;
   });
 }
@@ -298,14 +301,8 @@ export interface DatosSeccionProyectoContrato {
   condicionesEspeciales?: CondicionEspecial[] | null;
 }
 
-export async function actualizarSeccionProyectoContrato(proyectoId: string, datos: DatosSeccionProyectoContrato) {
-  const [fila] = await db
-    .update(fichasTrazabilidad)
-    .set(datos)
-    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
-    .returning();
-  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return fila;
+export async function actualizarSeccionProyectoContrato(proyectoId: string, datos: DatosSeccionProyectoContrato, actor?: ActorFicha) {
+  return actualizarFichaAuditada(proyectoId, datos, actor);
 }
 
 // "Ficha Editorial (Completado por RRPP)" — dueño exclusivo rrpp, no
@@ -324,14 +321,8 @@ export interface DatosSeccionFichaEditorial {
   objetivoComercial?: string[] | null;
 }
 
-export async function actualizarSeccionFichaEditorial(proyectoId: string, datos: DatosSeccionFichaEditorial) {
-  const [fila] = await db
-    .update(fichasTrazabilidad)
-    .set(datos)
-    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
-    .returning();
-  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return fila;
+export async function actualizarSeccionFichaEditorial(proyectoId: string, datos: DatosSeccionFichaEditorial, actor?: ActorFicha) {
+  return actualizarFichaAuditada(proyectoId, datos, actor);
 }
 
 // "Matriz de Ingreso (RRPP)" — dueño exclusivo rrpp, mismo alcance que
@@ -355,14 +346,8 @@ export interface DatosSeccionMatrizIngreso {
   matrizObservacionesComerciales?: string | null;
 }
 
-export async function actualizarSeccionMatrizIngreso(proyectoId: string, datos: DatosSeccionMatrizIngreso) {
-  const [fila] = await db
-    .update(fichasTrazabilidad)
-    .set(datos)
-    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
-    .returning();
-  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return fila;
+export async function actualizarSeccionMatrizIngreso(proyectoId: string, datos: DatosSeccionMatrizIngreso, actor?: ActorFicha) {
+  return actualizarFichaAuditada(proyectoId, datos, actor);
 }
 
 // "Proceso de Lanzamiento y Promoción" — Área exclusiva de RRPP, Fase 1
@@ -845,4 +830,15 @@ export async function eliminarPaisDistribucion(proyectoId: string, paisId: strin
     .where(and(eq(fichaDistribucionPaises.id, paisId), eq(fichaDistribucionPaises.fichaId, ficha.id)))
     .returning();
   return fila;
+}
+
+async function actualizarFichaAuditada(proyectoId: string, datos: Partial<typeof fichasTrazabilidad.$inferInsert>, actor?: ActorFicha) {
+  return db.transaction(async (tx) => {
+    const [antes] = await tx.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).for('update');
+    if (!antes) throw new Error('Ficha de trazabilidad no encontrada para el proyecto: ' + proyectoId);
+    const [fila] = await tx.update(fichasTrazabilidad).set(datos).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).returning();
+    if (!fila) throw new Error('Ficha de trazabilidad no encontrada');
+    await auditarCambioFicha(tx, antes, fila, Object.keys(datos), actor);
+    return fila;
+  });
 }

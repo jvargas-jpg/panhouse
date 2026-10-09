@@ -1,6 +1,7 @@
 import { TraceabilityWorkspace } from '../trazabilidad/TraceabilityWorkspace';
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useMe } from '../auth/useAuth';
 import { notificarJefatura } from '../jefatura/jefaturaApi';
 import { BotonNotificarTransicion } from './BotonNotificarTransicion';
@@ -73,6 +74,12 @@ function LegacyFichaTrazabilidadPage() {
 
   const proyectoQuery = useQuery({ queryKey: ['proyecto', id], queryFn: () => fetchProyecto(id), enabled: puedeVerFicha });
   const fichaQuery = useQuery({ queryKey: ['ficha', id], queryFn: () => fetchFicha(id), enabled: puedeVerFicha });
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash !== '#lanzamiento' || !fichaQuery.data || !proyectoQuery.data) return;
+    const frame = requestAnimationFrame(() => document.getElementById('lanzamiento')?.scrollIntoView({ block: 'start' }));
+    return () => cancelAnimationFrame(frame);
+  }, [hash, fichaQuery.data, proyectoQuery.data]);
 
   if (!puedeVerFicha) {
     return (
@@ -157,7 +164,7 @@ function LegacyFichaTrazabilidadPage() {
               <h2 className="text-base font-bold text-purple-900">Área exclusiva de RRPP</h2>
             </div>
             <SeccionFichaEditorial key={`ficha-editorial-${id}`} proyectoId={id} ficha={fichaQuery.data.ficha} puedeEditar={puedeEditarFichaEditorial} />
-            <div className="mt-6">
+            <div id="lanzamiento" className="mt-6 scroll-mt-6">
               <SeccionLanzamientoPromocion
                 key={`lanzamiento-promocion-${id}`}
                 proyectoId={id}

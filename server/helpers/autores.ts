@@ -1,6 +1,24 @@
-import { eq, isNull } from 'drizzle-orm';
+import { eq, isNull, or, and } from 'drizzle-orm';
+import { auditarCambioComercial, camposModificados, type ActorFicha } from './intakeRrpp.js';
 import { db } from '../db/client.js';
 import { autores, proyectos, proyectosAutores } from '../db/schema/index.js';
+
+export async function actualizarAutor(autorId: string, datos: Partial<typeof autores.$inferInsert>, actor?: ActorFicha) {
+  return db.transaction(async (tx) => {
+    const [antes] = await tx.select().from(autores).where(eq(autores.id, autorId)).for('update');
+    if (!antes) return undefined;
+    const [autor] = await tx.update(autores).set(datos).where(eq(autores.id, autorId)).returning();
+    if (!autor) return undefined;
+    const campos = camposModificados(antes, autor, Object.keys(datos)).map((campo) => `autor.${campo}`);
+    if (actor?.rol === 'comercial' && campos.length > 0) {
+      const vinculados = await tx.selectDistinct({ id: proyectos.id }).from(proyectos)
+        .leftJoin(proyectosAutores, eq(proyectosAutores.proyectoId, proyectos.id))
+        .where(and(eq(proyectos.notificadoRrpp, true), or(eq(proyectos.autorId, autorId), eq(proyectosAutores.autorId, autorId))));
+      for (const p of vinculados) await auditarCambioComercial(tx, p.id, campos, actor);
+    }
+    return autor;
+  });
+}
 
 // Para la pantalla de jefe_area "Autores sin proyecto": left join contra
 // proyectos, filtrado a las filas sin match. Un autor con uno o más

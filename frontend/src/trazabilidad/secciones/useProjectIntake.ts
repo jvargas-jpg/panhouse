@@ -264,6 +264,7 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
       await Promise.all([
         ['ficha', proyectoId], ['proyecto', proyectoId], ['proyectos', 'activos'],
         ['fichas-trazabilidad', 'pendientes', 'contrato'], ['metricas', 'comercial'],
+        ['rrpp', 'dashboard'],
       ].map((queryKey) => queryClient.invalidateQueries({ queryKey })));
       const fallo = resultados.find((r) => r.status === 'rejected');
       if (fallo?.status === 'rejected') throw fallo.reason;

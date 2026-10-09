@@ -3,7 +3,7 @@ import { desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
 import { autores, CATEGORIAS_CLIENTE } from '../db/schema/index.js';
-import { eliminarAutor, listarAutoresSinProyecto } from '../helpers/autores.js';
+import { actualizarAutor, eliminarAutor, listarAutoresSinProyecto } from '../helpers/autores.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 
@@ -148,7 +148,7 @@ export async function autoresRoutes(app: FastifyInstance) {
       const body = parseOrReply(editarAutorSchema, request.body, reply);
       if (!body) return;
 
-      const [autor] = await db.update(autores).set(body).where(eq(autores.id, params.id)).returning();
+      const autor = await actualizarAutor(params.id, body, request.user);
       if (!autor) return reply.code(404).send({ message: 'Autor no encontrado' });
 
       return reply.send({ autor });

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
 import { EstadoBadge } from './EstadoBadge';
 import { EstadoTraspasoBadge } from './EstadoTraspasoBadge';
@@ -97,6 +97,8 @@ export function ProyectoDetallePage() {
   const rol = usuario?.rol;
 
   const [pasoActivo, setPasoActivo] = useState(1);
+  const { hash } = useLocation();
+  useEffect(() => { if (rol === 'rrpp' && hash === '#lanzamiento') setPasoActivo(10); }, [hash, rol, id]);
 
   // Mismos roles que ya se dejaron pasar en las rutas GET del backend
   // (server/routes/{trazabilidad,capitulos,pausas}.routes.ts). Se

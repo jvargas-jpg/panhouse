@@ -46,6 +46,7 @@ export function BotonNotificarTransicion({
       setNotificado(true);
       setToastVisible(true);
       queryClient.invalidateQueries({ queryKey: ['proyecto', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
       setTimeout(() => setToastVisible(false), 3000);
     },

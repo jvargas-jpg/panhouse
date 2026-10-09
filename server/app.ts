@@ -20,6 +20,7 @@ import { proyectosRoutes } from './routes/proyectos.routes.js';
 import { seguimientoRoutes } from './routes/seguimiento.routes.js';
 import { trazabilidadRoutes } from './routes/trazabilidad.routes.js';
 import { usuariosRoutes } from './routes/usuarios.routes.js';
+import { rrppRoutes } from './routes/rrpp.routes.js';
 
 export function buildApp() {
   const app = Fastify({
@@ -48,6 +49,7 @@ export function buildApp() {
   app.register(pagosRoutes, { prefix: '/api/pagos' });
   app.register(notificacionesRoutes, { prefix: '/api/notificaciones' });
   app.register(metricasRoutes, { prefix: '/api/metricas' });
+  app.register(rrppRoutes, { prefix: '/api/rrpp' });
 
   app.get('/health', async () => ({ status: 'ok' }));
 

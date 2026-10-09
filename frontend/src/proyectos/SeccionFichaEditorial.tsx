@@ -76,6 +76,7 @@ export function SeccionFichaEditorial({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
     },
   });
 

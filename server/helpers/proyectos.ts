@@ -1,3 +1,4 @@
+import { auditarCambioComercial, camposModificados, type ActorFicha } from './intakeRrpp.js';
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
@@ -438,15 +439,18 @@ export interface DatosReasignarProyecto {
 // de comercial (ver PATCH /:id/reasignar). Deliberadamente separada de
 // actualizarProyecto (especificaciones operativas, a cargo de
 // especialista) — ver la nota de solapamiento en el schema de la ruta.
-export async function reasignarProyecto(proyectoId: string, datos: DatosReasignarProyecto) {
+export async function reasignarProyecto(proyectoId: string, datos: DatosReasignarProyecto, actor?: ActorFicha) {
   const { autorIds, ...datosProyecto } = datos;
 
-  // Sin coautoría en este update: un solo UPDATE de proyectos, como
-  // antes — no hace falta transacción ni tocar proyectos_autores.
   if (!autorIds) {
-    const [fila] = await db.update(proyectos).set(datosProyecto).where(eq(proyectos.id, proyectoId)).returning();
-    if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
-    return fila;
+    return db.transaction(async (tx) => {
+      const [antes] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+      if (!antes) throw new Error('Proyecto no encontrado: ' + proyectoId);
+      const [fila] = await tx.update(proyectos).set(datosProyecto).where(eq(proyectos.id, proyectoId)).returning();
+      if (!fila) throw new Error('Proyecto no encontrado: ' + proyectoId);
+      await auditarCambioComercial(tx, proyectoId, camposModificados(antes, fila, Object.keys(datosProyecto)), actor);
+      return fila;
+    });
   }
 
   const [autorPrincipal] = autorIds;
@@ -456,6 +460,8 @@ export async function reasignarProyecto(proyectoId: string, datos: DatosReasigna
   if (!autorPrincipal) throw new Error('reasignarProyecto necesita al menos un autorId en autorIds');
 
   return db.transaction(async (tx) => {
+    const [antes] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+    const autoresAntes = await tx.select({ id: proyectosAutores.autorId }).from(proyectosAutores).where(eq(proyectosAutores.proyectoId, proyectoId));
     // proyectos.autorId (columna legacy, todavía vigente en la etapa
     // aditiva de la migración a coautoría — ver crearProyecto más
     // arriba) se mantiene sincronizada con el primer autor del array:
@@ -475,6 +481,9 @@ export async function reasignarProyecto(proyectoId: string, datos: DatosReasigna
     await tx.delete(proyectosAutores).where(eq(proyectosAutores.proyectoId, proyectoId));
     await tx.insert(proyectosAutores).values(autorIds.map((autorId) => ({ proyectoId, autorId })));
 
+    const cambios = antes ? camposModificados(antes, fila, Object.keys(datosProyecto)) : [];
+    if (JSON.stringify(autoresAntes.map((v) => v.id).sort()) !== JSON.stringify([...autorIds].sort())) cambios.push('autorIds');
+    await auditarCambioComercial(tx, proyectoId, cambios, actor);
     return fila;
   });
 }

@@ -81,6 +81,7 @@ export function SeccionLanzamientoPromocion({
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
     },
   });
 
