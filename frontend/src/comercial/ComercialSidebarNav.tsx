@@ -73,7 +73,7 @@ export function ComercialSidebarNav({ activo }: { activo: ItemNavComercial }) {
         <IconoNav path={ICONO_PAGO} />
         Pagos
       </Link>
-      <Link to="/comercial/metricas" className={activo === 'indicadores' ? ITEM_ACTIVO : ITEM_INACTIVO}>
+      <Link to="/comercial/metricas" aria-current={activo === 'indicadores' ? 'page' : undefined} className={activo === 'indicadores' ? ITEM_ACTIVO : ITEM_INACTIVO}>
         <IconoNav path={ICONO_INDICADORES} />
         Indicadores
       </Link>

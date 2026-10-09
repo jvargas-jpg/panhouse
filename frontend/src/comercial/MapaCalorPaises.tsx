@@ -9,7 +9,7 @@ const TOPOJSON_URL = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.
 
 const GRIS_SIN_DATOS = '#F3F4F6';
 const ORO_CLARO = '#FEF08A'; // país con menos clientes del ranking
-const ORO_PRINCIPAL = '#EAB308'; // país con más clientes (maximo)
+const ORO_PRINCIPAL = '#EEBA2A'; // token dorado PanHouse
 // Solo para el estado hover del mapa (no forma parte de la escala de
 // datos) — mismo azul que la línea de "Proyectos iniciados por mes" en
 // MetricasPage.tsx, deliberadamente distinto de cualquier color de la
@@ -65,7 +65,7 @@ export function MapaCalorPaises({ paises }: { paises: PaisRanking[] }) {
     // más scale es lo que realmente agranda el mapa dentro de la
     // tarjeta, ajustar solo el CSS con un viewBox chico lo dejaría con
     // el mismo detalle pequeño, solo estirado.
-    <ComposableMap width={800} height={400} projectionConfig={{ scale: 150 }} style={{ width: '100%', height: 'auto' }}>
+    <ComposableMap role="img" aria-label="Distribución de autores por país; consulta el ranking adjunto" width={800} height={400} projectionConfig={{ scale: 150 }} style={{ width: '100%', height: 'auto', maxHeight: 200 }}>
       <Geographies geography={TOPOJSON_URL}>
         {({ geographies }) =>
           geographies.map((geo) => {
@@ -85,7 +85,7 @@ export function MapaCalorPaises({ paises }: { paises: PaisRanking[] }) {
                 }}
               >
                 <title>
-                  {nombre}: {cantidad} cliente{cantidad === 1 ? '' : 's'}
+                  {nombre}: {cantidad} autor{cantidad === 1 ? '' : 'es'}
                 </title>
               </Geography>
             );

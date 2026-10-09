@@ -867,6 +867,16 @@ export interface LibroAutor {
   portadaFeedback: string | null;
 }
 
+export interface IndicadoresComerciales {
+  periodo: { meses: number; desde: string; hasta: string; anteriorDesde: string; anteriorHasta: string; zonaHoraria: 'America/Caracas' };
+  summary: { autores: number; proyectos: number; listos: number; completitud: number | null; crecimientoAutores: number | null; crecimientoProyectos: number | null };
+  funnel: { autores: number; proyectos: number; completos: number; listos: number; entregados: number; proyectosPorAutor: number | null; completosPorcentaje: number | null; listosPorcentaje: number | null; entregadosPorcentaje: number | null };
+  monthly: { clave: string; mes: string; autores: number; proyectos: number; listos: number }[];
+  services: ServicioRanking[];
+  countries: PaisRanking[];
+  timings: { promedioDias: number | null; comparacionPorcentaje: number | null; motivo: string };
+}
+
 // GET /api/metricas/comercial — server/helpers/metricas.ts.
 export interface KpisComerciales {
   clientesMesActual: number;

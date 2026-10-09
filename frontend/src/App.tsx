@@ -4,6 +4,7 @@ import { AutoresPage } from './autores/AutoresPage';
 import { LoginPage } from './auth/LoginPage';
 import { RequireAuth } from './auth/RequireAuth';
 import { RegistrarPagoPage } from './comercial/RegistrarPagoPage';
+import { IndicadoresLoading } from './comercial/IndicadoresComponents';
 import { HomePage } from './HomePage';
 import { AppLayout } from './layout/AppLayout';
 import { FullscreenLayout } from './layout/FullscreenLayout';
@@ -41,7 +42,7 @@ export function App() {
           <Route
             path="/comercial/metricas"
             element={
-              <Suspense fallback={<p className="p-6 text-sm text-gray-500">Cargando…</p>}>
+              <Suspense fallback={<IndicadoresLoading />}>
                 <MetricasPage />
               </Suspense>
             }

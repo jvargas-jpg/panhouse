@@ -3,10 +3,10 @@ const ICONO_PROYECTOS = 'M9 3h6l2 3h3a1 1 0 011 1v11a2 2 0 01-2 2H5a2 2 0 01-2-2
 const ICONO_PENDIENTE = 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z';
 const ICONO_ACTIVOS = 'M13 7h8m0 0v8m0-8l-8 8-4-4-6 6';
 
-function IconoKpi({ path }: { path: string }) {
+export function IconoKpi({ path }: { path: string }) {
   return (
     <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-dorado/10 text-dorado">
-      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg aria-hidden="true" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={path} />
       </svg>
     </span>
