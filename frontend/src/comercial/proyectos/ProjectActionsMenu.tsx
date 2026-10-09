@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 
-export function ProjectActionsMenu({ nombre, onEditar, onEliminar, ocupado }: {
-  nombre: string; onEditar?: () => void; onEliminar: () => void; ocupado: boolean;
+export function ProjectActionsMenu({ nombre, onEditar, onEliminar, onVerFicha, ocupado }: {
+  nombre: string; onEditar?: () => void; onEliminar: () => void; onVerFicha?: () => void; ocupado: boolean;
 }) {
   const [abierto, setAbierto] = useState(false);
   const [arriba, setArriba] = useState(false);
@@ -35,6 +35,7 @@ export function ProjectActionsMenu({ nombre, onEditar, onEliminar, ocupado }: {
         botones[siguiente]?.focus();
       }
     }} className={`absolute right-0 z-30 w-40 rounded-lg border border-gray-200 bg-white p-1 shadow-md ${arriba ? 'bottom-full mb-1' : 'top-full mt-1'}`}>
+      {onVerFicha && <button type="button" role="menuitem" onClick={() => { cerrar(); onVerFicha(); }} className="block w-full rounded-md px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-50 focus:bg-gray-100 focus:outline-none">Ver ficha</button>}
       {onEditar && <button type="button" role="menuitem" onClick={() => { cerrar(); onEditar(); }} className="block w-full rounded-md px-3 py-2.5 text-left text-sm text-gray-800 hover:bg-gray-50 focus:bg-gray-100 focus:outline-none">Editar</button>}
       <button type="button" role="menuitem" onClick={() => { cerrar(); onEliminar(); }} className="block w-full rounded-md px-3 py-2.5 text-left text-sm text-red-700 hover:bg-red-50 focus:bg-red-50 focus:outline-none">Eliminar</button>
     </div>}

@@ -5,6 +5,7 @@ import { autores, proyectos, servicios } from '../db/schema/index.js';
 import { columnaAsignacion, ESTADOS_ACTIVOS, type RolConCarga } from './carga.js';
 import { calcularDiasEfectivosProyecto } from './pausas.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
+import { rrppEnviadoAtSql } from './auditLog.js';
 
 export interface PlazosServicio {
   plazoDias: number | null;
@@ -100,6 +101,7 @@ export interface ProyectoConRiesgo {
   // botón correspondiente no podría quedar deshabilitado ("Notificado")
   // tras recargar la página.
   notificadoRrpp: boolean;
+  rrppEnviadoAt: string | null;
   notificadoJefatura: boolean;
   // Fase 5 (5A Edición) — cierre del subpipeline de edición
   // (registrarFeedbackTripa, ver server/helpers/proyectos.ts): la fecha
@@ -144,6 +146,7 @@ const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   correctorId: proyectos.correctorId,
   jefeAreaId: proyectos.jefeAreaId,
   notificadoRrpp: proyectos.notificadoRrpp,
+  rrppEnviadoAt: rrppEnviadoAtSql,
   notificadoJefatura: proyectos.notificadoJefatura,
   fechaFeedbackTripa: proyectos.fechaFeedbackTripa,
   autorId: autores.id,
@@ -167,6 +170,7 @@ type FilaProyectoConAutorYServicio = {
   correctorId: string | null;
   jefeAreaId: string | null;
   notificadoRrpp: boolean;
+  rrppEnviadoAt: string | null;
   notificadoJefatura: boolean;
   fechaFeedbackTripa: string | null;
   autorId: string;
@@ -199,6 +203,7 @@ async function mapearFilaConRiesgo(
     correctorId: fila.correctorId,
     jefeAreaId: fila.jefeAreaId,
     notificadoRrpp: fila.notificadoRrpp,
+    rrppEnviadoAt: fila.rrppEnviadoAt,
     notificadoJefatura: fila.notificadoJefatura,
     fechaFeedbackTripa: fila.fechaFeedbackTripa,
     autor: { id: fila.autorId, nombre: fila.autorNombre },

@@ -1,3 +1,4 @@
+import { RrppHandoffAction } from '../../comercial/RrppHandoffAction';
 import type { ChangeEvent, ReactNode } from 'react';
 import type { EjecucionServicio, PresupuestoServicio } from '../../types/api';
 import { conValorLegacyIncluido } from '../../proyectos/campos';
@@ -16,7 +17,7 @@ function Block({ title, children }: { title: string; children: ReactNode }) {
 
 export function ProjectIntakeSection(props: ProjectIntakeProps) {
   const f = useProjectIntake(props);
-  // Reuse the existing state and endpoints. This presentation offers saving only.
+  const puedeEnviar = props.puedeNotificarRrpp && !props.notificadoRrpp && props.ficha.listoParaRrpp && !f.cambiosPendientes;
   function change<T extends string>(set: (value: T) => void, reset: () => void) {
     return (event: ChangeEvent<HTMLSelectElement | HTMLInputElement | HTMLTextAreaElement>) => { set(event.target.value as T); reset(); };
   }
@@ -26,7 +27,7 @@ export function ProjectIntakeSection(props: ProjectIntakeProps) {
       <h2 className="text-base font-semibold text-gray-900">Ingreso comercial</h2><p className="mt-1 text-xs leading-5 text-gray-500">Datos iniciales y condiciones comerciales del proyecto.</p>
     </div>
     <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6">
-      <CommercialReadiness {...props.ficha} />
+      <CommercialReadiness {...props.ficha} notificadoRrpp={props.notificadoRrpp} rrppEnviadoAt={props.rrppEnviadoAt} />
       <AuthorContextCard autores={props.autores} />
       {f.catalogosQuery.isError && <div role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">No se pudo cargar el catálogo de servicios. <button type="button" onClick={() => { void f.catalogosQuery.refetch(); }} className="font-semibold underline">Reintentar</button></div>}
       <Block title="Datos del proyecto">
@@ -58,8 +59,9 @@ export function ProjectIntakeSection(props: ProjectIntakeProps) {
       <Block title="Observaciones del ingreso"><Field id="ingreso-observaciones" label="Observaciones del ingreso (opcional)"><textarea id="ingreso-observaciones" rows={3} value={f.ingresoObservaciones} onChange={change(f.setIngresoObservaciones, f.mutacion.reset)} className={INPUT} /></Field></Block>
     </div>
     <footer className="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-gray-200 bg-white px-5 py-3 sm:px-6">
-      <div className="min-w-0 flex-1 text-xs"><p className="text-gray-500">Guardado manual</p>{f.guardadoOk && <p role="status" className="mt-1 text-green-700">Cambios guardados.</p>}{f.huboError && <p role="alert" className="mt-1 break-words text-red-700">No se pudo guardar{f.errorMensaje ? `: ${f.errorMensaje}` : '.'}</p>}</div>
-      <button type="submit" disabled={f.guardando || f.catalogosQuery.isLoading} className="min-h-11 shrink-0 rounded-lg bg-dorado px-4 py-2.5 text-sm font-semibold text-tinta transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2 disabled:opacity-60">{f.guardando ? 'Guardando…' : 'Guardar cambios'}</button>
+      <div className="min-w-0 flex-1 text-xs"><p className="text-gray-500">{f.cambiosPendientes ? 'Cambios sin guardar' : 'Guardado manual'}</p>{f.guardadoOk && <p role="status" className="mt-1 text-green-700">Cambios guardados.</p>}{f.huboError && <p role="alert" className="mt-1 break-words text-red-700">No se pudo guardar{f.errorMensaje ? `: ${f.errorMensaje}` : '.'}</p>}</div>
+      <RrppHandoffAction proyectoId={props.proyectoId} disponible={puedeEnviar} disabled={f.guardando || !!props.actualizando} />
+      {!puedeEnviar && <button type="submit" disabled={f.guardando || f.catalogosQuery.isLoading} className="min-h-11 shrink-0 rounded-lg bg-dorado px-4 py-2.5 text-sm font-semibold text-tinta transition-colors hover:brightness-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2 disabled:opacity-60">{f.guardando ? 'Guardando…' : 'Guardar cambios'}</button>}
     </footer>
   </form>;
 }

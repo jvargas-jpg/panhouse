@@ -1,3 +1,4 @@
+import { RrppHandoffAction } from '../comercial/RrppHandoffAction';
 import { useProjectIntake, SUBTIPOS_CRUDO, OPCIONES_CAPITULOS, OPCIONES_PAGINAS } from '../trazabilidad/secciones/useProjectIntake';
 import { CampoFichaTecnica, conValorLegacyIncluido, formatearFechaONull } from './campos';
 import type { AutorConPerfil, EjecucionServicio, FichaCompleta, PresupuestoServicio, SubtipoCrudo } from '../types/api';
@@ -177,8 +178,8 @@ export function SeccionProyectoPerfil({
     ingresoServicioAlianza, setIngresoServicioAlianza, ingresoServicioPresupuesto, setIngresoServicioPresupuesto,
     ingresoObservaciones, setIngresoObservaciones, capitulosPactados, setCapitulosPactados,
     paginasPactadas, setPaginasPactadas, criterioExtra, setCriterioExtra, condicionesEspeciales, setCondicionesEspeciales,
-    mutacionServicio, mutacion, mutacionContrato, accionEnCurso, guardando, guardadoOk, huboError, errorMensaje,
-    handleGuardarBorrador, handleEnviarRrpp
+    mutacionServicio, mutacion, mutacionContrato, cambiosPendientes, guardando, guardadoOk, huboError, errorMensaje,
+    handleGuardarBorrador
   } = useProjectIntake({ proyectoId, ficha, autores, servicio, puedeEditar, puedeEditarContrato, puedeEditarComercial, puedeNotificarRrpp, notificadoRrpp });
 
   if (!puedeEditar) {
@@ -637,43 +638,15 @@ export function SeccionProyectoPerfil({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Traspaso Comercial → RRPP: solo comercial (puedeNotificarRrpp)
-              y solo mientras no se haya enviado antes (notificadoRrpp) —
-              una vez enviado, "Guardar" liso alcanza para seguir
-              corrigiendo datos sin reenviar (ver el else de abajo). */}
-          {puedeNotificarRrpp && !notificadoRrpp ? (
-            <>
-              <button
-                type="button"
-                onClick={handleEnviarRrpp}
-                disabled={guardando}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:opacity-60"
-              >
-                {guardando && accionEnCurso === 'enviar' ? 'Enviando…' : 'Enviar a RRPP'}
-              </button>
-              {/* Guarda los mismos campos que "Enviar a RRPP" pero sin
-                  notificar — para cuando comercial todavía no terminó de
-                  llenar todo y quiere guardar el avance sin pasarle el
-                  turno a RRPP. */}
-              <button
-                type="submit"
-                disabled={guardando}
-                className="rounded-md px-4 py-2 text-sm font-medium text-gray-500 transition hover:text-gray-700 disabled:opacity-60"
-              >
-                {guardando && accionEnCurso === 'guardar' ? 'Guardando…' : 'Guardar borrador'}
-              </button>
-            </>
+          {puedeNotificarRrpp && !notificadoRrpp && ficha.listoParaRrpp && !cambiosPendientes ? (
+            <RrppHandoffAction proyectoId={proyectoId} disabled={guardando} />
           ) : (
-            <button
-              type="submit"
-              disabled={guardando}
-              className="rounded-md bg-dorado px-4 py-2 text-sm font-medium text-tinta transition hover:brightness-95 disabled:opacity-60"
-            >
-              {guardando ? 'Guardando…' : 'Guardar'}
+            <button type="submit" disabled={guardando} className="rounded-md bg-dorado px-4 py-2 text-sm font-medium text-tinta transition hover:brightness-95 disabled:opacity-60">
+              {guardando ? 'Guardando…' : 'Guardar cambios'}
             </button>
           )}
           {guardadoOk && (
-            <span className="text-sm text-green-700">{accionEnCurso === 'enviar' ? 'Enviado a RRPP ✓' : 'Guardado ✓'}</span>
+            <span className="text-sm text-green-700">Guardado ✓</span>
           )}
           {huboError && (
             <span role="alert" className="text-sm text-red-600">

@@ -11,7 +11,7 @@ import { fetchMetricasComercial } from '../metricasApi';
 import { ProjectsKpis } from './ProjectsKpis';
 import { ProjectsList } from './ProjectsList';
 import { ProjectsToolbar } from './ProjectsToolbar';
-import { buildProjects, filterProjects, projectName, type CommercialProject, type ProjectsFilter, type ProjectsOrder } from './projectsModel';
+import { buildProjects, commercialProjectStatus, filterProjects, projectName, type CommercialProject, type ProjectsFilter, type ProjectsOrder } from './projectsModel';
 
 export function CommercialProjectsView() {
   const queryClient = useQueryClient();
@@ -57,7 +57,7 @@ export function CommercialProjectsView() {
       <div className="min-w-0"><h1 className="text-2xl font-bold tracking-tight text-gray-900">Proyectos</h1><p className="mt-1 text-sm leading-6 text-gray-500">Gestiona los proyectos editoriales y completa la información comercial pendiente.</p></div>
       <button type="button" onClick={nuevo} className="min-h-11 shrink-0 rounded-lg bg-dorado px-4 py-2.5 text-sm font-semibold text-tinta shadow-sm transition-all hover:brightness-95 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2">+ Nuevo proyecto</button>
     </div>
-    <div className="mb-5"><ProjectsToolbar busqueda={busqueda} onBusqueda={setBusqueda} filtro={filtro} onFiltro={setFiltro} orden={orden} onOrden={setOrden} total={activos.data?.proyectos.length} pendientes={totalPendientes} listos={totalListos} /></div>
+    <div className="mb-5"><ProjectsToolbar busqueda={busqueda} onBusqueda={setBusqueda} filtro={filtro} onFiltro={setFiltro} orden={orden} onOrden={setOrden} total={activos.data?.proyectos.length} pendientes={activos.data?.proyectos.filter((p) => commercialProjectStatus(p) === 'pendientes').length} listos={activos.data?.proyectos.filter((p) => commercialProjectStatus(p) === 'listos').length} enviados={activos.data?.proyectos.filter((p) => p.notificadoRrpp).length} /></div>
     <div className="mb-6"><ProjectsKpis indicadores={[
       { etiqueta: 'Proyectos activos', ayuda: 'En el flujo editorial', valor: activos.data?.proyectos.length, cargando: activos.isLoading, error: activos.isError, reintentar: () => { void activos.refetch(); } },
       { etiqueta: 'Datos contractuales pendientes', ayuda: 'Información comercial por completar', valor: totalPendientes, cargando: activos.isLoading, error: activos.isError, reintentar: () => { void activos.refetch(); } },
@@ -65,6 +65,6 @@ export function CommercialProjectsView() {
       { etiqueta: 'Proyectos iniciados este mes', ayuda: 'Ingresos del mes actual', valor: metricas.data?.kpis.proyectosMesActual, cargando: metricas.isLoading, error: metricas.isError, reintentar: () => { void metricas.refetch(); } },
     ]} /></div>
 
-    <ProjectsList proyectos={visibles} total={lista.length} cargando={cargando} error={fuente.isError} filtrado={busqueda.trim().length > 0 || filtro !== 'todos'} pendientes={filtro === 'pendientes'} onReintentar={() => { void fuente.refetch(); }} onNuevo={nuevo} onEditar={editar} onEliminar={eliminar} ocupado={borrar.isPending} />
+    <ProjectsList onEnviado={() => setAviso({ mensaje: 'Proyecto enviado a RRPP.', error: false })} proyectos={visibles} total={lista.length} cargando={cargando} error={fuente.isError} filtrado={busqueda.trim().length > 0 || filtro !== 'todos'} pendientes={filtro === 'pendientes'} onReintentar={() => { void fuente.refetch(); }} onNuevo={nuevo} onEditar={editar} onEliminar={eliminar} ocupado={borrar.isPending} />
   </CrmSidebarLayout>;
 }

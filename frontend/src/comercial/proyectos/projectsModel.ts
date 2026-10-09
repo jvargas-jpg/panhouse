@@ -1,6 +1,6 @@
-import type { EstadoProyecto, ProyectoPendienteSeccion1, ProyectoResumen } from '../../types/api';
+import type { EstadoProyecto, ProyectoPendienteSeccion1, ProyectoResumen } from '../../types/api.js';
 
-export type ProjectsFilter = 'todos' | 'pendientes' | 'listos';
+export type ProjectsFilter = 'todos' | 'pendientes' | 'listos' | 'enviados';
 export type ProjectsOrder = 'original' | 'autor' | 'codigo';
 
 export interface CommercialProject {
@@ -12,13 +12,19 @@ export interface CommercialProject {
   servicio: ProyectoResumen['servicio'];
   estado?: EstadoProyecto;
   pendiente: boolean;
+  notificadoRrpp: boolean;
+  rrppEnviadoAt: string | null;
   faltantesComercial: ProyectoResumen['faltantesComercial'];
   datosEdicion?: ProyectoPendienteSeccion1;
 }
 
 // El DTO activo incluye la preparación comercial evaluada en backend.
+export function commercialProjectStatus(p: Pick<ProyectoResumen, 'notificadoRrpp' | 'listoParaRrpp'>): Exclude<ProjectsFilter, 'todos'> {
+  return p.notificadoRrpp ? 'enviados' : p.listoParaRrpp ? 'listos' : 'pendientes';
+}
+
 export function buildProjects(activos: ProyectoResumen[], filtro: ProjectsFilter): CommercialProject[] {
-  return activos.filter((p) => filtro === 'todos' || (filtro === 'listos' ? p.listoParaRrpp : !p.listoParaRrpp)).map((p) => ({
+  return activos.filter((p) => filtro === 'todos' || commercialProjectStatus(p) === filtro).map((p) => ({
     ...p, autorPrincipal: p.autor.nombre, pendiente: !p.listoParaRrpp, datosEdicion: p,
   }));
 }

@@ -2,6 +2,7 @@ import { db } from '../../server/db/client.js';
 import type { CausaPausa, EstadoProyecto, Rol } from '../../server/db/schema/index.js';
 import {
   autores,
+  fichasTrazabilidad,
   notificaciones,
   pagos,
   pausas,
@@ -142,6 +143,13 @@ export async function crearProyectoDePrueba(
     fechaProgramadaInicio: '2026-01-01',
     ...datos,
   });
+}
+
+export async function crearFichaComercialCompleta(proyectoId: string) {
+  return unaFila(await db.insert(fichasTrazabilidad).values({
+    proyectoId, ingresoFechaIngreso: '2026-01-01', ingresoServicioEjecucion: 'Normal',
+    ingresoServicioAlianza: false, capitulosPactados: '1 a 5', paginasPactadas: '100',
+  }).returning());
 }
 
 export async function crearRegistroSeguimiento(datos: { proyectoId: string; analistaId?: string; estatus?: string }) {

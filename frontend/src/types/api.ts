@@ -192,6 +192,7 @@ export interface ProyectoConRiesgo {
   // (ProyectoDetallePage.tsx) — ver POST /:id/notificar-rrpp y
   // POST /:id/notificar-jefatura, los dos pasos de la cascada.
   notificadoRrpp: boolean;
+  rrppEnviadoAt: string | null;
   notificadoJefatura: boolean;
   // Fase 5 (5A Edición) — cierre del subpipeline de edición
   // (PATCH /:id/feedback-tripa, ver server/helpers/proyectos.ts).
@@ -781,6 +782,8 @@ export interface Proyecto {
 // GET /api/proyectos/activos — selector del módulo de pagos
 // (RegistrarPagoPage.tsx). Mismo shape que server/helpers/proyectos.ts:ProyectoResumen.
 export interface ProyectoResumen extends PreparacionComercial {
+  notificadoRrpp: boolean;
+  rrppEnviadoAt: string | null;
   autores: { id: string; nombre: string; nombreArtistico: string | null }[];
   unidadId: string;
   presupuestoId: string;

@@ -98,10 +98,11 @@ export function ComercialDashboardPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
         <AttentionProjects
-          proyectos={pendientesContratoQuery.data?.proyectos ?? []}
-          cargando={pendientesContratoQuery.isLoading}
-          huboError={pendientesContratoQuery.isError}
-          onReintentar={() => pendientesContratoQuery.refetch()}
+          proyectos={(proyectosActivosQuery.data?.proyectos ?? []).filter((p) => !p.notificadoRrpp).sort((a, b) => Number(b.listoParaRrpp) - Number(a.listoParaRrpp))}
+          cargando={proyectosActivosQuery.isLoading}
+          huboError={proyectosActivosQuery.isError}
+          onReintentar={() => proyectosActivosQuery.refetch()}
+          onEnviado={() => setToastMensaje('Proyecto enviado a RRPP.')}
         />
 
         <div className="flex flex-col gap-6">

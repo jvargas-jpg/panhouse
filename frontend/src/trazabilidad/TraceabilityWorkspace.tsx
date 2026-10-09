@@ -21,7 +21,7 @@ export function TraceabilityWorkspace({ proyectoId }: { proyectoId: string }) {
       <CommercialTraceabilityNav active={section} onChange={setSection} />
       <div className="min-h-0 min-w-0 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
         {/* Keep the single draft mounted when consulting another section. */}
-        <div hidden={section !== 'ingreso'} className="h-full min-h-0"><ProjectIntakeSection proyectoId={proyectoId} ficha={ficha.data.ficha} autores={proyecto.data.proyecto.autores} servicio={proyecto.data.proyecto.servicio} puedeEditar puedeEditarContrato puedeEditarComercial puedeNotificarRrpp={false} notificadoRrpp={proyecto.data.proyecto.notificadoRrpp} /></div>
+        <div hidden={section !== 'ingreso'} className="h-full min-h-0"><ProjectIntakeSection proyectoId={proyectoId} ficha={ficha.data.ficha} autores={proyecto.data.proyecto.autores} servicio={proyecto.data.proyecto.servicio} puedeEditar puedeEditarContrato puedeEditarComercial puedeNotificarRrpp rrppEnviadoAt={proyecto.data.proyecto.rrppEnviadoAt} actualizando={ficha.isFetching || proyecto.isFetching} notificadoRrpp={proyecto.data.proyecto.notificadoRrpp} /></div>
         {section === 'resumen' && <CommercialTraceabilitySummary ficha={ficha.data.ficha} />}
       </div>
     </div>}

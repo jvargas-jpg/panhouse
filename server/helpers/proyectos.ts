@@ -3,7 +3,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
 import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, workItems } from '../db/schema/index.js';
-import { registrarEvento } from './auditLog.js';
+import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
@@ -172,13 +172,24 @@ export type ResultadoTransicionFase1 =
 // empieza acá, no antes.
 export async function notificarRrppProyectoBase(proyectoId: string, actorId: string): Promise<ResultadoTransicionFase1> {
   return db.transaction(async (tx) => {
-    const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    // Serializa envíos del mismo proyecto: el segundo request ve el hecho
+    // persistido tras esperar al primero, sin duplicar sus efectos.
+    const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1).for('update');
     if (!proyecto) {
       return { ok: false, status: 404, error: 'Proyecto no encontrado' };
     }
     if (proyecto.notificadoRrpp) {
       return { ok: false, status: 409, error: 'Este proyecto ya fue notificado a rrpp' };
     }
+
+    const [ficha] = await tx.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, proyectoId)).limit(1);
+    // Mismo evaluador de la ficha y de /activos. autorId es obligatorio/FK
+    // y es el fallback canónico para proyectos previos a la coautoría.
+    const preparacion = evaluarPreparacionComercial({ ...proyecto, autores: [{ id: proyecto.autorId }],
+      ingresoFechaIngreso: ficha?.ingresoFechaIngreso, ingresoServicioEjecucion: ficha?.ingresoServicioEjecucion,
+      ingresoServicioAlianza: ficha?.ingresoServicioAlianza, capitulosPactados: ficha?.capitulosPactados, paginasPactadas: ficha?.paginasPactadas,
+    });
+    if (!preparacion.listoParaRrpp) return { ok: false, status: 409, error: 'Completa y guarda los datos comerciales requeridos antes de enviar a RRPP' };
 
     // titulo ya no existe como campo manual (ver schema/proyectos.ts) —
     // el mensaje usa el codigo generado al crear el proyecto, siempre
@@ -782,6 +793,8 @@ export async function listarProyectosSinEditor(): Promise<ProyectoSinEditor[]> {
   }));
 }
 export interface ProyectoResumen extends PreparacionComercial {
+  notificadoRrpp: boolean;
+  rrppEnviadoAt: string | null;
   autores: AutorDeProyecto[];
   unidadId: string;
   presupuestoId: string;
@@ -854,6 +867,8 @@ export async function listarProyectosActivosResumen(): Promise<ProyectoResumen[]
       titulo: proyectos.titulo,
       codigo: proyectos.codigo,
       estado: proyectos.estado,
+      notificadoRrpp: proyectos.notificadoRrpp,
+      rrppEnviadoAt: rrppEnviadoAtSql,
       unidadId: proyectos.unidadId,
       presupuestoId: proyectos.presupuestoId,
       fechaProgramadaInicio: proyectos.fechaProgramadaInicio,
@@ -894,6 +909,8 @@ export async function listarProyectosActivosResumen(): Promise<ProyectoResumen[]
       titulo: fila.titulo,
       codigo: fila.codigo,
       estado: fila.estado,
+      notificadoRrpp: fila.notificadoRrpp,
+      rrppEnviadoAt: fila.rrppEnviadoAt,
       autor: { id: fila.autorId, nombre: fila.autorNombre },
       servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
     };

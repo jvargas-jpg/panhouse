@@ -7,6 +7,7 @@ import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import {
   crearAutor,
+  crearFichaComercialCompleta,
   crearPresupuesto,
   crearProyecto,
   crearProyectoDePrueba,
@@ -401,11 +402,13 @@ describe('rutas de proyectos', () => {
   });
 
   describe('POST /api/proyectos/:id/notificar-rrpp', () => {
-    it('permite a comercial notificar a rrpp que el proyecto base está registrado', async () => {
+    it('permite a comercial notificar a rrpp que el ingreso comercial está completo', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
       const cookieComercial = await registrarYLoguear(app, 'comercial');
+
+      await crearFichaComercialCompleta(proyecto.id);
 
       const respuesta = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`).set('Cookie', cookieComercial);
 
@@ -428,6 +431,7 @@ describe('rutas de proyectos', () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
+      await crearFichaComercialCompleta(proyecto.id);
       const cookie = await registrarYLoguear(app, 'comercial');
 
       const primera = await request(app.server).post(`/api/proyectos/${proyecto.id}/notificar-rrpp`).set('Cookie', cookie);

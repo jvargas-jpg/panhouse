@@ -1,5 +1,12 @@
-import { auditLogs } from '../db/schema/index.js';
+import { sql } from 'drizzle-orm';
+import { auditLogs, proyectos } from '../db/schema/index.js';
 import type { Tx } from './tx.js';
+
+// Fecha real del primer handoff, sin inventar fechas para flags legacy.
+// Proyección SQL: no genera consultas adicionales por proyecto.
+export const rrppEnviadoAtSql = sql<string | null>`(select min(evento.created_at)::text from audit_logs evento
+  where evento.proyecto_id = ${proyectos.id} and evento.accion = 'RRPP_NOTIFICADO')`
+  .mapWith((valor: string | null) => valor ? new Date(valor).toISOString() : null);
 
 // Catálogo de acciones registradas — texto, no enum DB, a propósito
 // (se amplía sin migración, mismo criterio que notificaciones.rolDestino).

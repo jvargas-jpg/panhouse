@@ -3,10 +3,9 @@ import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../server/db/client.js';
 import { auditLogs, notificaciones, workItems } from '../server/db/schema/index.js';
-import { crearFichaTrazabilidad } from '../server/helpers/trazabilidad.js';
 import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
-import { crearProyectoDePrueba, crearUsuario } from './helpers/fixtures.js';
+import { crearFichaComercialCompleta, crearProyectoDePrueba, crearUsuario } from './helpers/fixtures.js';
 import { crearAppDePrueba } from './helpers/testApp.js';
 
 // §25/§31 del master prompt de rearquitectura: flujo completo
@@ -19,7 +18,7 @@ describe('Workflow Core: Comercial → RRPP → Jefatura → Especialista', () =
 
   async function crearProyectoConFicha() {
     const proyecto = await crearProyectoDePrueba();
-    await crearFichaTrazabilidad(proyecto.id);
+    await crearFichaComercialCompleta(proyecto.id);
     return proyecto;
   }
 

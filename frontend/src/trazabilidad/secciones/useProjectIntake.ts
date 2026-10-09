@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type FormEvent } from 'react';
 import type { AutorConPerfil, CondicionEspecial, EjecucionServicio, FichaCompleta, PresupuestoServicio, SubtipoCrudo } from '../../types/api';
 import { actualizarSeccionProyectoContrato, actualizarSeccionProyectoPerfil } from '../../proyectos/proyectoDetalleApi';
-import { fetchCatalogos, notificarRrpp, reasignarProyecto } from '../../jefatura/jefaturaApi';
+import { fetchCatalogos, reasignarProyecto } from '../../jefatura/jefaturaApi';
 
 export const SUBTIPOS_CRUDO: SubtipoCrudo[] = ['Capítulo', 'Tripa'];
 
@@ -94,6 +94,8 @@ export type ProjectIntakeProps = {
   // que BotonNotificarTransicion.tsx): el formulario vuelve a mostrar
   // "Guardar" liso para seguir corrigiendo datos sin reenviar.
   notificadoRrpp: boolean;
+  rrppEnviadoAt?: string | null;
+  actualizando?: boolean;
 };
 
 // One form state and the original mutation/permission logic for both presentations.
@@ -232,84 +234,48 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
     },
   });
 
-  // Mismo endpoint/mecánica que el antiguo botón separado "Notificar a
-  // RRPP" (BotonNotificarTransicion.tsx, ver ProyectoDetallePage.tsx):
-  // el backend ya responde 409 si ya se había notificado antes
-  // (idempotencia vía proyecto.notificadoRrpp) — acá ni siquiera se
-  // ofrece el botón una vez notificadoRrpp=true, ver el JSX más abajo.
-  const mutacionNotificarRrpp = useMutation({
-    mutationFn: () => notificarRrpp(proyectoId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['proyecto', proyectoId] });
-      queryClient.invalidateQueries({ queryKey: ['proyectos', 'activos'] });
-      queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
-    },
+  // Comparamos campos editables; la fecha de cierre es calculada.
+  const firma = JSON.stringify({
+    ...(puedeEditarComercial ? { servicioCodigo, ingresoFechaIngreso, ingresoServicioEjecucion,
+      ingresoTiempoExpresMeses, ingresoServicioAlianza, ingresoServicioPresupuesto } : {}),
+    ...(puedeEditarContrato ? { capitulosPactados, paginasPactadas, criterioExtra, condicionesEspeciales } : {}),
+    ...(puedeEditarSubtipoCrudo ? { ingresoServicioSubtipoCrudo } : {}), ingresoObservaciones,
   });
+  const [firmaGuardada, setFirmaGuardada] = useState(firma);
+  const cambiosPendientes = firma !== firmaGuardada;
+  const [guardando, setGuardando] = useState(false);
+  const [guardado, setGuardado] = useState(false);
+  const [errorGuardado, setErrorGuardado] = useState<string>();
 
-  // 'enviar' vs 'guardar' distingue qué mutaciones cuentan para el
-  // mensaje de éxito/error de abajo: mutacionNotificarRrpp solo se
-  // dispara al hacer clic en "Enviar a RRPP", nunca en "Guardar
-  // borrador" — sin este guard, mutacionNotificarRrpp se quedaría en
-  // 'idle' tras un "Guardar borrador" y el AND de guardadoOk nunca
-  // sería true para ese caso.
-  const [accionEnCurso, setAccionEnCurso] = useState<'guardar' | 'enviar' | null>(null);
-
-  // Sin estos dos guards, un rol que no puede tocar ese bloque (rrpp no
-  // edita el comercial, ver puedeEditarComercial arriba; rrpp/jefe_area
-  // no editan el contrato, ver puedeEditarContrato) vería igual el
-  // guard 403 del backend en cada Guardar, aunque los campos estén
-  // como texto estático y nadie los haya tocado.
-  function guardarCampos() {
-    mutacion.mutate();
-    if (puedeEditarComercial) mutacionServicio.mutate();
-    if (puedeEditarContrato) mutacionContrato.mutate();
-  }
-
-  function handleGuardarBorrador(event: FormEvent) {
+  async function handleGuardarBorrador(event: FormEvent) {
     event.preventDefault();
-    setAccionEnCurso('guardar');
-    guardarCampos();
+    if (guardando) return;
+    const firmaEnviada = firma;
+    setGuardando(true);
+    setGuardado(false);
+    setErrorGuardado(undefined);
+    try {
+      // Esperar a todas las escrituras, incluso cuando alguna falla.
+      const resultados = await Promise.allSettled([
+        mutacion.mutateAsync(),
+        ...(puedeEditarComercial ? [mutacionServicio.mutateAsync()] : []),
+        ...(puedeEditarContrato ? [mutacionContrato.mutateAsync()] : []),
+      ]);
+      await Promise.all([
+        ['ficha', proyectoId], ['proyecto', proyectoId], ['proyectos', 'activos'],
+        ['fichas-trazabilidad', 'pendientes', 'contrato'], ['metricas', 'comercial'],
+      ].map((queryKey) => queryClient.invalidateQueries({ queryKey })));
+      const fallo = resultados.find((r) => r.status === 'rejected');
+      if (fallo?.status === 'rejected') throw fallo.reason;
+      setFirmaGuardada(firmaEnviada);
+      setGuardado(true);
+    } catch (error) {
+      setErrorGuardado(error instanceof Error ? error.message : 'Inténtalo nuevamente.');
+    } finally { setGuardando(false); }
   }
-
-  function handleEnviarRrpp() {
-    if (!window.confirm('¿Estás seguro de enviar este proyecto a RRPP? Asegúrate de que los datos del contrato estén correctos.')) {
-      return;
-    }
-    setAccionEnCurso('enviar');
-    guardarCampos();
-    mutacionNotificarRrpp.mutate();
-  }
-
-  // Ídem guardarCampos: una mutación que nunca se dispara para este rol
-  // o esta acción se queda en estado 'idle' para siempre — no debe
-  // contar ni para el mensaje de éxito ni para el de error de todo el
-  // formulario.
-  const notificarCuenta = accionEnCurso === 'enviar';
-  const guardando =
-    mutacion.isPending ||
-    (puedeEditarComercial && mutacionServicio.isPending) ||
-    (puedeEditarContrato && mutacionContrato.isPending) ||
-    (notificarCuenta && mutacionNotificarRrpp.isPending);
-  const guardadoOk =
-    mutacion.isSuccess &&
-    (!puedeEditarComercial || mutacionServicio.isSuccess) &&
-    (!puedeEditarContrato || mutacionContrato.isSuccess) &&
-    (!notificarCuenta || mutacionNotificarRrpp.isSuccess);
-  const huboError =
-    mutacion.isError ||
-    (puedeEditarComercial && mutacionServicio.isError) ||
-    (puedeEditarContrato && mutacionContrato.isError) ||
-    (notificarCuenta && mutacionNotificarRrpp.isError);
-  const errorMensaje =
-    mutacion.error instanceof Error
-      ? mutacion.error.message
-      : puedeEditarComercial && mutacionServicio.error instanceof Error
-        ? mutacionServicio.error.message
-        : puedeEditarContrato && mutacionContrato.error instanceof Error
-          ? mutacionContrato.error.message
-          : notificarCuenta && mutacionNotificarRrpp.error instanceof Error
-            ? mutacionNotificarRrpp.error.message
-            : undefined;
+  const guardadoOk = guardado && !cambiosPendientes && !guardando;
+  const huboError = errorGuardado !== undefined;
+  const errorMensaje = errorGuardado;
 
   return {
     puedeEditarSubtipoCrudo, catalogosQuery, servicioCodigo, setServicioCodigo, ingresoFechaIngreso, setIngresoFechaIngreso,
@@ -318,7 +284,7 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
     ingresoServicioAlianza, setIngresoServicioAlianza, ingresoServicioPresupuesto, setIngresoServicioPresupuesto,
     ingresoObservaciones, setIngresoObservaciones, capitulosPactados, setCapitulosPactados,
     paginasPactadas, setPaginasPactadas, criterioExtra, setCriterioExtra, condicionesEspeciales, setCondicionesEspeciales,
-    mutacionServicio, mutacion, mutacionContrato, accionEnCurso, guardando, guardadoOk, huboError, errorMensaje,
-    handleGuardarBorrador, handleEnviarRrpp
+    mutacionServicio, mutacion, mutacionContrato, cambiosPendientes, guardando, guardadoOk, huboError, errorMensaje,
+    handleGuardarBorrador
   };
 }
