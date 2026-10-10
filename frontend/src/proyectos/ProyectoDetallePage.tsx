@@ -98,7 +98,10 @@ export function ProyectoDetallePage() {
 
   const [pasoActivo, setPasoActivo] = useState(1);
   const { hash } = useLocation();
-  useEffect(() => { if (rol === 'rrpp' && hash === '#lanzamiento') setPasoActivo(10); }, [hash, rol, id]);
+  useEffect(() => {
+    const step: Record<string, number> = { '#edicion': 2, '#correccion': 5, '#diseno': 7, '#calidad': 8, '#digital': 9, '#lanzamiento': 10, '#impresion': 10, '#distribucion': 10 };
+    if (step[hash]) setPasoActivo(step[hash]);
+  }, [hash, id]);
 
   // Mismos roles que ya se dejaron pasar en las rutas GET del backend
   // (server/routes/{trazabilidad,capitulos,pausas}.routes.ts). Se

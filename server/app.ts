@@ -19,6 +19,7 @@ import { portalRoutes } from './routes/portal.routes.js';
 import { proyectosRoutes } from './routes/proyectos.routes.js';
 import { seguimientoRoutes } from './routes/seguimiento.routes.js';
 import { trazabilidadRoutes } from './routes/trazabilidad.routes.js';
+import { fichaVivaRoutes } from './routes/fichaViva.routes.js';
 import { usuariosRoutes } from './routes/usuarios.routes.js';
 import { rrppRoutes } from './routes/rrpp.routes.js';
 import { rrppLanzamientosRoutes } from './routes/rrppLanzamientos.routes.js';
@@ -44,6 +45,7 @@ export function buildApp() {
   app.register(correccionesRoutes, { prefix: '/api/correcciones' });
   app.register(direccionCreativaRoutes, { prefix: '/api/direccion-creativa' });
   app.register(trazabilidadRoutes, { prefix: '/api/fichas-trazabilidad' });
+  app.register(fichaVivaRoutes, { prefix: '/api/fichas-trazabilidad' });
   app.register(portalRoutes, { prefix: '/api/portal' });
   app.register(usuariosRoutes, { prefix: '/api/usuarios' });
   app.register(seguimientoRoutes, { prefix: '/api/seguimiento' });

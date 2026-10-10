@@ -404,6 +404,17 @@ const seccionImpresionSchema = z
   });
 
 export async function trazabilidadRoutes(app: FastifyInstance) {
+  // Historical account notes may contain credentials. Keep the database value
+  // intact, expose only presence, and return a plain email to its owner.
+  app.addHook('preSerialization', async (request, _reply, payload) => {
+    if (!payload || typeof payload !== 'object' || !('ficha' in payload)) return payload;
+    const response = payload as { ficha?: Record<string, unknown> };
+    const ficha = response.ficha;
+    if (!ficha || !('soporteDigitalCuentaAmazon' in ficha)) return payload;
+    const account = ficha.soporteDigitalCuentaAmazon;
+    const safeEmail = request.user?.rol === 'soporte_digital' && typeof account === 'string' && z.string().email().safeParse(account).success;
+    return { ...response, ficha: { ...ficha, cuentaAmazonRegistrada: !!account, soporteDigitalCuentaAmazon: safeEmail ? account : null } };
+  });
   // Ficha completa (las nueve secciones en una sola llamada): el
   // especialista dueño del proyecto, jefe_area, y todos los roles
   // dueños de alguna sección — necesitan leerla antes de editar la

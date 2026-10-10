@@ -18,6 +18,7 @@ function ContenidoDigitalMicro({
   puedeEditar: boolean;
 }) {
   const [cuentaAmazon, setCuentaAmazon] = useState(ficha.soporteDigitalCuentaAmazon ?? '');
+  const [cuentaModificada, setCuentaModificada] = useState(false);
   const [fechaEnvioFormulario, setFechaEnvioFormulario] = useState(ficha.soporteDigitalFechaEnvioFormulario ?? '');
   const [fechaActivacion, setFechaActivacion] = useState(ficha.soporteDigitalFechaActivacion ?? '');
   const queryClient = useQueryClient();
@@ -25,7 +26,7 @@ function ContenidoDigitalMicro({
   const mutacion = useMutation({
     mutationFn: () =>
       actualizarSeccionSoporteDigital(proyectoId, {
-        soporteDigitalCuentaAmazon: cuentaAmazon || null,
+        ...(cuentaModificada ? { soporteDigitalCuentaAmazon: cuentaAmazon || null } : {}),
         soporteDigitalFechaEnvioFormulario: fechaEnvioFormulario || null,
         soporteDigitalFechaActivacion: fechaActivacion || null,
       }),
@@ -45,7 +46,7 @@ function ContenidoDigitalMicro({
         <h3 className="mb-2 font-medium text-tinta">9. Solicitud de paquete final</h3>
         <CamposReadOnly
           campos={[
-            { etiqueta: 'Cuenta Amazon', valor: ficha.soporteDigitalCuentaAmazon },
+            { etiqueta: 'Cuenta Amazon registrada', valor: ficha.cuentaAmazonRegistrada ? 'Sí' : 'Sin registrar' },
             { etiqueta: 'Formulario enviado', valor: formatearFechaONull(ficha.soporteDigitalFechaEnvioFormulario) },
             { etiqueta: 'Activación', valor: formatearFechaONull(ficha.soporteDigitalFechaActivacion) },
           ]}
@@ -60,14 +61,15 @@ function ContenidoDigitalMicro({
       <div className="space-y-3">
         <div>
           <label htmlFor="soporte-cuenta-amazon" className="mb-1 block text-sm font-medium text-tinta">
-            Cuenta Amazon
+            Correo de la cuenta Amazon
           </label>
           <input
             id="soporte-cuenta-amazon"
-            type="text"
+            type="email"
             value={cuentaAmazon}
             onChange={(event) => {
               setCuentaAmazon(event.target.value);
+              setCuentaModificada(true);
               mutacion.reset();
             }}
             className="w-full rounded-md border border-tinta/20 px-3 py-2 text-sm text-tinta focus:border-dorado focus:outline-none focus:ring-1 focus:ring-dorado"

@@ -1,7 +1,11 @@
-import { QueryClient } from '@tanstack/react-query';
+import { MutationCache, QueryClient } from '@tanstack/react-query';
 import { ApiError } from './api';
 
 export const queryClient = new QueryClient({
+  // Workspace changes invalidate the shared dossier without copying data.
+  mutationCache: new MutationCache({
+    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ['ficha-viva'] }); },
+  }),
   defaultOptions: {
     queries: {
       retry: (falloPrevio, error) => {

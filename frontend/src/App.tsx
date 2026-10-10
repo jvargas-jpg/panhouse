@@ -12,6 +12,7 @@ import { AutorHomePage } from './portalAutor/AutorHomePage';
 import { AutorLayout } from './portalAutor/AutorLayout';
 import { LibroDetalleAutorPage } from './portalAutor/LibroDetalleAutorPage';
 import { FichaTrazabilidadPage } from './proyectos/FichaTrazabilidadPage';
+import { CommercialIntakePage } from './trazabilidad/CommercialIntakePage';
 import { ProyectoDetallePage } from './proyectos/ProyectoDetallePage';
 import { RrppIndicadoresLoading } from './rrpp/RrppIndicadoresLoading';
 import { RrppIngresosPage } from './rrpp/RrppIngresosPage';
@@ -68,6 +69,7 @@ export function App() {
               retirado). Mismo FullscreenLayout que el detalle de proyecto
               (formulario a ancho completo). */}
           <Route path="/proyectos/:id/ficha-trazabilidad" element={<FichaTrazabilidadPage />} />
+          <Route path="/proyectos/:id/ingreso-comercial" element={<CommercialIntakePage />} />
         </Route>
 
         {/* Portal del Autor: layout propio (top bar clara), no AppLayout

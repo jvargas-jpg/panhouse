@@ -644,6 +644,7 @@ export interface FichaCompleta extends PreparacionComercial {
   calidadObservaciones: string | null;
   calidadFases: FichaCalidadFase[];
   soporteDigitalCuentaAmazon: string | null;
+  cuentaAmazonRegistrada?: boolean;
   soporteDigitalFechaEnvioFormulario: string | null;
   soporteDigitalFechaActivacion: string | null;
   digitalEstatus: string | null;
