@@ -104,6 +104,14 @@ export const proyectos = pgTable('proyectos', {
   fechaRealInicio: date('fecha_real_inicio'),
   fechaDeseadaAutor: date('fecha_deseada_autor'),
 
+  // Decisión humana, ligada a las fechas evaluadas. El candidato sigue derivado.
+  expressDecision: varchar('express_decision', { length: 20 }),
+  expressFechaEstandar: date('express_fecha_estandar'),
+  expressFechaDeseada: date('express_fecha_deseada'),
+  expressDecididoPorId: uuid('express_decidido_por_id').references(() => users.id, { onDelete: 'set null' }),
+  expressDecididoEn: timestamp('express_decidido_en', { withTimezone: true }),
+  expressMotivo: text('express_motivo'),
+
   // --- HITOS DE PROCESO / FECHAS (Alineados a Matriz IA) ---
   fechaFinProyectada: date('fecha_fin_proyectada'),
   fechaProcesoIngreso: date('fecha_proceso_ingreso'),

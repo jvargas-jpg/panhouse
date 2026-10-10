@@ -23,6 +23,7 @@ import { fichaVivaRoutes } from './routes/fichaViva.routes.js';
 import { usuariosRoutes } from './routes/usuarios.routes.js';
 import { rrppRoutes } from './routes/rrpp.routes.js';
 import { rrppLanzamientosRoutes } from './routes/rrppLanzamientos.routes.js';
+import { jefaturaRoutes } from './routes/jefatura.routes.js';
 
 export function buildApp() {
   const app = Fastify({
@@ -54,6 +55,7 @@ export function buildApp() {
   app.register(metricasRoutes, { prefix: '/api/metricas' });
   app.register(rrppRoutes, { prefix: '/api/rrpp' });
   app.register(rrppLanzamientosRoutes, { prefix: '/api/rrpp/lanzamientos' });
+  app.register(jefaturaRoutes, { prefix: '/api/jefatura' });
 
   app.get('/health', async () => ({ status: 'ok' }));
 

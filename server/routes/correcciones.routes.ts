@@ -62,7 +62,6 @@ async function verificarAccesoAEjecucion(
 
   if (usuario.rol === 'corrector' && fila.correctorId === usuario.id) return { ok: true };
   if (usuario.rol === 'especialista' && fila.especialistaId === usuario.id && fila.freelance) return { ok: true };
-  if (usuario.rol === 'jefe_area') return { ok: true };
 
   return { ok: false, status: 403, error: 'No autorizado para esta corrección' };
 }
@@ -101,7 +100,7 @@ export async function correccionesRoutes(app: FastifyInstance) {
 
   app.patch(
     '/:id/inicio',
-    { preHandler: [requireAuth, requireRole('corrector', 'especialista', 'jefe_area')] },
+    { preHandler: [requireAuth, requireRole('corrector', 'especialista')] },
     async (request, reply) => {
       const params = parseOrReply(idParamSchema, request.params, reply);
       if (!params) return;
@@ -119,7 +118,7 @@ export async function correccionesRoutes(app: FastifyInstance) {
 
   app.patch(
     '/:id/entrega',
-    { preHandler: [requireAuth, requireRole('corrector', 'especialista', 'jefe_area')] },
+    { preHandler: [requireAuth, requireRole('corrector', 'especialista')] },
     async (request, reply) => {
       const params = parseOrReply(idParamSchema, request.params, reply);
       if (!params) return;

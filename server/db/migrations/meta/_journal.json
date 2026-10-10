@@ -519,6 +519,13 @@
       "when": 1791588497154,
       "tag": "0073_wild_electro",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1791669823026,
+      "tag": "0074_conscious_speedball",
+      "breakpoints": true
     }
   ]
 }

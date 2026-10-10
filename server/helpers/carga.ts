@@ -50,20 +50,23 @@ export interface CargaUsuario {
 
 // Para que jefe_area (especialistas) o jefe_edicion (editores) vean de
 // un vistazo quién tiene más trabajo antes de asignar un proyecto
-// nuevo. Reutiliza obtenerCargaUsuario por cada persona en vez de
-// reimplementar la suma con un JOIN propio. Ordenado de mayor a menor
+// nuevo. Lee proyectos y personas por lotes y reutiliza calcularCarga
+// para conservar la misma suma sin consultas por persona. Ordenado de mayor a menor
 // carga: es justo lo que quien reparte trabajo necesita ver primero,
 // no un orden incidental de la consulta.
 export async function listarCargaPorRol(rol: RolConCarga): Promise<CargaUsuario[]> {
   const usuarios = await db.select({ id: users.id, nombre: users.nombre, email: users.email }).from(users).where(eq(users.rol, rol));
-
-  const conCarga = await Promise.all(
-    usuarios.map(async (usuario) => ({
-      ...usuario,
-      carga: await obtenerCargaUsuario(usuario.id, rol),
-    })),
-  );
-
+  const filas = await db.select({ usuarioId: columnaAsignacion(rol), peso: servicios.pesoComplejidad })
+    .from(proyectos).innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
+    .where(inArray(proyectos.estado, ESTADOS_ACTIVOS));
+  const pesos = new Map<string, number[]>();
+  for (const fila of filas) {
+    if (!fila.usuarioId) continue;
+    const lista = pesos.get(fila.usuarioId) ?? [];
+    lista.push(fila.peso);
+    pesos.set(fila.usuarioId, lista);
+  }
+  const conCarga = usuarios.map(usuario => ({ ...usuario, carga: calcularCarga(pesos.get(usuario.id) ?? []) }));
   return conCarga.sort((a, b) => b.carga - a.carga);
 }
 

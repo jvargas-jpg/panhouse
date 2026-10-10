@@ -13,16 +13,16 @@ export function TopBar() {
 
   return (
     <header className="flex shrink-0 items-center justify-between border-b border-tinta/10 bg-white px-4 py-3 sm:px-6">
-      <span className="font-semibold text-tinta">Panhouse Gestor Editorial</span>
+      <span className="min-w-0 text-sm font-semibold text-tinta sm:text-base">Panhouse Gestor Editorial</span>
 
-      <div className="flex items-center gap-3">
+      <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         <NotificacionesCampana />
         <span className="hidden text-sm text-tinta/70 sm:inline">{user?.nombre}</span>
         <button
           type="button"
           onClick={handleLogout}
           disabled={logout.isPending}
-          className="rounded-md border border-tinta/20 px-3 py-1.5 text-sm font-medium text-tinta transition hover:bg-tinta/5 disabled:opacity-60"
+          className="shrink-0 whitespace-nowrap rounded-md border border-tinta/20 px-3 py-1.5 text-xs font-medium text-tinta transition hover:bg-tinta/5 disabled:opacity-60 sm:text-sm"
         >
           Cerrar sesión
         </button>

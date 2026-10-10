@@ -4,7 +4,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, workItems } from '../db/schema/index.js';
+import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
@@ -564,17 +564,9 @@ export async function actualizarPropuestaPortada(proyectoId: string, propuestaPo
 // separado de la creación del proyecto: jefe_area crea el proyecto y
 // luego reparte el trabajo, casi siempre en dos pasos seguidos de la
 // misma pantalla, pero nunca es el mismo paso.
-// estado: 'en_proceso' es explícito a pedido del negocio ("pasa a
-// producción activa al asignar") — hoy es un no-op en la práctica:
-// proyectos.estado nace en 'en_proceso' (ver schema/proyectos.ts) y
-// ningún otro punto del backend lo cambia todavía (retrasado/stand_by/
-// pausado/culminado/retirado no tienen flujo propio implementado aún),
-// así que un proyecto sin especialista nunca puede estar en otro
-// estado. Se deja igual, en vez de omitirlo, para que el contrato de
-// este endpoint sea correcto el día que esos otros flujos existan — sin
-// esto, asignar especialista a un proyecto marcado 'pausado' antes de
-// tener especialista (caso hoy imposible, no garantizado a futuro) lo
-// dejaría con un especialista pero sin volver a 'en_proceso'.
+// La primera asignacion inicia Produccion activa, segun el contrato
+// vigente del negocio. Reasignar o repetir conserva el estado macro:
+// no es una autorizacion para reanudar pausas ni quitar retrasos.
 // Fase 2 (Foundation): además del puntero en `proyectos` (lectura
 // rápida para carga.ts/ownership), ahora deja historial formal en
 // project_assignments + evento en audit_logs, dentro de la misma
@@ -584,10 +576,15 @@ export async function actualizarPropuestaPortada(proyectoId: string, propuestaPo
 // ya lo resuelve). Crea/completa el work item 'asignacion_especialista'
 // (el que RRPP→Jefatura deja 'pendiente', ver notificarJefaturaFichaCompletada)
 // y notifica puntualmente al especialista asignado (no a todo el rol).
-export async function asignarEspecialista(proyectoId: string, especialistaId: string, asignadoPorId: string): Promise<void> {
+export async function asignarEspecialista(proyectoId: string, especialistaId: string, asignadoPorId: string, opciones: { exigirHandoff?: boolean } = {}): Promise<void> {
   await db.transaction(async (tx) => {
-    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
-    if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1).for('update');
+    if (!proyecto) throw Object.assign(new Error('Proyecto no encontrado'), { statusCode: 404 });
+    if (opciones.exigirHandoff && (!proyecto.notificadoJefatura || !ESTADOS_ACTIVOS.includes(proyecto.estado)))
+      throw Object.assign(new Error('El proyecto debe estar activo y enviado formalmente por RRPP'), { statusCode: 409 });
+    const [candidato] = await tx.select({ rol: users.rol, activo: users.activo }).from(users).where(eq(users.id, especialistaId));
+    if (!candidato || candidato.rol !== 'especialista' || !candidato.activo)
+      throw Object.assign(new Error('Selecciona un Especialista activo'), { statusCode: 409 });
 
     const { cambio, asignacionId, anteriorUsuarioId } = await asignarConHistorial(tx, {
       proyectoId,
@@ -596,7 +593,10 @@ export async function asignarEspecialista(proyectoId: string, especialistaId: st
       asignadoPorId,
     });
 
-    await tx.update(proyectos).set({ especialistaId, estado: 'en_proceso' }).where(eq(proyectos.id, proyectoId));
+    // La primera asignación inicia Producción. Reasignar o repetir no
+    // reanuda un proyecto pausado ni borra su estado operativo.
+    const estado = anteriorUsuarioId || proyecto.especialistaId || !cambio ? proyecto.estado : 'en_proceso';
+    await tx.update(proyectos).set({ especialistaId, estado }).where(eq(proyectos.id, proyectoId));
 
     if (!cambio) return;
 

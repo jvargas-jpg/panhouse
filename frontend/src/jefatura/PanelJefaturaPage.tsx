@@ -1,257 +1,369 @@
-import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Modal } from '../autores/Modal';
-import type { ProyectoConRiesgo } from '../types/api';
-import { AsignarEspecialistaCard } from './AsignarEspecialistaCard';
-import { fetchCargaEquipo, fetchProyectosRiesgo, fetchTodosLosProyectos } from './jefaturaApi';
-import { ProyectoFilaJefatura } from './ProyectoFilaJefatura';
-import { SeguimientoCorreccionPage } from './SeguimientoCorreccionPage';
+import { useCallback, useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMe } from '../auth/useAuth';
+import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
+import { RrppIcon } from '../rrpp/RrppIcons';
+import { AssignmentCandidateDrawer } from './AssignmentCandidateDrawer';
+import {
+  fetchActividadJefatura,
+  fetchDashboardJefatura,
+} from './commandCenterApi';
+import {
+  DecisionQueue,
+  ErrorJefatura,
+  JefaturaKpis,
+  PriorityTracking,
+  ProjectIdentity,
+  RequestsList,
+  TeamCapacityCard,
+  fechaJefatura,
+  type TabDecision,
+} from './JefaturaCards';
+import {
+  JefaturaSidebar,
+  VISTAS_JEFATURA,
+  type VistaJefatura,
+} from './JefaturaSidebar';
 import { SeguimientoPage } from './SeguimientoPage';
+import { SeguimientoCorreccionPage } from './SeguimientoCorreccionPage';
+import './jefatura.css';
 
-// Mismo criterio de búsqueda que ProyectosPendientesCrmList.tsx
-// (autores/): coautoría completa (todos los autores, no solo el
-// primero), código y servicio (código + nombre).
-function coincide(proyecto: ProyectoConRiesgo, termino: string): boolean {
-  const q = termino.trim().toLowerCase();
-  if (!q) return true;
-  return (
-    proyecto.codigo.toLowerCase().includes(q) ||
-    proyecto.autores.some((autor) => autor.nombre.toLowerCase().includes(q)) ||
-    proyecto.servicio.codigo.toLowerCase().includes(q) ||
-    proyecto.servicio.nombre.toLowerCase().includes(q)
-  );
-}
-
-// AppLayout.tsx envuelve toda la app en <TopBar/> + <main className="mx-auto
-// max-w-4xl flex-1 overflow-y-auto px-4 py-6 sm:px-6">. Mismo breakout
-// que AutoresPage.tsx (autores/): ml/mr negativos + w-screen escapan la
-// columna angosta de 896px, -my-6 cancela la POSICIÓN del padding
-// vertical de ese <main> (empujando hacia arriba).
-const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen -my-6';
-
-// Ver AutoresPage.tsx para la explicación completa: h-full solo deja
-// una franja de 48px sin cubrir en el fondo (resuelve contra la caja de
-// contenido de <main>, ya sin su propio padding py-6). +3rem = ese
-// padding total.
-const ALTO_LLENO_MAIN = 'h-[calc(100%+3rem)]';
-
-const NAV_ACTIVO =
-  'w-full flex items-center gap-3 px-4 py-3 bg-dorado/10 text-dorado rounded-xl font-semibold text-sm border border-dorado/20 transition-all text-left';
-const NAV_INACTIVO =
-  'w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-medium text-sm transition-all text-left';
-
-type Vista = 'dashboard' | 'seguimiento' | 'correccion';
-
-// Regla de negocio confirmada: jefe_area NUNCA crea proyectos — solo
-// los recibe ya creados por comercial (ver AutoresPage.tsx) y reparte
-// el trabajo. Por eso el Dashboard no tiene botón "+ Nuevo Proyecto" ni
-// el formulario de creación que tenía antes (AutoresSinProyecto.tsx/
-// CrearProyectoForm.tsx, eliminados) — es una bandeja de entrada, no un
-// punto de alta.
-//
-// Shell con sidebar (mismo patrón que AutoresPage.tsx): "Dashboard" es
-// el contenido que ya existía (bandeja + línea de producción);
-// "Control de Tiempos" es la matriz de seguimiento nueva — dos vistas
-// del mismo espacio de trabajo de jefe_area, no dos pantallas sueltas.
 export function PanelJefaturaPage() {
-  const [vistaActiva, setVistaActiva] = useState<Vista>('dashboard');
-
-  const carga = useQuery({ queryKey: ['especialistas', 'carga'], queryFn: fetchCargaEquipo });
-  const riesgo = useQuery({ queryKey: ['proyectos', 'riesgo'], queryFn: fetchProyectosRiesgo });
-  const todos = useQuery({ queryKey: ['proyectos', 'todos'], queryFn: fetchTodosLosProyectos });
-
-  const [proyectoParaAsignar, setProyectoParaAsignar] = useState<ProyectoConRiesgo | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const proyectosActivos = riesgo.data?.proyectos ?? [];
-  // "Nuevos Proyectos por Asignar" — a pedido explícito del negocio,
-  // exclusivamente proyectos que RRPP ya mandó a Jefatura
-  // (notificadoJefatura, ver el botón "Mandar a Jefatura" en
-  // ProyectoDetallePage.tsx). Antes filtraba solo por especialistaId
-  // === null, así que mostraba CUALQUIER proyecto activo sin
-  // especialista — incluidos los que todavía estaban en manos de
-  // Comercial o RRPP, nunca enviados a Jefatura. Ese era el bug real
-  // ("muestra proyectos incorrectos"): no hacía falta un nuevo estado en
-  // la base, notificadoJefatura ya existía en ProyectoConRiesgo.
-  const nuevosSinAsignar = proyectosActivos
-    .filter((proyecto) => proyecto.especialistaId === null && proyecto.notificadoJefatura)
-    .filter((proyecto) => coincide(proyecto, searchTerm));
-  // "Proyectos en Curso" — especialistaId !== null sigue siendo el
-  // criterio correcto: proyectos.estado (en_proceso/retrasado/etc.) no
-  // cambia al asignar (nace en 'en_proceso' desde que se crea, ver
-  // schema/proyectos.ts) — especialistaId es la señal real de "ya
-  // arrancó la producción", no un estado aparte que haya que tocar.
-  const enCurso = proyectosActivos.filter((proyecto) => proyecto.especialistaId !== null).filter((proyecto) => coincide(proyecto, searchTerm));
-  const proyectosConAlerta = proyectosActivos.filter((p) => p.riesgo.vencido || p.riesgo.enRiesgo);
-
-  const totalProyectos = todos.data?.proyectos.length ?? 0;
-  const totalEspecialistas = carga.data?.especialistas.length ?? 0;
-
+  const { data: user } = useMe();
+  const [params, setParams] = useSearchParams();
+  const vistaParam = params.get('vista');
+  const vista: VistaJefatura = VISTAS_JEFATURA.includes(
+    vistaParam as VistaJefatura,
+  )
+    ? (vistaParam as VistaJefatura)
+    : 'inicio';
+  const tabParam = params.get('tab');
+  const tab: TabDecision =
+    vista === 'solicitudes'
+      ? 'solicitudes'
+      : tabParam === 'express' ||
+          tabParam === 'solicitudes' ||
+          tabParam === 'enRiesgo'
+        ? tabParam
+        : 'porAsignar';
+  const [search, setSearch] = useState('');
+  const [proyectoId, setProyectoId] = useState<string | null>(null);
+  const [aviso, setAviso] = useState('');
+  const [correccion, setCorreccion] = useState(false);
+  const cache = useQueryClient();
+  const dashboard = useQuery({
+    queryKey: ['jefatura', 'dashboard'],
+    queryFn: fetchDashboardJefatura,
+    enabled: user?.rol === 'jefe_area',
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchInterval: 60000,
+  });
+  const actividad = useQuery({
+    queryKey: ['jefatura', 'actividad'],
+    queryFn: fetchActividadJefatura,
+    enabled: user?.rol === 'jefe_area',
+    refetchInterval: 60000,
+  });
+  const close = useCallback(() => setProyectoId(null), []);
+  useEffect(() => {
+    if (!aviso) return;
+    const timer = setTimeout(() => setAviso(''), 5000);
+    return () => clearTimeout(timer);
+  }, [aviso]);
+  async function cambio(mensaje: string, cerrar = false) {
+    await Promise.all(
+      [
+        ['jefatura'],
+        ['proyectos'],
+        ['especialistas'],
+        ['proyecto'],
+        ['ficha'],
+        ['ficha-viva'],
+        ['notificaciones'],
+      ].map((queryKey) => cache.invalidateQueries({ queryKey })),
+    );
+    setAviso(mensaje);
+    if (cerrar) close();
+  }
+  function seleccionar(t: TabDecision) {
+    setParams({ tab: t });
+    setSearch('');
+  }
+  const proyecto = dashboard.data?.proyectos.find((p) => p.id === proyectoId);
+  if (user && user.rol !== 'jefe_area')
+    return <p role="alert">No tienes acceso a Jefatura.</p>;
+  const titulos: Record<VistaJefatura, string> = {
+    inicio: `Hola, ${user?.nombre ?? '…'}`,
+    asignaciones: 'Asignaciones y carga',
+    proyectos: 'Proyectos recibidos',
+    seguimiento: 'Seguimiento',
+    solicitudes: 'Solicitudes',
+    indicadores: 'Indicadores de Jefatura',
+  };
   return (
-    <div className={`${FULL_BLEED} ${ALTO_LLENO_MAIN} flex overflow-hidden bg-[#F8F9FA]`}>
-      <aside className="z-20 hidden h-full w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
-        <div className="flex h-20 items-center border-b border-gray-800 px-6">
-          <h1 className="text-xl font-light uppercase tracking-widest text-white">
-            Pan<span className="font-bold text-dorado">House</span>
-          </h1>
+    <CrmSidebarLayout
+      nav={<JefaturaSidebar vista={vista} />}
+      logo={
+        <img
+          src="/brand/panhouse-logo.webp"
+          alt="PanHouse Casa Editorial"
+          className="h-auto w-[132px] object-contain"
+        />
+      }
+      footer={
+        <div className="border-t border-gray-800/80 px-6 py-5">
+          <p className="text-xs italic text-gray-500">Historias que conectan</p>
         </div>
-
-        <nav className="flex-1 space-y-2 px-4 py-8">
-          <button onClick={() => setVistaActiva('dashboard')} className={vistaActiva === 'dashboard' ? NAV_ACTIVO : NAV_INACTIVO}>
-            {vistaActiva === 'dashboard' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
-            Dashboard
-          </button>
-
-          <button onClick={() => setVistaActiva('seguimiento')} className={vistaActiva === 'seguimiento' ? NAV_ACTIVO : NAV_INACTIVO}>
-            {vistaActiva === 'seguimiento' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
-            Control de Tiempos
-          </button>
-
-          <button onClick={() => setVistaActiva('correccion')} className={vistaActiva === 'correccion' ? NAV_ACTIVO : NAV_INACTIVO}>
-            {vistaActiva === 'correccion' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
-            Seguimiento de Corrección
-          </button>
-        </nav>
-      </aside>
-
-      {/* AppLayout.tsx ya envuelve el Outlet en un <main> — dos <main> anidados
-          no son válidos (landmark duplicado), así que este contenedor de
-          scroll independiente es un <div> con las mismas clases. */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        {vistaActiva === 'seguimiento' && <SeguimientoPage />}
-        {vistaActiva === 'correccion' && <SeguimientoCorreccionPage />}
-
-        {vistaActiva === 'dashboard' && (
-          <div className="animate-in fade-in space-y-8 p-6 duration-500 md:p-10">
-            <header className="flex flex-col gap-2 border-b border-tinta/10 pb-4">
-              <h1 className="text-2xl font-bold text-tinta">Panel de Jefatura</h1>
-              <p className="text-sm text-tinta/70">Bandeja de proyectos recibidos de Comercial y control de la línea de producción.</p>
-            </header>
-
-            <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="flex flex-col rounded-xl border border-tinta/10 bg-tinta p-5 text-crema shadow-sm transition-transform hover:scale-[1.02]">
-                <span className="text-sm font-medium text-crema/70">Total Proyectos</span>
-                <span className="mt-2 text-3xl font-bold text-dorado">{totalProyectos}</span>
-              </div>
-
-              <div className="flex flex-col rounded-xl border border-red-200 bg-red-50 p-5 shadow-sm transition-transform hover:scale-[1.02]">
-                <span className="text-sm font-medium text-red-800/70">En Riesgo / Vencidos</span>
-                <span className="mt-2 text-3xl font-bold text-red-600">{proyectosConAlerta.length}</span>
-              </div>
-
-              <div className="flex flex-col rounded-xl border border-dorado/30 bg-dorado/10 p-5 shadow-sm transition-transform hover:scale-[1.02]">
-                <span className="text-sm font-medium text-tinta/70">Especialistas Activos</span>
-                <span className="mt-2 text-3xl font-bold text-tinta">{totalEspecialistas}</span>
-              </div>
-            </section>
-
-            <input
-              type="search"
-              placeholder="Buscar por ID, autor o servicio..."
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              className="w-full max-w-md rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm shadow-sm outline-none transition-all focus:border-dorado focus:ring-2 focus:ring-dorado/40"
+      }
+      contentMaxWidth="max-w-[1760px]"
+      contentClassName="p-4 sm:p-7"
+      sidebarBreakpoint="lg"
+      overlays={
+        <>
+          {proyecto && (
+            <AssignmentCandidateDrawer
+              key={proyecto.id}
+              proyecto={proyecto}
+              equipo={dashboard.data?.teamCapacity ?? []}
+              onClose={close}
+              onCambio={cambio}
             />
-
-            <section>
-              <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-gray-900">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                Nuevos Proyectos por Asignar
-              </h2>
-
-              {riesgo.isLoading && <p className="animate-pulse text-sm text-tinta/70">Cargando proyectos…</p>}
-              {riesgo.isError && (
-                <p role="alert" className="text-sm text-red-600">
-                  No se pudieron cargar los proyectos{riesgo.error instanceof Error ? `: ${riesgo.error.message}` : ''}.
-                </p>
-              )}
-
-              {riesgo.data && nuevosSinAsignar.length === 0 && (
-                <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center">
-                  <p className="text-sm text-gray-500">
-                    {searchTerm ? `Ningún proyecto nuevo coincide con "${searchTerm}".` : 'No hay proyectos nuevos pendientes de revisión.'}
-                  </p>
-                </div>
-              )}
-
-              {nuevosSinAsignar.length > 0 && (
-                <div className="flex flex-col gap-4">
-                  {nuevosSinAsignar.map((proyecto) => (
-                    <ProyectoFilaJefatura
-                      key={proyecto.id}
-                      proyecto={proyecto}
-                      accion={
-                        <button
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            setProyectoParaAsignar(proyecto);
-                          }}
-                          className="flex-shrink-0 rounded-lg p-2 text-gray-400 transition-colors hover:bg-dorado/10 hover:text-dorado"
-                          title="Asignar especialista"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a3 3 0 11-6 0 3 3 0 016 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                            />
-                          </svg>
-                        </button>
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section>
-              <h2 className="mb-4 mt-12 flex items-center gap-2 text-xl font-bold text-gray-900">
-                <span className="h-2 w-2 rounded-full bg-dorado" />
-                Proyectos en Curso
-              </h2>
-
-              {riesgo.data && enCurso.length === 0 && (
-                <div className="rounded-xl border border-dashed border-gray-200 bg-white p-8 text-center">
-                  <p className="text-sm text-gray-500">
-                    {searchTerm ? `Ningún proyecto en curso coincide con "${searchTerm}".` : 'Ningún proyecto en curso todavía.'}
-                  </p>
-                </div>
-              )}
-
-              {enCurso.length > 0 && (
-                <div className="flex flex-col gap-4">
-                  {enCurso.map((proyecto) => (
-                    <ProyectoFilaJefatura key={proyecto.id} proyecto={proyecto} />
-                  ))}
-                </div>
-              )}
-            </section>
+          )}
+          {aviso && (
+            <div role="status" className="jf-toast">
+              {aviso}
+            </div>
+          )}
+        </>
+      }
+    >
+      <div className="jefatura">
+        <JefaturaSidebar vista={vista} mobile />
+        <header className="jf-page-header">
+          <div>
+            <p className="jf-eyebrow">JEFATURA · OPERACIÓN EDITORIAL</p>
+            <h1>{titulos[vista]}</h1>
+            <p>
+              {vista === 'inicio'
+                ? 'Supervisa la operación editorial, distribuye la carga del equipo y atiende los proyectos que requieren decisión.'
+                : vista === 'asignaciones'
+                  ? 'Compara carga ponderada y composición antes de distribuir el trabajo.'
+                  : 'Revisa el contexto operativo y continúa desde el expediente del proyecto.'}
+            </p>
           </div>
+          {vista === 'inicio' && (
+            <span className="jf-snapshot">
+              <span />
+              Estado actual
+            </span>
+          )}
+        </header>
+        {vista === 'indicadores' ? (
+          <section className="jf-card jf-placeholder">
+            <RrppIcon nombre="indicadores" className="h-8 w-8" />
+            <h2>Un espacio para medir Producción</h2>
+            <p>
+              Los indicadores históricos de Jefatura se implementarán en una
+              etapa posterior.
+            </p>
+            <Link className="jf-button" to="/">
+              Volver al Inicio
+            </Link>
+          </section>
+        ) : vista === 'seguimiento' ? (
+          <>
+            <div className="jf-actions jf-follow-nav">
+              <button
+                className={`jf-button ${!correccion ? '' : 'jf-button-secondary'}`}
+                onClick={() => setCorreccion(false)}
+              >
+                Procesos
+              </button>
+              <button
+                className={`jf-button ${correccion ? '' : 'jf-button-secondary'}`}
+                onClick={() => setCorreccion(true)}
+              >
+                Corrección
+              </button>
+            </div>
+            {correccion ? <SeguimientoCorreccionPage /> : <SeguimientoPage />}
+          </>
+        ) : (
+          <>
+            {vista === 'inicio' && (
+              <JefaturaKpis
+                summary={dashboard.data?.summary}
+                loading={dashboard.isLoading}
+                onSelect={seleccionar}
+              />
+            )}
+            {dashboard.isError && (
+              <ErrorJefatura
+                retry={() => {
+                  void dashboard.refetch();
+                }}
+                texto="No pudimos actualizar los pendientes y la carga del equipo."
+              />
+            )}
+            {vista === 'inicio' || vista === 'solicitudes' ? (
+              <>
+                <div className="jf-main-grid">
+                  <div className="jf-column">
+                    <DecisionQueue
+                      data={dashboard.data}
+                      tab={tab}
+                      onTab={seleccionar}
+                      onCompare={(p) => setProyectoId(p.id)}
+                      search={search}
+                      onSearch={setSearch}
+                      loading={dashboard.isLoading}
+                    />
+                    {vista === 'inicio' && (
+                      <PriorityTracking
+                        proyectos={dashboard.data?.priorityTracking}
+                        loading={dashboard.isLoading}
+                      />
+                    )}
+                  </div>
+                  <div className="jf-column">
+                    <TeamCapacityCard
+                      equipo={dashboard.data?.teamCapacity}
+                      loading={dashboard.isLoading}
+                    />
+                    {vista === 'inicio' && (
+                      <section className="jf-card">
+                        <div className="jf-card-head">
+                          <div>
+                            <h2>Solicitudes recientes</h2>
+                            <p>Revisión y destino de cada solicitud</p>
+                          </div>
+                        </div>
+                        {dashboard.isLoading ? (
+                          <div className="jf-list-skeleton">
+                            <div className="jf-skeleton" />
+                          </div>
+                        ) : (
+                          <RequestsList
+                            requests={dashboard.data?.requests.slice(0, 4)}
+                          />
+                        )}
+                      </section>
+                    )}
+                  </div>
+                </div>
+                {vista === 'inicio' && (
+                  <>
+                    <section className="jf-card jf-activity">
+                      <div className="jf-card-head">
+                        <div>
+                          <h2>Actividad reciente</h2>
+                          <p>Últimos movimientos del equipo</p>
+                        </div>
+                        <RrppIcon nombre="actividad" className="h-4 w-4" />
+                      </div>
+                      {actividad.isError ? (
+                        <ErrorJefatura
+                          retry={() => {
+                            void actividad.refetch();
+                          }}
+                        />
+                      ) : actividad.isLoading ? (
+                        <div className="jf-list-skeleton">
+                          <div className="jf-skeleton" />
+                        </div>
+                      ) : !actividad.data?.actividad.length ? (
+                        <p className="jf-empty">
+                          Los próximos movimientos aparecerán aquí.
+                        </p>
+                      ) : (
+                        <ul>
+                          {actividad.data.actividad.map((a) => (
+                            <li key={a.id}>
+                              <span className="jf-activity-dot" />
+                              <p>
+                                <strong>{a.actor}</strong> {a.texto}{' '}
+                                <Link
+                                  to={`/proyectos/${a.proyectoId}/ficha-trazabilidad`}
+                                >
+                                  #{a.codigo}
+                                </Link>
+                              </p>
+                              <time dateTime={a.fecha}>
+                                {fechaJefatura(a.fecha)}
+                              </time>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
+                  </>
+                )}
+              </>
+            ) : (
+              <div className="jf-main-grid">
+                <section className="jf-card">
+                  <div className="jf-card-head">
+                    <div>
+                      <h2>
+                        {vista === 'asignaciones'
+                          ? 'Distribución de proyectos'
+                          : 'Proyectos recibidos de RRPP'}
+                      </h2>
+                      <p>
+                        Abre el expediente para supervisar; compara al equipo
+                        antes de asignar.
+                      </p>
+                    </div>
+                  </div>
+                  {dashboard.isLoading ? (
+                    <div className="jf-list-skeleton">
+                      <div className="jf-skeleton" />
+                    </div>
+                  ) : !dashboard.data ? (
+                    <p className="jf-empty">
+                      Los proyectos no están disponibles.
+                    </p>
+                  ) : !dashboard.data.proyectos.length ? (
+                    <p className="jf-empty">
+                      No hay proyectos recibidos en este momento.
+                    </p>
+                  ) : (
+                    <ul className="jf-project-list">
+                      {dashboard.data.proyectos.map((p) => (
+                        <li key={p.id}>
+                          <ProjectIdentity p={p} />
+                          <div>
+                            <strong>
+                              {p.especialista?.nombre ??
+                                'Pendiente de asignación'}
+                            </strong>
+                            <span className="jf-meta">{p.servicio.nombre}</span>
+                          </div>
+                          {vista === 'asignaciones' && (
+                            <button
+                              className="jf-button jf-button-small"
+                              onClick={() => setProyectoId(p.id)}
+                            >
+                              {p.porAsignar ? 'Asignar' : 'Reasignar'}
+                            </button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </section>
+                <TeamCapacityCard
+                  equipo={dashboard.data?.teamCapacity}
+                  loading={dashboard.isLoading}
+                  completo
+                />
+              </div>
+            )}
+          </>
         )}
       </div>
-
-      {proyectoParaAsignar && (
-        // Título corregido a pedido explícito del negocio: este modal
-        // (vista rápida del dashboard) solo asigna al Especialista/
-        // Coordinador Responsable — "Escuadrón de Producción" es el
-        // nombre de la tarjeta completa dentro del proyecto
-        // (SeccionEquipo.tsx), que sí reparte editor/corrector/
-        // diseñador además del especialista. Llamar igual a este modal
-        // generaba la confusión de que asignaba todo el equipo desde acá.
-        <Modal titulo="Asignar Especialista / Coordinador Responsable" onClose={() => setProyectoParaAsignar(null)}>
-          <AsignarEspecialistaCard
-            proyectoId={proyectoParaAsignar.id}
-            autorNombre={proyectoParaAsignar.autores.map((autor) => autor.nombre).join(', ') || proyectoParaAsignar.autor.nombre}
-            servicioCodigo={proyectoParaAsignar.servicio.codigo}
-            servicioNombre={proyectoParaAsignar.servicio.nombre}
-            fechaDeseadaAutor={proyectoParaAsignar.fechaDeseadaAutor}
-            onAsignado={() => setProyectoParaAsignar(null)}
-            onCancelar={() => setProyectoParaAsignar(null)}
-          />
-        </Modal>
-      )}
-    </div>
+    </CrmSidebarLayout>
   );
 }
