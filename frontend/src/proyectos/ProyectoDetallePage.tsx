@@ -177,7 +177,7 @@ function ProyectoDetalleContent() {
               — #{proyectoQuery.data.proyecto.codigo}
             </h1>
             <p className="text-sm text-white/70">
-              {proyectoQuery.data.proyecto.servicio.nombre} ({proyectoQuery.data.proyecto.servicio.codigo})
+              {proyectoQuery.data.proyecto.servicio.codigo} — {proyectoQuery.data.proyecto.servicio.nombre}
             </p>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
               <EstadoBadge estado={proyectoQuery.data.proyecto.estado} />

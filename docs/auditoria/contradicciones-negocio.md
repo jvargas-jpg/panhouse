@@ -16,6 +16,8 @@
 | **Impacto** | Si Comercial intentara fijar este valor, comprometería un cronograma operativo sin el diagnóstico de páginas y estado del manuscrito que solo RRPP realiza en la reunión inicial. |
 | **Decisión de Negocio** | **Confirmada.** Comercial registra solo "Crudo" general. RRPP en su intake inicial define "Crudo - Tripa" o "Crudo - Capítulo", momento en el cual el sistema calcula la Fecha de Cierre Oficial. |
 
+**Plazo Tripa pendiente de resolución (10/10/2026):** Manual del Especialista §1.5 indica 150 días; la Ficha y formulación operativa actual usan 90. La aclaración RRPP → Jefatura conserva **90 provisional** para Tripa y **150** para Capítulo en el cálculo compartido. No se cambia silenciosamente Tripa a 150 ni se declara resuelta esta contradicción. CR mantiene el peso real único del catálogo (**3**), sin multiplicador Express; diferenciar pesos por subtipo requiere definición empresarial explícita. RRPP es el único propietario de clasificación, obligatoria antes del envío formal. Ver [reporte A–M](../arquitectura/16-jefatura-flujo-decision.md#aclaración-consolidada-crudo-readiness-y-planificación).
+
 ---
 
 ## 2. Momento de Activación del Proceso de Soporte Digital (Amazon KDP)

@@ -77,6 +77,9 @@ export function SeccionFichaEditorial({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
       queryClient.invalidateQueries({ queryKey: ['rrpp'] });
+      queryClient.invalidateQueries({ queryKey: ['jefatura'] });
+      queryClient.invalidateQueries({ queryKey: ['ficha-viva', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['proyecto', proyectoId] });
     },
   });
 

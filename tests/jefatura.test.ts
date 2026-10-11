@@ -423,7 +423,7 @@ describe('Express: decisión humana, contexto y auditoría', () => {
     });
     const input = {
       decision: 'confirmado' as const,
-      fechaEstandar: previo.express.fechaEstandar,
+      fechaEstandar: previo.express.fechaEstandar!,
       fechaDeseada: previo.express.fechaDeseada!,
       motivo: 'Fecha comprometida revisada',
     };
@@ -460,7 +460,7 @@ describe('Express: decisión humana, contexto y auditoría', () => {
     const ex = (await obtenerDashboardJefatura(ahora)).proyectos[0]!.express;
     await decidirExpressJefatura(p.id, jefe, {
       decision: 'normal',
-      fechaEstandar: ex.fechaEstandar,
+      fechaEstandar: ex.fechaEstandar!,
       fechaDeseada: ex.fechaDeseada!,
     });
     expect(
@@ -476,7 +476,7 @@ describe('Express: decisión humana, contexto y auditoría', () => {
     expect(
       await decidirExpressJefatura(p.id, jefe, {
         decision: 'confirmado',
-        fechaEstandar: ex.fechaEstandar,
+        fechaEstandar: ex.fechaEstandar!,
         fechaDeseada: ex.fechaDeseada!,
       }),
     ).toMatchObject({ ok: false, status: 409 });
@@ -490,7 +490,7 @@ describe('Express: decisión humana, contexto y auditoría', () => {
       .where(eq(servicios.id, p.servicioId));
     await db
       .update(fichasTrazabilidad)
-      .set({ fechaDeseadaCulminacion: '2026-12-25' })
+      .set({ ingresoFechaIngreso: '2026-10-10', fechaDeseadaCulminacion: '2026-12-25' })
       .where(eq(fichasTrazabilidad.proyectoId, p.id));
     const ex = (await obtenerDashboardJefatura(ahora)).proyectos[0]!.express;
     expect(ex).toMatchObject({

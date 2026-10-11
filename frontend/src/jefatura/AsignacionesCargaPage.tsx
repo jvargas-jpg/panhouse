@@ -70,7 +70,7 @@ function FilaProyecto({
           {!p.express.compresionDias && (
             <span className="jac-normal">
               <RrppIcon nombre="calendario" />
-              Plazo normal
+              {p.datoIncompleto ? 'Plazo pendiente · dato incompleto' : 'Plazo normal'}
             </span>
           )}
           {p.express.estado === 'normal_confirmado' && (
@@ -93,7 +93,7 @@ function FilaProyecto({
       <div className="jac-assignment">
         <p className="jac-service">
           <RrppIcon nombre="libro" />
-          {p.servicio.nombre}
+          {p.servicio.codigo === 'CR' ? `CR — ${p.servicio.nombre}` : p.servicio.nombre}
         </p>
         <p className="jac-owner">
           <RrppIcon nombre="persona" />

@@ -93,3 +93,38 @@ Capturas en [`docs/evidencias/decision-jefatura`](../evidencias/decision-jefatur
 - [Móvil Ficha](../evidencias/decision-jefatura/mobile-ficha.jpg), [decisión](../evidencias/decision-jefatura/mobile-decision.jpg), [comparación](../evidencias/decision-jefatura/mobile-comparacion.jpg).
 - [Tablet Ficha](../evidencias/decision-jefatura/tablet-ficha.jpg), [decisión](../evidencias/decision-jefatura/tablet-decision.jpg).
 - [Ficha Especialista](../evidencias/decision-jefatura/especialista-ficha.jpg), [resumen con responsable](../evidencias/decision-jefatura/proyecto-responsable.jpg).
+
+## Aclaración consolidada: Crudo, readiness y planificación
+
+Ampliación del mismo flujo, 10 de octubre de 2026. El subtipo permanece en la Ficha canónica; el handoff no lo copia. Se reutiliza `evaluarPreparacionRrpp` y su gate de definición Crudo. Se corrigió Inicio RRPP para que un work item cerrado no convierta un intake incompleto en «Listo para Jefatura».
+
+| Punto | Resultado |
+|---|---|
+| A. Fuente canónica | `fichasTrazabilidad.ingresoServicioSubtipoCrudo`; valores `Tripa` / `Capítulo`. Todas las lecturas usan esta columna, sin snapshot de Jefatura. |
+| B. Propietario | RRPP. Comercial y Jefatura reciben 403 al intentar modificar este campo. |
+| C. Readiness existente | Ya existía `server/helpers/preparacionRrpp.ts`. Alimenta progreso, checklist, faltantes, estados y el endpoint formal dentro de su transacción. Se conserva. |
+| D. Obligatorios actuales | `matrizDiagnosticoGenerado = true` y `matrizIngresoGenerado = true`; adicionalmente, sólo para CR, subtipo válido. Colección, público, tema, título y demás campos opcionales no bloquean. No se inventó otro catálogo de obligatorios. |
+| E. CR sin subtipo | Readiness false, 67% si ambas señales documentales están completas, clasificación en faltantes y handoff directo rechazado con 409. No crea envío ni aparece en la cola de Jefatura. |
+| F. Tripa | 90 días operativos **provisionales**. No se cambió a 150 ni se resolvió la contradicción documental. |
+| G. Capítulo | 150 días. Ghostwriting usa 180; Sello conserva 90 comerciales y 60 internos para alertas. Los demás servicios leen su configuración real. |
+| H. Fecha y Express | `shared/planificacion.ts` centraliza resolver plazo y sumar días UTC. Base: fecha de ingreso canónica, con fecha programada del core como respaldo donde existe. Fecha deseada canónica, con respaldo legacy del core. Posible Express = deseada anterior a estándar; compresión = diferencia de días. La decisión explícita de Jefatura sigue separada y se invalida si cambia el par de fechas. CR sin clasificación no recibe fecha estándar ni un Express inventado. |
+| I. Peso real | La auditoría local confirmó `servicios.pesoComplejidad = 3` para CR, aplicado a ambos subtipos. El snapshot y recomendador siguen leyendo el catálogo. |
+| J. Pesos y Express | No hay peso por subtipo ni multiplicador Express. El subtipo afecta plazo y Express; pesos distintos requieren definición empresarial explícita. |
+| K. Auditoría existente | Seis CR sin clasificación: `BE3B50`, `13C2C0`, `924EE1`, `C7BBE3`, `DA372D`, `72DCCF`. **Cero** enviados formalmente a Jefatura; todos en proceso. No se escribió ningún subtipo ni se modificaron datos históricos. Lectura reproducible: `scripts/audit-crudo-readiness.ts`. Los legacy ya enviados se señalan «LEGACY / DATO INCOMPLETO» y quedan sin plazo calculado. |
+| L. Regresiones nuevas | Integraciones de CR incompleto y rechazo directo; work item cerrado sin readiness; Tripa y Capítulo; igualdad entre Ingresos, RRPP Proyectos, Inicio/Asignaciones/contexto Jefatura, Proyecto y Ficha; corrección posterior sin copia y decisión Express obsoleta; legacy incompleto; Sello 90/60; gate rechaza subtipo vacío o desconocido. |
+| M. Conflicto pendiente | Manual del Especialista: Tripa 150; formulación operativa actual: Tripa 90. Se mantiene 90 provisional y no se altera `servicios.plazoDias` ni el peso del catálogo. |
+
+`READY` sigue separado de `HANDOFF`: guardar todos los requisitos habilita la acción; sólo la confirmación formal persiste el envío. Las invalidaciones después de guardar RRPP y enviar actualizan las familias RRPP, Jefatura, Proyectos, Ficha y expediente vivo sin reload manual.
+
+La fecha de cierre de la Ficha se deriva al leer; no se migra ni sobrescribe el valor histórico almacenado. Las alertas de CR clasificado usan su plazo; para datos legacy sin clasificación conservan la referencia de riesgo del catálogo sin presentarla como fecha estándar de planificación.
+
+### Validación de esta ampliación
+
+- **219 casos distintos aprobados en 11 archivos afectados**; no equivale a la suite completa. `jefatura` 23, `jefaturaAsignaciones` 18, `rrppProyectos` 46, `fichaViva` 21, `rrppIngresos` 29, `rrppCrudoPlanificacion` 7, `alertas` 13, `cronograma` 9, `preparacionComercial.routes` 4, `rrppDashboard` 27, `gates` 22. Diez casos nuevos: siete integraciones y tres variantes de subtipo inválido.
+- Backend y frontend compilan. Vite conserva el aviso previo de chunk principal superior a 500 kB.
+- QA en base local desechable `panhouse_jefatura_preview`: CR sin clasificación muestra 67% y un faltante; no permite envío. Guardar Tripa muestra listo y fecha `2026-04-01`, sin envío automático. Guardar Capítulo cambia a `2026-05-31`; confirmar envío registra el handoff. Jefatura recibe Capítulo, 150 días, fecha deseada `2026-04-15`, compresión 46 y peso 3. Proyecto 360 y Ficha muestran el mismo subtipo y cierre. Asignación a Camila: carga 0 → 3, sale de Por asignar. No se operó sobre proyectos reales.
+- Panel de decisión y Ficha inspeccionados en 1440×900, 375×812 y 768×1024. Móvil y tablet: ancho de documento igual al viewport, sin overflow horizontal; contexto, fechas y acciones legibles.
+- Evidencias de esta ampliación en [`docs/evidencias/crudo-readiness`](../evidencias/crudo-readiness/): [clasificación pendiente](../evidencias/crudo-readiness/rrpp-sin-subtipo.jpg), [Tripa listo](../evidencias/crudo-readiness/rrpp-tripa-listo.jpg), [Capítulo enviado](../evidencias/crudo-readiness/rrpp-capitulo-enviado.jpg), [Inicio Jefatura](../evidencias/crudo-readiness/jefatura-inicio.jpg), [decisión desktop](../evidencias/crudo-readiness/jefatura-decision-desktop.jpg), [móvil](../evidencias/crudo-readiness/jefatura-decision-mobile.jpg), [tablet](../evidencias/crudo-readiness/jefatura-decision-tablet.jpg), [Proyecto 360](../evidencias/crudo-readiness/proyecto-360.jpg), [Ficha desktop](../evidencias/crudo-readiness/ficha-desktop.jpg), [móvil](../evidencias/crudo-readiness/ficha-mobile.jpg), [tablet](../evidencias/crudo-readiness/ficha-tablet.jpg).
+- Entrega mediante commit local `feat: align crudo readiness and canonical planning`, sin push y sin incluir `fuentes-negocio/`.
+- [Ficha tras asignar](../evidencias/crudo-readiness/ficha-asignada.jpg): Tu gestión cambia a Supervisar, equipo muestra a Camila y la actividad conserva el evento del handoff y la asignación. Consola del navegador sin errores al terminar el flujo. Viewport temporal restaurado y pestaña QA cerrada.
+- Datos QA limpiados con el guard del script; puertos temporales 3002/5174 cerrados. Los servidores habituales 3000/5173 permanecen activos. Producción y datos reales no se modificaron.

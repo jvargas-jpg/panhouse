@@ -11,9 +11,10 @@ import {
 } from './jefatura.js';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { proyectos, fichasTrazabilidad, unidades, presupuestos } from '../db/schema/index.js';
+import { proyectos, fichasTrazabilidad, servicios, unidades, presupuestos } from '../db/schema/index.js';
 import { evaluarPreparacionComercial } from './preparacionComercial.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
+import { proyectarIngreso } from './cronograma.js';
 
 const normalizar = (v: string) =>
   v.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es').trim();
@@ -90,7 +91,7 @@ export async function obtenerAsignacionesJefatura(
   for (const p of snapshot.proyectos) {
     servicios.set(p.servicio.id, {
       id: p.servicio.id,
-      nombre: p.servicio.nombre,
+      nombre: p.servicio.nombreCatalogo ?? p.servicio.nombre,
     });
     if (p.especialista) especialistas.set(p.especialista.id, p.especialista);
   }
@@ -137,10 +138,11 @@ export async function compararAsignacionJefatura(
   const original = snapshot.proyectos.find((p) => p.id === id);
   if (!original) return null;
   const proyecto = conRecomendacion(original, snapshot.teamCapacity);
-  const [datos] = await db.select({ p: proyectos, f: fichasTrazabilidad, unidad: unidades.nombre, presupuesto: presupuestos.nombre })
+  const [datos] = await db.select({ p: proyectos, f: fichasTrazabilidad, s: servicios, unidad: unidades.nombre, presupuesto: presupuestos.nombre })
     .from(proyectos).leftJoin(fichasTrazabilidad, eq(fichasTrazabilidad.proyectoId, proyectos.id))
     .leftJoin(unidades, eq(unidades.id, proyectos.unidadId))
     .leftJoin(presupuestos, eq(presupuestos.id, proyectos.presupuestoId))
+    .innerJoin(servicios, eq(servicios.id, proyectos.servicioId))
     .where(eq(proyectos.id, id)).limit(1);
   if (!datos) return null;
   const f = datos.f;
@@ -150,7 +152,7 @@ export async function compararAsignacionJefatura(
     proyecto,
     contexto: {
       ingreso: f?.ingresoFechaIngreso ?? null,
-      cierreProyectado: f?.ingresoFechaCierre ?? null,
+      cierreProyectado: f ? proyectarIngreso(datos.s, f)?.fechaFinComprometida.toISOString().slice(0, 10) ?? null : null,
       ejecucion: f?.ingresoServicioEjecucion ?? null,
       tiempoExpressMeses: f?.ingresoTiempoExpresMeses ?? null,
       subtipoCrudo: proyecto.servicio.codigo === 'CR' ? f?.ingresoServicioSubtipoCrudo ?? null : null,
@@ -160,7 +162,7 @@ export async function compararAsignacionJefatura(
       alianza: f?.ingresoServicioAlianza ?? null,
       unidad: datos.unidad,
       comercial: comercial ? 'Completo' : 'Pendiente',
-      rrpp: datos.p.notificadoJefatura ? 'Completo' : !datos.p.notificadoRrpp ? 'Aún no habilitado' : rrpp ? 'Listo para Jefatura' : 'En diagnóstico',
+      rrpp: datos.p.notificadoJefatura ? rrpp ? 'Completo' : 'LEGACY / DATO INCOMPLETO' : !datos.p.notificadoRrpp ? 'Aún no habilitado' : rrpp ? 'Listo para Jefatura' : 'En diagnóstico',
     },
     candidatos: ordenarCandidatos(snapshot.teamCapacity).map((c) => {
       const esActual = c.id === proyecto.especialista?.id;

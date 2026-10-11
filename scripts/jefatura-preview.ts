@@ -93,6 +93,7 @@ if (process.env.PREVIEW_REUSE_DATA !== 'true') {
         rol: 'lider_creativo',
         passwordHash,
       },
+      { nombre: 'Rocío Pérez', email: 'rrpp@preview.panhouse.test', rol: 'rrpp', passwordHash },
     ])
     .returning();
   const [ef, se, cr] = await db
@@ -136,7 +137,7 @@ if (process.env.PREVIEW_REUSE_DATA !== 'true') {
       .set({ notificadoRrpp: true, notificadoJefatura: true, ...extra })
       .where(eq(proyectos.id, p.id));
     await crearFichaComercialCompleta(p.id);
-    await db.update(fichasTrazabilidad).set({matrizDiagnosticoGenerado:true,matrizIngresoGenerado:true,ingresoServicioSubtipoCrudo:servicioId===cr!.id?'Tripa':null, ingresoServicioEjecucion:extra.fechaDeseadaAutor?'Express':'Normal',ingresoTiempoExpresMeses:extra.fechaDeseadaAutor?3:null}).where(eq(fichasTrazabilidad.proyectoId,p.id));
+    await db.update(fichasTrazabilidad).set({ingresoFechaIngreso:extra.fechaProgramadaInicio ?? p.fechaProgramadaInicio,matrizDiagnosticoGenerado:true,matrizIngresoGenerado:true,ingresoServicioSubtipoCrudo:servicioId===cr!.id?'Tripa':null, ingresoServicioEjecucion:extra.fechaDeseadaAutor?'Express':'Normal',ingresoTiempoExpresMeses:extra.fechaDeseadaAutor?3:null}).where(eq(fichasTrazabilidad.proyectoId,p.id));
     return p;
   }
   await proyecto('Isabel Figueroa', ef!.id, { especialistaId: ana!.id });
@@ -177,6 +178,8 @@ if (process.env.PREVIEW_REUSE_DATA !== 'true') {
   await proyecto('Intake todavía en RRPP', ef!.id, {
     notificadoJefatura: false,
   });
+  const clasificar = await proyecto('Diagnóstico Crudo QA', cr!.id, { notificadoJefatura: false, fechaProgramadaInicio: '2026-01-01' });
+  await db.update(fichasTrazabilidad).set({ ingresoServicioSubtipoCrudo: null, fechaDeseadaCulminacion: '2026-04-15' }).where(eq(fichasTrazabilidad.proyectoId, clasificar.id));
   const riesgo = await proyecto('Lucía Fernández', cr!.id, {
     fechaProgramadaInicio: '2026-05-01',
   });

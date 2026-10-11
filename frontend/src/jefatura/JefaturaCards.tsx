@@ -42,7 +42,7 @@ export function ExpressBadge({ express }: { express: ExpressJefatura }) {
           ? 'Posible Express'
           : express.estado === 'normal_confirmado'
             ? 'Prioridad normal'
-            : 'Normal'}
+            : express.estado === 'pendiente_clasificacion' ? 'Plazo pendiente' : 'Normal'}
     </span>
   );
 }
@@ -260,7 +260,7 @@ export function DecisionQueue({
                     </td>
                     <td data-label="Servicio">
                       <strong className="jf-service" title={p.servicio.nombre}>
-                        {p.servicio.codigo}
+                        {p.servicio.codigo === 'CR' ? `CR — ${p.servicio.nombre}` : p.servicio.codigo}
                       </strong>
                     </td>
                     <td data-label="Prioridad">

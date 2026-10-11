@@ -95,6 +95,10 @@ export function RrppIngresoDetalle({
         ['rrpp'],
         ['ficha', id],
         ['proyecto', id],
+        ['proyectos'],
+        ['jefatura'],
+        ['ficha-viva', id],
+        ['notificaciones'],
         ['fichas-trazabilidad', 'enviados-a-rrpp'],
       ].map((queryKey) => cliente.invalidateQueries({ queryKey })),
     );

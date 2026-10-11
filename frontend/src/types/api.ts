@@ -177,6 +177,8 @@ export interface RiesgoProyecto {
 // el backend (server/helpers/alertas.ts:listarProyectosConRiesgo), un
 // solo join reutilizado en vez de duplicarlo por endpoint.
 export interface ProyectoConRiesgo {
+  subtipoCrudo: string | null;
+  datoIncompleto: boolean;
   id: string;
   titulo: string | null;
   codigo: string;
@@ -477,6 +479,7 @@ export type FaltanteComercial = 'autores' | 'servicioId' | 'unidadId' | 'presupu
 export interface PreparacionComercial { listoParaRrpp: boolean; faltantesComercial: FaltanteComercial[] }
 
 export interface FichaCompleta extends PreparacionComercial {
+  plazosServicio?: { codigo: string; plazoDias: number | null; plazoInternoDias: number | null; plazoComercialDias: number | null };
   proyectoId: string;
   // sección 1. perfilAutor/objetivosComerciales ("Resumen y Objetivos")
   // se eliminaron a pedido explícito del negocio: texto libre de una
@@ -717,6 +720,9 @@ export interface Servicio {
   id: string;
   codigo: string;
   nombre: string;
+  plazoDias?: number | null;
+  plazoInternoDias?: number | null;
+  plazoComercialDias?: number | null;
 }
 
 export interface Unidad {

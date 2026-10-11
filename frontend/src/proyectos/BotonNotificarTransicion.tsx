@@ -47,6 +47,11 @@ export function BotonNotificarTransicion({
       setToastVisible(true);
       queryClient.invalidateQueries({ queryKey: ['proyecto', proyectoId] });
       queryClient.invalidateQueries({ queryKey: ['rrpp', 'dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['rrpp'] });
+      queryClient.invalidateQueries({ queryKey: ['jefatura'] });
+      queryClient.invalidateQueries({ queryKey: ['proyectos'] });
+      queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['ficha-viva', proyectoId] });
       queryClient.invalidateQueries({ queryKey: ['notificaciones'] });
       setTimeout(() => setToastVisible(false), 3000);
     },

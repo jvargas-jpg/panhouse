@@ -1,6 +1,7 @@
 import { auditarCambioFicha, type ActorFicha } from './intakeRrpp.js';
 import { and, desc, eq, inArray, isNull, notInArray, type SQL } from 'drizzle-orm';
 import { evaluarPreparacionComercial } from './preparacionComercial.js';
+import { proyectarIngreso } from './cronograma.js';
 import { listarProyectosActivosResumen } from './proyectos.js';
 import { db } from '../db/client.js';
 import {
@@ -73,11 +74,14 @@ export async function obtenerFichaCompleta(proyectoId: string) {
 
   const [proyecto] = await db.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
   if (!proyecto) return undefined;
+  const [servicio] = await db.select().from(servicios).where(eq(servicios.id, proyecto.servicioId));
+  const plazosServicio = servicio ? { codigo: servicio.codigo, plazoDias: servicio.plazoDias, plazoInternoDias: servicio.plazoInternoDias, plazoComercialDias: servicio.plazoComercialDias } : undefined;
+  const ingresoFechaCierre = plazosServicio ? proyectarIngreso(plazosServicio, ficha)?.fechaFinComprometida.toISOString().slice(0, 10) ?? null : null;
   const autoresPorProyecto = await obtenerAutoresPorProyectos([proyectoId]);
   const preparacion = evaluarPreparacionComercial({ ...proyecto, ...ficha,
     autores: autoresPorProyecto.get(proyectoId) ?? [{ id: proyecto.autorId }],
   });
-  return { ...fechasLanzamientoCanonicas(ficha), ...preparacion, calidadFases, disenoPropuestas, lanzamientoReuniones, distribucionPaises };
+  return { ...fechasLanzamientoCanonicas(ficha), ingresoFechaCierre, plazosServicio, ...preparacion, calidadFases, disenoPropuestas, lanzamientoReuniones, distribucionPaises };
 }
 
 export interface ProyectoPendienteSeccion1 {

@@ -13,6 +13,9 @@ import {
 // exactamente GATE-02/GATE-03 — qué habilitan, campos requeridos,
 // comportamiento, sin agregar reglas "porque parecen lógicas".
 describe('GATE-02 — Definición de Crudo', () => {
+  it.each(['', 'Crudo', 'Otro'])('no considera válido el subtipo %j aunque no sea null', (subtipo) => {
+    expect(evaluarGateDefinicionCrudo({ servicioCodigo: 'CR', ingresoServicioSubtipoCrudo: subtipo }).desbloqueado).toBe(false);
+  });
   it('desbloqueado trivialmente para cualquier servicio que no sea Crudo (CR)', () => {
     const resultado = evaluarGateDefinicionCrudo({ servicioCodigo: 'EF', ingresoServicioSubtipoCrudo: null });
     expect(resultado.desbloqueado).toBe(true);

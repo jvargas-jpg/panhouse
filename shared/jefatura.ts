@@ -1,8 +1,9 @@
 export type EstadoExpressJefatura =
-  'normal' | 'posible' | 'confirmado' | 'normal_confirmado';
+  'normal' | 'posible' | 'confirmado' | 'normal_confirmado' | 'pendiente_clasificacion';
 export interface ExpressJefatura {
   estado: EstadoExpressJefatura;
-  fechaEstandar: string;
+  fechaEstandar: string | null;
+  plazoBaseDias?: number | null;
   fechaDeseada: string | null;
   compresionDias: number;
   decididoEn: string | null;
@@ -27,7 +28,9 @@ export interface ProyectoJefatura {
   impactoCarga: number;
   autores: string;
   estado: string;
-  servicio: { id: string; codigo: string; nombre: string; peso: number };
+  servicio: { id: string; codigo: string; nombre: string; nombreCatalogo?: string; peso: number };
+  subtipoCrudo: string | null;
+  datoIncompleto: boolean;
   especialista: { id: string; nombre: string } | null;
   porAsignar: boolean;
   express: ExpressJefatura;

@@ -1,3 +1,4 @@
+import { esSubtipoCrudo } from '../../shared/planificacion.js';
 // Reglas semánticas centralizadas — mismo patrón que preparacionComercial.ts
 // (GATE-01, ya implementado ahí, no se reimplementa acá). Funciones
 // puras sobre datos simples, consumidas tanto por rutas de escritura
@@ -66,7 +67,7 @@ export interface ResultadoGate {
 // docs/auditoria/contradicciones-negocio.md §1.
 export function evaluarGateDefinicionCrudo(datos: DatosGateDefinicionCrudo): ResultadoGate {
   if (datos.servicioCodigo !== 'CR') return { desbloqueado: true };
-  if (!datos.ingresoServicioSubtipoCrudo) {
+  if (!esSubtipoCrudo(datos.ingresoServicioSubtipoCrudo)) {
     return { desbloqueado: false, motivo: 'RRPP todavía no definió si el Crudo es Tripa o Capítulo' };
   }
   return { desbloqueado: true };

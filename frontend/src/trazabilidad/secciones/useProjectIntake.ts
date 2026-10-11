@@ -1,3 +1,4 @@
+import { proyectarIngreso } from '../../../../shared/planificacion';
 import { useMe } from '../../auth/useAuth';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type FormEvent } from 'react';
@@ -6,57 +7,6 @@ import { actualizarSeccionProyectoContrato, actualizarSeccionProyectoPerfil } fr
 import { fetchCatalogos, reasignarProyecto } from '../../jefatura/jefaturaApi';
 
 export const SUBTIPOS_CRUDO: SubtipoCrudo[] = ['Capítulo', 'Tripa'];
-
-// Traducción de la fórmula de Excel provista por el negocio. Comercial
-// solo elige la categoría general del servicio al crear el proyecto
-// (Sello editorial/Escritura fantasma/Crudo, ver CODIGOS_SERVICIO_ALTA
-// en CrearProyectoModalForm.tsx) — EEC/EET (las categorías de la
-// primera versión, "Capítulo"/"Tripa" como servicios separados) se
-// desactivaron en el catálogo (server/db/seed.ts), reemplazadas por
-// 'Crudo'.
-//
-// Si el servicio es 'CR', el plazo depende del subtipo que define rrpp
-// (fichasTrazabilidad.ingresoServicioSubtipoCrudo, ver el <select>
-// "Especificación de Crudo" en Detalles del Proyecto más abajo) — sin
-// ese subtipo todavía elegido, esta función devuelve null a propósito
-// (el useEffect de más abajo lo interpreta como "no calcular", deja
-// Fecha de Cierre vacía en vez de inventar un valor).
-//
-// EEC/EET se mantienen como rama de compatibilidad: el único proyecto
-// real que ya tenía uno de los dos asignado antes de este cambio sigue
-// calculando con el mismo valor fijo de siempre — desactivarlos en el
-// catálogo (para que nadie los vuelva a elegir) no les rompe el cálculo
-// retroactivamente.
-const DIAS_POR_SERVICIO_LEGACY: Record<string, number> = {
-  EEC: 150,
-  EET: 90,
-};
-const DIAS_POR_DEFECTO = 90;
-
-function diasDePlazoPorServicio(servicioCodigo: string, subtipoCrudo: SubtipoCrudo | ''): number | null {
-  if (servicioCodigo === 'SE') return 60;
-  if (servicioCodigo === 'EF') return 180;
-  if (servicioCodigo === 'CR') {
-    if (subtipoCrudo === 'Capítulo') return 150;
-    if (subtipoCrudo === 'Tripa') return 90;
-    return null;
-  }
-  return DIAS_POR_SERVICIO_LEGACY[servicioCodigo] ?? DIAS_POR_DEFECTO;
-}
-
-// Aritmética en UTC a propósito: fechaISO llega como 'YYYY-MM-DD' (mismo
-// formato que <input type="date">) — construir con `new Date(fechaISO)`
-// a secas y sumar con setDate() opera en hora LOCAL, lo que puede
-// correr un día hacia atrás/adelante según la zona horaria del
-// navegador al volver a leer el resultado. Date.UTC/getUTC*/setUTCDate
-// evitan ese corrimiento por completo: el cálculo nunca toca la zona
-// horaria local.
-function sumarDiasISO(fechaISO: string, dias: number): string {
-  const [anio, mes, dia] = fechaISO.split('-').map(Number);
-  const fecha = new Date(Date.UTC(anio, mes - 1, dia));
-  fecha.setUTCDate(fecha.getUTCDate() + dias);
-  return fecha.toISOString().slice(0, 10);
-}
 
 // Rangos temporales, no números exactos: comercial todavía no define la
 // cantidad real de capítulos/páginas al vender. Placeholder funcional a
@@ -100,7 +50,7 @@ export type ProjectIntakeProps = {
 
 // One form state and the original mutation/permission logic for both presentations.
 export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContrato, puedeEditarComercial }: ProjectIntakeProps) {
-  const catalogosQuery = useQuery({ queryKey: ['catalogos'], queryFn: fetchCatalogos });
+  const catalogosQuery = useQuery({ queryKey: ['catalogos'], queryFn: fetchCatalogos, enabled: puedeEditarComercial });
 
   const [servicioCodigo, setServicioCodigo] = useState(servicio.codigo);
 
@@ -134,30 +84,12 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
   const [criterioExtra, setCriterioExtra] = useState(ficha.criterioExtra ?? '');
   const [condicionesEspeciales, setCondicionesEspeciales] = useState<CondicionEspecial[]>(ficha.condicionesEspeciales ?? []);
 
-  // Fecha de cierre automática: equivalente a un watch(['ingresoFechaIngreso',
-  // 'servicioCodigo', 'ingresoServicioSubtipoCrudo']) + setValue('ingresoFechaCierre', ...)
-  // de react-hook-form (esta base de código no usa esa librería, ver el
-  // resto del archivo: todo useState liso) — recalcula y sobreescribe
-  // cada vez que cambia cualquiera de los tres, incluso al cargar la
-  // ficha por primera vez. El campo queda deshabilitado en el JSX de más
-  // abajo para que nadie la edite a mano — el objetivo explícito de esta
-  // regla es eliminar el error de cálculo humano, así que el valor
-  // mostrado SIEMPRE es el calculado, nunca el que haya quedado
-  // guardado antes de esta automatización. Nada de esto se persiste
-  // solo — como el resto de la sección, hace falta apretar Guardar.
-  //
-  // Si el servicio es 'CR' y todavía no hay subtipo elegido,
-  // diasDePlazoPorServicio devuelve null — acá eso se traduce en limpiar
-  // Fecha de Cierre (nunca queda un valor viejo de otro servicio
-  // pegado), no en inventar un número. El input lo muestra como
-  // "Pendiente de selección por RRPP" más abajo. En cuanto rrpp elige
-  // Capítulo o Tripa (el <select> de más abajo), este mismo efecto
-  // recalcula la fecha real de inmediato, sin esperar a Guardar.
+  // The same domain projection is used by backend and draft previews.
+  const plazos = servicioCodigo === servicio.codigo ? ficha.plazosServicio : catalogosQuery.data?.servicios.find(s => s.codigo === servicioCodigo);
   useEffect(() => {
-    if (!ingresoFechaIngreso) return;
-    const dias = diasDePlazoPorServicio(servicioCodigo, ingresoServicioSubtipoCrudo);
-    setIngresoFechaCierre(dias === null ? '' : sumarDiasISO(ingresoFechaIngreso, dias));
-  }, [ingresoFechaIngreso, servicioCodigo, ingresoServicioSubtipoCrudo]);
+    const resultado = plazos ? proyectarIngreso({ codigo: servicioCodigo, plazoDias: plazos.plazoDias ?? null, plazoInternoDias: plazos.plazoInternoDias ?? null, plazoComercialDias: plazos.plazoComercialDias ?? null }, { ingresoFechaIngreso: ingresoFechaIngreso || null, ingresoServicioSubtipoCrudo: ingresoServicioSubtipoCrudo || null }) : null;
+    setIngresoFechaCierre(resultado?.fechaFinComprometida.toISOString().slice(0, 10) ?? '');
+  }, [ingresoFechaIngreso, servicioCodigo, ingresoServicioSubtipoCrudo, plazos]);
 
   const queryClient = useQueryClient();
   const { data: usuario } = useMe();
@@ -196,7 +128,6 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
     mutationFn: () =>
       actualizarSeccionProyectoPerfil(proyectoId, puedeEditarSubtipoCrudo ? { ingresoServicioSubtipoCrudo: ingresoServicioSubtipoCrudo || null } : {
         ingresoFechaIngreso: ingresoFechaIngreso || null,
-        ingresoFechaCierre: ingresoFechaCierre || null,
         // El subtipo solo viaja desde RRPP; Comercial y jefatura no lo escriben.
         ...(puedeEditarSubtipoCrudo ? { ingresoServicioSubtipoCrudo: ingresoServicioSubtipoCrudo || null } : {}),
         ingresoServicioEjecucion,
@@ -212,6 +143,9 @@ export function useProjectIntake({ proyectoId, ficha, servicio, puedeEditarContr
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['ficha', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['ficha-viva', proyectoId] });
+      queryClient.invalidateQueries({ queryKey: ['jefatura'] });
+      queryClient.invalidateQueries({ queryKey: ['proyecto', proyectoId] });
       queryClient.invalidateQueries({ queryKey: ['rrpp'] });
       queryClient.invalidateQueries({ queryKey: ['proyectos', 'activos'] });
       queryClient.invalidateQueries({ queryKey: ['fichas-trazabilidad', 'pendientes', 'contrato'] });

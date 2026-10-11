@@ -70,6 +70,9 @@ const seleccion = {
     id: servicios.id,
     codigo: servicios.codigo,
     nombre: servicios.nombre,
+    plazoDias: servicios.plazoDias,
+    plazoInternoDias: servicios.plazoInternoDias,
+    plazoComercialDias: servicios.plazoComercialDias,
   },
 };
 const base = () =>
@@ -512,9 +515,9 @@ export async function resumenProyectoRrpp(id: string) {
     fechas: {
       ingreso: ficha?.ingresoFechaIngreso ?? null,
       proyectada: ficha
-        ? fechaProyectadaIngreso(fila.servicio.codigo, ficha)
+        ? fechaProyectadaIngreso(fila.servicio.codigo, ficha, fila.servicio)
         : null,
-      deseadaAutor: p!.fechaDeseadaAutor,
+      deseadaAutor: ficha?.fechaDeseadaCulminacion ?? p!.fechaDeseadaAutor,
       lanzamiento: ficha?.lanzamientoPromocionFechaTentativa ?? null,
       ultimaActividad: fechaIso(fila.actualizadoAt),
     },

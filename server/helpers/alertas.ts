@@ -1,7 +1,8 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { EstadoProyecto } from '../db/schema/index.js';
-import { autores, proyectos, servicios, projectAssignments } from '../db/schema/index.js';
+import { autores, proyectos, servicios, projectAssignments, fichasTrazabilidad } from '../db/schema/index.js';
+import { nombreServicioProyecto, resolverPlazosServicio } from '../../shared/planificacion.js';
 import { columnaAsignacion, ESTADOS_ACTIVOS, especialistaActualSql, scopeEspecialista, type RolConCarga } from './carga.js';
 import { calcularDiasEfectivosProyecto } from './pausas.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
@@ -60,9 +61,12 @@ export async function evaluarRiesgoProyecto(
       plazoDias: servicios.plazoDias,
       plazoInternoDias: servicios.plazoInternoDias,
       plazoComercialDias: servicios.plazoComercialDias,
+      codigo: servicios.codigo,
+      subtipo: fichasTrazabilidad.ingresoServicioSubtipoCrudo,
     })
     .from(proyectos)
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
+    .leftJoin(fichasTrazabilidad, eq(proyectos.id, fichasTrazabilidad.proyectoId))
     .where(eq(proyectos.id, proyectoId))
     .limit(1);
 
@@ -71,11 +75,7 @@ export async function evaluarRiesgoProyecto(
   }
 
   const fechaInicio = parseFecha(fila.fechaRealInicio ?? fila.fechaProgramadaInicio);
-  const diasPlazo = determinarDiasPlazoAlerta({
-    plazoDias: fila.plazoDias,
-    plazoInternoDias: fila.plazoInternoDias,
-    plazoComercialDias: fila.plazoComercialDias,
-  });
+  const diasPlazo = determinarDiasPlazoAlerta(resolverPlazosServicio(fila, fila.subtipo) ?? fila);
 
   const diasEfectivos = await calcularDiasEfectivosProyecto(proyectoId, fechaInicio, ahora, ahora);
 
@@ -121,6 +121,8 @@ export interface ProyectoConRiesgo {
   autor: { id: string; nombre: string };
   autores: AutorDeProyecto[];
   servicio: { id: string; codigo: string; nombre: string };
+  subtipoCrudo: string | null;
+  datoIncompleto: boolean;
   riesgo: RiesgoProyecto;
 }
 
@@ -154,6 +156,7 @@ const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   servicioId: servicios.id,
   servicioCodigo: servicios.codigo,
   servicioNombre: servicios.nombre,
+  subtipoCrudo: fichasTrazabilidad.ingresoServicioSubtipoCrudo,
 } as const;
 
 type FilaProyectoConAutorYServicio = {
@@ -178,6 +181,7 @@ type FilaProyectoConAutorYServicio = {
   servicioId: string;
   servicioCodigo: string;
   servicioNombre: string;
+  subtipoCrudo: string | null;
 };
 
 // autoresPorProyecto: mapa en lote (obtenerAutoresPorProyectos), no una
@@ -208,7 +212,9 @@ async function mapearFilaConRiesgo(
     fechaFeedbackTripa: fila.fechaFeedbackTripa,
     autor: { id: fila.autorId, nombre: fila.autorNombre },
     autores: autoresPorProyecto.get(fila.id) ?? [{ id: fila.autorId, nombre: fila.autorNombre, nombreArtistico: null }],
-    servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: fila.servicioNombre },
+    servicio: { id: fila.servicioId, codigo: fila.servicioCodigo, nombre: nombreServicioProyecto(fila.servicioCodigo, fila.servicioNombre, fila.subtipoCrudo) },
+    subtipoCrudo: fila.servicioCodigo === 'CR' ? fila.subtipoCrudo : null,
+    datoIncompleto: fila.servicioCodigo === 'CR' && !['Tripa', 'Capítulo'].includes(fila.subtipoCrudo ?? ''),
     riesgo: await evaluarRiesgoProyecto(fila.id),
   };
 }
@@ -235,6 +241,7 @@ async function listarProyectosConRiesgo(asignacion?: { rol: RolConCarga; usuario
     .select(COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO)
     .from(proyectos)
     .leftJoin(projectAssignments, scopeEspecialista())
+    .leftJoin(fichasTrazabilidad, eq(proyectos.id, fichasTrazabilidad.proyectoId))
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
     .where(and(...condiciones));
@@ -268,6 +275,7 @@ export async function obtenerProyectoConRiesgo(proyectoId: string): Promise<Proy
     .select(COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO)
     .from(proyectos)
     .leftJoin(projectAssignments, scopeEspecialista())
+    .leftJoin(fichasTrazabilidad, eq(proyectos.id, fichasTrazabilidad.proyectoId))
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
     .where(eq(proyectos.id, proyectoId))

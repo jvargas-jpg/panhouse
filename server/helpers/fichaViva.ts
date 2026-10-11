@@ -1,3 +1,4 @@
+import { nombreServicioProyecto, proyectarIngreso } from '../../shared/planificacion.js';
 import { and, asc, count, desc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
@@ -92,8 +93,8 @@ export async function historialFicha(id: string, cursor?: string, limit = 20): P
     return { items, nextCursor: rows.length > limit && last ? Buffer.from(JSON.stringify({ date: last.date, id: last.id })).toString('base64url') : null };
 }
 type Base = Awaited<ReturnType<typeof baseFicha>>;
-async function baseFicha(id: string) { const [row] = await db.select({ p: proyectos, f: fichasTrazabilidad, service: servicios.codigo, serviceName: servicios.nombre, unit: unidades.nombre, budget: presupuestos.nombre }).from(proyectos).innerJoin(fichasTrazabilidad, eq(fichasTrazabilidad.proyectoId, proyectos.id)).innerJoin(servicios, eq(servicios.id, proyectos.servicioId)).innerJoin(unidades, eq(unidades.id, proyectos.unidadId)).innerJoin(presupuestos, eq(presupuestos.id, proyectos.presupuestoId)).where(eq(proyectos.id, id)).limit(1); if (!row)
-    throw new ErrorFichaViva(404, 'Ficha no encontrada'); return row; }
+async function baseFicha(id: string) { const [row] = await db.select({ p: proyectos, f: fichasTrazabilidad, service: servicios.codigo, plan: servicios, serviceName: servicios.nombre, unit: unidades.nombre, budget: presupuestos.nombre }).from(proyectos).innerJoin(fichasTrazabilidad, eq(fichasTrazabilidad.proyectoId, proyectos.id)).innerJoin(servicios, eq(servicios.id, proyectos.servicioId)).innerJoin(unidades, eq(unidades.id, proyectos.unidadId)).innerJoin(presupuestos, eq(presupuestos.id, proyectos.presupuestoId)).where(eq(proyectos.id, id)).limit(1); if (!row)
+    throw new ErrorFichaViva(404, 'Ficha no encontrada'); row.f.ingresoFechaCierre = proyectarIngreso(row.plan, row.f)?.fechaFinComprometida.toISOString().slice(0, 10) ?? null; return row; }
 async function autoresFicha(p: Base['p']) { const columns = { id: autores.id, name: autores.nombre, category: autores.categoria, nombreArtistico: autores.nombreArtistico, pais: autores.pais, nacionalidad: autores.nacionalidad, email: autores.email, telefono: autores.telefono, redesSociales: autores.redesSociales, fechaNacimiento: autores.fechaNacimiento, personalidad: autores.personalidad, ocupacion: autores.ocupacion }; const rows = await db.select(columns).from(proyectosAutores).innerJoin(autores, eq(autores.id, proyectosAutores.autorId)).where(eq(proyectosAutores.proyectoId, p.id)).orderBy(asc(autores.nombre)); return rows.length ? rows : db.select(columns).from(autores).where(eq(autores.id, p.autorId)); }
 async function equipoFicha(p: Base['p'], history = false): Promise<EquipoFicha[]> {
     const rows = await db.select({ id: projectAssignments.id, userId: users.id, name: users.nombre, tipo: projectAssignments.tipo, scope: projectAssignments.workItemId, at: projectAssignments.asignadoEn, end: projectAssignments.finalizadoEn }).from(projectAssignments).innerJoin(users, eq(users.id, projectAssignments.usuarioId)).where(and(eq(projectAssignments.proyectoId, p.id), history ? undefined : isNull(projectAssignments.finalizadoEn))).orderBy(desc(projectAssignments.asignadoEn)).limit(history ? 200 : 100);
@@ -173,12 +174,13 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
         distribucionEstatus: fichasTrazabilidad.distribucionEstatus,
         updatedAt: fichasTrazabilidad.updatedAt,
     };
-    const [base] = await db.select({p:proyectos,f:fichaColumns,service:servicios.codigo,serviceName:servicios.nombre,unit:unidades.nombre,budget:presupuestos.nombre})
+    const [base] = await db.select({p:proyectos,f:fichaColumns,service:servicios.codigo,plan:servicios,serviceName:servicios.nombre,unit:unidades.nombre,budget:presupuestos.nombre})
         .from(proyectos).innerJoin(fichasTrazabilidad,eq(fichasTrazabilidad.proyectoId,proyectos.id))
         .innerJoin(servicios,eq(servicios.id,proyectos.servicioId)).innerJoin(unidades,eq(unidades.id,proyectos.unidadId))
         .innerJoin(presupuestos,eq(presupuestos.id,proyectos.presupuestoId)).where(eq(proyectos.id,id)).limit(1);
     if (!base) throw new ErrorFichaViva(404,'Ficha no encontrada');
     const { p, f, service } = base;
+    f.ingresoFechaCierre = proyectarIngreso(base.plan, f)?.fechaFinComprometida.toISOString().slice(0, 10) ?? null;
     p.especialistaId = await obtenerEspecialistaActual(id, p.especialistaId);
     const authorColumns = {id:autores.id,name:autores.nombre,category:autores.categoria};
     let authors = await db.select(authorColumns).from(proyectosAutores).innerJoin(autores,eq(autores.id,proyectosAutores.autorId)).where(eq(proyectosAutores.proyectoId,id)).orderBy(asc(autores.nombre));
@@ -206,7 +208,7 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
     const commercial = evaluarPreparacionComercial({ ...p, ...f, autores: authors });
     const rrpp = evaluarPreparacionRrpp(f, service);
     const commercialState = commercial.listoParaRrpp ? 'Completo' : 'Pendiente';
-    const rrppState = p.notificadoJefatura ? 'Completo' : !p.notificadoRrpp ? 'Aún no habilitado' : rrpp.listoParaJefatura ? 'Listo para Jefatura' : 'En diagnóstico';
+    const rrppState = p.notificadoJefatura ? rrpp.listoParaJefatura ? 'Completo' : 'LEGACY / DATO INCOMPLETO' : !p.notificadoRrpp ? 'Aún no habilitado' : rrpp.listoParaJefatura ? 'Listo para Jefatura' : 'En diagnóstico';
     const countOf = (statuses: string[]) => errors.includes('Estados operativos') ? null : states.filter(r => statuses.includes(r.estado)).reduce((n, r) => n + r.total, 0);
     const title = p.tituloDefinitivo ?? f.posibleTituloLibro ?? p.titulo ?? 'Título por definir';
     const printingInterest = f.asesoriaCotizacionImpresion || f.impresionDeseaCotizacion === true;
@@ -222,7 +224,7 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
             detail = `Registro de área: ${macro}`;
         }
         if (area.id === 'proyecto') {
-            state = p.notificadoJefatura ? 'Completo' : p.notificadoRrpp ? 'En curso' : 'Pendiente';
+            state = p.notificadoJefatura && rrpp.listoParaJefatura ? 'Completo' : p.notificadoRrpp ? 'En curso' : 'Pendiente';
             detail = `Comercial: ${commercialState.toLowerCase()} · RRPP: ${rrppState.toLowerCase()}`;
         }
         if (area.id === 'edicion') {
@@ -296,7 +298,7 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
     }
     const overview = [campo('budget', base.budget, 'proyectos.presupuestoId', 'Presupuesto inicial'), campo('ingresoServicioPresupuesto', f.ingresoServicioPresupuesto, 'fichas_trazabilidad', 'Presupuesto del servicio'), campo('ingresoFechaIngreso', f.ingresoFechaIngreso, 'fichas_trazabilidad'), campo('ingresoFechaCierre', f.ingresoFechaCierre, 'fichas_trazabilidad'), campo('ingresoServicioEjecucion', f.ingresoServicioEjecucion, 'fichas_trazabilidad'), campo('ingresoServicioAlianza', f.ingresoServicioAlianza, 'fichas_trazabilidad'), ...(f.ingresoServicioEjecucion === 'Express' ? [campo('ingresoTiempoExpresMeses', f.ingresoTiempoExpresMeses, 'fichas_trazabilidad')] : []), campo('capitulosPactados', f.capitulosPactados, 'fichas_trazabilidad'), campo('paginasPactadas', f.paginasPactadas, 'fichas_trazabilidad'), campo('coleccionPanhouse', f.coleccionPanhouse, 'fichas_trazabilidad')].filter(c => c.value !== null && c.value !== undefined && c.value !== '');
     const creativeState = estadoTrabajo(states.filter(s => s.tipo === 'direccion_creativa'));
-    return { project: { id, code: p.codigo, title, service: `${service} · ${base.serviceName}`, unit: base.unit, macroState: p.estado, updatedAt: new Date(Math.max(p.updatedAt.getTime(), f.updatedAt.getTime(), activity.items[0] ? Date.parse(activity.items[0].date) : 0)).toISOString() }, authors: authors.map(a => ({ id: a.id, name: a.name, category: a.category })), overview, summary: { active: countOf(['en_progreso']), completed: countOf(['completado']), pending: countOf(['pendiente']), blocked: countOf(['bloqueado']), commercial: commercialState, commercialMissing: commercial.faltantesComercial.map(etiquetaCampo), rrpp: rrppState, rrppMissing: rrpp.faltantes.map(x => x.etiqueta), launchEnabled: !!launch, launchPhase: launch ? f.asesoriaFase : null, launch: traceability[6]!.state, launchDate: launch ? f.lanzamientoPromocionFechaTentativa : null }, team, traceability, myActions, recentActivity: activity.items, secondaryErrors: errors, relatedProcesses: [{ name: 'Dirección creativa', state: creativeState, detail: 'Brief, conceptos y aprobación interna RRPP.', href: creativeState !== 'No iniciado' && (actor.rol === 'lider_creativo' || actor.rol === 'rrpp') ? '/' : undefined }, { name: 'Jefatura', state: p.especialistaId ? 'Especialista asignado' : p.notificadoJefatura ? 'Pendiente de asignación' : 'Aún no recibido', detail: 'Asignaciones y coordinación editorial.', href: actor.rol === 'jefe_area' ? `/?vista=asignaciones&proyecto=${id}` : undefined }] };
+    return { project: { id, code: p.codigo, title, service: `${service} ${service === 'CR' ? '—' : '·'} ${nombreServicioProyecto(base.service, base.serviceName, base.f.ingresoServicioSubtipoCrudo)}`, unit: base.unit, macroState: p.estado, updatedAt: new Date(Math.max(p.updatedAt.getTime(), f.updatedAt.getTime(), activity.items[0] ? Date.parse(activity.items[0].date) : 0)).toISOString() }, authors: authors.map(a => ({ id: a.id, name: a.name, category: a.category })), overview, summary: { active: countOf(['en_progreso']), completed: countOf(['completado']), pending: countOf(['pendiente']), blocked: countOf(['bloqueado']), commercial: commercialState, commercialMissing: commercial.faltantesComercial.map(etiquetaCampo), rrpp: rrppState, rrppMissing: rrpp.faltantes.map(x => x.etiqueta), launchEnabled: !!launch, launchPhase: launch ? f.asesoriaFase : null, launch: traceability[6]!.state, launchDate: launch ? f.lanzamientoPromocionFechaTentativa : null }, team, traceability, myActions, recentActivity: activity.items, secondaryErrors: errors, relatedProcesses: [{ name: 'Dirección creativa', state: creativeState, detail: 'Brief, conceptos y aprobación interna RRPP.', href: creativeState !== 'No iniciado' && (actor.rol === 'lider_creativo' || actor.rol === 'rrpp') ? '/' : undefined }, { name: 'Jefatura', state: p.especialistaId ? 'Especialista asignado' : p.notificadoJefatura ? 'Pendiente de asignación' : 'Aún no recibido', detail: 'Asignaciones y coordinación editorial.', href: actor.rol === 'jefe_area' ? `/?vista=asignaciones&proyecto=${id}` : undefined }] };
 }
 export const datosDocumentalesSchema = z.object({ datos: z.record(z.union([z.string().max(5000), z.number().finite(), z.boolean(), z.null()])) }).strict();
 
@@ -366,7 +368,7 @@ export async function expedienteFichaViva(id: string, actor: ActorFicha): Promis
         add('proyecto', 'proyecto.' + key, p[key], 'proyectos', etiquetaCampo(key), 'Datos generales y hitos');
     if (p.titulo)
         add('proyecto', 'tituloHistorico', p.titulo, 'proyectos', 'Título histórico', 'Referencias históricas', true);
-    for (const [key, value] of [['Servicio', base.serviceName], ['Unidad editorial', base.unit], ['Presupuesto inicial', base.budget]])
+    for (const [key, value] of [['Servicio', nombreServicioProyecto(base.service, base.serviceName, base.f.ingresoServicioSubtipoCrudo)], ['Unidad editorial', base.unit], ['Presupuesto inicial', base.budget]])
         add('proyecto', String(key), value, 'catálogos', String(key), 'Contrato y venta');
     const jobs = [
         { name: 'Campos documentales', run: () => db.select().from(fichaDocumentalDatos).where(eq(fichaDocumentalDatos.proyectoId, id)) },

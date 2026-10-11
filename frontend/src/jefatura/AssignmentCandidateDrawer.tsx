@@ -170,15 +170,17 @@ export function AssignmentCandidateDrawer({
               </strong>
             </p>
             <p className="jf-context-note">
-              {proyecto.especialista ? 'Asignado' : 'Pendiente de asignación'} · {proyecto.servicio.nombre}
+              {proyecto.especialista ? 'Asignado' : 'Pendiente de asignación'} · {proyecto.servicio.codigo === 'CR' ? `CR — ${proyecto.servicio.nombre}` : proyecto.servicio.nombre}
             </p>
             <h4 className="jf-decision-label">Contexto para asignar</h4>
+            {proyecto.datoIncompleto && <p className="jf-context-note jf-text-danger">LEGACY / DATO INCOMPLETO: RRPP envió este Crudo sin clasificación. No hay plazo ni evaluación Express hasta que RRPP lo defina.</p>}
             {proyecto.riesgo.atencion && (
               <p className="jf-context-note jf-text-danger">
                 Requiere atención: {proyecto.riesgo.causas.join(' · ')}
               </p>
             )}
             <dl className="jf-date-grid">
+              {proyecto.express.plazoBaseDias != null && <div><dt>Plazo base</dt><dd>{proyecto.express.plazoBaseDias} días{proyecto.subtipoCrudo === 'Tripa' ? ' · provisional' : ''}</dd></div>}
               {contexto && [
                 ['Subtipo Crudo', contexto.subtipoCrudo],
                 ['Ejecución comercial', contexto.ejecucion === 'Express' && contexto.tiempoExpressMeses ? `Express · ${contexto.tiempoExpressMeses} meses` : contexto.ejecucion],
@@ -198,7 +200,7 @@ export function AssignmentCandidateDrawer({
               <div>
                 <dt>Compresión</dt>
                 <dd>
-                  {proyecto.express.compresionDias
+                  {proyecto.datoIncompleto ? 'Pendiente de clasificación' : proyecto.express.compresionDias
                     ? `${proyecto.express.compresionDias} días`
                     : 'Sin compresión'}
                 </dd>

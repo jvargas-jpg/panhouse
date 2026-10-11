@@ -12,7 +12,7 @@ import {
 } from '../db/schema/index.js';
 import { ESTADOS_ACTIVOS } from './carga.js';
 import { listarPropuestasPendientesRrpp } from './direccionCreativa.js';
-import { diagnosticoListo, tieneTrabajoRrpp } from './intakeRrpp.js';
+import { tieneTrabajoRrpp } from './intakeRrpp.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos } from './proyectosAutores.js';
 import { EVENTOS_LANZAMIENTO_RRPP } from './rrppLanzamientoCatalogos.js';
@@ -148,10 +148,8 @@ export async function obtenerDashboardRrpp(ahora = new Date()) {
   const ingresos: IngresoRrpp[] = [];
   for (const f of bases.values()) {
     if (!f.proyecto.notificadoRrpp || f.item?.estado === 'cancelado') continue;
-    const completado =
-      f.proyecto.notificadoJefatura ||
-      f.item?.estado === 'completado' ||
-      diagnosticoListo(f.ficha, f.servicio.codigo);
+    const preparacion = evaluarPreparacionRrpp(f.ficha, f.servicio.codigo);
+    const completado = f.proyecto.notificadoJefatura || preparacion.listoParaJefatura;
     // Campos propios de RRPP son evidencia de trabajo guardado también en registros legacy.
     const iniciado =
       (!!f.item && f.item.estado !== 'pendiente') || tieneTrabajoRrpp(f.ficha);
@@ -163,15 +161,15 @@ export async function obtenerDashboardRrpp(ahora = new Date()) {
       ...f.base,
       estado,
       enviadoJefatura: f.proyecto.notificadoJefatura,
-      pendiente: completado
+      pendiente: f.proyecto.notificadoJefatura && !preparacion.listoParaJefatura ? 'LEGACY / DATO INCOMPLETO' : completado
         ? f.proyecto.notificadoJefatura
           ? 'Enviado a Jefatura'
           : 'Listo para Jefatura'
-        : f.servicio.codigo === 'CR' && !f.ficha.ingresoServicioSubtipoCrudo
+        : preparacion.faltantes.some(c => c.campo === 'ingresoServicioSubtipoCrudo')
           ? 'CRUDO · pendiente de clasificación'
           : estado === 'nuevo'
             ? 'Pendiente de diagnóstico'
-            : evaluarPreparacionRrpp(f.ficha, f.servicio.codigo).faltantes[0]?.etiqueta ?? 'Completar diagnóstico',
+            : preparacion.faltantes[0]?.etiqueta ?? 'Completar diagnóstico',
       actualizadoAt: evento?.fecha.toISOString() ?? null,
       actualizadoPor: evento
         ? evento.accion === 'RRPP_NOTIFICADO'

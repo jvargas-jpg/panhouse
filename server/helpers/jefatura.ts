@@ -29,7 +29,8 @@ import {
   calcularCarga,
   resolverEspecialistaActual,
 } from './carga.js';
-import { calcularCronograma, type PlazosServicio } from './cronograma.js';
+import { calcularCronograma, resolverPlazosServicio, type PlazosServicio } from './cronograma.js';
+import { nombreServicioProyecto } from '../../shared/planificacion.js';
 import {
   determinarDiasPlazoAlerta,
   evaluarRiesgo,
@@ -56,11 +57,15 @@ export function evaluarExpressJefatura(
   p: Decision,
   servicio: PlazosServicio,
   deseadaFicha: string | null = null,
+  subtipo: string | null = null,
+  ingreso: string | null = null,
 ): ExpressJefatura {
-  const fechaDeseada = p.fechaDeseadaAutor ?? deseadaFicha;
+  const fechaDeseada = deseadaFicha ?? p.fechaDeseadaAutor;
+  const plazo = resolverPlazosServicio(servicio, subtipo);
+  if (!plazo) return { estado: 'pendiente_clasificacion', fechaEstandar: null, fechaDeseada, compresionDias: 0, plazoBaseDias: null, decididoEn: null, motivo: null };
   const cronograma = calcularCronograma(
-    servicio,
-    fecha(p.fechaProgramadaInicio),
+    plazo,
+    fecha(ingreso ?? p.fechaProgramadaInicio),
     fechaDeseada ? fecha(fechaDeseada) : null,
   );
   const fechaEstandar = cronograma.fechaFinComprometida
@@ -79,6 +84,7 @@ export function evaluarExpressJefatura(
     p.expressFechaEstandar === fechaEstandar &&
     p.expressFechaDeseada === fechaDeseada;
   return {
+    plazoBaseDias: plazo.plazoComercialDias ?? plazo.plazoDias,
     fechaEstandar,
     fechaDeseada,
     compresionDias,
@@ -199,6 +205,8 @@ export async function obtenerDashboardJefatura(
           s: servicios,
           autor: autores.nombre,
           deseadaFicha: fichasTrazabilidad.fechaDeseadaCulminacion,
+          subtipo: fichasTrazabilidad.ingresoServicioSubtipoCrudo,
+          ingreso: fichasTrazabilidad.ingresoFechaIngreso,
         })
         .from(proyectos)
         .innerJoin(servicios, eq(servicios.id, proyectos.servicioId))
@@ -314,7 +322,7 @@ export async function obtenerDashboardJefatura(
     day: '2-digit',
   }).format(ahora);
   const todos: ProyectoJefatura[] = filas.map(
-    ({ p, s, autor, deseadaFicha }) => {
+    ({ p, s, autor, deseadaFicha, subtipo, ingreso }) => {
       const especialistaId = resolverEspecialistaActual(
         especialistaActivo.get(p.id),
         p.especialistaId,
@@ -380,10 +388,13 @@ export async function obtenerDashboardJefatura(
             ?.map((a) => a.nombre)
             .join(', ') || autor,
         estado: p.estado,
+        subtipoCrudo: s.codigo === 'CR' ? subtipo : null,
+        datoIncompleto: s.codigo === 'CR' && !resolverPlazosServicio(s, subtipo),
         servicio: {
           id: s.id,
           codigo: s.codigo,
-          nombre: s.nombre,
+          nombre: nombreServicioProyecto(s.codigo, s.nombre, subtipo),
+          nombreCatalogo: s.nombre,
           peso: s.pesoComplejidad,
         },
         especialista: especialistaId
@@ -393,9 +404,9 @@ export async function obtenerDashboardJefatura(
             }
           : null,
         porAsignar: p.notificadoJefatura && !especialistaId,
-        express: evaluarExpressJefatura(p, s, deseadaFicha),
+        express: evaluarExpressJefatura(p, s, deseadaFicha, subtipo, ingreso),
         riesgo: evaluarAtencionJefatura(
-          evaluarRiesgo(dias, determinarDiasPlazoAlerta(s)),
+          evaluarRiesgo(dias, determinarDiasPlazoAlerta(resolverPlazosServicio(s, subtipo) ?? s)),
           p.estado,
           procesos,
         ),
@@ -416,7 +427,7 @@ export async function obtenerDashboardJefatura(
         for (const p of propios) {
           const dato = composicion.get(p.servicio.codigo) ?? {
             codigo: p.servicio.codigo,
-            nombre: p.servicio.nombre,
+            nombre: p.servicio.nombreCatalogo ?? p.servicio.nombre,
             cantidad: 0,
             carga: 0,
           };
@@ -554,12 +565,12 @@ export async function decidirExpressJefatura(
       .from(servicios)
       .where(eq(servicios.id, p.servicioId));
     const [f] = await tx
-      .select({ deseada: fichasTrazabilidad.fechaDeseadaCulminacion })
+      .select({ deseada: fichasTrazabilidad.fechaDeseadaCulminacion, subtipo: fichasTrazabilidad.ingresoServicioSubtipoCrudo, ingreso: fichasTrazabilidad.ingresoFechaIngreso })
       .from(fichasTrazabilidad)
       .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
       .for('update');
     if (!s) throw new Error('Servicio del proyecto no encontrado');
-    const express = evaluarExpressJefatura(p, s, f?.deseada ?? null);
+    const express = evaluarExpressJefatura(p, s, f?.deseada ?? null, f?.subtipo ?? null, f?.ingreso ?? null);
     if (
       !express.compresionDias ||
       express.fechaEstandar !== input.fechaEstandar ||

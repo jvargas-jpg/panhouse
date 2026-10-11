@@ -18,7 +18,7 @@ import { ESTADOS_ACTIVOS } from './carga.js';
 import { auditarCambioFicha, tieneTrabajoRrpp } from './intakeRrpp.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos } from './proyectosAutores.js';
-import { calcularCronograma } from './cronograma.js';
+import { proyectarIngreso, type PlazosServicio } from './cronograma.js';
 import {
   seccionFichaEditorialSchema,
   seccionMatrizIngresoSchema,
@@ -57,24 +57,8 @@ export function datosRrpp(ficha: Ficha) {
 
 // Mismo plazo operativo que la ficha existente. La suma se delega al cronograma
 // central; Tripa conserva 90 días provisionales, sin resolver el conflicto manual.
-export function fechaProyectadaIngreso(codigo: string, ficha: Ficha) {
-  const dias =
-    codigo === 'CR'
-      ? ficha.ingresoServicioSubtipoCrudo === 'Capítulo'
-        ? 150
-        : ficha.ingresoServicioSubtipoCrudo === 'Tripa'
-          ? 90
-          : null
-      : (({ SE: 60, EF: 180, EEC: 150, EET: 90 } as Record<string, number>)[
-          codigo
-        ] ?? 90);
-  if (dias === null || !ficha.ingresoFechaIngreso) return null;
-  return calcularCronograma(
-    { plazoDias: dias, plazoInternoDias: null, plazoComercialDias: null },
-    new Date(ficha.ingresoFechaIngreso + 'T00:00:00Z'),
-  )
-    .fechaFinComprometida.toISOString()
-    .slice(0, 10);
+export function fechaProyectadaIngreso(codigo: string, ficha: Ficha, servicio: PlazosServicio) {
+  return proyectarIngreso({ ...servicio, codigo }, ficha)?.fechaFinComprometida.toISOString().slice(0, 10) ?? null;
 }
 
 export async function obtenerIngresosRrpp(id?: string) {
@@ -83,7 +67,7 @@ export async function obtenerIngresosRrpp(id?: string) {
       proyecto: proyectos,
       ficha: fichasTrazabilidad,
       autor: autores.nombre,
-      servicio: { codigo: servicios.codigo, nombre: servicios.nombre },
+      servicio: servicios,
       item: workItems,
     })
     .from(proyectos)
@@ -152,7 +136,7 @@ export async function obtenerIngresosRrpp(id?: string) {
         titulo: f.proyecto.titulo,
         posibleTitulo: f.ficha.posibleTituloLibro,
         nombre: autoresProyecto.map((a) => a.nombre).join(', '),
-        servicio: f.servicio,
+        servicio: { codigo: f.servicio.codigo, nombre: f.servicio.nombre },
         estado: f.proyecto.notificadoJefatura
           ? ('enviado' as const)
           : preparacion.listoParaJefatura
@@ -193,6 +177,7 @@ export async function obtenerIngresoRrpp(id: string) {
       proyecto: proyectos,
       ficha: fichasTrazabilidad,
       autor: autores.nombre,
+      servicio: servicios,
     })
     .from(proyectos)
     .innerJoin(
@@ -200,6 +185,7 @@ export async function obtenerIngresoRrpp(id: string) {
       eq(fichasTrazabilidad.proyectoId, proyectos.id),
     )
     .innerJoin(autores, eq(autores.id, proyectos.autorId))
+    .innerJoin(servicios, eq(servicios.id, proyectos.servicioId))
     .where(and(eq(proyectos.id, id), eq(proyectos.notificadoRrpp, true)));
   if (!fila) return null;
   const resumen = (await obtenerIngresosRrpp(id))[0];
@@ -219,7 +205,7 @@ export async function obtenerIngresoRrpp(id: string) {
         .map((a) => a.nombre),
     ),
     datos: datosRrpp(f),
-    fechaProyectada: fechaProyectadaIngreso(resumen.servicio.codigo, f),
+    fechaProyectada: fechaProyectadaIngreso(resumen.servicio.codigo, f, fila.servicio),
   };
 }
 export function contextoComercialRrpp(

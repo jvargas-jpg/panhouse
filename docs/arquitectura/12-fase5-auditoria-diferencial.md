@@ -77,6 +77,8 @@ Dos fuentes vivas e independientes (la Ficha real de un proyecto activo + una fi
 
 **No se modificó `servicios.plazoDias` ni ningún cálculo de SLA en esta ronda.** El catálogo actual sigue usando `CR: plazoDias: 150` para toda categoría "Crudo" (sin distinguir subtipo a nivel de catálogo — el subtipo vive en `fichasTrazabilidad.ingresoServicioSubtipoCrudo`, no en `servicios`). Esto queda marcado explícitamente como **pendiente de confirmación del negocio**: ¿Crudo-Tripa es 90 o 150 días? La magnitud de los pesos de carga tampoco se tocó (instrucción explícita, sin cambios).
 
+**Ampliación del 10 de octubre de 2026:** la aclaración del flujo RRPP → Jefatura exige conservar Tripa **90 provisional** y Capítulo **150**, con cálculo compartido entre intake, Ficha y decisión de Jefatura. Se centralizó esa regla operativa sin cambiar catálogo, pesos ni resolver el conflicto del Manual. Readiness y envío formal siguen separados; CR sin subtipo válido bloquea el envío. Ver [reporte A–M](16-jefatura-flujo-decision.md#aclaración-consolidada-crudo-readiness-y-planificación).
+
 ---
 
 ## 6. Pendiente para continuar Fase 5 (NO implementado en esta ronda — distinguir de lo de arriba)
