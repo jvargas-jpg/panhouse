@@ -1,0 +1,61 @@
+{
+  "date": "2026-10-11T22:16:12.517Z",
+  "regression": {
+    "testFiles": 59,
+    "tests": 1117,
+    "passed": 1117,
+    "failed": 0,
+    "skipped": 0,
+    "completeFileCoverage": true
+  },
+  "specificTests": {
+    "files": 7,
+    "tests": 156,
+    "passed": 156,
+    "derivedFromFullRegression": true
+  },
+  "backend": {
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "frontend": {
+    "typecheck": "passed",
+    "build": "passed",
+    "unitRunner": "not configured",
+    "buildWarning": "main minified chunk 864.30 kB"
+  },
+  "browser": {
+    "decisionesFunctional": 12,
+    "decisionesLinks": 6,
+    "seguimientoFunctional": 13,
+    "seguimientoGeometry": 23,
+    "pageErrors": 0
+  },
+  "developmentFixtures": {
+    "removedCorrecciones": 4,
+    "removedDecisiones": 4,
+    "removedWorkItems": 4,
+    "removedFixtureAudit": 14,
+    "projectsPreserved": 30
+  },
+  "spreadsheetOriginalSha256": "d3c620f737014e068cd28fb366f237aa176d86b501915a2a5188115c14cf95d7",
+  "cleanup": {
+    "ownedDatabasesAbsent": true,
+    "ownedRamContainerAbsent": true,
+    "qaServersStopped": true
+  },
+  "development": {
+    "frontend": {
+      "url": "http://localhost:5173",
+      "status": 200
+    },
+    "backend": {
+      "url": "http://localhost:3000",
+      "authWithoutSession": 401
+    },
+    "proyectos": 30,
+    "correcciones": 0,
+    "decisiones": 0
+  },
+  "implementationCommit": "d8312420aad089c739cccbedc9e79d1ff5d93297"
+}

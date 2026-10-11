@@ -1,0 +1,23 @@
+{
+  "intervenciones-10": {
+    "queries": 2,
+    "rows": 10
+  },
+  "intervenciones-50": {
+    "queries": 2,
+    "rows": 16
+  },
+  "general": {
+    "queries": 8,
+    "rows": 13
+  },
+  "general-detalle": {
+    "queries": 13
+  },
+  "intervencion-detalle": {
+    "queries": 2
+  },
+  "intervencion-actividad": {
+    "queries": 4
+  }
+}

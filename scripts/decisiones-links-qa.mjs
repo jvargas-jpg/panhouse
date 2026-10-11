@@ -1,0 +1,46 @@
+import assert from 'node:assert/strict';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { tmpdir } from 'node:os';
+import { pathToFileURL } from 'node:url';
+const {chromium}=await import(pathToFileURL(join(tmpdir(),'panhouse-browser-qa/node_modules/playwright/index.mjs')).href);
+const data=JSON.parse(await readFile(join(tmpdir(),'panhouse-browser-qa/case-decisiones-links.json'),'utf8'));
+const browser=await chromium.launch({headless:true});
+const jefe=await browser.newContext({viewport:{width:1440,height:900},storageState:join(tmpdir(),'panhouse-browser-qa/state-decisiones-jefe.json')});
+const owner=await browser.newContext({viewport:{width:1440,height:900},storageState:join(tmpdir(),'panhouse-browser-qa/state-decisiones-especialista.json')});
+const page=await jefe.newPage(), requester=await owner.newPage();
+const base='http://localhost:5176',dir=resolve('docs/evidencias/decisiones-jefatura');const checks=[],errors=[];
+for(const p of [page,requester]){p.setDefaultTimeout(60000);p.on('pageerror',e=>errors.push(e.message));}
+try{
+  await page.goto(`${base}/?vista=proyectos&proyecto=${data.proyectoId}`,{waitUntil:'domcontentloaded',timeout:60000});
+  await page.getByRole('link',{name:'Ver decisión',exact:true}).waitFor();
+  await page.screenshot({path:join(dir,'proyectos-decision.png')});
+  await page.getByRole('link',{name:'Ver decisión',exact:true}).click();await page.locator('.jd-ask').waitFor();
+  assert.equal(new URL(page.url()).searchParams.get('decision'),data.id);checks.push('Quick View opens the real native pending decision');
+  await page.setViewportSize({width:768,height:1024});
+  assert.equal(await page.locator('.jd-detail').evaluate(el=>el.getBoundingClientRect().width),580);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  await page.screenshot({path:join(dir,'tablet-final.png')});checks.push('tablet detail measures 580px without horizontal overflow');
+  await page.setViewportSize({width:375,height:812});
+  assert.equal(await page.locator('.jd-detail').evaluate(el=>el.getBoundingClientRect().width),375);
+  assert.equal(await page.locator('.jd-actions').evaluate(el=>el.getBoundingClientRect().bottom<=innerHeight),true);
+  await page.screenshot({path:join(dir,'mobile-final.png')});checks.push('mobile detail and footer fit 375x812');
+  await page.setViewportSize({width:1440,height:900});
+  await page.getByRole('button',{name:'Solicitar información',exact:true}).click();
+  await page.locator('.jd-confirm textarea').fill('Confirma el formato Word antes de autorizar la revisión previa');
+  await page.locator('.jd-confirm').getByRole('button',{name:'Confirmar',exact:true}).click();await page.locator('.jd-confirm').waitFor({state:'hidden'});
+  await requester.goto(base,{waitUntil:'domcontentloaded'});await requester.getByTitle('Notificaciones',{exact:true}).click();
+  await requester.getByRole('button',{name:/Jefatura solicitó información adicional/}).first().click();
+  await requester.getByLabel('Tu respuesta').waitFor();assert.ok(requester.url().includes(`/decisiones/${data.id}/responder`));
+  await requester.getByLabel('Tu respuesta').fill('Confirmo que son 121 páginas de Tripa Word completa');
+  await requester.getByRole('button',{name:'Enviar respuesta',exact:true}).click();
+  await requester.getByText('La solicitud está pendiente de revisión de Jefatura.',{exact:true}).waitFor();checks.push('requester notification opens the same case and accepts the contextual answer');
+  await page.goto(base,{waitUntil:'domcontentloaded'});await page.getByTitle('Notificaciones',{exact:true}).click();
+  await page.getByRole('button',{name:/Recibiste información adicional/}).first().click();await page.locator('.jd-ask').waitFor();
+  assert.equal(new URL(page.url()).searchParams.get('decision'),data.id);checks.push('Jefatura notification opens the answered expediente');
+  await page.getByRole('button',{name:'Aprobar',exact:true}).click();await page.locator('.jd-confirm').getByRole('button',{name:'Confirmar',exact:true}).click();await page.locator('.jd-detail-header').getByText('Aprobada',{exact:true}).waitFor();
+  await page.goto(`${base}/proyectos/${data.proyectoId}/ficha-trazabilidad`,{waitUntil:'domcontentloaded'});
+  await page.getByRole('button',{name:'Ver historial',exact:true}).click();await page.getByText('Jefatura aprobó el caso',{exact:true}).first().waitFor();
+  await page.screenshot({path:join(dir,'ficha-decision.png')});checks.push('Ficha records the actual human approval in project history');
+  assert.deepEqual(errors,[]);await writeFile(join(dir,'qa-links.json'),JSON.stringify({checks,errors},null,2));console.log(JSON.stringify({checks:checks.length,errors}));
+}finally{await browser.close();}

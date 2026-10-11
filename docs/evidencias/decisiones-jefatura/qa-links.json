@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Quick View opens the real native pending decision",
+    "tablet detail measures 580px without horizontal overflow",
+    "mobile detail and footer fit 375x812",
+    "requester notification opens the same case and accepts the contextual answer",
+    "Jefatura notification opens the answered expediente",
+    "Ficha records the actual human approval in project history"
+  ],
+  "errors": []
+}

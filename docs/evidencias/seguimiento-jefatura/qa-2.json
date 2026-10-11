@@ -1,0 +1,138 @@
+{
+  "cycle": "2",
+  "checks": [
+    {
+      "name": "General desktop",
+      "width": 1440,
+      "scroll": 1440
+    },
+    {
+      "name": "Intervenciones desktop",
+      "width": 1440,
+      "scroll": 1440
+    },
+    {
+      "name": "General drawer",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer A",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer B",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer C",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer D",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer E",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer F",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer G",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer H",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer I",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer J",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer K",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer L",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer M",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Drawer F2",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "Legacy values and missing-hour precision",
+      "width": 1440,
+      "scroll": 1440,
+      "drawer": 580
+    },
+    {
+      "name": "General tablet",
+      "width": 768,
+      "scroll": 768
+    },
+    {
+      "name": "Intervenciones tablet",
+      "width": 768,
+      "scroll": 768
+    },
+    {
+      "name": "General mobile",
+      "width": 375,
+      "scroll": 375
+    },
+    {
+      "name": "Intervenciones mobile",
+      "width": 375,
+      "scroll": 375
+    },
+    {
+      "name": "Mobile drawer",
+      "width": 375,
+      "scroll": 375,
+      "drawer": 375
+    }
+  ],
+  "errors": []
+}

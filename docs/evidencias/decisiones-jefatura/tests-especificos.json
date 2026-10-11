@@ -1,0 +1,1810 @@
+{
+  "source": "Derived from the final complete regression; not a separate invocation",
+  "testFiles": 7,
+  "tests": 156,
+  "passed": 156,
+  "failed": 0,
+  "skipped": 0,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida handoff consume versión y tripa canónicas; bandeja compartida permite iniciar y revisar por personas distintas",
+          "status": "passed",
+          "title": "handoff consume versión y tripa canónicas; bandeja compartida permite iniciar y revisar por personas distintas",
+          "duration": 12221.493900000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida no aprueba checklist incompleto, criterios fallidos o comentarios pendientes",
+          "status": "passed",
+          "title": "no aprueba checklist incompleto, criterios fallidos o comentarios pendientes",
+          "duration": 10529.886299999998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida no devuelve ajustes sin PDF comentado/total real ni acepta datos inválidos",
+          "status": "passed",
+          "title": "no devuelve ajustes sin PDF comentado/total real ni acepta datos inválidos",
+          "duration": 9486.290200000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida resolver concurrentemente es idempotente, conserva hora y no duplica audit/notificaciones",
+          "status": "passed",
+          "title": "resolver concurrentemente es idempotente, conserva hora y no duplica audit/notificaciones",
+          "duration": 6463.331299999998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida F1 → ajustes de Diseño → F2.1 → F2.2… soporta N rondas sin duplicar versiones ni borrar historia",
+          "status": "passed",
+          "title": "F1 → ajustes de Diseño → F2.1 → F2.2… soporta N rondas sin duplicar versiones ni borrar historia",
+          "duration": 11597.248599999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida valida contadores de pendientes/nuevos y no permite aprobar sin verificarlos",
+          "status": "passed",
+          "title": "valida contadores de pendientes/nuevos y no permite aprobar sin verificarlos",
+          "duration": 6855.5901999999915,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida Autor recibe solo PDF aprobado por Calidad; bypass por Diseño está cerrado",
+          "status": "passed",
+          "title": "Autor recibe solo PDF aprobado por Calidad; bypass por Diseño está cerrado",
+          "duration": 7615.030400000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida feedback de Autor exige PDF marcado, abre Diseño y vuelve a F2 con el total del Autor",
+          "status": "passed",
+          "title": "feedback de Autor exige PDF marcado, abre Diseño y vuelve a F2 con el total del Autor",
+          "duration": 7421.356199999995,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida revisión final exige Autor aprobado y retry concurrente no duplica F3 ni avisos",
+          "status": "passed",
+          "title": "revisión final exige Autor aprobado y retry concurrente no duplica F3 ni avisos",
+          "duration": 6460.176699999996,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida F3 → ajustes → F4.x; solo aprobación final deja output listo para paquete final",
+          "status": "passed",
+          "title": "F3 → ajustes → F4.x; solo aprobación final deja output listo para paquete final",
+          "duration": 16710.130600000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida RBAC/IDOR: diseñador, corrector, editor, creativo y especialista no revisan; especialista ajeno no coordina ni lee",
+          "status": "passed",
+          "title": "RBAC/IDOR: diseñador, corrector, editor, creativo y especialista no revisan; especialista ajeno no coordina ni lee",
+          "duration": 22136.142200000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida rutas legacy no alteran ni eliminan una ronda operativa protegida",
+          "status": "passed",
+          "title": "rutas legacy no alteran ni eliminan una ronda operativa protegida",
+          "duration": 5155.202399999995,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida las relaciones Calidad ↔ versión conservan integridad y permiten CASCADE del proyecto temporal",
+          "status": "passed",
+          "title": "las relaciones Calidad ↔ versión conservan integridad y permiten CASCADE del proyecto temporal",
+          "duration": 4515.487499999988,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida SLA se evalúa con la hora de revisión real y no cambia el resultado al consultar",
+          "status": "passed",
+          "title": "SLA se evalúa con la hora de revisión real y no cambia el resultado al consultar",
+          "duration": 4469.216199999995,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5E Calidad — rondas canónicas y bandeja compartida"
+          ],
+          "fullName": "5E Calidad — rondas canónicas y bandeja compartida listo para paquete final exige la cubierta actual aprobada; una cubierta nueva pendiente cierra el gate",
+          "status": "passed",
+          "title": "listo para paquete final exige la cubierta actual aprobada; una cubierta nueva pendiente cierra el gate",
+          "duration": 5108.617200000008,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1791755905237,
+      "endTime": 1791756041984.6172,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/Jhose/OneDrive/Documentos/panhouse/tests/calidad.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "GATE-02 — Definición de Crudo"
+          ],
+          "fullName": "GATE-02 — Definición de Crudo no considera válido el subtipo \"\" aunque no sea null",
+          "status": "passed",
+          "title": "no considera válido el subtipo \"\" aunque no sea null",
+          "duration": 6.964600000000246,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-02 — Definición de Crudo"
+          ],
+          "fullName": "GATE-02 — Definición de Crudo no considera válido el subtipo \"Crudo\" aunque no sea null",
+          "status": "passed",
+          "title": "no considera válido el subtipo \"Crudo\" aunque no sea null",
+          "duration": 1.2388999999993757,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-02 — Definición de Crudo"
+          ],
+          "fullName": "GATE-02 — Definición de Crudo no considera válido el subtipo \"Otro\" aunque no sea null",
+          "status": "passed",
+          "title": "no considera válido el subtipo \"Otro\" aunque no sea null",
+          "duration": 1.3316999999997279,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-02 — Definición de Crudo"
+          ],
+          "fullName": "GATE-02 — Definición de Crudo desbloqueado trivialmente para cualquier servicio que no sea Crudo (CR)",
+          "status": "passed",
+          "title": "desbloqueado trivialmente para cualquier servicio que no sea Crudo (CR)",
+          "duration": 1.6638999999995576,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-02 — Definición de Crudo"
+          ],
+          "fullName": "GATE-02 — Definición de Crudo bloqueado si el servicio es Crudo (CR) y RRPP todavía no definió el subtipo",
+          "status": "passed",
+          "title": "bloqueado si el servicio es Crudo (CR) y RRPP todavía no definió el subtipo",
+          "duration": 3.8921000000000276,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-02 — Definición de Crudo"
+          ],
+          "fullName": "GATE-02 — Definición de Crudo desbloqueado si el servicio es Crudo y RRPP ya definió el subtipo",
+          "status": "passed",
+          "title": "desbloqueado si el servicio es Crudo y RRPP ya definió el subtipo",
+          "duration": 1.4706999999998516,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-03 — Asignación Formal"
+          ],
+          "fullName": "GATE-03 — Asignación Formal bloqueado sin especialista asignado",
+          "status": "passed",
+          "title": "bloqueado sin especialista asignado",
+          "duration": 1.6053000000001703,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-03 — Asignación Formal"
+          ],
+          "fullName": "GATE-03 — Asignación Formal desbloqueado una vez asignado el especialista",
+          "status": "passed",
+          "title": "desbloqueado una vez asignado el especialista",
+          "duration": 1.2471999999997934,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-04 — Título y Subtítulo Aprobados"
+          ],
+          "fullName": "GATE-04 — Título y Subtítulo Aprobados bloqueado sin título definitivo",
+          "status": "passed",
+          "title": "bloqueado sin título definitivo",
+          "duration": 1.3923000000004322,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-04 — Título y Subtítulo Aprobados"
+          ],
+          "fullName": "GATE-04 — Título y Subtítulo Aprobados bloqueado con título pero sin subtítulo",
+          "status": "passed",
+          "title": "bloqueado con título pero sin subtítulo",
+          "duration": 1.0603000000000975,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-04 — Título y Subtítulo Aprobados"
+          ],
+          "fullName": "GATE-04 — Título y Subtítulo Aprobados desbloqueado con título y subtítulo definitivos",
+          "status": "passed",
+          "title": "desbloqueado con título y subtítulo definitivos",
+          "duration": 0.845499999999447,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-05 — Aprobación Interna de Portada (RRPP)"
+          ],
+          "fullName": "GATE-05 — Aprobación Interna de Portada (RRPP) bloqueado sin aprobación de RRPP",
+          "status": "passed",
+          "title": "bloqueado sin aprobación de RRPP",
+          "duration": 1.1588000000001557,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-05 — Aprobación Interna de Portada (RRPP)"
+          ],
+          "fullName": "GATE-05 — Aprobación Interna de Portada (RRPP) desbloqueado una vez RRPP aprueba",
+          "status": "passed",
+          "title": "desbloqueado una vez RRPP aprueba",
+          "duration": 0.931999999999789,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-06 — Revisión Previa de Tripas Extensas (5B Corrección)"
+          ],
+          "fullName": "GATE-06 — Revisión Previa de Tripas Extensas (5B Corrección) desbloqueado trivialmente cuando no se requiere revisión previa",
+          "status": "passed",
+          "title": "desbloqueado trivialmente cuando no se requiere revisión previa",
+          "duration": 1.4470000000001164,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-06 — Revisión Previa de Tripas Extensas (5B Corrección)"
+          ],
+          "fullName": "GATE-06 — Revisión Previa de Tripas Extensas (5B Corrección) bloqueado si se requiere revisión previa y todavía no se confirmó",
+          "status": "passed",
+          "title": "bloqueado si se requiere revisión previa y todavía no se confirmó",
+          "duration": 4.259399999999914,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-06 — Revisión Previa de Tripas Extensas (5B Corrección)"
+          ],
+          "fullName": "GATE-06 — Revisión Previa de Tripas Extensas (5B Corrección) desbloqueado una vez el Especialista confirma la revisión previa",
+          "status": "passed",
+          "title": "desbloqueado una vez el Especialista confirma la revisión previa",
+          "duration": 1.5480999999999767,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-07 — Momento de Activación de la Reunión Creativa (5C)"
+          ],
+          "fullName": "GATE-07 — Momento de Activación de la Reunión Creativa (5C) bloqueado sin título, sin importar el servicio",
+          "status": "passed",
+          "title": "bloqueado sin título, sin importar el servicio",
+          "duration": 1.4558999999999287,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-07 — Momento de Activación de la Reunión Creativa (5C)"
+          ],
+          "fullName": "GATE-07 — Momento de Activación de la Reunión Creativa (5C) Sello (SE): desbloqueado con título, sin depender de fechaFeedbackTripa",
+          "status": "passed",
+          "title": "Sello (SE): desbloqueado con título, sin depender de fechaFeedbackTripa",
+          "duration": 1.579200000000128,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-07 — Momento de Activación de la Reunión Creativa (5C)"
+          ],
+          "fullName": "GATE-07 — Momento de Activación de la Reunión Creativa (5C) Crudo (CR): bloqueado con título pero sin feedback de tripa completa",
+          "status": "passed",
+          "title": "Crudo (CR): bloqueado con título pero sin feedback de tripa completa",
+          "duration": 1.6216999999996915,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-07 — Momento de Activación de la Reunión Creativa (5C)"
+          ],
+          "fullName": "GATE-07 — Momento de Activación de la Reunión Creativa (5C) Ghost (EF): desbloqueado con título y feedback de tripa completa ya registrado",
+          "status": "passed",
+          "title": "Ghost (EF): desbloqueado con título y feedback de tripa completa ya registrado",
+          "duration": 0.8535999999994601,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-08 — Brief Aprobado Requerido para Conceptos (5C)"
+          ],
+          "fullName": "GATE-08 — Brief Aprobado Requerido para Conceptos (5C) bloqueado sin aprobación del autor sobre el brief",
+          "status": "passed",
+          "title": "bloqueado sin aprobación del autor sobre el brief",
+          "duration": 7.325600000000122,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "GATE-08 — Brief Aprobado Requerido para Conceptos (5C)"
+          ],
+          "fullName": "GATE-08 — Brief Aprobado Requerido para Conceptos (5C) desbloqueado una vez el autor aprueba el brief",
+          "status": "passed",
+          "title": "desbloqueado una vez el autor aprueba el brief",
+          "duration": 1.0615999999999985,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1791756289594,
+      "endTime": 1791756289655.0615,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/Jhose/OneDrive/Documentos/panhouse/tests/gates.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "POST /api/proyectos/:id/correcciones"
+          ],
+          "fullName": "Fase 5B — Corrección POST /api/proyectos/:id/correcciones permite al especialista dueño solicitar una corrección: crea work item pendiente",
+          "status": "passed",
+          "title": "permite al especialista dueño solicitar una corrección: crea work item pendiente",
+          "duration": 4419.2587,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "POST /api/proyectos/:id/correcciones"
+          ],
+          "fullName": "Fase 5B — Corrección POST /api/proyectos/:id/correcciones no marca requiereRevisionPrevia cuando las páginas son menores o iguales a 120",
+          "status": "passed",
+          "title": "no marca requiereRevisionPrevia cuando las páginas son menores o iguales a 120",
+          "duration": 2815.1762,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "POST /api/proyectos/:id/correcciones"
+          ],
+          "fullName": "Fase 5B — Corrección POST /api/proyectos/:id/correcciones rechaza (403) a un especialista que no está asignado a este proyecto (IDOR)",
+          "status": "passed",
+          "title": "rechaza (403) a un especialista que no está asignado a este proyecto (IDOR)",
+          "duration": 2237.8583,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "POST /api/proyectos/:id/correcciones"
+          ],
+          "fullName": "Fase 5B — Corrección POST /api/proyectos/:id/correcciones idempotente: pedir dos veces el mismo alcance mientras está abierto no duplica work item",
+          "status": "passed",
+          "title": "idempotente: pedir dos veces el mismo alcance mientras está abierto no duplica work item",
+          "duration": 2017.3898000000008,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "POST /api/proyectos/:id/correcciones"
+          ],
+          "fullName": "Fase 5B — Corrección POST /api/proyectos/:id/correcciones rechaza un alcance inválido",
+          "status": "passed",
+          "title": "rechaza un alcance inválido",
+          "duration": 1828.979900000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/asignar"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/asignar asigna un corrector interno (con cuenta): crea assignment, work item -> en_progreso, notifica",
+          "status": "passed",
+          "title": "asigna un corrector interno (con cuenta): crea assignment, work item -> en_progreso, notifica",
+          "duration": 3344.0483999999997,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/asignar"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/asignar asigna un corrector freelance (sin cuenta): correctorNombre, sin assignment ni notificación por usuario",
+          "status": "passed",
+          "title": "asigna un corrector freelance (sin cuenta): correctorNombre, sin assignment ni notificación por usuario",
+          "duration": 3484.9570999999996,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/asignar"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/asignar GATE-06: rechaza asignar sin revisión previa; el Especialista ya no puede autoconfirmarla; solo una decisión aprobada desbloquea",
+          "status": "passed",
+          "title": "GATE-06: rechaza asignar sin revisión previa; el Especialista ya no puede autoconfirmarla; solo una decisión aprobada desbloquea",
+          "duration": 3644.472999999998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/asignar"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/asignar reasignación: cierra el assignment anterior y conserva el historial",
+          "status": "passed",
+          "title": "reasignación: cierra el assignment anterior y conserva el historial",
+          "duration": 4176.706900000005,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/asignar"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/asignar dos intervenciones del mismo proyecto pueden tener corrector distinto cada una, en simultáneo",
+          "status": "passed",
+          "title": "dos intervenciones del mismo proyecto pueden tener corrector distinto cada una, en simultáneo",
+          "duration": 3731.4925000000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/asignar"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/asignar rechaza a un rol distinto de especialista (ej. corrector)",
+          "status": "passed",
+          "title": "rechaza a un rol distinto de especialista (ej. corrector)",
+          "duration": 2457.9960999999967,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/inicio y /entrega"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/inicio y /entrega permite al corrector interno asignado marcar su propio inicio y entrega",
+          "status": "passed",
+          "title": "permite al corrector interno asignado marcar su propio inicio y entrega",
+          "duration": 2492.345300000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/inicio y /entrega"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/inicio y /entrega rechaza (403) a un corrector que no es el asignado a esta corrección (IDOR)",
+          "status": "passed",
+          "title": "rechaza (403) a un corrector que no es el asignado a esta corrección (IDOR)",
+          "duration": 3163.980300000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/inicio y /entrega"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/inicio y /entrega permite al especialista marcar inicio/entrega cuando el corrector es freelance (sin cuenta)",
+          "status": "passed",
+          "title": "permite al especialista marcar inicio/entrega cuando el corrector es freelance (sin cuenta)",
+          "duration": 1502.9034000000029,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/inicio y /entrega"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/inicio y /entrega rechaza (403) al especialista marcar inicio/entrega cuando el corrector SÍ es interno (no freelance)",
+          "status": "passed",
+          "title": "rechaza (403) al especialista marcar inicio/entrega cuando el corrector SÍ es interno (no freelance)",
+          "duration": 2150.3559000000023,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/cierre"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/cierre permite al especialista cerrar con un resultado, nunca al corrector",
+          "status": "passed",
+          "title": "permite al especialista cerrar con un resultado, nunca al corrector",
+          "duration": 1334.052300000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "PATCH /api/correcciones/:id/cierre"
+          ],
+          "fullName": "Fase 5B — Corrección PATCH /api/correcciones/:id/cierre rechaza (403) a un corrector intentando cerrar",
+          "status": "passed",
+          "title": "rechaza (403) a un corrector intentando cerrar",
+          "duration": 1872.2439000000013,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "GET /api/correcciones/mias"
+          ],
+          "fullName": "Fase 5B — Corrección GET /api/correcciones/mias devuelve solo las correcciones asignadas al corrector que inicia sesión",
+          "status": "passed",
+          "title": "devuelve solo las correcciones asignadas al corrector que inicia sesión",
+          "duration": 2516.318500000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "GET /api/correcciones/mias"
+          ],
+          "fullName": "Fase 5B — Corrección GET /api/correcciones/mias rechaza a un rol distinto de corrector",
+          "status": "passed",
+          "title": "rechaza a un rol distinto de corrector",
+          "duration": 1468.015600000006,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "GET /api/correcciones/seguimiento"
+          ],
+          "fullName": "Fase 5B — Corrección GET /api/correcciones/seguimiento permite a jefe_area ver todas las correcciones activas",
+          "status": "passed",
+          "title": "permite a jefe_area ver todas las correcciones activas",
+          "duration": 2103.1803,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Fase 5B — Corrección",
+            "GET /api/correcciones/seguimiento"
+          ],
+          "fullName": "Fase 5B — Corrección GET /api/correcciones/seguimiento rechaza a un rol distinto de jefe_area (ej. especialista)",
+          "status": "passed",
+          "title": "rechaza a un rol distinto de jefe_area (ej. especialista)",
+          "duration": 1430.145000000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "5B entrega exacta aditiva y retry"
+          ],
+          "fullName": "5B entrega exacta aditiva y retry guarda instante real, conserva fecha legacy y calcula atraso del mismo día; retry no pisa historia ni duplica avisos",
+          "status": "passed",
+          "title": "guarda instante real, conserva fecha legacy y calcula atraso del mismo día; retry no pisa historia ni duplica avisos",
+          "duration": 2407.7058000000034,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1791756421136,
+      "endTime": 1791756477740.7058,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/Jhose/OneDrive/Documentos/panhouse/tests/correcciones.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado Vista general conserva procesos paralelos, riesgo y filtros con ocho lecturas",
+          "status": "passed",
+          "title": "Vista general conserva procesos paralelos, riesgo y filtros con ocho lecturas",
+          "duration": 1885.256800000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado sirve actividad real de notas y reasignaciones sin exponer identificadores",
+          "status": "passed",
+          "title": "sirve actividad real de notas y reasignaciones sin exponer identificadores",
+          "duration": 766.8446999999996,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado revierte una nota si el mismo cambio intenta evaluar una intervención no elegible",
+          "status": "passed",
+          "title": "revierte una nota si el mismo cambio intenta evaluar una intervención no elegible",
+          "duration": 521.8209999999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado proyecta una solicitud real sin crear seguimiento manual",
+          "status": "passed",
+          "title": "proyecta una solicitud real sin crear seguimiento manual",
+          "duration": 719.5000999999993,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado preserva tres materiales del mismo proyecto como intervenciones separadas",
+          "status": "passed",
+          "title": "preserva tres materiales del mismo proyecto como intervenciones separadas",
+          "duration": 649.8790999999983,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado distingue rondas posteriores de Corrección",
+          "status": "passed",
+          "title": "distingue rondas posteriores de Corrección",
+          "duration": 546.7482,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado integra fases y rondas reales de Calidad sin SLA inventado",
+          "status": "passed",
+          "title": "integra fases y rondas reales de Calidad sin SLA inventado",
+          "duration": 572.3371999999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado mantiene legacy sin inventar horas ni SLA",
+          "status": "passed",
+          "title": "mantiene legacy sin inventar horas ni SLA",
+          "duration": 570.1995000000006,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado no duplica la intervención al guardar supervisión",
+          "status": "passed",
+          "title": "no duplica la intervención al guardar supervisión",
+          "duration": 708.0079000000005,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado registra notas con actor y valores antes/después",
+          "status": "passed",
+          "title": "registra notas con actor y valores antes/después",
+          "duration": 764.4293999999991,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado rechaza una versión antigua sin sobrescribir ni auditar",
+          "status": "passed",
+          "title": "rechaza una versión antigua sin sobrescribir ni auditar",
+          "duration": 750.4091000000008,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado impide cambiar responsables, fechas, estados y páginas del workflow",
+          "status": "passed",
+          "title": "impide cambiar responsables, fechas, estados y páginas del workflow",
+          "duration": 538.8526999999995,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado evalúa F1 únicamente después de la revisión",
+          "status": "passed",
+          "title": "evalúa F1 únicamente después de la revisión",
+          "duration": 828.2491999999984,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado protege los resultados operativos y comentarios de Soporte Editorial",
+          "status": "passed",
+          "title": "protege los resultados operativos y comentarios de Soporte Editorial",
+          "duration": 690.584899999998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado solo permite comentarios de corrección después de entrega",
+          "status": "passed",
+          "title": "solo permite comentarios de corrección después de entrega",
+          "duration": 790.9678000000022,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado registra 80/20 freelance sin generar pagos comerciales",
+          "status": "passed",
+          "title": "registra 80/20 freelance sin generar pagos comerciales",
+          "duration": 957.2524999999987,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado conserva el gate de 120 páginas en el flujo de asignación",
+          "status": "passed",
+          "title": "conserva el gate de 120 páginas en el flujo de asignación",
+          "duration": 761.5348000000013,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado asigna timestamps reales y mantiene SLA central de 12h",
+          "status": "passed",
+          "title": "asigna timestamps reales y mantiene SLA central de 12h",
+          "duration": 635.2819000000018,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado requiere motivo histórico y conserva fecha sin hora cuando falta precisión",
+          "status": "passed",
+          "title": "requiere motivo histórico y conserva fecha sin hora cuando falta precisión",
+          "duration": 562.2821000000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado cierra asignación interna al reasignar a un externo y refleja responsable actual",
+          "status": "passed",
+          "title": "cierra asignación interna al reasignar a un externo y refleja responsable actual",
+          "duration": 801.0769999999975,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado deriva duración efectiva descontando pausas reales",
+          "status": "passed",
+          "title": "deriva duración efectiva descontando pausas reales",
+          "duration": 529.1121999999996,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado resuelve cambios de autor y Especialista desde la fuente canónica",
+          "status": "passed",
+          "title": "resuelve cambios de autor y Especialista desde la fuente canónica",
+          "duration": 488.15350000000035,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado excluye retirados y prehandoff; permite historial de culminados",
+          "status": "passed",
+          "title": "excluye retirados y prehandoff; permite historial de culminados",
+          "duration": 980.7963000000018,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado filtra búsqueda sin acentos, material, grupo y rango",
+          "status": "passed",
+          "title": "filtra búsqueda sin acentos, material, grupo y rango",
+          "duration": 713.6265000000021,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado pagina en backend, limita tamaño y no crece en consultas por fila",
+          "status": "passed",
+          "title": "pagina en backend, limita tamaño y no crece en consultas por fila",
+          "duration": 717.9673000000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado valida fechas, catálogos y números sin coerción insegura",
+          "status": "passed",
+          "title": "valida fechas, catálogos y números sin coerción insegura",
+          "duration": 481.9508999999998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado protege RBAC, IDOR y origen de la identidad",
+          "status": "passed",
+          "title": "protege RBAC, IDOR y origen de la identidad",
+          "duration": 584.9853000000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Seguimiento operativo integrado"
+          ],
+          "fullName": "Seguimiento operativo integrado deniega acciones operativas a Jefatura y creación de registros libres",
+          "status": "passed",
+          "title": "deniega acciones operativas a Jefatura y creación de registros libres",
+          "duration": 843.6028000000006,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1791756513156,
+      "endTime": 1791756533520.6028,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/Jhose/OneDrive/Documentos/panhouse/tests/seguimientoOperativo.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones crea la decisión al solicitar una corrección >120 páginas, expone gate bloqueado y aparece en la bandeja",
+          "status": "passed",
+          "title": "crea la decisión al solicitar una corrección >120 páginas, expone gate bloqueado y aparece en la bandeja",
+          "duration": 7030.567300000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones no duplica la decisión si se solicita la corrección dos veces (idempotencia por origen)",
+          "status": "passed",
+          "title": "no duplica la decisión si se solicita la corrección dos veces (idempotencia por origen)",
+          "duration": 4429.239100000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones no aplica el gate de Tripa Word a preliminares aunque sus páginas superen 120",
+          "status": "passed",
+          "title": "no aplica el gate de Tripa Word a preliminares aunque sus páginas superen 120",
+          "duration": 4972.920000000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones no crea decisión cuando la corrección no supera 120 páginas",
+          "status": "passed",
+          "title": "no crea decisión cuando la corrección no supera 120 páginas",
+          "duration": 4331.134399999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones lifecycle: pendiente -> en_revision al iniciar, -> informacion_solicitada al pedir info, -> en_revision al responder",
+          "status": "passed",
+          "title": "lifecycle: pendiente -> en_revision al iniciar, -> informacion_solicitada al pedir info, -> en_revision al responder",
+          "duration": 5003.255100000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones aprobar desbloquea el gate transaccionalmente; rechazar exige motivo y mantiene el gate bloqueado",
+          "status": "passed",
+          "title": "aprobar desbloquea el gate transaccionalmente; rechazar exige motivo y mantiene el gate bloqueado",
+          "duration": 5207.820899999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones aprobar con businessKey nuevo (segunda ronda) permite asignar; resultado histórico se conserva legible",
+          "status": "passed",
+          "title": "aprobar con businessKey nuevo (segunda ronda) permite asignar; resultado histórico se conserva legible",
+          "duration": 7298.7211000000025,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones resolución es idempotente: doble resolución no duplica audit ni notificaciones, y rechaza con 400",
+          "status": "passed",
+          "title": "resolución es idempotente: doble resolución no duplica audit ni notificaciones, y rechaza con 400",
+          "duration": 5019.294200000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones concurrencia: version vieja devuelve 409 y no sobreescribe el estado",
+          "status": "passed",
+          "title": "concurrencia: version vieja devuelve 409 y no sobreescribe el estado",
+          "duration": 4468.629399999998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones RBAC: solo jefe_area resuelve; el solicitante no puede aprobar su propio caso",
+          "status": "passed",
+          "title": "RBAC: solo jefe_area resuelve; el solicitante no puede aprobar su propio caso",
+          "duration": 4845.4216000000015,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones IDOR: un id inventado devuelve 404, no expone datos de otro proyecto",
+          "status": "passed",
+          "title": "IDOR: un id inventado devuelve 404, no expone datos de otro proyecto",
+          "duration": 4206.575299999997,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones otro jefe_area (mismo rol, distinta persona) también puede ver y resolver -- target es el ROL, no la persona",
+          "status": "passed",
+          "title": "otro jefe_area (mismo rol, distinta persona) también puede ver y resolver -- target es el ROL, no la persona",
+          "duration": 4636.956200000008,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones no permite creación libre: POST/PATCH directos a correcciones.ts sin pasar por el workflow siguen bloqueados por 410 (sección legacy ya retirada)",
+          "status": "passed",
+          "title": "no permite creación libre: POST/PATCH directos a correcciones.ts sin pasar por el workflow siguen bloqueados por 410 (sección legacy ya retirada)",
+          "duration": 4507.593899999993,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones creación concurrente devuelve una sola corrección, decisión, auditoría y aviso",
+          "status": "passed",
+          "title": "creación concurrente devuelve una sola corrección, decisión, auditoría y aviso",
+          "duration": 4287.819000000003,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones resoluciones simultáneas con la misma versión producen un éxito y un conflicto",
+          "status": "passed",
+          "title": "resoluciones simultáneas con la misma versión producen un éxito y un conflicto",
+          "duration": 5072.63870000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones un fallo de auditoría revierte tanto la resolución como el gate",
+          "status": "passed",
+          "title": "un fallo de auditoría revierte tanto la resolución como el gate",
+          "duration": 4481.568599999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones una pregunta repetida no duplica avisos, no permite resolver esperando información y protege respuestas antiguas",
+          "status": "passed",
+          "title": "una pregunta repetida no duplica avisos, no permite resolver esperando información y protege respuestas antiguas",
+          "duration": 4962.382800000007,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones el solicitante puede leer su pregunta; otra persona no puede leer ni responder el expediente",
+          "status": "passed",
+          "title": "el solicitante puede leer su pregunta; otra persona no puede leer ni responder el expediente",
+          "duration": 5285.820000000007,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones work items de otros owners y notificaciones no se convierten en decisiones",
+          "status": "passed",
+          "title": "work items de otros owners y notificaciones no se convierten en decisiones",
+          "duration": 4039.4410999999964,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones límite estricto de 120 páginas y enlaces de Inicio/Seguimiento comparten la decisión nativa",
+          "status": "passed",
+          "title": "límite estricto de 120 páginas y enlaces de Inicio/Seguimiento comparten la decisión nativa",
+          "duration": 4981.046000000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones valida filtros, busca motivos y excluye retirados y destinos de otro rol",
+          "status": "passed",
+          "title": "valida filtros, busca motivos y excluye retirados y destinos de otro rol",
+          "duration": 6861.321199999991,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones lista con 10 o 31 casos mantiene dos consultas y orden estable",
+          "status": "passed",
+          "title": "lista con 10 o 31 casos mantiene dos consultas y orden estable",
+          "duration": 6474.97189999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Jefatura · Decisiones"
+          ],
+          "fullName": "Jefatura · Decisiones colección inconsistente: Soporte Editorial escala, crea UNA decisión idempotente, no cambia el checklist ni el owner RRPP",
+          "status": "passed",
+          "title": "colección inconsistente: Soporte Editorial escala, crea UNA decisión idempotente, no cambia el checklist ni el owner RRPP",
+          "duration": 7172.331900000005,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1791756044869,
+      "endTime": 1791756164449.3318,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/Jhose/OneDrive/Documentos/panhouse/tests/decisiones.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership vacío: cinco KPIs cero y especialistas sin carga",
+          "status": "passed",
+          "title": "vacío: cinco KPIs cero y especialistas sin carga",
+          "duration": 2657.2721,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership RRPP listo sin handoff no aparece; el handoff formal crea la cola",
+          "status": "passed",
+          "title": "RRPP listo sin handoff no aparece; el handoff formal crea la cola",
+          "duration": 6545.577099999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership asignados, cerrados y assignment activo sin FK no entran en por asignar",
+          "status": "passed",
+          "title": "asignados, cerrados y assignment activo sin FK no entran en por asignar",
+          "duration": 2375.699199999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership recomienda mayor cantidad pero menor carga; conserva pesos y composición",
+          "status": "passed",
+          "title": "recomienda mayor cantidad pero menor carga; conserva pesos y composición",
+          "duration": 2587.3537000000033,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership pausados y stand-by mantienen carga; inactivos no son candidatos",
+          "status": "passed",
+          "title": "pausados y stand-by mantienen carga; inactivos no son candidatos",
+          "duration": 2686.098399999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership desempata carga por riesgo y luego Express confirmado, explicando el criterio",
+          "status": "passed",
+          "title": "desempata carga por riesgo y luego Express confirmado, explicando el criterio",
+          "duration": 2970.770199999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership riesgo conserva el umbral central y descuenta pausas",
+          "status": "passed",
+          "title": "riesgo conserva el umbral central y descuenta pausas",
+          "duration": 2036.4984000000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership seguimiento conserva paralelismo, bloqueo, vencimiento y responsable",
+          "status": "passed",
+          "title": "seguimiento conserva paralelismo, bloqueo, vencimiento y responsable",
+          "duration": 1877.2414999999964,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership respeta la hora del SLA de Corrección y el responsable freelance",
+          "status": "passed",
+          "title": "respeta la hora del SLA de Corrección y el responsable freelance",
+          "duration": 2061.7778000000035,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership usa plazos fijados de Calidad y Diseño sin fabricar SLA ni ignorar entregas puntuales",
+          "status": "passed",
+          "title": "usa plazos fijados de Calidad y Diseño sin fabricar SLA ni ignorar entregas puntuales",
+          "duration": 1884.7427000000025,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Inicio de Jefatura: snapshot, carga y ownership"
+          ],
+          "fullName": "Inicio de Jefatura: snapshot, carga y ownership solicitud de Editor es supervisión; la asignación creativa sí cuenta para Jefatura",
+          "status": "passed",
+          "title": "solicitud de Editor es supervisión; la asignación creativa sí cuenta para Jefatura",
+          "duration": 1554.5236000000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Express: decisión humana, contexto y auditoría"
+          ],
+          "fullName": "Express: decisión humana, contexto y auditoría detecta posible Express y confirmación no altera peso ni plazo",
+          "status": "passed",
+          "title": "detecta posible Express y confirmación no altera peso ni plazo",
+          "duration": 2005.1277000000046,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Express: decisión humana, contexto y auditoría"
+          ],
+          "fullName": "Express: decisión humana, contexto y auditoría normal explícito preserva fecha deseada; cambio de fecha vuelve a requerir revisión",
+          "status": "passed",
+          "title": "normal explícito preserva fecha deseada; cambio de fecha vuelve a requerir revisión",
+          "duration": 1055.7695999999996,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Express: decisión humana, contexto y auditoría"
+          ],
+          "fullName": "Express: decisión humana, contexto y auditoría fecha deseada RRPP y plazo comercial de Sello se conservan",
+          "status": "passed",
+          "title": "fecha deseada RRPP y plazo comercial de Sello se conservan",
+          "duration": 1492.6059000000023,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Express: decisión humana, contexto y auditoría"
+          ],
+          "fullName": "Express: decisión humana, contexto y auditoría no admite decisión para proyecto no recibido, cerrado o inexistente",
+          "status": "passed",
+          "title": "no admite decisión para proyecto no recibido, cerrado o inexistente",
+          "duration": 1190.9787999999971,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Asignación transaccional y RBAC de Jefatura"
+          ],
+          "fullName": "Asignación transaccional y RBAC de Jefatura asigna y reasigna FK, cierra historial, completa tarea, audita y notifica individualmente",
+          "status": "passed",
+          "title": "asigna y reasigna FK, cierra historial, completa tarea, audita y notifica individualmente",
+          "duration": 1604.2200000000012,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Asignación transaccional y RBAC de Jefatura"
+          ],
+          "fullName": "Asignación transaccional y RBAC de Jefatura serializa asignaciones concurrentes sin dos assignments activos",
+          "status": "passed",
+          "title": "serializa asignaciones concurrentes sin dos assignments activos",
+          "duration": 755.1103999999978,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Asignación transaccional y RBAC de Jefatura"
+          ],
+          "fullName": "Asignación transaccional y RBAC de Jefatura revierte historial y FK si falla una referencia dentro de la transacción",
+          "status": "passed",
+          "title": "revierte historial y FK si falla una referencia dentro de la transacción",
+          "duration": 1389.841999999997,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Asignación transaccional y RBAC de Jefatura"
+          ],
+          "fullName": "Asignación transaccional y RBAC de Jefatura reasignar o repetir no reanuda un proyecto pausado",
+          "status": "passed",
+          "title": "reasignar o repetir no reanuda un proyecto pausado",
+          "duration": 1291.041799999999,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Asignación transaccional y RBAC de Jefatura"
+          ],
+          "fullName": "Asignación transaccional y RBAC de Jefatura rechaza candidato ajeno al rol/inactivo y proyecto no handed-off sin efectos",
+          "status": "passed",
+          "title": "rechaza candidato ajeno al rol/inactivo y proyecto no handed-off sin efectos",
+          "duration": 826.5578000000023,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Asignación transaccional y RBAC de Jefatura"
+          ],
+          "fullName": "Asignación transaccional y RBAC de Jefatura RBAC real: 401 sin sesión, 403 para otros roles; ID desconocido y malformed",
+          "status": "passed",
+          "title": "RBAC real: 401 sin sesión, 403 para otros roles; ID desconocido y malformed",
+          "duration": 2029.3358999999982,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Asignación transaccional y RBAC de Jefatura"
+          ],
+          "fullName": "Asignación transaccional y RBAC de Jefatura actividad solo expone eventos reconocidos, sin JSON ni secretos",
+          "status": "passed",
+          "title": "actividad solo expone eventos reconocidos, sin JSON ni secretos",
+          "duration": 1441.2811999999976,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Asignación transaccional y RBAC de Jefatura"
+          ],
+          "fullName": "Asignación transaccional y RBAC de Jefatura actividad limita a cinco y excluye eventos técnicos no reconocidos",
+          "status": "passed",
+          "title": "actividad limita a cinco y excluye eventos técnicos no reconocidos",
+          "duration": 717.8128999999972,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1791755991288,
+      "endTime": 1791756036329.813,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/Jhose/OneDrive/Documentos/panhouse/tests/jefatura.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura Jefatura no puede crear proyectos por la API",
+          "status": "passed",
+          "title": "Jefatura no puede crear proyectos por la API",
+          "duration": 1422.3487999999998,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura vacío: contadores, paginación y filtros sin datos ficticios",
+          "status": "passed",
+          "title": "vacío: contadores, paginación y filtros sin datos ficticios",
+          "duration": 1299.8950999999997,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura excluye pre-handoff y retirados; incluye entregados y culminados",
+          "status": "passed",
+          "title": "excluye pre-handoff y retirados; incluye entregados y culminados",
+          "duration": 940.6057999999994,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura mantiene compatibilidad de asignados legacy sin handoff",
+          "status": "passed",
+          "title": "mantiene compatibilidad de asignados legacy sin handoff",
+          "duration": 1376.4125999999997,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura Por asignar coincide exactamente con Inicio y Asignaciones",
+          "status": "passed",
+          "title": "Por asignar coincide exactamente con Inicio y Asignaciones",
+          "duration": 1151.3685000000005,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura assignment activo gana sobre FK y el historial finalizado no es equipo actual",
+          "status": "passed",
+          "title": "assignment activo gana sobre FK y el historial finalizado no es equipo actual",
+          "duration": 1083.2068,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura asignar por el flujo existente actualiza listado, quick view y CTA",
+          "status": "passed",
+          "title": "asignar por el flujo existente actualiza listado, quick view y CTA",
+          "duration": 1601.8297999999995,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura producción exige Especialista y procesos editoriales abiertos; pausa conserva ámbito",
+          "status": "passed",
+          "title": "producción exige Especialista y procesos editoriales abiertos; pausa conserva ámbito",
+          "duration": 1681.0560000000005,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura filtro Servicio proviene del catálogo y solo devuelve ese servicio",
+          "status": "passed",
+          "title": "filtro Servicio proviene del catálogo y solo devuelve ese servicio",
+          "duration": 711.7176,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura Especialista / Sin asignar usa ownership canónico y solo ofrece activos",
+          "status": "passed",
+          "title": "Especialista / Sin asignar usa ownership canónico y solo ofrece activos",
+          "duration": 1378.1700999999994,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura busca título, código, autor y coautor sin distinguir acentos",
+          "status": "passed",
+          "title": "busca título, código, autor y coautor sin distinguir acentos",
+          "duration": 975.2969999999987,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura Express solo cuenta confirmados vigentes, no posibles ni históricos",
+          "status": "passed",
+          "title": "Express solo cuenta confirmados vigentes, no posibles ni históricos",
+          "duration": 2092.8018999999986,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura riesgo coincide con Inicio y su contador produce exactamente el mismo conjunto",
+          "status": "passed",
+          "title": "riesgo coincide con Inicio y su contador produce exactamente el mismo conjunto",
+          "duration": 4697.805400000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura culminado explícito no requiere ausencia de tareas; no genera riesgo ni asignación",
+          "status": "passed",
+          "title": "culminado explícito no requiere ausencia de tareas; no genera riesgo ni asignación",
+          "duration": 2392.9304999999986,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura Crudo Tripa usa dato canónico RRPP y plazo central",
+          "status": "passed",
+          "title": "Crudo Tripa usa dato canónico RRPP y plazo central",
+          "duration": 2768.192799999997,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura Crudo Capítulo usa dato canónico RRPP y plazo central",
+          "status": "passed",
+          "title": "Crudo Capítulo usa dato canónico RRPP y plazo central",
+          "duration": 2339.9344000000056,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura Crudo legacy sin subtipo no inventa clasificación, objetivo ni plazo",
+          "status": "passed",
+          "title": "Crudo legacy sin subtipo no inventa clasificación, objetivo ni plazo",
+          "duration": 1574.6715999999942,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura quick view: ingreso real, portada aprobada, equipo y hitos paralelos",
+          "status": "passed",
+          "title": "quick view: ingreso real, portada aprobada, equipo y hitos paralelos",
+          "duration": 1597.679400000001,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura actividad es local al proyecto, legible y no expone JSON",
+          "status": "passed",
+          "title": "actividad es local al proyecto, legible y no expone JSON",
+          "duration": 1589.5472999999984,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura paginación real, orden estable y límite de página; counts independientes de filtros",
+          "status": "passed",
+          "title": "paginación real, orden estable y límite de página; counts independientes de filtros",
+          "duration": 3706.870600000002,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura RBAC y validación de filtros rechazan consultas no autorizadas o inválidas",
+          "status": "passed",
+          "title": "RBAC y validación de filtros rechazan consultas no autorizadas o inválidas",
+          "duration": 1478.2605999999942,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura IDOR: resumen y actividad ocultan proyectos ajenos al ámbito e IDs inexistentes",
+          "status": "passed",
+          "title": "IDOR: resumen y actividad ocultan proyectos ajenos al ámbito e IDs inexistentes",
+          "duration": 1561.363900000004,
+          "failureMessages": [],
+          "meta": {}
+        },
+        {
+          "ancestorTitles": [
+            "Explorador de proyectos de Jefatura"
+          ],
+          "fullName": "Explorador de proyectos de Jefatura ocho lecturas por lotes con 1 y 31 proyectos; nunca una consulta por fila",
+          "status": "passed",
+          "title": "ocho lecturas por lotes con 1 y 31 proyectos; nunca una consulta por fila",
+          "duration": 1991.8331000000035,
+          "failureMessages": [],
+          "meta": {}
+        }
+      ],
+      "startTime": 1791756339872,
+      "endTime": 1791756381288.833,
+      "status": "passed",
+      "message": "",
+      "name": "C:/Users/Jhose/OneDrive/Documentos/panhouse/tests/jefaturaProyectos.test.ts"
+    }
+  ]
+}

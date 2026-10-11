@@ -1,0 +1,18 @@
+{
+  "checks": [
+    "10 compact columns; no duplicate creation flow",
+    "pagination, selection, close and reload preserve page",
+    "two modes and browser history",
+    "debounced search, empty state, reload and clear",
+    "server material filter and 50-row page size",
+    "notes persist, audit names and note body are visible",
+    "optimistic conflict does not overwrite or discard local draft",
+    "post-review F1 evaluation and observations; operational approval and comments unchanged",
+    "freelance 80/20 persists without payment action or amounts",
+    "reassignment history resolves previous/current names",
+    "general tabs, contextual switch and multiple interventions per project",
+    "activity failure remains local to tab",
+    "mobile full-width panel, focus trap, Escape and fixed destination links"
+  ],
+  "errors": []
+}

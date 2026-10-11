@@ -1,0 +1,17 @@
+{
+  "checks": [
+    "146 pages uses the existing gate and blocks assignment",
+    "Inicio KPI and decision queue share the native decision source",
+    "Seguimiento opens its associated decision without offering resolution there",
+    "UI approval atomically satisfies the gate; assignment continues; audit and notification exist",
+    "request info, requester UI response and return to review keep the same case and visible answer",
+    "rejection requires a reason in the real modal and keeps correction blocked",
+    "stale UI reports conflict, refreshes the resolution and prevents another action",
+    "mobile full-screen detail, confirmation focus, Escape and real approval work",
+    "empty state, resolved CTA and URL filters survive reload",
+    "Soporte creates a contextual collection escalation; its own request-info flow works; RRPP referral leaves Quality intact",
+    "resolved cases retain author, decision maker, date and reason without actions",
+    "real browser comparison: Seguimiento table differs from the Decisions inbox and expediente"
+  ],
+  "errors": []
+}
