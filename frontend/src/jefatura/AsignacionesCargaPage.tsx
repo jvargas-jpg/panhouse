@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import type {
   AsignacionesJefatura,
@@ -31,19 +31,21 @@ function FilaProyecto({
   onCompare,
 }: {
   p: ProyectoJefatura;
-  onCompare: (p: ProyectoJefatura) => void;
+  onCompare: (p: ProyectoJefatura, modo?: 'contexto' | 'candidatos') => void;
 }) {
   return (
     <li
       className={`jac-project-row ${p.express.estado === 'confirmado' || p.express.estado === 'posible' ? 'jac-row-priority' : ''}`}
+      onClick={() => onCompare(p, 'contexto')}
     >
       <div className="jac-project-identity">
-        <Link
-          to={`/proyectos/${p.id}/ficha-trazabilidad`}
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onCompare(p, 'contexto'); }}
           className="jac-title"
         >
           {p.titulo || p.autores}
-        </Link>
+        </button>
         <p className="jac-project-meta">
           #{p.codigo} · {p.autores}
         </p>
@@ -121,14 +123,14 @@ function FilaProyecto({
       <div className="jac-row-actions">
         <button
           className="jf-button jf-button-secondary"
-          onClick={() => onCompare(p)}
+          onClick={(e) => { e.stopPropagation(); onCompare(p, 'candidatos'); }}
         >
           <RrppIcon nombre="comparar" />
           Comparar
         </button>
         <button
           className={`jf-button ${p.especialista ? 'jac-reassign' : ''}`}
-          onClick={() => onCompare(p)}
+          onClick={(e) => { e.stopPropagation(); onCompare(p, 'contexto'); }}
           disabled={!p.entregadoJefatura}
           title={
             !p.entregadoJefatura
@@ -239,25 +241,39 @@ function CapacidadEquipo({
 export function AsignacionesCargaPage({
   onCompare,
 }: {
-  onCompare: (p: ProyectoJefatura) => void;
+  onCompare: (p: ProyectoJefatura, modo?: 'contexto' | 'candidatos') => void;
 }) {
-  const [tab, setTab] = useState<TabAsignaciones>('porAsignar');
-  const [busqueda, setBusqueda] = useState('');
-  const [q, setQ] = useState('');
-  const [servicioId, setServicio] = useState('');
-  const [especialistaId, setEspecialista] = useState('');
-  const [orden, setOrden] = useState<OrdenAsignaciones>('urgentes');
-  const [page, setPage] = useState(1);
+  const [params, setParams] = useSearchParams();
+  const paramsRef = useRef(params);
+  paramsRef.current = params;
+  function guardar(key: string, value: string) {
+    const next = new URLSearchParams(paramsRef.current);
+    if (value) next.set(key, value); else next.delete(key);
+    paramsRef.current = next;
+    setParams(next, { replace: true });
+  }
+  const tab = (tabs.some(t => t.id === params.get('jacTab')) ? params.get('jacTab') : 'porAsignar') as TabAsignaciones;
+  const setTab = (v: TabAsignaciones) => guardar('jacTab', v);
+  const q = params.get('jacQ') ?? '';
+  const setQ = (v: string) => guardar('jacQ', v);
+  const [busqueda, setBusqueda] = useState(q);
+  const servicioId = params.get('jacServicio') ?? '';
+  const setServicio = (v: string) => guardar('jacServicio', v);
+  const especialistaId = params.get('jacEspecialista') ?? '';
+  const setEspecialista = (v: string) => guardar('jacEspecialista', v);
+  const orden = (['urgentes','recientes','mayorImpacto','menorImpacto'].includes(params.get('jacOrden') ?? '') ? params.get('jacOrden') : 'urgentes') as OrdenAsignaciones;
+  const setOrden = (v: OrdenAsignaciones) => guardar('jacOrden', v);
+  const page = Math.max(1, Number(params.get('jacPagina')) || 1);
+  const setPage = (v: number) => guardar('jacPagina', String(v));
   const [opciones, setOpciones] = useState<
     Pick<AsignacionesJefatura, 'servicios' | 'especialistas'>
   >({ servicios: [], especialistas: [] });
   useEffect(() => {
     const timer = setTimeout(() => {
-      setQ(busqueda.trim());
-      setPage(1);
+      setParams(previous => { const next = new URLSearchParams(previous); if (busqueda.trim() !== (previous.get('jacQ') ?? '')) { next.set('jacQ', busqueda.trim()); next.set('jacPagina', '1'); } return next; }, { replace: true });
     }, 250);
     return () => clearTimeout(timer);
-  }, [busqueda]);
+  }, [busqueda, setParams]);
   const filtros = {
     tab,
     q,

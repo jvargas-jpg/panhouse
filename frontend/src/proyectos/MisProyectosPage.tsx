@@ -1,6 +1,6 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
 import type { FichaCompleta, ProyectoConRiesgo } from '../types/api';
 import { MetricasEspecialista } from './MetricasEspecialista';
 import { fetchFicha } from './proyectoDetalleApi';
@@ -22,10 +22,6 @@ const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen -my-6';
 // posición, no alto. +3rem = ese mismo padding total de <main>.
 const ALTO_LLENO_MAIN = 'h-[calc(100%+3rem)]';
 
-const NAV_ACTIVO =
-  'w-full flex items-center gap-3 px-4 py-3 bg-dorado/10 text-dorado rounded-xl font-semibold text-sm border border-dorado/20 transition-all text-left';
-const NAV_INACTIVO =
-  'w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-medium text-sm transition-all text-left';
 
 type VistaEspecialista = 'kanban' | 'metricas';
 
@@ -185,7 +181,8 @@ function TableroKanban() {
 // vez de flotar solo) y "Métricas de Producción" (placeholder, sin
 // datos reales que mostrar todavía).
 export function MisProyectosPage() {
-  const [vistaActiva, setVistaActiva] = useState<VistaEspecialista>('kanban');
+  const [params] = useSearchParams();
+  const vistaActiva: VistaEspecialista = params.get('vista') === 'metricas' ? 'metricas' : 'kanban';
 
   return (
     <div className={`${FULL_BLEED} ${ALTO_LLENO_MAIN} flex overflow-hidden bg-[#F8F9FA]`}>
@@ -193,18 +190,7 @@ export function MisProyectosPage() {
         <div className="px-6 py-8">
           <p className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-500">Panel Operativo</p>
           <nav className="space-y-2">
-            <button type="button" onClick={() => setVistaActiva('kanban')} className={vistaActiva === 'kanban' ? NAV_ACTIVO : NAV_INACTIVO}>
-              {vistaActiva === 'kanban' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
-              Tablero Kanban
-            </button>
-            <button
-              type="button"
-              onClick={() => setVistaActiva('metricas')}
-              className={vistaActiva === 'metricas' ? NAV_ACTIVO : NAV_INACTIVO}
-            >
-              {vistaActiva === 'metricas' && <span className="h-1.5 w-1.5 rounded-full bg-dorado" />}
-              Métricas de Producción
-            </button>
+            <SpecialistSidebarNav />
           </nav>
         </div>
       </aside>

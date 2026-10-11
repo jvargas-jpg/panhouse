@@ -8,7 +8,7 @@ import { autores, fichasTrazabilidad, notificaciones, projectAssignments, proyec
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
-import { ESTADOS_ACTIVOS, resolverEspecialistaActual } from './carga.js';
+import { ESTADOS_ACTIVOS, resolverEspecialistaActual, obtenerEspecialistaActual } from './carga.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItem } from './workItems.js';
@@ -286,6 +286,7 @@ export async function notificarJefaturaFichaCompletada(proyectoId: string, actor
 
 export async function obtenerProyecto(proyectoId: string) {
   const [fila] = await db.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+  if (fila) fila.especialistaId = await obtenerEspecialistaActual(proyectoId, fila.especialistaId);
   return fila;
 }
 

@@ -84,6 +84,20 @@ export interface CandidatoAsignacion extends CapacidadJefatura {
 export interface ComparacionAsignacion {
   proyecto: ProyectoJefatura;
   candidatos: CandidatoAsignacion[];
+  contexto: {
+    ingreso: string | null;
+    cierreProyectado: string | null;
+    ejecucion: string | null;
+    tiempoExpressMeses: number | null;
+    subtipoCrudo: string | null;
+    capitulos: string | null;
+    paginas: string | null;
+    presupuesto: string | null;
+    alianza: boolean | null;
+    unidad: string | null;
+    comercial: string;
+    rrpp: string;
+  };
 }
 export interface CapacidadJefatura {
   id: string;

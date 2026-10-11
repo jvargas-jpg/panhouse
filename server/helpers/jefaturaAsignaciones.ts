@@ -9,6 +9,11 @@ import {
   ordenarCandidatos,
   recomendarEspecialista,
 } from './jefatura.js';
+import { eq } from 'drizzle-orm';
+import { db } from '../db/client.js';
+import { proyectos, fichasTrazabilidad, unidades, presupuestos } from '../db/schema/index.js';
+import { evaluarPreparacionComercial } from './preparacionComercial.js';
+import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 
 const normalizar = (v: string) =>
   v.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('es').trim();
@@ -132,8 +137,31 @@ export async function compararAsignacionJefatura(
   const original = snapshot.proyectos.find((p) => p.id === id);
   if (!original) return null;
   const proyecto = conRecomendacion(original, snapshot.teamCapacity);
+  const [datos] = await db.select({ p: proyectos, f: fichasTrazabilidad, unidad: unidades.nombre, presupuesto: presupuestos.nombre })
+    .from(proyectos).leftJoin(fichasTrazabilidad, eq(fichasTrazabilidad.proyectoId, proyectos.id))
+    .leftJoin(unidades, eq(unidades.id, proyectos.unidadId))
+    .leftJoin(presupuestos, eq(presupuestos.id, proyectos.presupuestoId))
+    .where(eq(proyectos.id, id)).limit(1);
+  if (!datos) return null;
+  const f = datos.f;
+  const comercial = f && evaluarPreparacionComercial({ ...datos.p, ...f, autores: [{ id: datos.p.autorId }] }).listoParaRrpp;
+  const rrpp = f && evaluarPreparacionRrpp(f, proyecto.servicio.codigo).listoParaJefatura;
   return {
     proyecto,
+    contexto: {
+      ingreso: f?.ingresoFechaIngreso ?? null,
+      cierreProyectado: f?.ingresoFechaCierre ?? null,
+      ejecucion: f?.ingresoServicioEjecucion ?? null,
+      tiempoExpressMeses: f?.ingresoTiempoExpresMeses ?? null,
+      subtipoCrudo: proyecto.servicio.codigo === 'CR' ? f?.ingresoServicioSubtipoCrudo ?? null : null,
+      capitulos: f?.capitulosPactados ?? null,
+      paginas: f?.paginasPactadas ?? null,
+      presupuesto: f?.ingresoServicioPresupuesto ?? datos.presupuesto,
+      alianza: f?.ingresoServicioAlianza ?? null,
+      unidad: datos.unidad,
+      comercial: comercial ? 'Completo' : 'Pendiente',
+      rrpp: datos.p.notificadoJefatura ? 'Completo' : !datos.p.notificadoRrpp ? 'Aún no habilitado' : rrpp ? 'Listo para Jefatura' : 'En diagnóstico',
+    },
     candidatos: ordenarCandidatos(snapshot.teamCapacity).map((c) => {
       const esActual = c.id === proyecto.especialista?.id;
       const impactoCarga = esActual ? 0 : proyecto.impactoCarga;

@@ -1,5 +1,6 @@
 import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
+import type { Tx } from './tx.js';
 import type { EstadoProyecto } from '../db/schema/index.js';
 import {
   proyectos,
@@ -14,18 +15,22 @@ export const resolverEspecialistaActual = (
   activa: string | null | undefined,
   fk: string | null,
 ) => activa ?? fk;
-const scopeEspecialista = () =>
+export async function obtenerEspecialistaActual(proyectoId: string, fk: string | null, client: typeof db | Tx = db) {
+  const [activa] = await client.select({ usuarioId: projectAssignments.usuarioId }).from(projectAssignments)
+    .where(and(eq(projectAssignments.proyectoId, proyectoId), eq(projectAssignments.tipo, 'especialista'), isNull(projectAssignments.workItemId), isNull(projectAssignments.finalizadoEn))).limit(1);
+  return resolverEspecialistaActual(activa?.usuarioId, fk);
+}
+export const scopeEspecialista = () =>
   and(
     eq(projectAssignments.proyectoId, proyectos.id),
     eq(projectAssignments.tipo, 'especialista'),
     isNull(projectAssignments.workItemId),
     isNull(projectAssignments.finalizadoEn),
   );
+export const especialistaActualSql = sql<string | null>`coalesce(${projectAssignments.usuarioId}, ${proyectos.especialistaId})`;
 const columnaCargaActual = (rol: RolConCarga) =>
   rol === 'especialista'
-    ? sql<
-        string | null
-      >`coalesce(${projectAssignments.usuarioId}, ${proyectos.especialistaId})`
+    ? especialistaActualSql
     : sql<string | null>`${columnaAsignacion(rol)}`;
 
 // Un proyecto cuenta para la carga de quien esté asignado mientras no

@@ -8,6 +8,7 @@ import { AssignmentCandidateDrawer } from './AssignmentCandidateDrawer';
 import {
   fetchActividadJefatura,
   fetchDashboardJefatura,
+  fetchComparacionAsignacion,
 } from './commandCenterApi';
 import {
   DecisionQueue,
@@ -56,6 +57,13 @@ export function PanelJefaturaPage() {
   const [aviso, setAviso] = useState('');
   const [correccion, setCorreccion] = useState(false);
   const cache = useQueryClient();
+  const seleccionado = vista === 'asignaciones' ? params.get('proyecto') : null;
+  const seleccionadoQuery = useQuery({
+    queryKey: ['jefatura', 'candidatos', seleccionado],
+    queryFn: () => fetchComparacionAsignacion(seleccionado!),
+    enabled: !!seleccionado && user?.rol === 'jefe_area',
+    staleTime: 0,
+  });
   const dashboard = useQuery({
     queryKey: ['jefatura', 'dashboard'],
     queryFn: fetchDashboardJefatura,
@@ -73,7 +81,8 @@ export function PanelJefaturaPage() {
   const close = useCallback(() => {
     setProyectoId(null);
     setProyectoAsignacion(null);
-  }, []);
+    setParams(previous => { const next = new URLSearchParams(previous); next.delete('proyecto'); next.delete('decision'); return next; }, { replace: true });
+  }, [setParams]);
   useEffect(() => {
     if (!aviso) return;
     const timer = setTimeout(() => setAviso(''), 5000);
@@ -85,6 +94,7 @@ export function PanelJefaturaPage() {
         ['jefatura'],
         ['proyectos'],
         ['especialistas'],
+        ['mis-proyectos'],
         ['proyecto'],
         ['ficha'],
         ['ficha-viva'],
@@ -100,7 +110,7 @@ export function PanelJefaturaPage() {
   }
   const proyecto =
     vista === 'asignaciones'
-      ? proyectoAsignacion
+      ? seleccionado ? (seleccionadoQuery.data?.proyecto ?? (proyectoAsignacion?.id === seleccionado ? proyectoAsignacion : null)) : null
       : dashboard.data?.proyectos.find((p) => p.id === proyectoId);
   if (user && user.rol !== 'jefe_area')
     return <p role="alert">No tienes acceso a Jefatura.</p>;
@@ -142,6 +152,7 @@ export function PanelJefaturaPage() {
               proyecto={proyecto}
               onClose={close}
               onCambio={cambio}
+              modoInicial={params.get('decision') === 'candidatos' ? 'candidatos' : 'contexto'}
             />
           )}
           {aviso && (
@@ -174,7 +185,13 @@ export function PanelJefaturaPage() {
           </header>
         )}
         {vista === 'asignaciones' ? (
-          <AsignacionesCargaPage onCompare={setProyectoAsignacion} />
+          <>
+            {seleccionadoQuery.isError && seleccionado && <ErrorJefatura texto="No pudimos abrir el proyecto seleccionado." retry={() => { void seleccionadoQuery.refetch(); }} />}
+            <AsignacionesCargaPage onCompare={(p, modo = 'contexto') => {
+              setProyectoAsignacion(p);
+              setParams(previous => { const next = new URLSearchParams(previous); next.set('proyecto', p.id); next.set('decision', modo); return next; });
+            }} />
+          </>
         ) : vista === 'indicadores' ? (
           <section className="jf-card jf-placeholder">
             <RrppIcon nombre="indicadores" className="h-8 w-8" />

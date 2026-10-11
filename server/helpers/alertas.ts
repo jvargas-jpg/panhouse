@@ -1,8 +1,8 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { EstadoProyecto } from '../db/schema/index.js';
-import { autores, proyectos, servicios } from '../db/schema/index.js';
-import { columnaAsignacion, ESTADOS_ACTIVOS, type RolConCarga } from './carga.js';
+import { autores, proyectos, servicios, projectAssignments } from '../db/schema/index.js';
+import { columnaAsignacion, ESTADOS_ACTIVOS, especialistaActualSql, scopeEspecialista, type RolConCarga } from './carga.js';
 import { calcularDiasEfectivosProyecto } from './pausas.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 import { rrppEnviadoAtSql } from './auditLog.js';
@@ -141,7 +141,7 @@ const COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO = {
   fechaRealInicio: proyectos.fechaRealInicio,
   fechaDeseadaAutor: proyectos.fechaDeseadaAutor,
   disenadorId: proyectos.disenadorId,
-  especialistaId: proyectos.especialistaId,
+  especialistaId: especialistaActualSql,
   editorId: proyectos.editorId,
   correctorId: proyectos.correctorId,
   jefeAreaId: proyectos.jefeAreaId,
@@ -226,12 +226,15 @@ async function mapearFilaConRiesgo(
 async function listarProyectosConRiesgo(asignacion?: { rol: RolConCarga; usuarioId: string }): Promise<ProyectoConRiesgo[]> {
   const condiciones = [inArray(proyectos.estado, ESTADOS_ACTIVOS)];
   if (asignacion) {
-    condiciones.push(eq(columnaAsignacion(asignacion.rol), asignacion.usuarioId));
+    condiciones.push(asignacion.rol === 'especialista'
+      ? eq(especialistaActualSql, asignacion.usuarioId)
+      : eq(columnaAsignacion(asignacion.rol), asignacion.usuarioId));
   }
 
   const filas = await db
     .select(COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO)
     .from(proyectos)
+    .leftJoin(projectAssignments, scopeEspecialista())
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
     .where(and(...condiciones));
@@ -264,6 +267,7 @@ export async function obtenerProyectoConRiesgo(proyectoId: string): Promise<Proy
   const [fila] = await db
     .select(COLUMNAS_PROYECTO_CON_AUTOR_Y_SERVICIO)
     .from(proyectos)
+    .leftJoin(projectAssignments, scopeEspecialista())
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
     .where(eq(proyectos.id, proyectoId))

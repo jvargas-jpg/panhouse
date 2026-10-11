@@ -201,6 +201,7 @@
   padding: 0 12px;
 }
 .jac-project-row {
+  cursor: pointer;
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(0, 1.1fr) 90px 108px;
   gap: 14px;
@@ -209,6 +210,25 @@
   border-top: 1px solid #edf0f5;
   min-height: 98px;
 }
+
+.jac-title { text-align: left; background: transparent; border: 0; padding: 0; font: inherit; cursor: pointer; }
+.jf-drawer [hidden] { display: none !important; }
+.jf-drawer-decision { width: min(580px, 100vw); }
+.jf-drawer-comparison { width: min(850px, 100vw); }
+@media (max-width: 767px) { .jf-drawer-decision, .jf-drawer-comparison { width: 100vw; } }
+.jf-decision-label { font-size: 11px; letter-spacing: .07em; text-transform: uppercase; font-weight: 700; color: #75839a; margin: 14px 0 8px; }
+.jf-decision-recommendation { margin: 16px 0; padding: 14px 16px; border: 1px solid #e2c782; border-radius: 12px; background: #fdfaf3; }
+.jf-decision-recommendation .jf-decision-label { margin-top: 0; color: #987022; }
+.jf-recommendation-heading { display: flex; gap: 12px; align-items: baseline; justify-content: space-between; }
+.jf-recommendation-heading .jf-text-link { font-size: 11px; white-space: nowrap; }
+.jf-decision-recommendation h3 { font-size: 18px; font-weight: 700; margin: 0 0 8px; }
+.jf-decision-recommendation p { font-size: 12px; margin: 6px 0; }
+.jf-decision-recommendation > strong { display: block; font-size: 12px; margin-top: 10px; }
+.jf-readiness { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; font-size: 11px; }
+.jf-readiness b { display: block; color: #334b64; }
+.jf-decision-links { display: flex; flex-wrap: wrap; gap: 14px; margin: 14px 0 18px; font-size: 12px; text-decoration: underline; color: #5c6b83; }
+.jf-drawer-footer .jf-decision-links { margin: 0 0 9px; font-size: 11px; }
+.jf-drawer-decision .jf-date-grid { gap: 9px; padding-top: 10px; }
 .jac-project-row:hover {
   background: #fcfcfa;
 }

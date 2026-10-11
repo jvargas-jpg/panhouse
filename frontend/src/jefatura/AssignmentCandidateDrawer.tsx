@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { ProyectoJefatura } from '../../../shared/jefatura';
 import { RrppIcon } from '../rrpp/RrppIcons';
@@ -13,11 +14,17 @@ export function AssignmentCandidateDrawer({
   proyecto: inicial,
   onClose,
   onCambio,
+  modoInicial = 'contexto',
 }: {
   proyecto: ProyectoJefatura;
   onClose: () => void;
   onCambio: (mensaje: string, cerrar?: boolean) => Promise<void>;
+  modoInicial?: 'contexto' | 'candidatos';
 }) {
+  const location = useLocation();
+  const retorno = location.pathname + location.search;
+  const [comparando, setComparando] = useState(modoInicial === 'candidatos');
+  const candidatosRef = useRef<HTMLDivElement>(null);
   const comparacion = useQuery({
     queryKey: ['jefatura', 'candidatos', inicial.id],
     queryFn: () => fetchComparacionAsignacion(inicial.id),
@@ -25,6 +32,7 @@ export function AssignmentCandidateDrawer({
     refetchOnMount: 'always',
   });
   const proyecto = comparacion.data?.proyecto ?? inicial;
+  const contexto = comparacion.data?.contexto;
   const equipo = comparacion.isError
     ? []
     : (comparacion.data?.candidatos ?? []);
@@ -32,17 +40,18 @@ export function AssignmentCandidateDrawer({
     !comparacion.data || comparacion.isError || comparacion.isFetching;
   const [confirmando, setConfirmando] = useState(false);
   const [seleccion, setSeleccion] = useState(
-    proyecto.especialista?.id ?? proyecto.recomendacion?.especialistaId ?? '',
+    proyecto.recomendacion?.especialistaId ?? proyecto.especialista?.id ?? '',
   );
   const [motivo, setMotivo] = useState('');
   useEffect(() => {
     if (!seleccion && comparacion.data)
       setSeleccion(
-        comparacion.data.proyecto.especialista?.id ??
-          comparacion.data.proyecto.recomendacion?.especialistaId ??
+        comparacion.data.proyecto.recomendacion?.especialistaId ??
+          comparacion.data.proyecto.especialista?.id ??
           '',
       );
   }, [comparacion.data, seleccion]);
+  useEffect(() => { if (comparando && comparacion.data) candidatosRef.current?.scrollIntoView({ block: 'start' }); }, [comparando, comparacion.data]);
   const dialog = useRef<HTMLDivElement>(null);
   const antes = useRef<HTMLElement | null>(null);
   const busy = useRef(false);
@@ -109,6 +118,7 @@ export function AssignmentCandidateDrawer({
   const ocupado = asignacion.isPending || express.isPending;
   busy.current = ocupado;
   const elegido = equipo.find((c) => c.id === seleccion);
+  const recomendado = sinDatos ? undefined : equipo.find(c => c.recomendado);
   return (
     <div
       className="jf-overlay"
@@ -122,19 +132,19 @@ export function AssignmentCandidateDrawer({
         aria-labelledby="jf-drawer-title"
         tabIndex={-1}
         ref={dialog}
-        className="jf-drawer"
+        className={`jf-drawer ${comparando ? 'jf-drawer-comparison' : 'jf-drawer-decision'}`}
       >
         <header className="jf-drawer-head">
           <div>
             <p className="jf-eyebrow">DECISIÓN DE JEFATURA</p>
-            <h2 id="jf-drawer-title">Comparar especialistas</h2>
+            <h2 id="jf-drawer-title">{comparando ? 'Comparar especialistas' : proyecto.especialista ? 'Reasignar Especialista' : 'Asignar Especialista'}</h2>
           </div>
           <button
             type="button"
             className="jf-close"
             onClick={onClose}
             disabled={ocupado}
-            aria-label="Cerrar comparador"
+            aria-label="Cerrar panel de decisión"
           >
             ×
           </button>
@@ -145,7 +155,7 @@ export function AssignmentCandidateDrawer({
               <div>
                 <h3>{proyecto.titulo || proyecto.autores}</h3>
                 <p>
-                  #{proyecto.codigo} · {proyecto.servicio.nombre}
+                  #{proyecto.codigo} · {proyecto.autores}
                 </p>
               </div>
               <ExpressBadge express={proyecto.express} />
@@ -160,14 +170,23 @@ export function AssignmentCandidateDrawer({
               </strong>
             </p>
             <p className="jf-context-note">
-              Estado: {proyecto.estado.replace('_', ' ')}
+              {proyecto.especialista ? 'Asignado' : 'Pendiente de asignación'} · {proyecto.servicio.nombre}
             </p>
+            <h4 className="jf-decision-label">Contexto para asignar</h4>
             {proyecto.riesgo.atencion && (
               <p className="jf-context-note jf-text-danger">
                 Requiere atención: {proyecto.riesgo.causas.join(' · ')}
               </p>
             )}
             <dl className="jf-date-grid">
+              {contexto && [
+                ['Subtipo Crudo', contexto.subtipoCrudo],
+                ['Ejecución comercial', contexto.ejecucion === 'Express' && contexto.tiempoExpressMeses ? `Express · ${contexto.tiempoExpressMeses} meses` : contexto.ejecucion],
+                ['Fecha de ingreso', contexto.ingreso ? fechaJefatura(contexto.ingreso) : null],
+                ['Cierre comercial proyectado', contexto.cierreProyectado ? fechaJefatura(contexto.cierreProyectado) : null],
+                ['Capítulos pactados', contexto.capitulos], ['Páginas pactadas', contexto.paginas],
+                ['Presupuesto', contexto.presupuesto], ['Alianza', contexto.alianza === null ? null : contexto.alianza ? 'Sí' : 'No'], ['Unidad', contexto.unidad],
+              ].filter(([, valor]) => valor !== null && valor !== '').map(([nombre, valor]) => <div key={nombre}><dt>{nombre}</dt><dd>{valor}</dd></div>)}
               <div>
                 <dt>Fecha estándar</dt>
                 <dd>{fechaJefatura(proyecto.express.fechaEstandar)}</dd>
@@ -185,6 +204,8 @@ export function AssignmentCandidateDrawer({
                 </dd>
               </div>
             </dl>
+            {contexto && <div className="jf-readiness"><span>Información comercial <b>{contexto.comercial}</b></span><span>Ingreso RRPP <b>{contexto.rrpp}</b></span></div>}
+            {contexto?.ejecucion === 'Express' && proyecto.express.estado === 'normal' && <p className="jf-context-note">Comercial registró ejecución Express. La prioridad operativa se evalúa con las fechas vigentes; no hay compresión de plazo.</p>}
             {proyecto.express.estado === 'posible' && (
               <div className="jf-express-review">
                 <p>
@@ -226,7 +247,15 @@ export function AssignmentCandidateDrawer({
               </p>
             )}
           </section>
-          <div className="jf-section-heading">
+          {recomendado && <section className="jf-decision-recommendation" aria-label="Especialista recomendado">
+            <div className="jf-recommendation-heading"><p className="jf-decision-label">{proyecto.especialista ? 'Alternativa recomendada' : 'Especialista recomendado'}</p>{!comparando && <button type="button" className="jf-text-link" onClick={() => setComparando(true)}>Comparar equipo</button>}</div>
+            <h3>{recomendado.nombre}</h3>
+            <p>Carga actual <b>{recomendado.carga}</b> → después de asignar <b>{recomendado.cargaProyectada} pts</b></p>
+            <p>{recomendado.activos} activos · {recomendado.express} Express · {recomendado.enRiesgo} en riesgo</p>
+            <strong>¿Por qué?</strong><ul className="jf-reasons">{recomendado.razones.map(r => <li key={r}><RrppIcon nombre="check" className="h-3.5 w-3.5 shrink-0" />{r}</li>)}</ul>
+          </section>}
+          {!comparando && !recomendado && <button type="button" className="jf-button jf-button-secondary" onClick={() => setComparando(true)}>Comparar equipo</button>}
+          <div ref={candidatosRef} className="jf-section-heading" hidden={!comparando}>
             <div>
               <h3>Compara al equipo</h3>
               <p>La carga ponderada considera la composición de servicios.</p>
@@ -239,7 +268,7 @@ export function AssignmentCandidateDrawer({
                   : `${equipo.length} especialistas`}
             </span>
           </div>
-          <fieldset className="jf-candidates">
+          <fieldset className="jf-candidates" hidden={!comparando && !comparacion.isError && !comparacion.isLoading}>
             <legend className="sr-only">Elige Especialista responsable</legend>
             {comparacion.isError && (
               <ErrorJefatura
@@ -368,6 +397,10 @@ export function AssignmentCandidateDrawer({
           </section>
         )}
         <footer className="jf-drawer-footer">
+          <nav className="jf-decision-links" aria-label="Consulta del proyecto">
+            <Link to={`/proyectos/${proyecto.id}?volver=${encodeURIComponent(retorno)}`}>Ver proyecto</Link>
+            <Link to={`/proyectos/${proyecto.id}/ficha-trazabilidad?volver=${encodeURIComponent(retorno)}`}>Ver ficha de trazabilidad</Link>
+          </nav>
           <p>
             {elegido ? (
               <>
@@ -407,7 +440,7 @@ export function AssignmentCandidateDrawer({
                   ? confirmando
                     ? 'Confirmar reasignación'
                     : 'Reasignar proyecto'
-                  : 'Asignar Especialista'}
+                  : elegido ? `Asignar a ${elegido.nombre}` : 'Seleccionar Especialista'}
             </button>
           </div>
         </footer>

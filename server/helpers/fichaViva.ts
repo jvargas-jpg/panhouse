@@ -4,6 +4,7 @@ import { db } from '../db/client.js';
 import { auditLogs, autores, capitulos, correcciones, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, fichaDisenoPropuestas, fichaDistribucionPaises, fichaDocumentalDatos, fichaLanzamientoReuniones, fichasTrazabilidad, presupuestos, projectAssignments, proyectos, proyectosAutores, rrppEventos, rrppPublicaciones, servicios, unidades, users, workItems, type Rol, type ValorDocumental } from '../db/schema/index.js';
 import { CAMPOS_DOCUMENTALES } from './fichaDocumentalCatalogo.js';
 import { evaluarPreparacionComercial } from './preparacionComercial.js';
+import { obtenerEspecialistaActual } from './carga.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { fechasLanzamientoCanonicas } from './rrppLanzamientoFicha.js';
 import { registrarEvento } from './auditLog.js';
@@ -38,6 +39,7 @@ export async function verificarAccesoFichaViva(id: string, actor: ActorFicha, cl
     const [p] = await client.select().from(proyectos).where(eq(proyectos.id, id)).limit(1);
     if (!p)
         throw new ErrorFichaViva(404, 'Proyecto no encontrado');
+    if (actor.rol === 'especialista') p.especialistaId = await obtenerEspecialistaActual(id, p.especialistaId, client);
     const assigned = actor.rol === 'especialista' ? p.especialistaId : actor.rol === 'editor' ? p.editorId : actor.rol === 'disenador' ? p.disenadorId : undefined;
     if (assigned !== undefined && assigned !== actor.id)
         throw new ErrorFichaViva(403, 'Proyecto asignado a otra persona');
@@ -71,8 +73,21 @@ export async function historialFicha(id: string, cursor?: string, limit = 20): P
             throw new ErrorFichaViva(400, 'Página de historial inválida');
         }
     }
-    const rows = await db.select({ id: auditLogs.id, date: auditLogs.createdAt, action: auditLogs.accion, name: users.nombre }).from(auditLogs).leftJoin(users, eq(users.id, auditLogs.actorId)).where(and(eq(auditLogs.proyectoId, id), before)).orderBy(desc(auditLogs.createdAt), desc(auditLogs.id)).limit(limit + 1);
-    const items: ActividadFicha[] = rows.slice(0, limit).map(r => ({ id: r.id, date: r.date.toISOString(), label: EVENTOS[r.action] ?? EVENTOS_PROYECTO_RRPP[r.action]?.titulo ?? `Se registró un avance de ${areaEvento(r.action).toLowerCase()}`, actor: r.name ?? 'Sistema', area: areaEvento(r.action) }));
+    const rows = await db.select({ id: auditLogs.id, date: auditLogs.createdAt, action: auditLogs.accion, details: auditLogs.detalles, name: users.nombre }).from(auditLogs).leftJoin(users, eq(users.id, auditLogs.actorId)).where(and(eq(auditLogs.proyectoId, id), before)).orderBy(desc(auditLogs.createdAt), desc(auditLogs.id)).limit(limit + 1);
+    const ids = rows.filter(r => ['ESPECIALISTA_ASIGNADO','ESPECIALISTA_REASIGNADO'].includes(r.action)).flatMap(r => {
+        const d = r.details as { anterior?: string; nuevo?: string } | null;
+        return [d?.anterior, d?.nuevo].filter((v): v is string => !!v && /^[0-9a-f-]{36}$/i.test(v));
+    });
+    const responsables = ids.length ? await db.select({id: users.id, nombre: users.nombre}).from(users).where(inArray(users.id, ids)) : [];
+    const assignmentLabel = (r: typeof rows[number]) => {
+        if (!['ESPECIALISTA_ASIGNADO','ESPECIALISTA_REASIGNADO'].includes(r.action)) return undefined;
+        const d = r.details as { anterior?: string; nuevo?: string } | null;
+        const nuevo = responsables.find(u => u.id === d?.nuevo)?.nombre;
+        const anterior = responsables.find(u => u.id === d?.anterior)?.nombre;
+        if (!nuevo) return undefined;
+        return anterior ? `Jefatura reasignó: ${anterior} → ${nuevo}` : `Jefatura asignó a ${nuevo}`;
+    };
+    const items: ActividadFicha[] = rows.slice(0, limit).map(r => ({ id: r.id, date: r.date.toISOString(), label: assignmentLabel(r) ?? EVENTOS[r.action] ?? EVENTOS_PROYECTO_RRPP[r.action]?.titulo ?? `Se registró un avance de ${areaEvento(r.action).toLowerCase()}`, actor: r.name ?? 'Sistema', area: areaEvento(r.action) }));
     const last = items.at(-1);
     return { items, nextCursor: rows.length > limit && last ? Buffer.from(JSON.stringify({ date: last.date, id: last.id })).toString('base64url') : null };
 }
@@ -87,7 +102,7 @@ async function equipoFicha(p: Base['p'], history = false): Promise<EquipoFicha[]
         const fallback = [['especialista', p.especialistaId], ['editor', p.editorId], ['corrector', p.correctorId], ['disenador', p.disenadorId], ['jefe_area', p.jefeAreaId]].filter((x): x is [
             string,
             string
-        ] => !!x[1] && !rows.some(r => r.tipo === x[0] && r.userId === x[1]));
+        ] => !!x[1] && !rows.some(r => r.tipo === x[0] && !r.scope));
         if (fallback.length) {
             const names = await db.select({ id: users.id, name: users.nombre }).from(users).where(inArray(users.id, fallback.map(x => x[1])));
             for (const [role, uid] of fallback) {
@@ -114,7 +129,14 @@ export function estadoTrabajo(rows: CountState[], fallback: EstadoArea = 'No ini
     return 'En curso'; if (rows.some(r => r.estado === 'pendiente'))
     return 'Pendiente'; if (rows.some(r => r.estado === 'completado'))
     return 'Completo'; return fallback; }
-function workspace(area: AreaFicha, p: Base['p'], actor: ActorFicha, launchEnabled: boolean): AreaResumen['workspace'] { if (area === 'proyecto' && actor.rol === 'comercial')
+function workspace(area: AreaFicha, p: Base['p'], actor: ActorFicha, launchEnabled: boolean, hasProcess = false): AreaResumen['workspace'] {
+    if (actor.rol === 'jefe_area') {
+        if (area === 'proyecto') return p.notificadoJefatura && !p.especialistaId && ['en_proceso', 'retrasado', 'stand_by', 'pausado'].includes(p.estado)
+            ? { label: 'Asignar Especialista', href: `/?vista=asignaciones&proyecto=${p.id}` }
+            : { label: 'Supervisar proyecto', href: `/proyectos/${p.id}` };
+        if (area === 'correccion' && hasProcess) return { label: 'Ver seguimiento de Corrección', href: '/?vista=seguimiento' };
+        return;
+    } if (area === 'proyecto' && actor.rol === 'comercial')
     return { label: 'Gestionar datos de la venta', href: `/proyectos/${p.id}/ingreso-comercial` }; if (area === 'proyecto' && actor.rol === 'rrpp' && p.notificadoRrpp)
     return { label: 'Abrir ingreso RRPP', href: `/rrpp/ingresos?proyecto=${p.id}` }; if (area === 'lanzamiento' && actor.rol === 'rrpp' && launchEnabled)
     return { label: 'Abrir planificación', href: `/rrpp/lanzamientos?proyecto=${p.id}` }; const owners: Record<AreaFicha, Rol[]> = { proyecto: ['comercial', 'especialista', 'jefe_area'], edicion: ['especialista', 'editor', 'jefe_edicion'], correccion: ['especialista', 'corrector', 'jefe_area'], diseno: ['especialista', 'disenador'], calidad: ['especialista', 'soporte_editorial'], digital: ['soporte_digital'], lanzamiento: [], impresion: ['impresion'], distribucion: ['distribucion'] }; if (!owners[area].includes(actor.rol))
@@ -157,6 +179,7 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
         .innerJoin(presupuestos,eq(presupuestos.id,proyectos.presupuestoId)).where(eq(proyectos.id,id)).limit(1);
     if (!base) throw new ErrorFichaViva(404,'Ficha no encontrada');
     const { p, f, service } = base;
+    p.especialistaId = await obtenerEspecialistaActual(id, p.especialistaId);
     const authorColumns = {id:autores.id,name:autores.nombre,category:autores.categoria};
     let authors = await db.select(authorColumns).from(proyectosAutores).innerJoin(autores,eq(autores.id,proyectosAutores.autorId)).where(eq(proyectosAutores.proyectoId,id)).orderBy(asc(autores.nombre));
     if (!authors.length) authors = await db.select(authorColumns).from(autores).where(eq(autores.id,p.autorId));
@@ -242,7 +265,7 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
             state = 'Pendiente';
             detail = 'No se pudo consultar la habilitación de lanzamiento';
         }
-        return { id: area.id, name: area.name, state, detail, workspace: state === 'No aplica' ? undefined : workspace(area.id, p, actor, !!launch) };
+        return { id: area.id, name: area.name, state, detail, workspace: state === 'No aplica' ? undefined : workspace(area.id, p, actor, !!launch, own.length > 0 && !errors.includes('Estados operativos')) };
     });
     const myActions: AccionFicha[] = [];
     if (actor.rol === 'rrpp') {
@@ -253,6 +276,17 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
         if (pendingConcepts > 0 && ['en_proceso', 'retrasado'].includes(p.estado))
             myActions.push({ label: 'Revisar conceptos de portada', description: 'Consultar conceptos y su aprobación interna RRPP.', href: '/' });
     }
+    else if (actor.rol === 'jefe_area') {
+        const activo = ['en_proceso', 'retrasado', 'stand_by', 'pausado'].includes(p.estado);
+        if (!errors.includes('Equipo') && p.notificadoJefatura && !p.especialistaId && activo) {
+            myActions.push({ label: 'Asignar Especialista', description: 'El proyecto completó Comercial y RRPP y está esperando distribución dentro del equipo editorial.', href: `/?vista=asignaciones&proyecto=${id}`, primary: true });
+        } else {
+            myActions.push({ label: 'Supervisar proyecto', description: p.especialistaId ? 'Consulta al responsable actual y la situación del proyecto.' : 'Consulta el estado y las entregas pendientes del proyecto.', href: `/proyectos/${id}`, primary: true });
+        }
+        if (p.notificadoRrpp) myActions.push({ label: 'Ver diagnóstico', description: 'Revisar ingreso RRPP en la ficha, sin editarlo.', href: `/proyectos/${id}/ficha-trazabilidad?modo=completa#proyecto` });
+        if (!errors.includes('Estados operativos') && states.some(s => s.tipo === 'correccion' && ['pendiente', 'en_progreso', 'bloqueado'].includes(s.estado))) myActions.push({ label: 'Ver seguimiento de Corrección', description: 'Supervisa la intervención vigente sin actuar como Corrector.', href: '/?vista=seguimiento' });
+        if (activo && p.especialistaId) myActions.push({ label: 'Revisar solicitudes', description: 'Solicitudes operativas del equipo editorial.', href: '/?vista=solicitudes' });
+    }
     else {
         for (const area of traceability.filter(a => a.workspace)) {
             myActions.push({ label: area.workspace!.label, description: area.detail, href: area.workspace!.href, primary: myActions.length === 0 });
@@ -262,7 +296,7 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
     }
     const overview = [campo('budget', base.budget, 'proyectos.presupuestoId', 'Presupuesto inicial'), campo('ingresoServicioPresupuesto', f.ingresoServicioPresupuesto, 'fichas_trazabilidad', 'Presupuesto del servicio'), campo('ingresoFechaIngreso', f.ingresoFechaIngreso, 'fichas_trazabilidad'), campo('ingresoFechaCierre', f.ingresoFechaCierre, 'fichas_trazabilidad'), campo('ingresoServicioEjecucion', f.ingresoServicioEjecucion, 'fichas_trazabilidad'), campo('ingresoServicioAlianza', f.ingresoServicioAlianza, 'fichas_trazabilidad'), ...(f.ingresoServicioEjecucion === 'Express' ? [campo('ingresoTiempoExpresMeses', f.ingresoTiempoExpresMeses, 'fichas_trazabilidad')] : []), campo('capitulosPactados', f.capitulosPactados, 'fichas_trazabilidad'), campo('paginasPactadas', f.paginasPactadas, 'fichas_trazabilidad'), campo('coleccionPanhouse', f.coleccionPanhouse, 'fichas_trazabilidad')].filter(c => c.value !== null && c.value !== undefined && c.value !== '');
     const creativeState = estadoTrabajo(states.filter(s => s.tipo === 'direccion_creativa'));
-    return { project: { id, code: p.codigo, title, service: `${service} · ${base.serviceName}`, unit: base.unit, macroState: p.estado, updatedAt: new Date(Math.max(p.updatedAt.getTime(), f.updatedAt.getTime(), activity.items[0] ? Date.parse(activity.items[0].date) : 0)).toISOString() }, authors: authors.map(a => ({ id: a.id, name: a.name, category: a.category })), overview, summary: { active: countOf(['en_progreso']), completed: countOf(['completado']), pending: countOf(['pendiente']), blocked: countOf(['bloqueado']), commercial: commercialState, commercialMissing: commercial.faltantesComercial.map(etiquetaCampo), rrpp: rrppState, rrppMissing: rrpp.faltantes.map(x => x.etiqueta), launchEnabled: !!launch, launchPhase: launch ? f.asesoriaFase : null, launch: traceability[6]!.state, launchDate: launch ? f.lanzamientoPromocionFechaTentativa : null }, team, traceability, myActions, recentActivity: activity.items, secondaryErrors: errors, relatedProcesses: [{ name: 'Dirección creativa', state: creativeState, detail: 'Brief, conceptos y aprobación interna RRPP.', href: creativeState !== 'No iniciado' && (actor.rol === 'lider_creativo' || actor.rol === 'rrpp') ? '/' : undefined }, { name: 'Jefatura', state: p.especialistaId ? 'Especialista asignado' : p.notificadoJefatura ? 'Pendiente de asignación' : 'Aún no recibido', detail: 'Asignaciones y coordinación editorial.', href: actor.rol === 'jefe_area' ? '/' : undefined }] };
+    return { project: { id, code: p.codigo, title, service: `${service} · ${base.serviceName}`, unit: base.unit, macroState: p.estado, updatedAt: new Date(Math.max(p.updatedAt.getTime(), f.updatedAt.getTime(), activity.items[0] ? Date.parse(activity.items[0].date) : 0)).toISOString() }, authors: authors.map(a => ({ id: a.id, name: a.name, category: a.category })), overview, summary: { active: countOf(['en_progreso']), completed: countOf(['completado']), pending: countOf(['pendiente']), blocked: countOf(['bloqueado']), commercial: commercialState, commercialMissing: commercial.faltantesComercial.map(etiquetaCampo), rrpp: rrppState, rrppMissing: rrpp.faltantes.map(x => x.etiqueta), launchEnabled: !!launch, launchPhase: launch ? f.asesoriaFase : null, launch: traceability[6]!.state, launchDate: launch ? f.lanzamientoPromocionFechaTentativa : null }, team, traceability, myActions, recentActivity: activity.items, secondaryErrors: errors, relatedProcesses: [{ name: 'Dirección creativa', state: creativeState, detail: 'Brief, conceptos y aprobación interna RRPP.', href: creativeState !== 'No iniciado' && (actor.rol === 'lider_creativo' || actor.rol === 'rrpp') ? '/' : undefined }, { name: 'Jefatura', state: p.especialistaId ? 'Especialista asignado' : p.notificadoJefatura ? 'Pendiente de asignación' : 'Aún no recibido', detail: 'Asignaciones y coordinación editorial.', href: actor.rol === 'jefe_area' ? `/?vista=asignaciones&proyecto=${id}` : undefined }] };
 }
 export const datosDocumentalesSchema = z.object({ datos: z.record(z.union([z.string().max(5000), z.number().finite(), z.boolean(), z.null()])) }).strict();
 

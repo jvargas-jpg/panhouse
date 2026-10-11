@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import type { AreaFicha, ResumenFichaViva } from '../../../../shared/fichaViva';
 import { useMe } from '../../auth/useAuth';
-import { ComercialSidebarNav } from '../../comercial/ComercialSidebarNav';
-import { CrmSidebarLayout, NAV_ACTIVO, NAV_INACTIVO } from '../../layout/CrmSidebarLayout';
-import { RrppSidebarNav, RRPP_FOOTER, RRPP_LOGO } from '../../rrpp/RrppSidebarNav';
+import { CrmSidebarLayout } from '../../layout/CrmSidebarLayout';
+import { RoleProjectNavigation, retornoProyecto, destinoProyectos } from '../../layout/RoleProjectNavigation';
+import { RRPP_FOOTER, RRPP_LOGO } from '../../rrpp/RrppSidebarNav';
 import { Actividad, Card, dateFicha, Equipo, Estado, FichaSkeleton, IconFicha, ReadFields, WorkspaceLink } from './FichaElements';
 import { ExpedienteDocumental, HistorialCompleto } from './ExpedienteDocumental';
 import { useFichaViva } from './useFichaViva';
@@ -35,11 +35,14 @@ export function FichaVivaPage(){
   const [selected,setSelected]=useState<AreaFicha>((location.hash.replace('#','')||'proyecto') as AreaFicha);
   const [history,setHistory]=useState(false);
   const showArea=(area:AreaFicha)=>{setSelected(area);setParams(previous=>{const next=new URLSearchParams(previous);next.set('modo','completa');return next;});};
-  const nav=user?.rol==='rrpp'?<RrppSidebarNav vista="proyectos"/>:user?.rol==='comercial'?<ComercialSidebarNav activo="proyectos"/>:<><Link to="/" className={NAV_INACTIVO}><IconFicha name="grid"/>Mi espacio de trabajo</Link><Link to={'/proyectos/'+id} className={NAV_INACTIVO}><IconFicha name="book"/>Gestión del proyecto</Link><span className={NAV_ACTIVO}><IconFicha/>Ficha de trazabilidad</span></>;
-  const back=user?.rol==='rrpp'?'/rrpp/proyectos':user?.rol==='comercial'?'/proyectos':'/';
+  const origen=retornoProyecto(params.get('volver'));
+  const nav=<RoleProjectNavigation rol={user?.rol} origen={origen}/>;
+  const back=origen??destinoProyectos(user?.rol);
   return <CrmSidebarLayout contexto="fullscreen" sidebarBreakpoint="lg" nav={nav} logo={RRPP_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1480px]" contentClassName="fv-container">
+    <RoleProjectNavigation rol={user?.rol} origen={origen} mobile/>
     {query.isPending?<FichaSkeleton/>:query.isError?<div className="fv-page-error" role="alert"><IconFicha/><h1>No se pudo abrir la ficha</h1><p>{query.error.message}</p><button className="fv-button" onClick={()=>query.refetch()}>Reintentar</button><Link to={back}>Volver a proyectos</Link></div>:<>
-      <nav className="fv-breadcrumb" aria-label="Ubicación"><Link to={back}>Proyectos</Link><span aria-hidden="true">/</span><span>Ficha de trazabilidad</span></nav>
+      <nav className="fv-breadcrumb" aria-label="Ubicación"><Link to={back}>{origen?.includes('vista=asignaciones')?'Asignaciones y carga':'Proyectos'}</Link><span aria-hidden="true">/</span><Link to={`/proyectos/${id}${origen?'?volver='+encodeURIComponent(origen):''}`}>{query.data.project.title}</Link><span aria-hidden="true">/</span><span>Ficha de trazabilidad</span></nav>
+      <nav className="fv-project-navigation" aria-label="Vistas del proyecto"><Link to={`/proyectos/${id}${origen?'?volver='+encodeURIComponent(origen):''}`}>Resumen del proyecto</Link><span aria-current="page">Ficha de trazabilidad</span></nav>
       <header className="fv-header"><div className="fv-header-main"><span className="fv-eyebrow">Expediente editorial <span>#{query.data.project.code}</span></span><h1>{query.data.project.title}</h1><p className="fv-author">{query.data.authors.map(a=>a.name).join(' · ')||'Sin autor registrado'}</p><div className="fv-project-meta"><span>{query.data.project.service}</span><span>{query.data.project.unit}</span><Estado state={query.data.project.macroState}/></div></div><div className="fv-header-actions"><button className={'fv-button '+(complete?'':'fv-primary')} onClick={()=>setParams(previous=>{const next=new URLSearchParams(previous);if(complete)next.delete('modo');else next.set('modo','completa');return next;})}><IconFicha name={complete?'grid':'document'}/>{complete?'Volver al resumen':'Ver ficha completa'}</button><span>Actualizado {dateFicha(query.data.project.updatedAt)}</span></div></header>
       <EstadoProyecto data={query.data}/>
       {query.data.secondaryErrors.length>0&&<p className="fv-notice" role="status">Hay consultas pendientes: {query.data.secondaryErrors.join(', ')}. <button onClick={()=>query.refetch()}>Reintentar</button></p>}

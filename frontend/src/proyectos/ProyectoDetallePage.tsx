@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
+import { RoleProjectNavigation, destinoProyectos, retornoProyecto } from '../layout/RoleProjectNavigation';
+import { RRPP_FOOTER, RRPP_LOGO } from '../rrpp/RrppSidebarNav';
 import { useMe } from '../auth/useAuth';
 import { EstadoBadge } from './EstadoBadge';
 import { EstadoTraspasoBadge } from './EstadoTraspasoBadge';
@@ -28,6 +31,8 @@ import { SeccionSoporteDigital } from './SeccionSoporteDigital';
 // comercial (arriba) y para pasoActivo===1 (dentro del stepper de
 // producción) — antes eran dos copias casi idénticas del mismo bloque.
 function FaseIngresoPointer({ proyectoId }: { proyectoId: string }) {
+  const [params] = useSearchParams();
+  const origen = retornoProyecto(params.get('volver'));
   return (
     <div className="flex w-full flex-col items-start gap-4 rounded-xl border-2 border-purple-300 bg-purple-50/40 p-6 sm:flex-row sm:items-center sm:justify-between">
       <div>
@@ -38,7 +43,7 @@ function FaseIngresoPointer({ proyectoId }: { proyectoId: string }) {
         </p>
       </div>
       <Link
-        to={`/proyectos/${proyectoId}/ficha-trazabilidad`}
+        to={`/proyectos/${proyectoId}/ficha-trazabilidad${origen ? '?volver=' + encodeURIComponent(origen) : ''}`}
         className="shrink-0 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-700"
       >
         Ver Ficha de Trazabilidad completa →
@@ -90,11 +95,24 @@ const FASES = [
 const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen';
 
 export function ProyectoDetallePage() {
+  const { data: usuario } = useMe();
+  const [params] = useSearchParams();
+  const origen = retornoProyecto(params.get('volver'));
+  if (usuario?.rol !== 'jefe_area') return <ProyectoDetalleContent />;
+  return <CrmSidebarLayout contexto="fullscreen" sidebarBreakpoint="lg" nav={<RoleProjectNavigation rol={usuario.rol} origen={origen}/>} logo={RRPP_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1480px]" contentClassName="p-4 sm:p-7">
+    <RoleProjectNavigation rol={usuario.rol} origen={origen} mobile/>
+    <ProyectoDetalleContent />
+  </CrmSidebarLayout>;
+}
+function ProyectoDetalleContent() {
   const { id } = useParams<{ id: string }>();
   if (!id) throw new Error('Falta el id del proyecto en la ruta');
 
   const { data: usuario } = useMe();
   const rol = usuario?.rol;
+  const [params] = useSearchParams();
+  const origen = retornoProyecto(params.get('volver'));
+  const fullBleed = rol === 'jefe_area' ? 'w-full' : FULL_BLEED;
 
   const [pasoActivo, setPasoActivo] = useState(1);
   const { hash } = useLocation();
@@ -139,10 +157,10 @@ export function ProyectoDetallePage() {
           centrado debajo). */}
       {proyectoQuery.data && (
         <div
-          className={`${FULL_BLEED} relative overflow-hidden bg-gradient-to-b from-gray-900 to-black px-6 py-8 text-white shadow-lg md:px-16`}
+          className={`${fullBleed} relative overflow-hidden bg-gradient-to-b from-gray-900 to-black px-6 py-8 text-white shadow-lg md:px-16`}
         >
-          <Link to="/" className="text-sm text-white/60 hover:text-white hover:underline">
-            ← Mis proyectos
+          <Link to={origen ?? destinoProyectos(rol)} className="text-sm text-white/60 hover:text-white hover:underline">
+            ← {origen?.includes('vista=asignaciones') ? 'Asignaciones y carga' : 'Mis proyectos'}
           </Link>
 
           <div className="flex flex-col items-center text-center">
@@ -170,10 +188,10 @@ export function ProyectoDetallePage() {
                   segundo campo "estado" en la misma tabla que el de arriba
                   (operativo, en_proceso/retrasado/etc.), que ya se usa en
                   riesgo/carga y no tiene relación con este traspaso. */}
-              <EstadoTraspasoBadge
+              {proyectoQuery.data.proyecto.especialistaId ? <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800">Especialista asignado</span> : <EstadoTraspasoBadge
                 notificadoRrpp={proyectoQuery.data.proyecto.notificadoRrpp}
                 notificadoJefatura={proyectoQuery.data.proyecto.notificadoJefatura}
-              />
+              />}
               <RiesgoBadge riesgo={proyectoQuery.data.proyecto.riesgo} />
             </div>
           </div>
@@ -217,7 +235,7 @@ export function ProyectoDetallePage() {
           adentro) con su propio FULL_BLEED — mismo criterio que el
           hero de arriba para llegar de borde a borde de la pantalla. */}
       {proyectoQuery.data && puedeVerFicha && rol !== 'comercial' && rol !== 'rrpp' && (
-        <div className={`${FULL_BLEED} bg-crema px-6 pb-4 pt-5 shadow-lg md:px-16`}>
+        <div className={`${fullBleed} bg-crema px-6 pb-4 pt-5 shadow-lg md:px-16`}>
           <div className="mx-auto max-w-7xl">
             <div className="mb-4 flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">

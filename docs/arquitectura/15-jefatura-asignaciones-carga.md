@@ -125,3 +125,5 @@ Limpieza final completada con `PREVIEW_CLEANUP=true`: cero filas en usuarios, au
 | AF. Mobile | 375×812, tarjetas, tabs 2×2, controles accesibles, drawer completo, footer visible y Escape/foco verificados. |
 | AG. Diferencias | Sans del producto y shell compartido conservados; pesos/personas reales diferentes; títulos faltantes usan autores; barras relativas porque no hay capacidad máxima formal. |
 | AH. Commit | Commit local `feat: redesign jefatura assignments and capacity`; hash entregado al usuario. Sin push. |
+
+El refinamiento posterior de selección, panel contextual, destinos Proyecto/Ficha y fuente canónica compartida está documentado en [Flujo de decisión de Jefatura](16-jefatura-flujo-decision.md).

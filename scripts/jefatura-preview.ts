@@ -39,8 +39,9 @@ const {
   workItems,
   direccionesCreativas,
   projectAssignments,
+  fichasTrazabilidad,
 } = await import('../server/db/schema/index.js');
-const { crearAutor, crearUnidad, crearPresupuesto, crearProyecto } =
+const { crearAutor, crearUnidad, crearPresupuesto, crearProyecto, crearFichaComercialCompleta } =
   await import('../tests/helpers/fixtures.js');
 const { hashPassword } = await import('../server/helpers/password.js');
 const { decidirExpressJefatura } =
@@ -134,6 +135,8 @@ if (process.env.PREVIEW_REUSE_DATA !== 'true') {
       .update(proyectos)
       .set({ notificadoRrpp: true, notificadoJefatura: true, ...extra })
       .where(eq(proyectos.id, p.id));
+    await crearFichaComercialCompleta(p.id);
+    await db.update(fichasTrazabilidad).set({matrizDiagnosticoGenerado:true,matrizIngresoGenerado:true,ingresoServicioSubtipoCrudo:servicioId===cr!.id?'Tripa':null, ingresoServicioEjecucion:extra.fechaDeseadaAutor?'Express':'Normal',ingresoTiempoExpresMeses:extra.fechaDeseadaAutor?3:null}).where(eq(fichasTrazabilidad.proyectoId,p.id));
     return p;
   }
   await proyecto('Isabel Figueroa', ef!.id, { especialistaId: ana!.id });

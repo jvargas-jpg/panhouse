@@ -19,10 +19,12 @@ import {
   proyectosAutores,
   rolEnum,
   servicios,
+  fichasTrazabilidad,
+  workItems,
   users,
   type Rol,
 } from '../server/db/schema/index.js';
-import { crearAutor, crearProyectoDePrueba } from './helpers/fixtures.js';
+import { crearAutor, crearProyectoDePrueba, crearFichaComercialCompleta } from './helpers/fixtures.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import { createSession } from '../server/helpers/session.js';
 import { asignarEspecialista } from '../server/helpers/proyectos.js';
@@ -83,6 +85,84 @@ beforeEach(async () => {
 });
 
 describe('Asignaciones y carga: fuente canónica, filtros y proyección', () => {
+  it('handoff RRPP → decisión → assignment actualiza Inicio, Proyecto, Ficha e inbox sin activar otros gates', async () => {
+    const p = await proyecto({ notificadoJefatura: false, notificadoRrpp: true });
+    await crearFichaComercialCompleta(p.id);
+    await db.update(fichasTrazabilidad).set({ matrizDiagnosticoGenerado: true, matrizIngresoGenerado: true }).where(eq(fichasTrazabilidad.proyectoId, p.id));
+    const rrpp = await usuario('rrpp');
+    const handoff = await app.inject({ method: 'POST', url: `/api/proyectos/${p.id}/notificar-jefatura`, headers: { cookie: `panhouse_sid=${await createSession(rrpp)}` } });
+    expect(handoff.statusCode).toBe(201);
+    const inicioAntes = (await get('/api/jefatura/dashboard')).json();
+    expect(inicioAntes.proyectos.find((x: any) => x.id === p.id).porAsignar).toBe(true);
+    const fichaAntes = (await get(`/api/fichas-trazabilidad/${p.id}/resumen`)).json();
+    expect(fichaAntes.myActions[0]).toMatchObject({label:'Asignar Especialista', href:`/?vista=asignaciones&proyecto=${p.id}`});
+    expect(fichaAntes.myActions.some((x: any) => /corrección/i.test(x.label))).toBe(false);
+    expect(fichaAntes.team.filter((x: any) => x.role === 'Especialista editorial')).toHaveLength(0);
+    expect(fichaAntes.relatedProcesses.find((x: any) => x.name === 'Jefatura').state).toBe('Pendiente de asignación');
+    expect((await asignar(p.id, a, null)).statusCode).toBe(200);
+    const lista = (await get('/api/jefatura/asignaciones?tab=asignados')).json();
+    expect(lista.contadores).toMatchObject({ porAsignar: 0, asignados: 1 });
+    expect((await get('/api/jefatura/dashboard')).json().proyectos.find((x: any) => x.id === p.id).porAsignar).toBe(false);
+    expect((await get(`/api/proyectos/${p.id}/riesgo`)).json().proyecto.especialistaId).toBe(a);
+    const ficha = (await get(`/api/fichas-trazabilidad/${p.id}/resumen`)).json();
+    expect(ficha.team.filter((x: any) => x.role === 'Especialista editorial').map((x: any) => x.name)).toEqual(['Ana']);
+    expect(ficha.myActions[0].label).toBe('Supervisar proyecto');
+    expect(ficha.myActions.some((x: any) => x.label === 'Asignar Especialista')).toBe(false);
+    expect(ficha.relatedProcesses.find((x: any) => x.name === 'Jefatura').state).toBe('Especialista asignado');
+    expect(ficha.recentActivity.some((x: any) => x.label === 'Jefatura asignó a Ana')).toBe(true);
+    expect(ficha.summary.launchEnabled).toBe(false);
+    const sessionA = `panhouse_sid=${await createSession(a)}`;
+    expect((await get('/api/proyectos/mios', sessionA)).json().proyectos.some((x: any) => x.id === p.id)).toBe(true);
+    const items = await db.select().from(workItems).where(eq(workItems.proyectoId,p.id));
+    expect(items.find(x => x.tipo === 'asignacion_especialista')?.estado).toBe('completado');
+    expect(items.some(x => ['edicion','correccion','diseno','lanzamiento'].includes(x.tipo))).toBe(false);
+    expect(await db.select().from(projectAssignments).where(and(eq(projectAssignments.proyectoId,p.id),isNull(projectAssignments.finalizadoEn)))).toHaveLength(1);
+    expect((await db.select().from(notificaciones).where(eq(notificaciones.usuarioDestinoId,a))).length).toBe(1);
+    expect((await db.select().from(auditLogs).where(eq(auditLogs.proyectoId,p.id))).some(x => x.accion === 'ESPECIALISTA_ASIGNADO')).toBe(true);
+  });
+  it('Corrección contextual ofrece supervisión únicamente cuando hay un work item real y no concede edición', async () => {
+    const p = await proyecto();
+    await crearFichaComercialCompleta(p.id);
+    let ficha = (await get(`/api/fichas-trazabilidad/${p.id}/resumen`)).json();
+    expect(ficha.traceability.find((x: any) => x.id === 'correccion').workspace).toBeUndefined();
+    await db.insert(workItems).values({proyectoId:p.id,tipo:'correccion',estado:'en_progreso'});
+    ficha = (await get(`/api/fichas-trazabilidad/${p.id}/resumen`)).json();
+    expect(ficha.myActions.find((x: any) => /Corrección/.test(x.label))).toMatchObject({label:'Ver seguimiento de Corrección',href:'/?vista=seguimiento'});
+    expect((await app.inject({method:'PATCH', url:`/api/fichas-trazabilidad/${p.id}/documental/correccion`, headers:{cookie},payload:{datos:{tripa_15:true}}})).statusCode).toBe(403);
+  });
+  it('un ingreso no recibido o un proyecto cerrado no ofrece Asignar desde la Ficha', async () => {
+    const p = await proyecto({notificadoJefatura:false});
+    await crearFichaComercialCompleta(p.id);
+    expect((await get(`/api/fichas-trazabilidad/${p.id}/resumen`)).json().myActions[0].label).toBe('Supervisar proyecto');
+    await db.update(proyectos).set({notificadoJefatura:true,estado:'culminado'}).where(eq(proyectos.id,p.id));
+    expect((await get(`/api/fichas-trazabilidad/${p.id}/resumen`)).json().myActions.some((x: any) => x.label === 'Asignar Especialista')).toBe(false);
+  });
+  it('el contexto usa Crudo, ejecución y tiempo comercial canónicos sin redefinir Express ni peso', async () => {
+    const p = await proyecto({fechaDeseadaAutor:null});
+    await crearFichaComercialCompleta(p.id);
+    await db.update(servicios).set({codigo:'CR',pesoComplejidad:7}).where(eq(servicios.id,p.servicioId));
+    await db.update(fichasTrazabilidad).set({ingresoServicioSubtipoCrudo:'Tripa',ingresoServicioEjecucion:'Express',ingresoTiempoExpresMeses:3,capitulosPactados:'8',paginasPactadas:'240',matrizDiagnosticoGenerado:true,matrizIngresoGenerado:true}).where(eq(fichasTrazabilidad.proyectoId,p.id));
+    const decision = (await get(`/api/jefatura/proyectos/${p.id}/candidatos`)).json();
+    expect(decision.contexto).toMatchObject({subtipoCrudo:'Tripa',ejecucion:'Express',tiempoExpressMeses:3,capitulos:'8',paginas:'240',comercial:'Completo',rrpp:'Completo'});
+    expect(decision.proyecto.impactoCarga).toBe(7);
+    expect(decision.proyecto.express.estado).toBe('normal');
+    expect(decision.candidatos.every((x: any) => x.impactoCarga === 7)).toBe(true);
+  });
+  it('Ficha y Proyecto respetan el historial activo y su acceso aunque la FK esté desincronizada', async () => {
+    const p = await proyecto();
+    await crearFichaComercialCompleta(p.id);
+    await asignarEspecialista(p.id,a,jefe,{exigirHandoff:true});
+    await db.update(proyectos).set({especialistaId:b}).where(eq(proyectos.id,p.id));
+    const ficha = (await get(`/api/fichas-trazabilidad/${p.id}/resumen`)).json();
+    expect(ficha.team.filter((x: any) => x.role === 'Especialista editorial').map((x: any) => x.name)).toEqual(['Ana']);
+    expect((await get(`/api/proyectos/${p.id}/riesgo`)).json().proyecto.especialistaId).toBe(a);
+    expect((await get(`/api/fichas-trazabilidad/${p.id}/resumen`,`panhouse_sid=${await createSession(a)}`)).statusCode).toBe(200);
+    expect((await get(`/api/fichas-trazabilidad/${p.id}/resumen`,`panhouse_sid=${await createSession(b)}`)).statusCode).toBe(403);
+    await asignarEspecialista(p.id,b,jefe,{exigirHandoff:true});
+    const after = (await get(`/api/fichas-trazabilidad/${p.id}/resumen`)).json();
+    expect(after.team.filter((x: any) => x.role === 'Especialista editorial').map((x: any) => x.name)).toEqual(['Beatriz']);
+    expect(after.recentActivity.some((x: any) => x.label === 'Jefatura reasignó: Ana → Beatriz')).toBe(true);
+  });
   it('handoff formal, activos y tabs comparten proyecto, dueño y carga al asignar y reasignar', async () => {
     const p = await proyecto();
     const [servicio] = await db
