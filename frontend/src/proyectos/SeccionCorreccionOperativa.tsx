@@ -1,8 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { Modal } from '../autores/Modal';
 import type { AlcanceCorreccion, Correccion, EstadoPlazoCorreccion, ResultadoCorreccion } from '../types/api';
-import { hoyISO } from './campos';
 import {
   asignarCorrector,
   cerrarCorreccion,
@@ -140,7 +140,6 @@ function ModalAsignar({ correccion, proyectoId, onClose }: { correccion: Correcc
   const [correctorId, setCorrectorId] = useState('');
   const [correctorNombre, setCorrectorNombre] = useState('');
   const [contratoConfirmado, setContratoConfirmado] = useState(false);
-  const [revisionPreviaConfirmada, setRevisionPreviaConfirmada] = useState(correccion.revisionPreviaConfirmada);
   const queryClient = useQueryClient();
 
   const mutacion = useMutation({
@@ -150,7 +149,6 @@ function ModalAsignar({ correccion, proyectoId, onClose }: { correccion: Correcc
         correctorNombre: modo === 'freelance' ? correctorNombre : null,
         freelance: modo === 'freelance',
         contratoConfirmado,
-        revisionPreviaConfirmada,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['correcciones', proyectoId] });
@@ -171,10 +169,8 @@ function ModalAsignar({ correccion, proyectoId, onClose }: { correccion: Correcc
         {correccion.requiereRevisionPrevia && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
             Esta tripa supera las 120 páginas — el Manual exige revisión previa antes de asignar (costo evaluado caso por caso, no calculado aquí).
-            <label className="mt-2 flex items-center gap-2 text-xs font-medium">
-              <input type="checkbox" checked={revisionPreviaConfirmada} onChange={(event) => setRevisionPreviaConfirmada(event.target.checked)} />
-              Confirmo que ya se hizo la revisión previa
-            </label>
+            <p className="mt-2">{correccion.revisionPreviaConfirmada?'Jefatura aprobó la revisión previa.':'Pendiente de revisión de Jefatura.'}</p>
+            {correccion.decisionId && <Link className="mt-2 inline-block underline" to={`/decisiones/${correccion.decisionId}/responder`}>Ver solicitud de revisión</Link>}
           </div>
         )}
 
@@ -330,31 +326,23 @@ function ModalCerrar({ correccion, proyectoId, onClose }: { correccion: Correcci
 // mismo); si es interno, esta acción vive en "Mis Correcciones" del
 // corrector, no acá (mismo 403 que ya aplica el backend).
 function AccionesEjecucionFreelance({ correccion, proyectoId }: { correccion: Correccion; proyectoId: string }) {
-  const [fechaInicio, setFechaInicio] = useState(hoyISO());
-  const [fechaEntrega, setFechaEntrega] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   const [controlCambiosUrl, setControlCambiosUrl] = useState('');
   const [informeTecnicoUrl, setInformeTecnicoUrl] = useState('');
   const queryClient = useQueryClient();
 
   const inicioMutacion = useMutation({
-    mutationFn: () => marcarInicioCorreccion(correccion.id, fechaInicio),
+    mutationFn: () => marcarInicioCorreccion(correccion.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['correcciones', proyectoId] }),
   });
 
   const entregaMutacion = useMutation({
-    mutationFn: () => registrarEntregaCorreccion(correccion.id, { fecha: fechaEntrega.slice(0, 10), entregadoEn: new Date(fechaEntrega).toISOString(), controlCambiosUrl: controlCambiosUrl || null, informeTecnicoUrl: informeTecnicoUrl || null }),
+    mutationFn: () => registrarEntregaCorreccion(correccion.id, { controlCambiosUrl: controlCambiosUrl || null, informeTecnicoUrl: informeTecnicoUrl || null }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['correcciones', proyectoId] }),
   });
 
   if (!correccion.fechaInicio) {
     return (
       <div className="mt-3 flex items-end gap-2">
-        <input
-          type="date"
-          value={fechaInicio}
-          onChange={(event) => setFechaInicio(event.target.value)}
-          className="rounded-md border border-gray-200 px-2 py-1.5 text-sm"
-        />
         <button
           type="button"
           onClick={() => inicioMutacion.mutate()}
@@ -371,13 +359,6 @@ function AccionesEjecucionFreelance({ correccion, proyectoId }: { correccion: Co
     return (
       <div className="mt-3 flex flex-col gap-2 rounded-lg bg-gray-50 p-3">
         <div className="flex gap-2">
-          <input
-            type="datetime-local"
-            aria-label="Fecha y hora real de entrega"
-            value={fechaEntrega}
-            onChange={(event) => setFechaEntrega(event.target.value)}
-            className="rounded-md border border-gray-200 px-2 py-1.5 text-sm"
-          />
           <input
             type="text"
             placeholder="Enlace control de cambios"

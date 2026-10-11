@@ -1,4 +1,7 @@
-import { boolean, date, integer, numeric, pgTable, text, time, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, date, integer, numeric, pgTable, text, time, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { correcciones } from './correcciones.js';
+import { fichaCalidadFases } from './trazabilidad.js';
 import { proyectos } from './proyectos.js';
 import { users } from './users.js';
 
@@ -16,6 +19,11 @@ export const seguimientoFases = pgTable('seguimiento_fases', {
   proyectoId: uuid('proyecto_id')
     .notNull()
     .references(() => proyectos.id, { onDelete: 'cascade' }),
+
+  // Extensión de supervisión de una intervención real. Los campos operativos
+  // se leen del origen, no se copian aquí. Null/null conserva registros legacy.
+  correccionId: uuid('correccion_id').unique().references(() => correcciones.id, { onDelete: 'cascade' }),
+  calidadFaseId: uuid('calidad_fase_id').unique().references(() => fichaCalidadFases.id, { onDelete: 'cascade' }),
 
   // Quién hizo el trabajo (el "analista"/corrector de la matriz real).
   // set null, no cascade: si el usuario se desactiva, el registro
@@ -98,4 +106,4 @@ export const seguimientoFases = pgTable('seguimiento_fases', {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => ({ origenExclusivo: check('seguimiento_origen_exclusivo', sql`${table.correccionId} IS NULL OR ${table.calidadFaseId} IS NULL`) }));

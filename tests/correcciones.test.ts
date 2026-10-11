@@ -2,7 +2,8 @@ import { and, eq } from 'drizzle-orm';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../server/db/client.js';
-import { auditLogs, correcciones, notificaciones, projectAssignments, workItems } from '../server/db/schema/index.js';
+import { auditLogs, correcciones, decisiones, notificaciones, projectAssignments, workItems } from '../server/db/schema/index.js';
+import { resolverDecision } from '../server/helpers/decisiones.js';
 import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import { crearProyectoDePrueba, crearUsuario } from './helpers/fixtures.js';
@@ -195,7 +196,12 @@ describe('Fase 5B — Corrección', () => {
       await app.close();
     });
 
-    it('GATE-06: rechaza asignar sin confirmar revisión previa cuando paginas > 120', async () => {
+    // Jefatura · Decisiones (docs/arquitectura/17-jefatura-decisiones.md)
+    // cambió deliberadamente QUIÉN confirma este gate: ya NO es un
+    // booleano que el propio Especialista manda en el body (eso era el
+    // bug de confianza que motivó la nueva pantalla) -- ahora SOLO lo
+    // desbloquea `resolverDecision` al aprobar la decisión real.
+    it('GATE-06: rechaza asignar sin revisión previa; el Especialista ya no puede autoconfirmarla; solo una decisión aprobada desbloquea', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const cookie = await registrarYLoguear(app, 'especialista');
@@ -207,14 +213,29 @@ describe('Fase 5B — Corrección', () => {
         .patch(`/api/correcciones/${correccionId}/asignar`)
         .set('Cookie', cookie)
         .send({ correctorNombre: 'Genesis Herrera', freelance: true, contratoConfirmado: true });
-
       expect(respuesta.status).toBe(400);
+
+      // Intentar autoconfirmar vía el campo viejo ya NO tiene efecto --
+      // el schema simplemente lo ignora, el gate sigue bloqueado.
+      const intentoAutoconfirmar = await request(app.server)
+        .patch(`/api/correcciones/${correccionId}/asignar`)
+        .set('Cookie', cookie)
+        .send({ correctorNombre: 'Genesis Herrera', freelance: true, contratoConfirmado: true, revisionPreviaConfirmada: true });
+      expect(intentoAutoconfirmar.status).toBe(400);
+
+      // La decisión real se creó sola al solicitar la corrección.
+      const [decision] = await db.select().from(decisiones).where(eq(decisiones.originCorreccionId, correccionId));
+      expect(decision).toBeDefined();
+      expect(decision?.tipo).toBe('revision_previa_correccion');
+
+      const jefe = await crearUsuario('jefe_area');
+      const resuelta = await resolverDecision(decision!.id, jefe, 'approved', 'Costo aceptado.', decision!.version);
+      expect(resuelta.ok).toBe(true);
 
       const respuestaConfirmada = await request(app.server)
         .patch(`/api/correcciones/${correccionId}/asignar`)
         .set('Cookie', cookie)
-        .send({ correctorNombre: 'Genesis Herrera', freelance: true, contratoConfirmado: true, revisionPreviaConfirmada: true });
-
+        .send({ correctorNombre: 'Genesis Herrera', freelance: true, contratoConfirmado: true });
       expect(respuestaConfirmada.status).toBe(200);
 
       await app.close();
@@ -349,18 +370,19 @@ describe('Fase 5B — Corrección', () => {
       const inicio = await request(app.server)
         .patch(`/api/correcciones/${correccionId}/inicio`)
         .set('Cookie', cookieCorrector)
-        .send({ fecha: '2026-01-06' });
+        .send({});
       expect(inicio.status).toBe(200);
 
       const entrega = await request(app.server)
         .patch(`/api/correcciones/${correccionId}/entrega`)
         .set('Cookie', cookieCorrector)
-        .send({ fecha: '2026-01-10', controlCambiosUrl: 'https://drive.example/control', informeTecnicoUrl: 'https://drive.example/informe' });
+        .send({ controlCambiosUrl: 'https://drive.example/control', informeTecnicoUrl: 'https://drive.example/informe' });
       expect(entrega.status).toBe(200);
 
       const [correccion] = await db.select().from(correcciones).where(eq(correcciones.id, correccionId));
-      expect(correccion?.fechaInicio).toBe('2026-01-06');
-      expect(correccion?.fechaEntrega).toBe('2026-01-10');
+      expect(correccion?.iniciadoEn).toBeInstanceOf(Date);
+      expect(correccion?.entregadoEn).toBeInstanceOf(Date);
+      expect(correccion!.entregadoEn!.getTime()).toBeGreaterThanOrEqual(correccion!.iniciadoEn!.getTime());
 
       const [wi] = await db.select().from(workItems).where(eq(workItems.id, correccion!.workItemId));
       expect(wi?.estado).toBe('completado');
@@ -387,7 +409,7 @@ describe('Fase 5B — Corrección', () => {
       const respuesta = await request(app.server)
         .patch(`/api/correcciones/${correccionId}/inicio`)
         .set('Cookie', cookieOtroCorrector)
-        .send({ fecha: '2026-01-06' });
+        .send({});
 
       expect(respuesta.status).toBe(403);
       await app.close();
@@ -406,7 +428,7 @@ describe('Fase 5B — Corrección', () => {
         .set('Cookie', cookie)
         .send({ correctorNombre: 'Genesis Herrera', freelance: true, contratoConfirmado: true });
 
-      const respuesta = await request(app.server).patch(`/api/correcciones/${correccionId}/entrega`).set('Cookie', cookie).send({ fecha: '2026-01-10' });
+      const respuesta = await request(app.server).patch(`/api/correcciones/${correccionId}/entrega`).set('Cookie', cookie).send({});
       expect(respuesta.status).toBe(200);
 
       await app.close();
@@ -567,10 +589,10 @@ describe('5B entrega exacta aditiva y retry', () => {
     const p = await crearProyectoDePrueba({ especialistaId: especialista.id });
     const [wi] = await db.insert(workItems).values({ proyectoId: p.id, tipo: 'correccion', estado: 'en_progreso' }).returning();
     const [c] = await db.insert(correcciones).values({ proyectoId: p.id, workItemId: wi!.id, alcance: 'preliminares', correctorId: corrector.id, dueAt: new Date('2026-01-05T10:00:00Z') }).returning();
-    const body = { fecha: '2026-01-05', entregadoEn: '2026-01-05T20:00:00Z' };
+    const body = { fecha: '2026-01-05', entregadoEn: '2026-01-05T20:00:00Z', motivo: 'Registro historico verificado' };
     const url = `/api/correcciones/${c!.id}/entrega`;
     expect((await request(app.server).patch(url).set('Cookie', cookie).send(body)).status).toBe(200);
-    expect((await request(app.server).patch(url).set('Cookie', cookie).send({ ...body, entregadoEn: '2026-01-06T20:00:00Z' })).status).toBe(200);
+    expect((await request(app.server).patch(url).set('Cookie', cookie).send({ ...body, fecha: '2026-01-06', entregadoEn: '2026-01-06T20:00:00Z' })).status).toBe(200);
     const [fila] = await db.select().from(correcciones).where(eq(correcciones.id, c!.id));
     expect(fila?.fechaEntrega).toBe('2026-01-05'); expect(fila?.entregadoEn?.toISOString()).toBe('2026-01-05T20:00:00.000Z');
     expect(await db.select().from(auditLogs).where(eq(auditLogs.accion, 'CORRECCION_ENTREGADA'))).toHaveLength(1);

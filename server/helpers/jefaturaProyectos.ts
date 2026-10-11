@@ -109,9 +109,10 @@ export async function obtenerPortafolioJefatura(
 
 export async function obtenerQuickViewJefatura(
   id: string,
+  snapshotPrecalculado?: Awaited<ReturnType<typeof obtenerDashboardJefatura>>,
 ): Promise<QuickViewJefatura | null> {
   // La comprobación de ámbito sucede antes de leer o devolver información privada.
-  const snapshot = await obtenerDashboardJefatura(new Date(), {
+  const snapshot = snapshotPrecalculado ?? await obtenerDashboardJefatura(new Date(), {
     historico: true,
   });
   const proyecto = snapshot.proyectos.find((p) => p.id === id);
@@ -273,8 +274,8 @@ export async function obtenerQuickViewJefatura(
   };
 }
 
-export async function obtenerActividadProyectoJefatura(id: string) {
-  const snapshot = await obtenerDashboardJefatura(new Date(), {
+export async function obtenerActividadProyectoJefatura(id: string, snapshotPrecalculado?: Awaited<ReturnType<typeof obtenerDashboardJefatura>>) {
+  const snapshot = snapshotPrecalculado ?? await obtenerDashboardJefatura(new Date(), {
     historico: true,
   });
   if (!snapshot.proyectos.some((p) => p.id === id)) return null;

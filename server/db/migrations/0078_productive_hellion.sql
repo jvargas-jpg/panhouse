@@ -1,0 +1,1 @@
+CREATE INDEX "decisiones_work_item_idx" ON "decisiones" USING btree ("origin_work_item_id","status");

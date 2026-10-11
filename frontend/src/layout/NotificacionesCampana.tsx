@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMe } from '../auth/useAuth';
 import type { Notificacion } from '../types/api';
 import { fetchNotificaciones, marcarNotificacionLeida } from './notificacionesApi';
 
@@ -43,6 +44,7 @@ function ItemNotificacion({ notificacion, onClick }: { notificacion: Notificacio
 // impone. Reemplaza el ícono estático que ya existía en TopBar.tsx
 // (punto rojo fijo, sin datos ni clic) por uno real.
 export function NotificacionesCampana() {
+  const {data:user}=useMe();
   const [abierto, setAbierto] = useState(false);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -68,7 +70,9 @@ export function NotificacionesCampana() {
       mutacionLeer.mutate(notificacion.id);
     }
     setAbierto(false);
-    if (notificacion.proyectoId) {
+    if (notificacion.decisionId) {
+      navigate(user?.rol==='jefe_area' ? `/?vista=decisiones&decision=${notificacion.decisionId}` : `/decisiones/${notificacion.decisionId}/responder`);
+    } else if (notificacion.proyectoId) {
       navigate(`/proyectos/${notificacion.proyectoId}`);
     }
   }

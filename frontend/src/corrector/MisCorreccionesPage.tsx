@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { hoyISO } from '../proyectos/campos';
 import { fetchMisCorrecciones, marcarInicioCorreccion, registrarEntregaCorreccion } from '../proyectos/correccionesApi';
 import type { EstadoPlazoCorreccion, TrabajoCorrector } from '../types/api';
 
@@ -48,27 +47,24 @@ function ordenPrioridad(trabajo: TrabajoCorrector): number {
 }
 
 function AccionesEntrega({ trabajo }: { trabajo: TrabajoCorrector }) {
-  const [fecha, setFecha] = useState(hoyISO());
-  const [entregaEn, setEntregaEn] = useState(() => new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   const [controlCambiosUrl, setControlCambiosUrl] = useState('');
   const [informeTecnicoUrl, setInformeTecnicoUrl] = useState('');
   const queryClient = useQueryClient();
 
   const inicioMutacion = useMutation({
-    mutationFn: () => marcarInicioCorreccion(trabajo.id, fecha),
+    mutationFn: () => marcarInicioCorreccion(trabajo.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['correcciones', 'mias'] }),
   });
 
   const entregaMutacion = useMutation({
     mutationFn: () =>
-      registrarEntregaCorreccion(trabajo.id, { fecha: entregaEn.slice(0, 10), entregadoEn: new Date(entregaEn).toISOString(), controlCambiosUrl: controlCambiosUrl || null, informeTecnicoUrl: informeTecnicoUrl || null }),
+      registrarEntregaCorreccion(trabajo.id, { controlCambiosUrl: controlCambiosUrl || null, informeTecnicoUrl: informeTecnicoUrl || null }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['correcciones', 'mias'] }),
   });
 
   if (!trabajo.fechaInicio) {
     return (
       <div className="mt-3 flex items-end gap-2">
-        <input type="date" value={fecha} onChange={(event) => setFecha(event.target.value)} className="rounded-md border border-gray-200 px-2 py-1.5 text-sm" />
         <button
           type="button"
           onClick={() => inicioMutacion.mutate()}
@@ -84,7 +80,6 @@ function AccionesEntrega({ trabajo }: { trabajo: TrabajoCorrector }) {
   return (
     <div className="mt-3 flex flex-col gap-2 rounded-lg bg-gray-50 p-3">
       <div className="flex gap-2">
-        <input aria-label="Fecha y hora real de entrega" type="datetime-local" value={entregaEn} onChange={(event) => setEntregaEn(event.target.value)} className="rounded-md border border-gray-200 px-2 py-1.5 text-sm" />
         <input
           type="text"
           placeholder="Enlace control de cambios"

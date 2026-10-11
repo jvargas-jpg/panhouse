@@ -26,7 +26,7 @@ import {
   type VistaJefatura,
 } from './JefaturaSidebar';
 import { SeguimientoPage } from './SeguimientoPage';
-import { SeguimientoCorreccionPage } from './SeguimientoCorreccionPage';
+import { DecisionesPage } from './DecisionesPage';
 import './jefatura.css';
 import { AsignacionesCargaPage } from './AsignacionesCargaPage';
 import { ProyectosJefaturaPage } from './ProyectosJefaturaPage';
@@ -47,7 +47,7 @@ export function PanelJefaturaPage() {
     vista === 'solicitudes'
       ? 'solicitudes'
       : tabParam === 'express' ||
-          tabParam === 'solicitudes' ||
+          tabParam === 'solicitudes' || tabParam === 'decisiones' ||
           tabParam === 'enRiesgo'
         ? tabParam
         : 'porAsignar';
@@ -56,7 +56,6 @@ export function PanelJefaturaPage() {
   const [proyectoAsignacion, setProyectoAsignacion] =
     useState<ProyectoJefatura | null>(null);
   const [aviso, setAviso] = useState('');
-  const [correccion, setCorreccion] = useState(false);
   const cache = useQueryClient();
   const seleccionado = vista === 'asignaciones' ? params.get('proyecto') : null;
   const seleccionadoQuery = useQuery({
@@ -68,7 +67,7 @@ export function PanelJefaturaPage() {
   const dashboard = useQuery({
     queryKey: ['jefatura', 'dashboard'],
     queryFn: fetchDashboardJefatura,
-    enabled: user?.rol === 'jefe_area' && vista !== 'asignaciones' && vista !== 'proyectos',
+    enabled: user?.rol === 'jefe_area' && vista !== 'asignaciones' && vista !== 'proyectos' && vista !== 'seguimiento' && vista !== 'decisiones',
     staleTime: 0,
     refetchOnMount: 'always',
     refetchInterval: 60000,
@@ -121,6 +120,7 @@ export function PanelJefaturaPage() {
     proyectos: 'Proyectos',
     seguimiento: 'Seguimiento',
     solicitudes: 'Solicitudes',
+    decisiones: 'Decisiones y escalaciones',
     indicadores: 'Indicadores de Jefatura',
   };
   return (
@@ -130,7 +130,7 @@ export function PanelJefaturaPage() {
         <img
           src="/brand/panhouse-logo.webp"
           alt="PanHouse Casa Editorial"
-          className={`h-auto object-contain ${vista === 'asignaciones' || vista === 'proyectos' ? 'w-[176px]' : 'w-[132px]'}`}
+          className={`h-auto object-contain ${vista === 'asignaciones' || vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' ? 'w-[176px]' : 'w-[132px]'}`}
         />
       }
       footer={
@@ -143,9 +143,9 @@ export function PanelJefaturaPage() {
         </div>
       }
       contentMaxWidth="max-w-[1760px]"
-      contentClassName={vista === 'proyectos' ? 'p-4 sm:px-6 sm:py-4' : 'p-4 sm:p-7'}
+      contentClassName={vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' ? 'p-4 sm:px-6 sm:py-4' : 'p-4 sm:p-7'}
       sidebarBreakpoint="lg"
-      sidebarCompact={vista === 'proyectos'}
+      sidebarCompact={vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones'}
       overlays={
         <>
           {proyecto && (
@@ -165,7 +165,7 @@ export function PanelJefaturaPage() {
         </>
       }
     >
-      <div className={`jefatura ${vista === 'proyectos' ? 'jp-page' : ''}`}>
+      <div className={`jefatura ${vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' ? 'jp-page' : ''} ${vista === 'seguimiento' ? 'js-page' : ''} ${vista === 'decisiones' ? 'jd-page' : ''}`}>
         <JefaturaSidebar vista={vista} mobile />
         {vista !== 'asignaciones' && (
           <header className="jf-page-header">
@@ -175,7 +175,7 @@ export function PanelJefaturaPage() {
               <p>
                 {vista === 'inicio'
                   ? 'Supervisa la operación editorial, distribuye la carga del equipo y atiende los proyectos que requieren decisión.'
-                  : vista === 'proyectos' ? 'Vista global de los proyectos de Producción. Consulta su estado, equipo asignado y próximos hitos.' : 'Revisa el contexto operativo y continúa desde el expediente del proyecto.'}
+                  : vista === 'seguimiento' ? 'Supervisa los procesos editoriales, sus tiempos y los asuntos que requieren atención.' : vista === 'proyectos' ? 'Vista global de los proyectos de Producción. Consulta su estado, equipo asignado y próximos hitos.' : vista === 'decisiones' ? 'Resuelve excepciones, revisiones y casos que necesitan la intervención de Jefatura para que el proceso pueda continuar.' : 'Revisa el contexto operativo y continúa desde el expediente del proyecto.'}
               </p>
             </div>
             {vista === 'inicio' && (
@@ -184,7 +184,7 @@ export function PanelJefaturaPage() {
                 Estado actual
               </span>
             )}
-            {vista === 'proyectos' && <TopBar compacto />}
+            {(vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones') && <TopBar compacto />}
           </header>
         )}
         {vista === 'asignaciones' ? (
@@ -210,23 +210,9 @@ export function PanelJefaturaPage() {
             </Link>
           </section>
         ) : vista === 'seguimiento' ? (
-          <>
-            <div className="jf-actions jf-follow-nav">
-              <button
-                className={`jf-button ${!correccion ? '' : 'jf-button-secondary'}`}
-                onClick={() => setCorreccion(false)}
-              >
-                Procesos
-              </button>
-              <button
-                className={`jf-button ${correccion ? '' : 'jf-button-secondary'}`}
-                onClick={() => setCorreccion(true)}
-              >
-                Corrección
-              </button>
-            </div>
-            {correccion ? <SeguimientoCorreccionPage /> : <SeguimientoPage />}
-          </>
+          <SeguimientoPage />
+        ) : vista === 'decisiones' ? (
+          <DecisionesPage />
         ) : (
           <>
             {vista === 'inicio' && (

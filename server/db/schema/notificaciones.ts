@@ -1,6 +1,7 @@
 import { boolean, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { proyectos } from './proyectos.js';
 import { users } from './users.js';
+import { decisiones } from './decisiones.js';
 
 // Sistema de notificaciones global — hoy solo lo dispara la creación de
 // un proyecto (comercial → alerta a jefe_area, ver crearProyecto en
@@ -25,6 +26,7 @@ export const notificaciones = pgTable(
     // DELETE /api/proyectos/:id) no debe dejar notificaciones colgando
     // con un enlace roto a "Ver proyecto".
     proyectoId: uuid('proyecto_id').references(() => proyectos.id, { onDelete: 'cascade' }),
+    decisionId: uuid('decision_id').references(() => decisiones.id, { onDelete: 'cascade' }),
     rolDestino: text('rol_destino').notNull(),
     usuarioDestinoId: uuid('usuario_destino_id').references(() => users.id, { onDelete: 'cascade' }),
     mensaje: text('mensaje').notNull(),

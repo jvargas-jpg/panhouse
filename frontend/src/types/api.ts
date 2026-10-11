@@ -337,6 +337,7 @@ export type EstadoPlazoCorreccion = 'en_tiempo' | 'proximo_a_vencer' | 'vencido'
 
 // GET /api/proyectos/:id/correcciones — server/helpers/correcciones.ts:CorreccionDeProyecto.
 export interface Correccion {
+  decisionId?: string | null;
   entregadoEn: string | null;
   id: string;
   workItemId: string;
@@ -842,6 +843,7 @@ export interface Pago {
 // rolDestino === el rol de la sesión, así que lo que llega acá siempre
 // es "mío".
 export interface Notificacion {
+  decisionId?: string | null;
   id: string;
   proyectoId: string | null;
   rolDestino: string;

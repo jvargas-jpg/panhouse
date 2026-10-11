@@ -1,7 +1,7 @@
-import { and, desc, eq, ne } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { Rol } from '../db/schema/index.js';
-import { autores, correcciones, notificaciones, proyectos, servicios, workItems as workItemsTable } from '../db/schema/index.js';
+import { autores, correcciones, decisiones, notificaciones, projectAssignments, proyectos, servicios, users, workItems as workItemsTable } from '../db/schema/index.js';
 import { asignarConHistorial } from './assignments.js';
 import { registrarEvento } from './auditLog.js';
 import {
@@ -11,12 +11,13 @@ import {
   evaluarPlazoCorreccion,
   requiereRevisionPreviaPorPaginas,
 } from './correccionSla.js';
+import { crearDecisionRevisionPrevia } from './decisiones.js';
 import { evaluarGateRevisionPreviaCorreccion } from './gates.js';
 import type { Tx } from './tx.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItemPorId } from './workItems.js';
 
 async function obtenerCorreccion(tx: Tx, correccionId: string) {
-  const [fila] = await tx.select().from(correcciones).where(eq(correcciones.id, correccionId)).limit(1);
+  const [fila] = await tx.select().from(correcciones).where(eq(correcciones.id, correccionId)).limit(1).for('update');
   return fila;
 }
 
@@ -25,8 +26,8 @@ async function obtenerCorreccion(tx: Tx, correccionId: string) {
 // ronda del MISMO alcance (ej. re-corrección tras un resultado
 // "Deficiente") suma un sufijo numérico. Nunca una label de UI (Fase 5,
 // master prompt §8) — siempre el alcance real + un contador.
-async function siguienteBusinessKeyCorreccion(proyectoId: string, alcance: AlcanceCorreccion): Promise<{ businessKey: string; abiertaExistente: string | null }> {
-  const filas = await db
+async function siguienteBusinessKeyCorreccion(tx: Tx, proyectoId: string, alcance: AlcanceCorreccion): Promise<{ businessKey: string; abiertaExistente: string | null }> {
+  const filas = await tx
     .select({ id: correcciones.id, businessKey: correcciones.alcance, workItemId: correcciones.workItemId })
     .from(correcciones)
     .innerJoin(proyectos, eq(correcciones.proyectoId, proyectos.id))
@@ -40,7 +41,7 @@ async function siguienteBusinessKeyCorreccion(proyectoId: string, alcance: Alcan
   // de este alcance que NO está cerrada (completado/cancelado), no se
   // crea una segunda — se devuelve la existente.
   for (const previa of previas) {
-    const [wi] = await db.select({ estado: workItemsTable.estado }).from(workItemsTable).where(eq(workItemsTable.id, previa.workItemId)).limit(1);
+    const [wi] = await tx.select({ estado: workItemsTable.estado }).from(workItemsTable).where(eq(workItemsTable.id, previa.workItemId)).limit(1);
     if (wi && wi.estado !== 'completado' && wi.estado !== 'cancelado') {
       return { businessKey: previa.businessKey, abiertaExistente: previa.id };
     }
@@ -63,17 +64,23 @@ export interface DatosSolicitarCorreccion {
 // duplica work item ni notificación.
 export async function solicitarCorreccion(proyectoId: string, datos: DatosSolicitarCorreccion, actorId: string): Promise<{ id: string; nueva: boolean }> {
   return db.transaction(async (tx) => {
-    const [proyecto] = await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    const [proyecto] = await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1).for('update');
     if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
 
-    const { businessKey, abiertaExistente } = await siguienteBusinessKeyCorreccion(proyectoId, datos.alcance);
+    const { businessKey, abiertaExistente } = await siguienteBusinessKeyCorreccion(tx, proyectoId, datos.alcance);
     if (abiertaExistente) {
+      // Older native requests gain the same decision when their authorized
+      // requester retries; the correction/work item itself is never duplicated.
+      const [actual]=await tx.select().from(correcciones).where(eq(correcciones.id,abiertaExistente));
+      if(actual?.requiereRevisionPrevia && !actual.revisionPreviaConfirmada && actual.alcance==='tripa_completa' && actual.paginas!==null) {
+        await crearDecisionRevisionPrevia(tx,{proyectoId,correccionId:actual.id,workItemId:actual.workItemId,requestedByUserId:actorId,paginas:actual.paginas});
+      }
       return { id: abiertaExistente, nueva: false };
     }
 
     const workItemId = await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'correccion', businessKey });
 
-    const requiereRevisionPrevia = requiereRevisionPreviaPorPaginas(datos.paginas);
+    const requiereRevisionPrevia = datos.alcance === 'tripa_completa' && requiereRevisionPreviaPorPaginas(datos.paginas);
 
     const [creada] = await tx
       .insert(correcciones)
@@ -96,6 +103,21 @@ export async function solicitarCorreccion(proyectoId: string, datos: DatosSolici
       detalles: { alcance: datos.alcance, paginas: datos.paginas ?? null, requiereRevisionPrevia },
     });
 
+    // GATE-06 (Jefatura · Decisiones, docs/arquitectura/17-jefatura-decisiones.md):
+    // si la tripa supera 120 páginas, el caso queda expuesto para
+    // Jefatura DESDE que se solicita la corrección -- no se espera a
+    // que el Especialista intente asignar corrector para recién ahí
+    // avisar. Misma transacción, idempotente por originCorreccionId.
+    if (requiereRevisionPrevia) {
+      await crearDecisionRevisionPrevia(tx, {
+        proyectoId,
+        correccionId: creada.id,
+        workItemId,
+        requestedByUserId: actorId,
+        paginas: datos.paginas!,
+      });
+    }
+
     return { id: creada.id, nueva: true };
   });
 }
@@ -105,7 +127,6 @@ export interface DatosAsignarCorrector {
   correctorNombre?: string | null;
   freelance: boolean;
   contratoConfirmado: boolean;
-  revisionPreviaConfirmada?: boolean;
 }
 
 export type ResultadoAsignacion = { ok: true } | { ok: false; status: 400 | 403; error: string };
@@ -115,6 +136,14 @@ export type ResultadoAsignacion = { ok: true } | { ok: false; status: 400 | 403;
 // (a diferencia de Edición, acá no hay jefatura intermedia — confirmado
 // contra el Manual, no asumido). dueAt se deriva centralmente del SLA
 // por alcance (server/helpers/correccionSla.ts), nunca en el frontend.
+//
+// EXCEPCIÓN real desde Jefatura · Decisiones (docs/arquitectura/
+// 17-jefatura-decisiones.md): cuando `requiereRevisionPrevia` es true
+// (>120 páginas), el Especialista ya NO puede autoconfirmar la revisión
+// previa acá -- ese booleano ahora SOLO lo escribe la resolución de la
+// decisión correspondiente (server/helpers/decisiones.ts,
+// resolverDecision). Este endpoint solo LEE `correccion.revisionPreviaConfirmada`
+// tal cual está en la base; nunca la recibe del cliente.
 export async function asignarCorrector(correccionId: string, datos: DatosAsignarCorrector, actorId: string): Promise<ResultadoAsignacion> {
   if (!datos.correctorId && !datos.correctorNombre?.trim()) {
     return { ok: false, status: 400, error: 'Debe indicarse un corrector (interno o freelance)' };
@@ -132,11 +161,15 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
 
     const gate = evaluarGateRevisionPreviaCorreccion({
       requiereRevisionPrevia: correccion.requiereRevisionPrevia,
-      revisionPreviaConfirmada: datos.revisionPreviaConfirmada ?? correccion.revisionPreviaConfirmada,
+      revisionPreviaConfirmada: correccion.revisionPreviaConfirmada,
     });
     if (!gate.desbloqueado) return { ok: false, status: 400, error: gate.motivo ?? 'Gate bloqueado' };
 
     const ahora = new Date();
+    if (datos.correctorId) {
+      const [persona] = await tx.select().from(users).where(eq(users.id, datos.correctorId));
+      if (!persona?.activo || persona.rol !== 'corrector') return { ok: false, status: 400, error: 'Seleccione un Corrector activo' };
+    }
     const fechaAsignada = ahora.toISOString().slice(0, 10);
     const alcance = correccion.alcance as AlcanceCorreccion;
     // Instante real de la asignación (no solo la fecha) como base del
@@ -151,8 +184,8 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
         correctorNombre: datos.correctorId ? null : (datos.correctorNombre?.trim() ?? null),
         freelance: datos.freelance,
         contratoConfirmado: datos.contratoConfirmado,
-        revisionPreviaConfirmada: datos.revisionPreviaConfirmada ?? correccion.revisionPreviaConfirmada,
         fechaAsignada,
+        asignadoEn: correccion.asignadoEn ?? ahora,
         dueAt,
       })
       .where(eq(correcciones.id, correccionId));
@@ -168,6 +201,11 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
         usuarioId: datos.correctorId,
         asignadoPorId: actorId,
       });
+    } else {
+      // Un externo sin cuenta no puede abrir un assignment FK. La asignación
+      // interna anterior sí debe finalizar para no mostrar ownership obsoleto.
+      await tx.update(projectAssignments).set({finalizadoEn: ahora,motivoFin:'Reasignado a corrector externo'})
+        .where(and(eq(projectAssignments.workItemId,correccion.workItemId),eq(projectAssignments.tipo,'corrector'),isNull(projectAssignments.finalizadoEn)));
     }
 
     await transicionarWorkItemPorId(tx, correccion.workItemId, 'en_progreso');
@@ -178,7 +216,7 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
       entityType: 'work_item',
       entityId: correccion.workItemId,
       proyectoId: correccion.proyectoId,
-      detalles: { correctorId: datos.correctorId ?? null, correctorNombre: datos.correctorNombre ?? null, freelance: datos.freelance, dueAt },
+      detalles: { anteriorCorrectorId: correccion.correctorId, anteriorCorrectorNombre: correccion.correctorNombre, correctorId: datos.correctorId ?? null, correctorNombre: datos.correctorNombre ?? null, freelance: datos.freelance, dueAt },
     });
 
     if (datos.correctorId) {
@@ -194,13 +232,18 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
   });
 }
 
-export async function marcarInicioCorreccion(correccionId: string, fecha: string, actorId: string): Promise<void> {
+export async function marcarInicioCorreccion(correccionId: string, fecha: string | undefined, actorId: string, motivo?: string): Promise<void> {
   await db.transaction(async (tx) => {
     const correccion = await obtenerCorreccion(tx, correccionId);
     if (!correccion) throw new Error(`Corrección no encontrada: ${correccionId}`);
     if (correccion.fechaInicio) return; // Idempotente: ya estaba iniciada.
 
-    await tx.update(correcciones).set({ fechaInicio: fecha }).where(eq(correcciones.id, correccionId));
+    const ahora = new Date();
+    const diaActual = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(ahora);
+    // Llamadas nuevas registran el instante real. Un DATE histórico conserva
+    // su precisión original y nunca se convierte en una hora ficticia.
+    const iniciadoEn = !fecha || fecha === diaActual ? ahora : null;
+    await tx.update(correcciones).set({ fechaInicio: fecha ?? diaActual, iniciadoEn }).where(eq(correcciones.id, correccionId));
 
     await registrarEvento(tx, {
       actorId,
@@ -208,14 +251,15 @@ export async function marcarInicioCorreccion(correccionId: string, fecha: string
       entityType: 'work_item',
       entityId: correccion.workItemId,
       proyectoId: correccion.proyectoId,
-      detalles: { fechaInicio: fecha },
+      detalles: { fechaInicio: fecha ?? diaActual, iniciadoEn: iniciadoEn?.toISOString() ?? null, motivo: motivo ?? null, antes: { fechaInicio: correccion.fechaInicio, iniciadoEn: correccion.iniciadoEn } },
     });
   });
 }
 
 export interface DatosEntregaCorreccion {
-  fecha: string;
+  fecha?: string;
   entregadoEn?: string;
+  motivo?: string;
   controlCambiosUrl?: string | null;
   informeTecnicoUrl?: string | null;
 }
@@ -225,13 +269,15 @@ export async function registrarEntregaCorreccion(correccionId: string, datos: Da
     const [correccion] = await tx.select().from(correcciones).where(eq(correcciones.id, correccionId)).for('update');
     if (!correccion) throw new Error(`Corrección no encontrada: ${correccionId}`);
     if (correccion.fechaEntrega) return; // Retry no modifica el hecho histórico ni duplica avisos.
-    const entregadoEn = datos.entregadoEn ? new Date(datos.entregadoEn) : new Date();
+    const ahora = new Date();
+    const diaActual = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(ahora);
+    const entregadoEn = datos.entregadoEn ? new Date(datos.entregadoEn) : datos.fecha && datos.fecha !== diaActual ? null : ahora;
 
     await tx
       .update(correcciones)
       .set({
         entregadoEn,
-        fechaEntrega: datos.fecha,
+        fechaEntrega: datos.fecha ?? new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(entregadoEn ?? ahora),
         controlCambiosUrl: datos.controlCambiosUrl ?? correccion.controlCambiosUrl,
         informeTecnicoUrl: datos.informeTecnicoUrl ?? correccion.informeTecnicoUrl,
       })
@@ -245,7 +291,7 @@ export async function registrarEntregaCorreccion(correccionId: string, datos: Da
       entityType: 'work_item',
       entityId: correccion.workItemId,
       proyectoId: correccion.proyectoId,
-      detalles: { fechaEntrega: datos.fecha, entregadoEn: entregadoEn.toISOString() },
+      detalles: { fechaEntrega: datos.fecha ?? diaActual, entregadoEn: entregadoEn?.toISOString() ?? null, motivo: datos.motivo ?? null, antes: {fechaEntrega: correccion.fechaEntrega, entregadoEn: correccion.entregadoEn} },
     });
 
     const [proyecto] = await tx.select({ especialistaId: proyectos.especialistaId }).from(proyectos).where(eq(proyectos.id, correccion.proyectoId)).limit(1);
@@ -359,6 +405,7 @@ export async function listarCorreccionesDeProyecto(proyectoId: string): Promise<
       paginas: correcciones.paginas,
       requiereRevisionPrevia: correcciones.requiereRevisionPrevia,
       revisionPreviaConfirmada: correcciones.revisionPreviaConfirmada,
+      decisionId: decisiones.id,
       correctorId: correcciones.correctorId,
       correctorNombre: correcciones.correctorNombre,
       freelance: correcciones.freelance,
@@ -376,6 +423,7 @@ export async function listarCorreccionesDeProyecto(proyectoId: string): Promise<
     })
     .from(correcciones)
     .innerJoin(workItemsTable, eq(correcciones.workItemId, workItemsTable.id))
+    .leftJoin(decisiones, eq(decisiones.originCorreccionId,correcciones.id))
     .where(eq(correcciones.proyectoId, proyectoId))
     .orderBy(desc(correcciones.createdAt));
 

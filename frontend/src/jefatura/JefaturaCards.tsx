@@ -19,6 +19,7 @@ import type {
   SolicitudJefatura,
 } from '../../../shared/jefatura';
 import { RrppIcon } from '../rrpp/RrppIcons';
+import { fetchDecisiones } from './decisionesApi';
 export const fechaJefatura = (v: string | null) =>
   v
     ? new Intl.DateTimeFormat('es-VE', {
@@ -42,7 +43,9 @@ export function ExpressBadge({ express }: { express: ExpressJefatura }) {
           ? 'Posible Express'
           : express.estado === 'normal_confirmado'
             ? 'Prioridad normal'
-            : express.estado === 'pendiente_clasificacion' ? 'Plazo pendiente' : 'Normal'}
+            : express.estado === 'pendiente_clasificacion'
+              ? 'Plazo pendiente'
+              : 'Normal'}
     </span>
   );
 }
@@ -62,7 +65,8 @@ export function ErrorJefatura({
     </div>
   );
 }
-export type TabDecision = 'porAsignar' | 'express' | 'solicitudes' | 'enRiesgo';
+export type TabDecision =
+  'porAsignar' | 'express' | 'solicitudes' | 'decisiones' | 'enRiesgo';
 export function JefaturaKpis({
   summary,
   loading,
@@ -80,9 +84,9 @@ export function JefaturaKpis({
       icon: 'proceso',
     },
     {
-      key: 'solicitudes',
-      label: 'Solicitudes',
-      sub: 'Decisiones de Jefatura',
+      key: 'decisiones',
+      label: 'Decisiones',
+      sub: 'Casos pendientes de Jefatura',
       icon: 'ingreso',
     },
     {
@@ -122,16 +126,54 @@ export function JefaturaKpis({
     </section>
   );
 }
+function DecisionesInicio({ search }: { search: string }) {
+  const query = useQuery({
+    queryKey: ['decisiones', 'inicio', search],
+    queryFn: () =>
+      fetchDecisiones({ status: 'abiertas', q: search, page: 1, pageSize: 20 }),
+  });
+  if (query.isLoading) return <p className="jf-empty">Cargando decisiones…</p>;
+  if (query.isError) return <ErrorJefatura retry={() => query.refetch()} />;
+  return (
+    <div className="jf-home-decisions">
+      {!query.data?.items.length && (
+        <p className="jf-empty">
+          No tienes decisiones pendientes en esta búsqueda.
+        </p>
+      )}
+      {query.data?.items.map((item) => (
+        <Link
+          key={item.id}
+          className="jf-home-decision"
+          to={`/?vista=decisiones&decision=${item.id}`}
+        >
+          <strong>{item.titulo}</strong>
+          <span>
+            {item.autores} · #{item.codigo}
+          </span>
+          <span>
+            {item.subject} ·{' '}
+            {item.bloqueaCorreccion
+              ? 'Bloquea Corrección'
+              : item.status === 'informacion_solicitada'
+                ? 'Esperando información'
+                : 'Revisión pendiente'}
+          </span>
+        </Link>
+      ))}
+      <Link className="jf-button jf-button-secondary" to="/?vista=decisiones">
+        Ver todas las decisiones
+      </Link>
+    </div>
+  );
+}
 export function ProjectIdentity({
   p,
 }: {
   p: Pick<ProyectoJefatura, 'id' | 'autores' | 'codigo'>;
 }) {
   return (
-    <Link
-      className="jf-project-name"
-      to={`/?vista=proyectos&proyecto=${p.id}`}
-    >
+    <Link className="jf-project-name" to={`/?vista=proyectos&proyecto=${p.id}`}>
       <strong>{p.autores}</strong>
       <span>#{p.codigo}</span>
     </Link>
@@ -172,7 +214,8 @@ export function DecisionQueue({
   const tabs = [
     { key: 'porAsignar', name: 'Por asignar' },
     { key: 'express', name: 'Express' },
-    { key: 'solicitudes', name: 'Solicitudes' },
+    { key: 'decisiones', name: 'Decisiones' },
+    { key: 'solicitudes', name: 'Asignaciones creativas' },
     { key: 'enRiesgo', name: 'En riesgo' },
   ] as const;
   const vacio = search
@@ -231,6 +274,8 @@ export function DecisionQueue({
           </div>
         ) : !data ? (
           <p className="jf-empty">Los pendientes no están disponibles.</p>
+        ) : tab === 'decisiones' ? (
+          <DecisionesInicio search={search} />
         ) : tab === 'solicitudes' ? (
           <RequestsList requests={solicitudes} empty={vacio} />
         ) : !listado.length ? (
@@ -260,7 +305,9 @@ export function DecisionQueue({
                     </td>
                     <td data-label="Servicio">
                       <strong className="jf-service" title={p.servicio.nombre}>
-                        {p.servicio.codigo === 'CR' ? `CR — ${p.servicio.nombre}` : p.servicio.codigo}
+                        {p.servicio.codigo === 'CR'
+                          ? `CR — ${p.servicio.nombre}`
+                          : p.servicio.codigo}
                       </strong>
                     </td>
                     <td data-label="Prioridad">

@@ -1,201 +1,750 @@
+import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Modal } from '../autores/Modal';
-import { formatearFecha } from '../proyectos/campos';
-import type { RegistroSeguimiento } from '../types/api';
-import { RegistroSeguimientoForm } from './RegistroSeguimientoForm';
-import { fetchSeguimiento } from './seguimientoApi';
-import { fetchQuickView } from './portafolioApi';
-
-function formatearHora(hora: string | null): string {
-  if (!hora) return '—';
-  return hora.slice(0, 5);
-}
-
-function BadgeEstatus({ estatus }: { estatus: string | null }) {
-  if (!estatus) {
-    return <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">Sin estatus</span>;
-  }
-
-  const normalizado = estatus.toLowerCase();
-  if (normalizado.includes('entregado')) {
-    return <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-700">{estatus}</span>;
-  }
-  if (normalizado.includes('proceso')) {
-    return <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-xs font-medium text-yellow-700">{estatus}</span>;
-  }
-  return <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">{estatus}</span>;
-}
-
-function BadgePago({ activo, etiqueta }: { activo: boolean; etiqueta: string }) {
+import type { ProyectoJefatura } from '../../../shared/jefatura';
+import {
+  MATERIALES_SEGUIMIENTO,
+  PROCESOS_SEGUIMIENTO,
+  RESULTADOS_SEGUIMIENTO,
+  type FiltrosIntervenciones,
+  type FiltrosSeguimientoGeneral,
+  type IntervencionSeguimiento,
+  type OrigenIntervencion,
+} from '../../../shared/seguimientoOperativo';
+import {
+  fetchGeneralSeguimiento,
+  fetchIntervenciones,
+} from './seguimientoOperativoApi';
+import {
+  BusquedaSeguimiento,
+  ErrorSeguimiento,
+  EstadoIntervencionBadge,
+  fechaSeguimiento,
+  PaginacionSeguimiento,
+  SelectSeguimiento,
+  SlaBadge,
+  StatsSeguimiento,
+} from './SeguimientoElements';
+import { GeneralSeguimientoDrawer } from './GeneralSeguimientoDrawer';
+import { IntervencionDrawer } from './IntervencionDrawer';
+import {
+  EstadoProyecto,
+  PortadaProyecto,
+  PrioridadProyecto,
+} from './PortafolioElements';
+import './portafolio.css';
+import './seguimiento.css';
+const opciones = (v: Record<string, string>) =>
+  Object.entries(v).map(([id, nombre]) => ({ id, nombre }));
+const grupos = {
+  todas: 'Todas',
+  pendientes: 'Pendientes',
+  en_progreso: 'En proceso',
+  vencidas: 'Vencidas',
+  entregadas: 'Entregadas',
+};
+function nextDue(p: ProyectoJefatura) {
   return (
-    <span
-      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-        activo ? 'bg-dorado/20 text-tinta' : 'bg-gray-100 text-gray-400'
-      }`}
-    >
-      {etiqueta}
-    </span>
+    p.procesos
+      .map((r) => r.vence)
+      .filter((v): v is string => !!v)
+      .sort()[0] ?? null
   );
 }
-
-function FechaHora({ fecha, hora }: { fecha: string | null; hora: string | null }) {
-  if (!fecha) return <span className="text-gray-400">—</span>;
+function ProyectoCell({
+  p,
+}: {
+  p: {
+    titulo: string | null;
+    autores: string;
+    codigo: string;
+    portadaUrl?: string | null;
+    servicio?: unknown;
+  };
+}) {
   return (
-    <span>
-      {formatearFecha(fecha)}
-      {hora && <span className="ml-1 text-gray-400">· {formatearHora(hora)}</span>}
-    </span>
+    <div className="js-project">
+      {typeof p.servicio === 'object' && p.servicio !== null ? (
+        <PortadaProyecto p={p as ProyectoJefatura} />
+      ) : (
+        <span className="js-book-placeholder" aria-hidden="true">
+          ▤
+        </span>
+      )}
+      <div>
+        <strong>{p.titulo ?? p.autores}</strong>
+        <span>
+          {p.autores} <small>#{p.codigo}</small>
+        </span>
+      </div>
+    </div>
   );
 }
-
-const COLUMNAS = [
-  'Proyecto/Autor',
-  'Unidad',
-  'Asignación',
-  'Especialista',
-  'Páginas',
-  'Recibido',
-  'Inicio',
-  'Entrega',
-  'Analista',
-  'Tipo servicio',
-  'Estatus',
-  'Tiempo',
-  'Pagos',
-  'Obs.',
-  '',
-];
-
-function FilaRegistro({ registro, onEditar }: { registro: RegistroSeguimiento; onEditar: () => void }) {
+function IntervencionRow({
+  d,
+  onSelect,
+}: {
+  d: IntervencionSeguimiento;
+  onSelect: () => void;
+}) {
   return (
-    <tr className="border-b border-gray-100 text-sm text-gray-700 transition-colors last:border-0 hover:bg-gray-50">
-      <td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-900">
-        {registro.proyecto.autorNombre}
-        <span className="ml-1.5 font-normal text-gray-400">#{registro.proyecto.codigo}</span>
+    <tr>
+      <td>
+        <button className="js-project-button" onClick={onSelect}>
+          <ProyectoCell p={d.proyecto} />
+        </button>
       </td>
-      <td className="whitespace-nowrap px-4 py-3">{registro.proyecto.unidadNombre ?? <span className="text-gray-400">—</span>}</td>
-      <td className="whitespace-nowrap px-4 py-3">{registro.asignacionTipo ?? <span className="text-gray-400">—</span>}</td>
-      <td className="whitespace-nowrap px-4 py-3">{registro.especialista?.nombre ?? <span className="text-gray-400">Sin asignar</span>}</td>
-      <td className="whitespace-nowrap px-4 py-3">{registro.paginas ?? <span className="text-gray-400">—</span>}</td>
-      <td className="whitespace-nowrap px-4 py-3">
-        <FechaHora fecha={registro.fechaAsignada} hora={registro.horaRecibida} />
+      <td>
+        {MATERIALES_SEGUIMIENTO[d.material]}
+        {d.origen === 'legacy' && <small>Registro anterior</small>}
       </td>
-      <td className="whitespace-nowrap px-4 py-3">
-        <FechaHora fecha={registro.fechaInicio} hora={registro.horaInicio} />
+      <td>
+        <strong>{PROCESOS_SEGUIMIENTO[d.proceso]}</strong>
+        <small>
+          {d.ronda === null ? 'Ronda sin registro' : `Ronda ${d.ronda}`}
+          {d.faseNumero ? ` · Fase ${d.faseNumero}` : ''}
+        </small>
       </td>
-      <td className="whitespace-nowrap px-4 py-3">
-        <FechaHora fecha={registro.fechaEntrega} hora={registro.horaEntrega} />
+      <td title={d.analista?.nombre}>
+        {d.analista?.tipo === 'bandeja'
+          ? 'Bandeja de Soporte'
+          : (d.analista?.nombre ?? 'Sin asignar')}
+        {d.freelance && <small className="js-gold-text">Freelance</small>}
       </td>
-      <td className="whitespace-nowrap px-4 py-3">{registro.analista?.nombre ?? <span className="text-gray-400">Sin asignar</span>}</td>
-      <td className="whitespace-nowrap px-4 py-3">{registro.tipoServicio ?? <span className="text-gray-400">—</span>}</td>
-      <td className="whitespace-nowrap px-4 py-3">
-        <BadgeEstatus estatus={registro.estatus} />
+      <td>{d.especialista?.nombre ?? 'Sin asignar'}</td>
+      <td>
+        <span>
+          {d.tiempos.iniciado
+            ? fechaSeguimiento(d.tiempos.iniciado, false)
+            : d.tiempos.fechaInicio
+              ? fechaSeguimiento(d.tiempos.fechaInicio, false)
+              : 'Por iniciar'}
+        </span>
+        <small>
+          {d.tiempos.vence
+            ? `Vence ${fechaSeguimiento(d.tiempos.vence, false)}`
+            : 'Sin fecha límite'}
+        </small>
       </td>
-      <td className="whitespace-nowrap px-4 py-3">
-        {registro.totalDias ?? '—'}d / {registro.totalHoras ?? '—'}h
+      <td>
+        <EstadoIntervencionBadge estado={d.estado} />
       </td>
-      <td className="whitespace-nowrap px-4 py-3">
-        <div className="flex flex-wrap gap-1">
-          <BadgePago activo={registro.freelance} etiqueta="Freelance" />
-          <BadgePago activo={registro.pago80} etiqueta="80%" />
-          <BadgePago activo={registro.pago20} etiqueta="20%" />
-        </div>
+      <td>
+        <SlaBadge sla={d.sla} />
       </td>
-      <td className="max-w-[220px] truncate px-4 py-3 text-gray-500" title={registro.observaciones ?? undefined}>
-        {registro.observaciones ?? <span className="text-gray-400">—</span>}
+      <td>
+        {d.alertas.length ? (
+          <span className="js-alert-count" title={d.alertas.join(' · ')}>
+            {d.alertas.length} {d.alertas.length === 1 ? 'alerta' : 'alertas'}
+          </span>
+        ) : (
+          <span className="js-muted">—</span>
+        )}
       </td>
-      <td className="whitespace-nowrap px-4 py-3 text-right">
-        <button onClick={onEditar} className="text-xs font-medium text-tinta/70 underline hover:text-tinta">
-          Editar
+      <td>
+        <button
+          className="js-more"
+          aria-label={`Abrir intervención ${d.proyecto.titulo ?? d.proyecto.autores}, ${PROCESOS_SEGUIMIENTO[d.proceso]}, ${d.ronda === null ? 'ronda sin registro' : `ronda ${d.ronda}`}`}
+          onClick={onSelect}
+        >
+          ⋮
         </button>
       </td>
     </tr>
   );
 }
-
-// "Control de Tiempos": matriz de rendimiento de jefe_area, trasladada
-// del Excel "Seguimiento Corrección" real. Crear/editar ya está
-// conectado al backend (ver seguimiento.routes.ts) — el modal "+ Nuevo
-// Registro" dejó de ser un stub.
 export function SeguimientoPage() {
-  const [params] = useSearchParams();
-  const proyectoId = params.get('proyecto');
-  const contexto = useQuery({ queryKey: ['jefatura', 'quick-view', proyectoId], queryFn: () => fetchQuickView(proyectoId!), enabled: !!proyectoId });
-  const query = useQuery({ queryKey: ['seguimiento'], queryFn: fetchSeguimiento });
-  const registros = proyectoId ? query.data?.registros.filter(r => r.proyecto.id === proyectoId) ?? [] : query.data?.registros ?? [];
-  const [registroEnEdicion, setRegistroEnEdicion] = useState<RegistroSeguimiento | null>(null);
-  const [modalNuevoAbierto, setModalNuevoAbierto] = useState(false);
-
+  const [params, setParams] = useSearchParams();
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const mode = params.get('modo') === 'correccion' ? 'correccion' : 'general';
+  const get = (k: string) => params.get(k) || undefined;
+  const page = Math.max(1, Number(get('page')) || 1);
+  const pageSize = [10, 20, 50].includes(Number(get('size')))
+    ? Number(get('size'))
+    : 10;
+  const change = useCallback(
+    (key: string, value: string, reset = true) =>
+      setParams((prev) => {
+        const n = new URLSearchParams(prev);
+        value ? n.set(key, value) : n.delete(key);
+        if (reset) {
+          n.delete('page');
+          n.delete('detalle');
+          n.delete('intervencion');
+        }
+        return n;
+      }),
+    [setParams],
+  );
+  const search = useCallback((v: string) => change('q', v), [change]);
+  const switchMode = (m: string, project?: string) =>
+    setParams((prev) => {
+      const n = new URLSearchParams({ vista: 'seguimiento', modo: m });
+      for (const k of ['q', 'especialista', 'proyecto']) {
+        const v = prev.get(k);
+        if (v) n.set(k, v);
+      }
+      if (project) n.set('proyecto', project);
+      return n;
+    });
+  const f: FiltrosSeguimientoGeneral = {
+    q: get('q') ?? '',
+    proceso: get('proceso'),
+    especialistaId: get('especialista'),
+    proyectoId: get('proyecto'),
+    estado: get('estado') as FiltrosSeguimientoGeneral['estado'],
+    riesgo: get('riesgo') as FiltrosSeguimientoGeneral['riesgo'],
+    orden: (get('orden') ?? 'urgentes') as FiltrosSeguimientoGeneral['orden'],
+    page,
+    pageSize,
+  };
+  const fi: FiltrosIntervenciones = {
+    q: f.q,
+    grupo: (get('grupo') ?? 'todas') as FiltrosIntervenciones['grupo'],
+    proceso: get('proceso') as FiltrosIntervenciones['proceso'],
+    material: get('material') as FiltrosIntervenciones['material'],
+    analistaId: get('analista'),
+    especialistaId: f.especialistaId,
+    proyectoId: f.proyectoId,
+    freelance: get('freelance') as FiltrosIntervenciones['freelance'],
+    resultado: get('resultado') as FiltrosIntervenciones['resultado'],
+    origen: get('origen') as FiltrosIntervenciones['origen'],
+    from: get('from'),
+    to: get('to'),
+    orden: f.orden,
+    page,
+    pageSize,
+  };
+  const general = useQuery({
+    queryKey: ['seguimiento', 'general', f],
+    queryFn: () => fetchGeneralSeguimiento(f),
+    enabled: mode === 'general',
+    refetchInterval: 30000,
+  });
+  const interv = useQuery({
+    queryKey: ['seguimiento', 'intervenciones', fi],
+    queryFn: () => fetchIntervenciones(fi),
+    enabled: mode === 'correccion',
+    refetchInterval: 30000,
+  });
+  const query = mode === 'general' ? general : interv;
+  const data = query.data;
+  const catalog =
+    mode === 'general' ? general.data?.filters : interv.data?.filters;
+  const selection = params.get('intervencion')?.split(':');
+  const selectedSource = selection?.[0] as OrigenIntervencion | undefined,
+    selectedId = selection?.[1];
+  const close = useCallback(
+    () =>
+      setParams(
+        (prev) => {
+          const n = new URLSearchParams(prev);
+          n.delete('detalle');
+          n.delete('intervencion');
+          return n;
+        },
+        { replace: true },
+      ),
+    [setParams],
+  );
+  const volver = `/?${params}`;
+  const select = (d: IntervencionSeguimiento) =>
+    change('intervencion', `${d.origen}:${d.id}`, false);
+  const clear = () => setParams({ vista: 'seguimiento', modo: mode });
+  const activeFilters = [
+    'q',
+    'proyecto',
+    'proceso',
+    'especialista',
+    'material',
+    'analista',
+    'freelance',
+    'resultado',
+    'origen',
+    'from',
+    'to',
+    'estado',
+    'riesgo',
+  ].filter((k) => params.has(k)).length;
   return (
-    <div className="mx-auto w-full max-w-[1600px] overflow-x-auto p-6">
-      {proyectoId && <section className="jf-card mb-4 p-4">
-        <p className="font-semibold">{contexto.data ? `${contexto.data.proyecto.titulo ?? contexto.data.proyecto.autores} · #${contexto.data.proyecto.codigo}` : contexto.isError ? 'Proyecto no disponible en el ámbito de Jefatura' : 'Cargando contexto del proyecto…'}</p>
-        {contexto.data && <p className="mt-2 text-sm text-gray-500">{contexto.data.proyecto.riesgo.causas.join(' · ') || 'Sin alertas operativas registradas.'}</p>}
-        <div className="mt-3 flex flex-wrap gap-4 text-sm"><Link to={`/?vista=proyectos&proyecto=${proyectoId}`}>Volver al proyecto</Link><Link to="/?vista=seguimiento">Ver todo el seguimiento</Link></div>
-      </section>}
-      <div className="mb-6 flex items-center justify-between gap-4">
-        <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
-          <span className="h-2 w-2 rounded-full bg-dorado" /> Control de Tiempos y Producción
-        </h2>
+    <div className="js-workspace">
+      <div
+        className="js-mode-switch"
+        role="group"
+        aria-label="Modo de Seguimiento"
+      >
         <button
-          onClick={() => setModalNuevoAbierto(true)}
-          className="flex-shrink-0 rounded-lg bg-tinta px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-gray-800"
+          aria-pressed={mode === 'general'}
+          onClick={() => switchMode('general')}
         >
-          + Nuevo Registro
+          Vista general
+        </button>
+        <button
+          aria-pressed={mode === 'correccion'}
+          onClick={() => switchMode('correccion')}
+        >
+          Corrección y Calidad
+        </button>
+        <p>
+          {mode === 'general'
+            ? 'Proyectos, procesos paralelos y prioridades'
+            : 'Intervenciones reales, tiempos y supervisión de calidad'}
+        </p>
+      </div>
+      {mode === 'general' ? (
+        <StatsSeguimiento
+          items={[
+            {
+              label: 'En seguimiento',
+              value: general.data?.counts.seguimiento,
+            },
+            {
+              label: 'En riesgo',
+              value: general.data?.counts.riesgo,
+              tone: 'js-red',
+            },
+            {
+              label: 'Bloqueados',
+              value: general.data?.counts.bloqueados,
+              tone: 'js-red',
+            },
+            {
+              label: 'Próximos a vencer',
+              value: general.data?.counts.proximos,
+              tone: 'js-amber',
+            },
+            {
+              label: 'Express',
+              value: general.data?.counts.express,
+              tone: 'js-amber',
+            },
+          ]}
+        />
+      ) : (
+        <StatsSeguimiento
+          items={[
+            {
+              label: 'Intervenciones activas',
+              value: interv.data?.counts.activas,
+            },
+            { label: 'Por iniciar', value: interv.data?.counts.porIniciar },
+            {
+              label: 'Vencidas',
+              value: interv.data?.counts.vencidas,
+              tone: 'js-red',
+            },
+            {
+              label: 'Entregadas hoy',
+              value: interv.data?.counts.entregadasHoy,
+            },
+            {
+              label: 'Freelance pendientes',
+              value: interv.data?.counts.freelancePendientes,
+              tone: 'js-amber',
+            },
+          ]}
+        />
+      )}
+      <p className="js-count-context">
+        {mode === 'general'
+          ? 'Conteos de la cartera activa de Jefatura.'
+          : 'Conteos del periodo y filtros seleccionados, antes de aplicar el grupo.'}
+      </p>
+      {mode === 'correccion' && (
+        <nav className="js-groups" aria-label="Grupos de intervenciones">
+          {Object.entries(grupos).map(([k, v]) => (
+            <button
+              key={k}
+              aria-pressed={fi.grupo === k}
+              onClick={() => change('grupo', k)}
+            >
+              {v}
+              <span>
+                {interv.data?.grupos[k as keyof typeof grupos] ?? '—'}
+              </span>
+            </button>
+          ))}
+        </nav>
+      )}
+      <div
+        className={`js-filters ${filtersOpen ? '' : 'js-filters-collapsed'}`}
+      >
+        <BusquedaSeguimiento value={f.q} onChange={search} />
+        <button
+          className="js-toggle-filters"
+          aria-expanded={filtersOpen}
+          onClick={() => setFiltersOpen((v) => !v)}
+        >
+          Filtros{activeFilters ? ` (${activeFilters})` : ''}
+        </button>
+        <SelectSeguimiento
+          label="Proceso"
+          value={get('proceso') ?? ''}
+          onChange={(v) => change('proceso', v)}
+          options={
+            mode === 'general'
+              ? (general.data?.filters.procesos ?? [])
+              : opciones(PROCESOS_SEGUIMIENTO)
+          }
+        />
+        <SelectSeguimiento
+          label="Especialista"
+          value={get('especialista') ?? ''}
+          onChange={(v) => change('especialista', v)}
+          options={[
+            { id: 'sin_asignar', nombre: 'Sin asignar' },
+            ...(catalog?.especialistas ?? []),
+          ]}
+        />
+        {mode === 'general' ? (
+          <>
+            <SelectSeguimiento
+              label="Estado"
+              value={get('estado') ?? ''}
+              onChange={(v) => change('estado', v)}
+              options={opciones({
+                en_proceso: 'En producción',
+                retrasado: 'Retrasado',
+                pausado: 'Pausado',
+                stand_by: 'Stand-by',
+              })}
+            />
+            <SelectSeguimiento
+              label="Atención"
+              value={get('riesgo') ?? ''}
+              onChange={(v) => change('riesgo', v)}
+              options={opciones({
+                riesgo: 'En riesgo',
+                bloqueados: 'Bloqueados',
+                proximos: 'Próximos a vencer',
+                express: 'Express confirmado',
+              })}
+            />
+          </>
+        ) : (
+          <>
+            <SelectSeguimiento
+              label="Material"
+              value={get('material') ?? ''}
+              onChange={(v) => change('material', v)}
+              options={opciones(MATERIALES_SEGUIMIENTO)}
+            />
+            <SelectSeguimiento
+              label="Analista"
+              value={get('analista') ?? ''}
+              onChange={(v) => change('analista', v)}
+              options={[
+                { id: 'sin_asignar', nombre: 'Sin usuario asignado' },
+                ...(interv.data?.filters.analistas ?? []),
+              ]}
+            />
+            <SelectSeguimiento
+              label="Freelance"
+              value={get('freelance') ?? ''}
+              onChange={(v) => change('freelance', v)}
+              options={opciones({ si: 'Freelance', no: 'Equipo interno' })}
+            />
+            <SelectSeguimiento
+              label="Resultado"
+              value={get('resultado') ?? ''}
+              onChange={(v) => change('resultado', v)}
+              options={[
+                ...opciones(RESULTADOS_SEGUIMIENTO),
+                { id: 'sin_evaluar', nombre: 'A espera de evaluación' },
+              ]}
+            />
+            <SelectSeguimiento
+              label="Origen"
+              value={get('origen') ?? ''}
+              onChange={(v) => change('origen', v)}
+              options={opciones({
+                correccion: 'Corrección',
+                calidad: 'Calidad',
+                legacy: 'Registros anteriores',
+              })}
+            />
+            <label className="js-date">
+              Desde
+              <input
+                aria-label="Periodo desde"
+                type="date"
+                value={get('from') ?? ''}
+                onChange={(e) => change('from', e.target.value)}
+              />
+            </label>
+            <label className="js-date">
+              Hasta
+              <input
+                aria-label="Periodo hasta"
+                type="date"
+                value={get('to') ?? ''}
+                onChange={(e) => change('to', e.target.value)}
+              />
+            </label>
+          </>
+        )}
+        <SelectSeguimiento
+          label="Orden"
+          value={get('orden') ?? 'urgentes'}
+          onChange={(v) => change('orden', v)}
+          options={opciones({
+            urgentes: 'Mayor urgencia',
+            vencimiento: 'Próximo vencimiento',
+            recientes: 'Más recientes',
+          })}
+        />
+        <button className="js-clear" onClick={clear} disabled={!activeFilters}>
+          Limpiar{activeFilters ? ` (${activeFilters})` : ''}
         </button>
       </div>
-
-      {query.isLoading && <p className="text-sm text-tinta/70">Cargando matriz…</p>}
+      {f.proyectoId && (
+        <div className="js-context-filter">
+          <span>Seguimiento del proyecto seleccionado</span>
+          <Link to={`/?vista=proyectos&proyecto=${f.proyectoId}`}>
+            Ver en Proyectos
+          </Link>
+          <button onClick={() => change('proyecto', '')}>Ver todos</button>
+        </div>
+      )}
       {query.isError && (
-        <p role="alert" className="text-sm text-red-600">
-          No se pudo cargar la matriz{query.error instanceof Error ? `: ${query.error.message}` : ''}.
-        </p>
+        <ErrorSeguimiento
+          error={query.error}
+          retry={() => void query.refetch()}
+        />
       )}
-
-      {query.data && registros.length === 0 && (
-        <div className="rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center">
-          <p className="text-sm text-gray-500">{proyectoId ? 'No hay registros de seguimiento cargados para este proyecto.' : 'Todavía no hay registros de seguimiento cargados.'}</p>
+      {query.isLoading && (
+        <div className="js-loading" role="status">
+          Cargando seguimiento…
         </div>
       )}
-
-      {query.data && registros.length > 0 && (
-        <div className="min-w-[1600px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-          <table className="w-full border-collapse text-left">
-            <thead className="border-b border-gray-200 bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500">
-              <tr>
-                {COLUMNAS.map((columna) => (
-                  <th key={columna} className="whitespace-nowrap px-4 py-3">
-                    {columna}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {registros.map((registro) => (
-                <FilaRegistro key={registro.id} registro={registro} onEditar={() => setRegistroEnEdicion(registro)} />
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {modalNuevoAbierto && (
-        <Modal titulo="Nuevo Registro de Seguimiento" onClose={() => setModalNuevoAbierto(false)} ancho="3xl">
-          <RegistroSeguimientoForm registro={null} onGuardado={() => setModalNuevoAbierto(false)} onCancelar={() => setModalNuevoAbierto(false)} />
-        </Modal>
-      )}
-
-      {registroEnEdicion && (
-        <Modal titulo="Editar Registro de Seguimiento" onClose={() => setRegistroEnEdicion(null)} ancho="3xl">
-          <RegistroSeguimientoForm
-            registro={registroEnEdicion}
-            onGuardado={() => setRegistroEnEdicion(null)}
-            onCancelar={() => setRegistroEnEdicion(null)}
+      {data && (
+        <section
+          className="js-list"
+          aria-label={
+            mode === 'general'
+              ? 'Proyectos en seguimiento'
+              : 'Intervenciones de corrección y calidad'
+          }
+        >
+          <div className="js-list-heading">
+            <h2>
+              {mode === 'general' ? 'Supervisión operativa' : 'Intervenciones'}
+            </h2>
+            <span>
+              {data.pagination.total}{' '}
+              {mode === 'general' ? 'proyectos' : 'intervenciones'}
+              {query.isFetching ? ' · Actualizando…' : ''}
+            </span>
+          </div>
+          {!data.items.length ? (
+            <div className="js-empty">
+              <h3>
+                {activeFilters
+                  ? 'No hay resultados con estos filtros'
+                  : 'Sin registros disponibles'}
+              </h3>
+              <p>
+                {mode === 'general'
+                  ? 'Los proyectos entregados a Jefatura aparecen aquí con sus procesos actuales.'
+                  : 'Las solicitudes reales de Corrección y Calidad aparecen automáticamente; los registros anteriores se identifican por su origen.'}
+              </p>
+              {activeFilters > 0 && (
+                <button className="js-secondary" onClick={clear}>
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="js-desktop-table">
+                <table
+                  className={`js-table ${mode === 'correccion' ? 'js-interv-table' : ''}`}
+                >
+                  <thead>
+                    <tr>
+                      {(mode === 'general'
+                        ? [
+                            'Proyecto / autor',
+                            'Especialista',
+                            'Procesos abiertos',
+                            'Próximo vencimiento',
+                            'Estado',
+                            'Alertas',
+                            '',
+                          ]
+                        : [
+                            'Proyecto / autor',
+                            'Material',
+                            'Proceso',
+                            'Analista',
+                            'Especialista',
+                            'Inicio / vencimiento',
+                            'Estado',
+                            'SLA',
+                            'Alertas',
+                            '',
+                          ]
+                      ).map((h, i) => (
+                        <th key={i}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mode === 'general'
+                      ? general.data?.items.map((p) => (
+                          <tr key={p.id}>
+                            <td>
+                              <button
+                                className="js-project-button"
+                                onClick={() => change('detalle', p.id, false)}
+                              >
+                                <ProyectoCell p={p} />
+                              </button>
+                            </td>
+                            <td>{p.especialista?.nombre ?? 'Sin asignar'}</td>
+                            <td>
+                              <div className="js-process-tags">
+                                {p.procesos.length ? (
+                                  p.procesos.map((r) => (
+                                    <span
+                                      key={r.id}
+                                      className={`js-badge ${r.estado === 'bloqueado' ? 'js-state-bloqueado' : ''}`}
+                                    >
+                                      {r.nombre}
+                                    </span>
+                                  ))
+                                ) : (
+                                  <span className="js-muted">
+                                    Sin procesos abiertos
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td>
+                              {nextDue(p)
+                                ? fechaSeguimiento(nextDue(p), false)
+                                : 'Sin fecha pautada'}
+                            </td>
+                            <td>
+                              <EstadoProyecto p={p} />
+                            </td>
+                            <td>
+                              <PrioridadProyecto p={p} />
+                              {p.riesgo.atencion && (
+                                <span
+                                  className="js-alert-count"
+                                  title={p.riesgo.causas.join(' · ')}
+                                >
+                                  {p.riesgo.causas.length} alertas
+                                </span>
+                              )}
+                            </td>
+                            <td>
+                              <button
+                                className="js-more"
+                                aria-label={`Abrir seguimiento de ${p.titulo ?? p.autores}`}
+                                onClick={() => change('detalle', p.id, false)}
+                              >
+                                ⋮
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      : interv.data?.items.map((d) => (
+                          <IntervencionRow
+                            key={`${d.origen}:${d.id}`}
+                            d={d}
+                            onSelect={() => select(d)}
+                          />
+                        ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="js-mobile-list">
+                {mode === 'general'
+                  ? general.data?.items.map((p) => (
+                      <button
+                        className="js-mobile-card"
+                        key={p.id}
+                        onClick={() => change('detalle', p.id, false)}
+                      >
+                        <ProyectoCell p={p} />
+                        <div>
+                          <EstadoProyecto p={p} />
+                          <PrioridadProyecto p={p} />
+                        </div>
+                        <p>
+                          {p.especialista?.nombre ?? 'Sin Especialista'} ·{' '}
+                          {p.procesos.length} procesos abiertos
+                        </p>
+                        <small>
+                          {nextDue(p)
+                            ? `Próximo ${fechaSeguimiento(nextDue(p), false)}`
+                            : 'Sin vencimiento pautado'}
+                        </small>
+                        {p.riesgo.atencion && (
+                          <p className="js-danger">{p.riesgo.causas[0]}</p>
+                        )}
+                      </button>
+                    ))
+                  : interv.data?.items.map((d) => (
+                      <button
+                        className="js-mobile-card"
+                        key={`${d.origen}:${d.id}`}
+                        onClick={() => select(d)}
+                      >
+                        <ProyectoCell p={d.proyecto} />
+                        <div>
+                          <EstadoIntervencionBadge estado={d.estado} />
+                          <SlaBadge sla={d.sla} />
+                        </div>
+                        <p>
+                          {MATERIALES_SEGUIMIENTO[d.material]} ·{' '}
+                          {PROCESOS_SEGUIMIENTO[d.proceso]} ·{' '}
+                          {d.ronda === null
+                            ? 'Ronda sin registro'
+                            : `Ronda ${d.ronda}`}
+                        </p>
+                        <small>
+                          {d.analista?.nombre ?? 'Sin analista'} ·{' '}
+                          {d.especialista?.nombre ?? 'Sin Especialista'}
+                        </small>
+                        {d.alertas.length > 0 && (
+                          <p className="js-danger">{d.alertas[0]}</p>
+                        )}
+                      </button>
+                    ))}
+              </div>
+            </>
+          )}
+          <PaginacionSeguimiento
+            p={data.pagination}
+            onPage={(v) => change('page', String(v), false)}
+            onSize={(v) => change('size', String(v))}
           />
-        </Modal>
+        </section>
       )}
+      {mode === 'general' && get('detalle') && (
+        <GeneralSeguimientoDrawer
+          key={get('detalle')}
+          id={get('detalle')!}
+          onClose={close}
+          volver={volver}
+          onCorreccion={() => switchMode('correccion', get('detalle'))}
+        />
+      )}
+      {mode === 'correccion' &&
+        selectedId &&
+        selectedSource &&
+        ['correccion', 'calidad', 'legacy'].includes(selectedSource) && (
+          <IntervencionDrawer
+            key={`${selectedSource}:${selectedId}`}
+            origen={selectedSource}
+            id={selectedId}
+            onClose={close}
+            volver={volver}
+          />
+        )}
     </div>
   );
 }

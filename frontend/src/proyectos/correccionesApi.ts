@@ -17,7 +17,6 @@ export interface DatosAsignarCorrector {
   correctorNombre?: string | null;
   freelance: boolean;
   contratoConfirmado: boolean;
-  revisionPreviaConfirmada?: boolean;
 }
 
 export function asignarCorrector(correccionId: string, datos: DatosAsignarCorrector) {
@@ -27,7 +26,7 @@ export function asignarCorrector(correccionId: string, datos: DatosAsignarCorrec
   });
 }
 
-export function marcarInicioCorreccion(correccionId: string, fecha: string) {
+export function marcarInicioCorreccion(correccionId: string, fecha?: string) {
   return apiFetch<{ ok: true }>(`/correcciones/${correccionId}/inicio`, {
     method: 'PATCH',
     body: JSON.stringify({ fecha }),
@@ -36,7 +35,7 @@ export function marcarInicioCorreccion(correccionId: string, fecha: string) {
 
 export function registrarEntregaCorreccion(
   correccionId: string,
-  datos: { fecha: string; entregadoEn?: string; controlCambiosUrl?: string | null; informeTecnicoUrl?: string | null },
+  datos: { fecha?: string; entregadoEn?: string; controlCambiosUrl?: string | null; informeTecnicoUrl?: string | null },
 ) {
   return apiFetch<{ ok: true }>(`/correcciones/${correccionId}/entrega`, {
     method: 'PATCH',

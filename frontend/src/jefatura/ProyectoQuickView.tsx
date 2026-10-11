@@ -307,6 +307,7 @@ export function ProyectoQuickView({
             {tab === 'Resumen' && (
               <>
                 <EstadoContexto d={d} />
+                {p.procesos.filter(r=>r.decisionId).map(r=><p className="jp-risk-note" key={r.id}>Decisión pendiente: {r.nombre}. <Link to={`/?vista=decisiones&decision=${r.decisionId}`}>Ver decisión</Link></p>)}
                 <div className="jp-detail-grid">
                   <Dato
                     nombre="Servicio"
@@ -669,7 +670,7 @@ export function ProyectoQuickView({
               p.riesgo.atencion && (
                 <Link
                   className="jp-primary"
-                  to={`/?vista=seguimiento&proyecto=${id}`}
+                  to={`/?vista=seguimiento${p.estado === 'culminado' ? '&modo=correccion' : ''}&proyecto=${id}`}
                 >
                   <RrppIcon nombre="actividad" className="h-4 w-4" />
                   Revisar seguimiento

@@ -90,13 +90,16 @@ beforeEach(async () => {
 });
 
 describe('Inicio de Jefatura: snapshot, carga y ownership', () => {
-  it('vacío: cuatro KPIs cero y especialistas sin carga', async () => {
+  it('vacío: cinco KPIs cero y especialistas sin carga', async () => {
     const d = await obtenerDashboardJefatura(ahora);
     expect(d.summary).toEqual({
       porAsignar: 0,
       solicitudes: 0,
       enRiesgo: 0,
       express: 0,
+      // decisiones: resumen de Jefatura · Decisiones (ver decisiones.ts),
+      // sumado como KPI adicional por la integración de Decisiones.
+      decisiones: 0,
     });
     expect(d.teamCapacity.map((c) => c.carga)).toEqual([0, 0]);
   });

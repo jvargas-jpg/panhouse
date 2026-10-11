@@ -1,0 +1,8 @@
+ALTER TABLE "notificaciones" ADD COLUMN "decision_id" uuid;--> statement-breakpoint
+ALTER TABLE "notificaciones" ADD CONSTRAINT "notificaciones_decision_id_decisiones_id_fk" FOREIGN KEY ("decision_id") REFERENCES "public"."decisiones"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "decisiones_bandeja_idx" ON "decisiones" USING btree ("target_role","status","requested_at","id");--> statement-breakpoint
+CREATE INDEX "decisiones_proyecto_idx" ON "decisiones" USING btree ("proyecto_id","status");--> statement-breakpoint
+ALTER TABLE "decisiones" ADD CONSTRAINT "decisiones_origen_tipo_check" CHECK (("decisiones"."tipo"='revision_previa_correccion' AND "decisiones"."origin_correccion_id" IS NOT NULL AND "decisiones"."origin_calidad_fase_id" IS NULL) OR ("decisiones"."tipo"='coleccion_inconsistente' AND "decisiones"."origin_calidad_fase_id" IS NOT NULL AND "decisiones"."origin_correccion_id" IS NULL));--> statement-breakpoint
+ALTER TABLE "decisiones" ADD CONSTRAINT "decisiones_estado_check" CHECK ("decisiones"."status" IN ('pendiente','en_revision','informacion_solicitada','resuelta'));--> statement-breakpoint
+ALTER TABLE "decisiones" ADD CONSTRAINT "decisiones_version_check" CHECK ("decisiones"."version" > 0);--> statement-breakpoint
+ALTER TABLE "decisiones" ADD CONSTRAINT "decisiones_resolucion_check" CHECK (("decisiones"."status"='resuelta' AND "decisiones"."resolution_type" IN ('approved','rejected','cancelled') AND "decisiones"."resolved_at" IS NOT NULL AND "decisiones"."resolved_by_user_id" IS NOT NULL) OR ("decisiones"."status"<>'resuelta' AND "decisiones"."resolution_type" IS NULL AND "decisiones"."resolved_at" IS NULL AND "decisiones"."resolved_by_user_id" IS NULL));

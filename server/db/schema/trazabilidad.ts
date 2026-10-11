@@ -516,6 +516,7 @@ export const fichaCalidadFases = pgTable(
     solicitadoEn: timestamp('solicitado_en', { withTimezone: true }),
     dueAt: timestamp('due_at', { withTimezone: true }),
     iniciadoEn: timestamp('iniciado_en', { withTimezone: true }),
+    iniciadoPorId: uuid('iniciado_por_id').references(() => users.id),
     revisadoEn: timestamp('revisado_en', { withTimezone: true }),
     revisadoPorId: uuid('revisado_por_id').references(() => users.id),
     comentariosUrl: text('comentarios_url'),

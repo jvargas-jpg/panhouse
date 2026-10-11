@@ -4,6 +4,9 @@ import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import { crearProyectoDePrueba, crearRegistroSeguimiento, crearUsuario } from './helpers/fixtures.js';
 import { crearAppDePrueba } from './helpers/testApp.js';
+import { db } from '../server/db/client.js';
+import { proyectos } from '../server/db/schema/index.js';
+import { eq } from 'drizzle-orm';
 
 describe('GET /api/seguimiento', () => {
   beforeEach(async () => {
@@ -15,6 +18,7 @@ describe('GET /api/seguimiento', () => {
     await app.ready();
 
     const proyecto = await crearProyectoDePrueba();
+    await db.update(proyectos).set({notificadoJefatura:true}).where(eq(proyectos.id,proyecto.id));
     const analista = await crearUsuario('soporte_editorial');
     await crearRegistroSeguimiento({ proyectoId: proyecto.id, analistaId: analista.id, estatus: 'Entregado' });
     const cookie = await registrarYLoguear(app, 'jefe_area');
@@ -22,10 +26,10 @@ describe('GET /api/seguimiento', () => {
     const respuesta = await request(app.server).get('/api/seguimiento').set('Cookie', cookie);
 
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body.registros).toHaveLength(1);
-    expect(respuesta.body.registros[0].analista.id).toBe(analista.id);
-    expect(respuesta.body.registros[0].estatus).toBe('Entregado');
-    expect(respuesta.body.registros[0].proyecto.id).toBe(proyecto.id);
+    expect(respuesta.body.items).toHaveLength(1);
+    expect(respuesta.body.items[0].analista.id).toBe(analista.id);
+    expect(respuesta.body.items[0].estado).toBe('entregado');
+    expect(respuesta.body.items[0].proyecto.id).toBe(proyecto.id);
 
     await app.close();
   });
@@ -35,13 +39,14 @@ describe('GET /api/seguimiento', () => {
     await app.ready();
 
     const proyecto = await crearProyectoDePrueba();
+    await db.update(proyectos).set({notificadoJefatura:true}).where(eq(proyectos.id,proyecto.id));
     await crearRegistroSeguimiento({ proyectoId: proyecto.id });
     const cookie = await registrarYLoguear(app, 'jefe_area');
 
     const respuesta = await request(app.server).get('/api/seguimiento').set('Cookie', cookie);
 
     expect(respuesta.status).toBe(200);
-    expect(respuesta.body.registros[0].analista).toBeNull();
+    expect(respuesta.body.items[0].analista).toBeNull();
 
     await app.close();
   });

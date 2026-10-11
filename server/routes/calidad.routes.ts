@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { CRITERIOS_CALIDAD, coordinarCalidad, iniciarCalidad, listarCalidad, resolverCalidad } from '../helpers/calidad.js';
+import { CRITERIOS_CALIDAD, coordinarCalidad, escalarColeccionInconsistente, iniciarCalidad, listarCalidad, resolverCalidad } from '../helpers/calidad.js';
 import { ErrorDiseno } from '../helpers/diseno.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import { parseOrReply } from '../helpers/validate.js';
@@ -33,5 +33,14 @@ export async function calidadRoutes(app: FastifyInstance) {
   });
   app.patch('/:id/coordinacion', { preHandler: [requireAuth, requireRole('especialista')] }, async (req, reply) => {
     const p = parseOrReply(id, req.params, reply); const b = parseOrReply(coordinacion, req.body, reply); if (!p || !b) return; return coordinarCalidad(p.id, b, req.user!);
+  });
+  // Jefatura · Decisiones (docs/arquitectura/17-jefatura-decisiones.md) —
+  // escalación por colección inconsistente. NO cambia el checklist ni
+  // resuelve la ronda; solo expone el caso a Jefatura.
+  app.post('/:id/escalar-coleccion', { preHandler: [requireAuth, requireRole('soporte_editorial')] }, async (req, reply) => {
+    const p = parseOrReply(id, req.params, reply);
+    const b = parseOrReply(z.object({ motivo: z.string().trim().min(10).max(1000) }).strict(), req.body, reply);
+    if (!p || !b) return;
+    return escalarColeccionInconsistente(p.id, b.motivo, req.user!);
   });
 }

@@ -17,22 +17,25 @@ import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 
+// `revisionPreviaConfirmada` YA NO se acepta acá (Jefatura · Decisiones,
+// docs/arquitectura/17-jefatura-decisiones.md) -- ese booleano ahora
+// solo lo escribe resolverDecision() al aprobar la revisión previa.
 const asignarCorrectorSchema = z.object({
   correctorId: z.string().uuid().nullable().optional(),
   correctorNombre: z.string().min(1).nullable().optional(),
   freelance: z.boolean(),
   contratoConfirmado: z.boolean(),
-  revisionPreviaConfirmada: z.boolean().optional(),
-});
+}).strict();
 
-const fechaSchema = z.object({ fecha: z.string().min(1) });
+const fechaSchema = z.object({ fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(), motivo: z.string().trim().min(10).max(500).optional() }).strict();
 
 const entregaSchema = z.object({
-  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  fecha: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  motivo: z.string().trim().min(10).max(500).optional(),
   entregadoEn: z.string().datetime({ offset: true }).refine((s) => new Date(s).getTime() <= Date.now(), 'La entrega no puede estar en el futuro').optional(),
   controlCambiosUrl: z.string().nullable().optional(),
   informeTecnicoUrl: z.string().nullable().optional(),
-});
+}).strict();
 
 const cierreSchema = z.object({
   resultado: z.enum(['buena', 'regular', 'deficiente']),
@@ -111,7 +114,11 @@ export async function correccionesRoutes(app: FastifyInstance) {
       const acceso = await verificarAccesoAEjecucion(params.id, request.user);
       if (!acceso.ok) return reply.code(acceso.status).send({ error: acceso.error });
 
-      await marcarInicioCorreccion(params.id, body.fecha, request.user.id);
+      const diaActual = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      if (body.fecha && body.fecha !== diaActual && !body.motivo) return reply.code(400).send({error:'El registro manual de una fecha histórica requiere motivo'});
+      if (body.fecha && (isNaN(Date.parse(body.fecha)) || new Date(body.fecha).toISOString().slice(0,10) !== body.fecha || body.fecha > diaActual)) return reply.code(400).send({error:'Inicio inválido o futuro'});
+
+      await marcarInicioCorreccion(params.id, body.fecha, request.user.id, body.motivo);
       return reply.send({ ok: true });
     },
   );
@@ -129,6 +136,10 @@ export async function correccionesRoutes(app: FastifyInstance) {
       const acceso = await verificarAccesoAEjecucion(params.id, request.user);
       if (!acceso.ok) return reply.code(acceso.status).send({ error: acceso.error });
 
+      const diaActual = new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+      if ((body.entregadoEn || body.fecha && body.fecha !== diaActual) && !body.motivo) return reply.code(400).send({error:'El registro manual de tiempos requiere motivo'});
+      if (body.fecha && (isNaN(Date.parse(body.fecha)) || new Date(body.fecha).toISOString().slice(0,10)!==body.fecha || body.fecha>diaActual)) return reply.code(400).send({error:'Entrega inválida o futura'});
+      if (body.fecha && body.entregadoEn && new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(body.entregadoEn))!==body.fecha) return reply.code(400).send({error:'La fecha y el instante de entrega no coinciden'});
       await registrarEntregaCorreccion(params.id, body, request.user.id);
       return reply.send({ ok: true });
     },

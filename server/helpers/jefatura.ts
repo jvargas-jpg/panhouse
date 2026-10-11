@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import {
   auditLogs,
@@ -30,6 +30,7 @@ import {
   resolverEspecialistaActual,
 } from './carga.js';
 import { calcularCronograma, resolverPlazosServicio, type PlazosServicio } from './cronograma.js';
+import { resumenDecisiones } from './decisiones.js';
 import { nombreServicioProyecto } from '../../shared/planificacion.js';
 import {
   determinarDiasPlazoAlerta,
@@ -171,6 +172,9 @@ export const NOMBRES_PROCESO: Record<string, string> = {
   diseno: 'Diseño',
   revision_interna_cubierta: 'Revisión de cubierta',
   calidad: 'Calidad',
+  validacion: 'Validación',
+  fase_calidad_1: 'Fase de Calidad 1',
+  revision_final: 'Revisión final',
   soporte_digital: 'Soporte digital',
   lanzamiento: 'Lanzamiento',
   impresion: 'Impresión',
@@ -229,6 +233,7 @@ export async function obtenerDashboardJefatura(
       db
         .select({
           item: workItems,
+          decisionId: sql<string | null>`(SELECT d.id FROM decisiones d WHERE d.origin_work_item_id=${workItems.id} AND d.target_role='jefe_area' AND d.status<>'resuelta' ORDER BY d.requested_at,d.id LIMIT 1)`,
           correccion: {
             dueAt: correcciones.dueAt,
             fechaEntrega: correcciones.fechaEntrega,
@@ -335,7 +340,7 @@ export async function obtenerDashboardJefatura(
             t.item.tipo !== 'intake_rrpp' &&
             t.item.tipo !== 'asignacion_especialista',
         )
-        .map(({ item, correccion, diseno, entregaDiseno, calidad }) => {
+        .map(({ item, decisionId, correccion, diseno, entregaDiseno, calidad }) => {
           const limite = correccion?.dueAt ?? diseno?.dueAt ?? calidad?.dueAt;
           const plazo = correccion?.dueAt
             ? evaluarPlazoCorreccion(
@@ -351,9 +356,10 @@ export async function obtenerDashboardJefatura(
                 : null;
           return {
             id: item.id,
+            decisionId,
             tipo: item.tipo,
             nombre: NOMBRES_PROCESO[item.tipo] ?? 'Proceso editorial',
-            estado: item.estado,
+            estado: decisionId && item.tipo==='correccion' ? 'bloqueado' : item.estado,
             vence: limite?.toISOString() ?? item.fechaFinPautada,
             vencido: limite
               ? plazo === 'vencido'
@@ -517,6 +523,7 @@ export async function obtenerDashboardJefatura(
       ];
     })
     .sort((a, b) => b.creadaEn.localeCompare(a.creadaEn));
+  const resumenDec = await resumenDecisiones();
   return {
     actualizadoEn: ahora.toISOString(),
     summary: {
@@ -527,6 +534,7 @@ export async function obtenerDashboardJefatura(
         (p) =>
           p.express.estado === 'posible' || p.express.estado === 'confirmado',
       ).length,
+      decisiones: resumenDec.pendientes,
     },
     proyectos: listado,
     teamCapacity,

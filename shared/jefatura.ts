@@ -10,6 +10,7 @@ export interface ExpressJefatura {
   motivo: string | null;
 }
 export interface ProcesoJefatura {
+  decisionId?: string | null;
   id: string;
   tipo: string;
   nombre: string;
@@ -136,6 +137,10 @@ export interface DashboardJefatura {
     solicitudes: number;
     enRiesgo: number;
     express: number;
+    // Jefatura · Decisiones (docs/arquitectura/17-jefatura-decisiones.md)
+    // -- pendientes + en_revision, ADITIVO a `solicitudes` (conceptos
+    // distintos, ver comentario en server/helpers/jefatura.ts).
+    decisiones: number;
   };
   proyectos: ProyectoJefatura[];
   teamCapacity: CapacidadJefatura[];

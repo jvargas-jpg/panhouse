@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AutoresPage } from './autores/AutoresPage';
 import { LoginPage } from './auth/LoginPage';
+import { RespuestaDecisionPage } from './jefatura/RespuestaDecisionPage';
 import { RequireAuth } from './auth/RequireAuth';
 import { RegistrarPagoPage } from './comercial/RegistrarPagoPage';
 import { IndicadoresLoading } from './comercial/IndicadoresComponents';
@@ -31,6 +32,7 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/decisiones/:id/responder" element={<RespuestaDecisionPage />} />
           {/* Rutas explícitas del CRM que antes solo se veía como pestaña
               interna de AutoresPage.tsx en "/" — a pedido explícito del
               negocio, ahora que comercial tiene su propio Inicio

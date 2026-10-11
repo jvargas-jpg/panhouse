@@ -14,6 +14,8 @@ export const rrppEnviadoAtSql = sql<string | null>`(select min(evento.created_at
 // Mantener este tipo sincronizado es responsabilidad de quien agrega un
 // evento nuevo; no es una validación de runtime.
 export type AccionAuditoria =
+  | 'SEGUIMIENTO_NOTA_REGISTRADA' | 'SEGUIMIENTO_EVALUACION_REGISTRADA'
+  | 'SEGUIMIENTO_PAGO_REGISTRADO' | 'SEGUIMIENTO_DATOS_REGISTRADOS'
   | 'EXPRESS_CONFIRMADO'
   | 'PRIORIDAD_NORMAL_CONFIRMADA'
   | 'FICHA_DOCUMENTAL_ACTUALIZADA'
@@ -51,12 +53,15 @@ export type AccionAuditoria =
   | 'DISENO_ENVIAR_AUTOR' | 'DISENO_FEEDBACK' | 'DISENO_APROBAR_AUTOR' | 'DISENO_HANDOFF_CALIDAD'
   | 'CUBIERTA_REVISION_INTERNA' | 'CUBIERTA_REVISION_CREATIVA'
   | 'CALIDAD_INICIADA' | 'CALIDAD_REVISADA' | 'CALIDAD_ENVIADA_AUTOR'
-  | 'CALIDAD_FEEDBACK_AUTOR' | 'CALIDAD_APROBADA_AUTOR' | 'CALIDAD_REVISION_FINAL_SOLICITADA';
+  | 'CALIDAD_FEEDBACK_AUTOR' | 'CALIDAD_APROBADA_AUTOR' | 'CALIDAD_REVISION_FINAL_SOLICITADA'
+  // Jefatura · Decisiones (docs/arquitectura/17-jefatura-decisiones.md).
+  | 'DECISION_CREADA' | 'DECISION_REVISION_INICIADA' | 'DECISION_INFORMACION_SOLICITADA'
+  | 'DECISION_INFORMACION_RESPONDIDA' | 'DECISION_RESUELTA';
 
 export interface RegistrarEventoInput {
   actorId: string | null;
   accion: AccionAuditoria;
-  entityType: 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento';
+  entityType: 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision';
   entityId: string;
   proyectoId?: string | null;
   detalles?: Record<string, unknown>;

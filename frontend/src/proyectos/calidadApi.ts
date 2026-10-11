@@ -21,6 +21,7 @@ export interface CoordinacionCalidad {
   cantidadComentarios?: number; feedbackAutorDueAt?: string; numerosLegalesUrl?: string;
 }
 export const fetchCalidad = (proyectoId?: string) => apiFetch<{ rondas: RondaCalidad[] }>(proyectoId ? `/calidad/proyecto/${proyectoId}` : '/calidad/bandeja');
+export const escalarColeccion = (id:string,motivo:string) => apiFetch<{ok:true;yaExistia:boolean}>(`/calidad/${id}/escalar-coleccion`,{method:'POST',body:JSON.stringify({motivo})});
 export const iniciarCalidad = (id: string, dueAt?: string) => apiFetch(`/calidad/${id}/inicio`, { method: 'PATCH', body: JSON.stringify({ dueAt }) });
 export const resolverCalidad = (id: string, body: ResultadoCalidad) => apiFetch(`/calidad/${id}/resultado`, { method: 'PATCH', body: JSON.stringify(body) });
 export const coordinarCalidad = (id: string, body: CoordinacionCalidad) => apiFetch(`/calidad/${id}/coordinacion`, { method: 'PATCH', body: JSON.stringify(body) });

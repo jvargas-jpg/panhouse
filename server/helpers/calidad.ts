@@ -1,7 +1,8 @@
 import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { autores, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, fichasTrazabilidad, notificaciones, proyectos, users, workItems, type Rol } from '../db/schema/index.js';
+import { autores, colecciones, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, fichasTrazabilidad, notificaciones, proyectos, users, workItems, type Rol } from '../db/schema/index.js';
 import { registrarEvento, type AccionAuditoria } from './auditLog.js';
+import { crearDecisionColeccionInconsistente } from './decisiones.js';
 import { ErrorDiseno } from './diseno.js';
 import { plazoDiseno } from './disenoSla.js';
 import type { Tx } from './tx.js';
@@ -48,11 +49,38 @@ export async function iniciarCalidad(id: string, dueAt: string | undefined, acto
   return conRonda(id, actor, 'soporte_editorial', async (tx, q, _v, _d, p) => {
     if (q.iniciadoEn) { exigir(!dueAt || q.dueAt?.getTime() === new Date(dueAt).getTime(), 'El plazo ya fue registrado'); return { ok: true }; }
     exigir(!q.revisadoEn, 'Revisión ya resuelta');
-    await tx.update(fichaCalidadFases).set({ iniciadoEn: new Date(), dueAt: dueAt ? new Date(dueAt) : q.dueAt }).where(eq(fichaCalidadFases.id, id));
+    await tx.update(fichaCalidadFases).set({ iniciadoEn: new Date(), iniciadoPorId: actor.id, dueAt: dueAt ? new Date(dueAt) : q.dueAt }).where(eq(fichaCalidadFases.id, id));
     await transicionarWorkItemPorId(tx, q.workItemId!, 'en_progreso');
     await evento(tx, q, p.id, actor.id, 'CALIDAD_INICIADA'); return { ok: true };
   });
 }
+// Jefatura · Decisiones (docs/arquitectura/17-jefatura-decisiones.md) —
+// escalación real confirmada: "Calidad debe validar que la colección
+// asignada corresponda al proyecto; si detecta discrepancia, el caso
+// debe elevarse a Jefatura, que debe revisarlo con RRPP." Distinto de
+// un checklist reprobado normal (eso solo manda la versión de vuelta a
+// Diseño, ver resolverCalidad) -- acá el problema es que el dato
+// REGISTRADO del proyecto podría estar mal, algo que Diseño no puede
+// arreglar rehaciendo su trabajo. No toca el checklist ni el lifecycle
+// de la ronda -- es una señal PARALELA a Jefatura, nunca le cambia el
+// campo de RRPP desde acá (RRPP sigue siendo el owner del dato).
+export async function escalarColeccionInconsistente(id: string, motivo: string, actor: Actor) {
+  return conRonda(id, actor, 'soporte_editorial', async (tx, q, _v, _d, p) => {
+    exigir(q.numeroFase===1 || q.numeroFase===3,'La colección se revisa en F1 o Revisión final',400);
+    exigir(!q.revisadoEn && !['retirado','culminado'].includes(p.estado),'Esta ronda ya no admite una escalación',409);
+    const [coleccion] = p.coleccionId ? await tx.select({ nombre: colecciones.nombre }).from(colecciones).where(eq(colecciones.id, p.coleccionId)) : [undefined];
+    const { yaExistia } = await crearDecisionColeccionInconsistente(tx, {
+      proyectoId: p.id,
+      calidadFaseId: q.id,
+      workItemId: q.workItemId,
+      requestedByUserId: actor.id,
+      coleccionRegistrada: coleccion?.nombre ?? null,
+      motivo,
+    });
+    return { ok: true, yaExistia };
+  });
+}
+
 export interface ResultadoCalidad {
   aprobar: boolean; cantidadComentarios: number; cantidadPaginas?: number; comentariosUrl?: string;
   cambiosPendientesPorAplicar?: number; cambiosNuevosSugeridos?: number; observaciones?: string;
@@ -81,7 +109,7 @@ export async function resolverCalidad(id: string, datos: ResultadoCalidad, actor
     } else exigir(datos.cantidadComentarios > 0 && datos.comentariosUrl, 'Adjunte el PDF comentado y su cantidad de comentarios', 400);
     const [persona] = await tx.select({ nombre: users.nombre }).from(users).where(eq(users.id, actor.id));
     const ahora = new Date();
-    await tx.update(fichaCalidadFases).set({ aprobado: datos.aprobar, iniciadoEn: q.iniciadoEn ?? ahora, revisadoEn: ahora, revisadoPorId: actor.id,
+    await tx.update(fichaCalidadFases).set({ aprobado: datos.aprobar, iniciadoEn: q.iniciadoEn ?? ahora, iniciadoPorId: q.iniciadoPorId ?? actor.id, revisadoEn: ahora, revisadoPorId: actor.id,
       nombreQuienRecibe: persona?.nombre, cantidadComentarios: datos.cantidadComentarios, comentariosUrl: datos.comentariosUrl ?? null, observaciones: datos.observaciones ?? null,
       cantidadPaginas: datos.cantidadPaginas ?? null, cambiosPendientesPorAplicar: datos.cambiosPendientesPorAplicar ?? null, cambiosNuevosSugeridos: datos.cambiosNuevosSugeridos ?? null,
       checklist: datos.checklist ?? null,

@@ -69,6 +69,7 @@ export const correcciones = pgTable('correcciones', {
   contratoConfirmado: boolean('contrato_confirmado').notNull().default(false),
 
   fechaAsignada: date('fecha_asignada'),
+  asignadoEn: timestamp('asignado_en', { withTimezone: true }),
   // timestamp, no date (checkpoint 5B §0.1): algunos alcances tienen
   // SLA de 12h (medio día), no 1 día completo — un `date` solo puede
   // representar el día, perdiendo esa mitad. Derivado centralmente del
@@ -77,6 +78,7 @@ export const correcciones = pgTable('correcciones', {
   // recalculado después si el SLA de referencia cambia.
   dueAt: timestamp('due_at', { withTimezone: true }),
   fechaInicio: date('fecha_inicio'),
+  iniciadoEn: timestamp('iniciado_en', { withTimezone: true }),
   fechaEntrega: date('fecha_entrega'), // Compatibilidad legacy, sin backfill de horas ficticias.
   entregadoEn: timestamp('entregado_en', { withTimezone: true }),
 

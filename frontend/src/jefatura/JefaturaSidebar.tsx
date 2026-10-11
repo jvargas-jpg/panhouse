@@ -1,11 +1,20 @@
 import { Link } from 'react-router-dom';
 import { RrppIcon } from '../rrpp/RrppIcons';
+// 'solicitudes' se conserva en el tipo/lista de vistas válidas (un
+// enlace viejo a /?vista=solicitudes sigue funcionando, cae en la MISMA
+// vista 'inicio' con la pestaña Solicitudes preseleccionada, ver
+// PanelJefaturaPage.tsx) -- pero YA NO tiene su propio ítem de sidebar
+// (docs/arquitectura/17-jefatura-decisiones.md §26): es un atajo a una
+// pestaña que ya vive DENTRO de Inicio, no una página aparte: quitarla
+// del nav no pierde nada, ese mismo contenido sigue a un clic desde
+// Inicio. "Decisiones" sí es una página real nueva.
 export type VistaJefatura =
   | 'inicio'
   | 'asignaciones'
   | 'proyectos'
   | 'seguimiento'
   | 'solicitudes'
+  | 'decisiones'
   | 'indicadores';
 export const VISTAS_JEFATURA = [
   'inicio',
@@ -13,6 +22,7 @@ export const VISTAS_JEFATURA = [
   'proyectos',
   'seguimiento',
   'solicitudes',
+  'decisiones',
   'indicadores',
 ] as const;
 const items = [
@@ -20,7 +30,7 @@ const items = [
   { id: 'asignaciones', nombre: 'Asignaciones y carga', icono: 'proceso' },
   { id: 'proyectos', nombre: 'Proyectos', icono: 'proyectos' },
   { id: 'seguimiento', nombre: 'Seguimiento', icono: 'actividad' },
-  { id: 'solicitudes', nombre: 'Solicitudes', icono: 'ingreso' },
+  { id: 'decisiones', nombre: 'Decisiones', icono: 'ingreso' },
   { id: 'indicadores', nombre: 'Indicadores', icono: 'indicadores' },
 ] as const;
 export function JefaturaSidebar({
