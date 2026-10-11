@@ -15,7 +15,6 @@ import {
   ErrorJefatura,
   JefaturaKpis,
   PriorityTracking,
-  ProjectIdentity,
   RequestsList,
   TeamCapacityCard,
   fechaJefatura,
@@ -30,6 +29,8 @@ import { SeguimientoPage } from './SeguimientoPage';
 import { SeguimientoCorreccionPage } from './SeguimientoCorreccionPage';
 import './jefatura.css';
 import { AsignacionesCargaPage } from './AsignacionesCargaPage';
+import { ProyectosJefaturaPage } from './ProyectosJefaturaPage';
+import { TopBar } from '../layout/TopBar';
 import type { ProyectoJefatura } from '../../../shared/jefatura';
 
 export function PanelJefaturaPage() {
@@ -67,7 +68,7 @@ export function PanelJefaturaPage() {
   const dashboard = useQuery({
     queryKey: ['jefatura', 'dashboard'],
     queryFn: fetchDashboardJefatura,
-    enabled: user?.rol === 'jefe_area' && vista !== 'asignaciones',
+    enabled: user?.rol === 'jefe_area' && vista !== 'asignaciones' && vista !== 'proyectos',
     staleTime: 0,
     refetchOnMount: 'always',
     refetchInterval: 60000,
@@ -117,7 +118,7 @@ export function PanelJefaturaPage() {
   const titulos: Record<VistaJefatura, string> = {
     inicio: `Hola, ${user?.nombre ?? '…'}`,
     asignaciones: 'Asignaciones y carga',
-    proyectos: 'Proyectos recibidos',
+    proyectos: 'Proyectos',
     seguimiento: 'Seguimiento',
     solicitudes: 'Solicitudes',
     indicadores: 'Indicadores de Jefatura',
@@ -129,7 +130,7 @@ export function PanelJefaturaPage() {
         <img
           src="/brand/panhouse-logo.webp"
           alt="PanHouse Casa Editorial"
-          className={`h-auto object-contain ${vista === 'asignaciones' ? 'w-[176px]' : 'w-[132px]'}`}
+          className={`h-auto object-contain ${vista === 'asignaciones' || vista === 'proyectos' ? 'w-[176px]' : 'w-[132px]'}`}
         />
       }
       footer={
@@ -142,8 +143,9 @@ export function PanelJefaturaPage() {
         </div>
       }
       contentMaxWidth="max-w-[1760px]"
-      contentClassName="p-4 sm:p-7"
+      contentClassName={vista === 'proyectos' ? 'p-4 sm:px-6 sm:py-4' : 'p-4 sm:p-7'}
       sidebarBreakpoint="lg"
+      sidebarCompact={vista === 'proyectos'}
       overlays={
         <>
           {proyecto && (
@@ -163,7 +165,7 @@ export function PanelJefaturaPage() {
         </>
       }
     >
-      <div className="jefatura">
+      <div className={`jefatura ${vista === 'proyectos' ? 'jp-page' : ''}`}>
         <JefaturaSidebar vista={vista} mobile />
         {vista !== 'asignaciones' && (
           <header className="jf-page-header">
@@ -173,7 +175,7 @@ export function PanelJefaturaPage() {
               <p>
                 {vista === 'inicio'
                   ? 'Supervisa la operación editorial, distribuye la carga del equipo y atiende los proyectos que requieren decisión.'
-                  : 'Revisa el contexto operativo y continúa desde el expediente del proyecto.'}
+                  : vista === 'proyectos' ? 'Vista global de los proyectos de Producción. Consulta su estado, equipo asignado y próximos hitos.' : 'Revisa el contexto operativo y continúa desde el expediente del proyecto.'}
               </p>
             </div>
             {vista === 'inicio' && (
@@ -182,6 +184,7 @@ export function PanelJefaturaPage() {
                 Estado actual
               </span>
             )}
+            {vista === 'proyectos' && <TopBar compacto />}
           </header>
         )}
         {vista === 'asignaciones' ? (
@@ -192,6 +195,8 @@ export function PanelJefaturaPage() {
               setParams(previous => { const next = new URLSearchParams(previous); next.set('proyecto', p.id); next.set('decision', modo); return next; });
             }} />
           </>
+        ) : vista === 'proyectos' ? (
+          <ProyectosJefaturaPage />
         ) : vista === 'indicadores' ? (
           <section className="jf-card jf-placeholder">
             <RrppIcon nombre="indicadores" className="h-8 w-8" />
@@ -333,54 +338,7 @@ export function PanelJefaturaPage() {
                   </>
                 )}
               </>
-            ) : (
-              <div className="jf-main-grid">
-                <section className="jf-card">
-                  <div className="jf-card-head">
-                    <div>
-                      <h2>Proyectos recibidos de RRPP</h2>
-                      <p>
-                        Abre el expediente para supervisar; compara al equipo
-                        antes de asignar.
-                      </p>
-                    </div>
-                  </div>
-                  {dashboard.isLoading ? (
-                    <div className="jf-list-skeleton">
-                      <div className="jf-skeleton" />
-                    </div>
-                  ) : !dashboard.data ? (
-                    <p className="jf-empty">
-                      Los proyectos no están disponibles.
-                    </p>
-                  ) : !dashboard.data.proyectos.length ? (
-                    <p className="jf-empty">
-                      No hay proyectos recibidos en este momento.
-                    </p>
-                  ) : (
-                    <ul className="jf-project-list">
-                      {dashboard.data.proyectos.map((p) => (
-                        <li key={p.id}>
-                          <ProjectIdentity p={p} />
-                          <div>
-                            <strong>
-                              {p.especialista?.nombre ??
-                                'Pendiente de asignación'}
-                            </strong>
-                            <span className="jf-meta">{p.servicio.nombre}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-                <TeamCapacityCard
-                  equipo={dashboard.data?.teamCapacity}
-                  loading={dashboard.isLoading}
-                  completo
-                />
-              </div>
-            )}
+            ) : null}
           </>
         )}
       </div>

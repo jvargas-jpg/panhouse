@@ -23,6 +23,8 @@ export interface ProyectoJefatura {
   codigo: string;
   titulo: string | null;
   creadoEn: string;
+  fechaObjetivo?: string | null;
+  portadaUrl?: string | null;
   entregadoJefatura: boolean;
   asignacionDesincronizada: boolean;
   impactoCarga: number;
@@ -147,4 +149,31 @@ export interface ActividadJefatura {
   actor: string;
   texto: string;
   fecha: string;
+}
+
+export type TabProyectosJefatura = 'todos' | 'porAsignar' | 'enProduccion' | 'enRiesgo' | 'express' | 'completados';
+export type EstadoPortafolio = 'porAsignar' | 'enProduccion' | 'enRiesgo' | 'pausado' | 'standBy' | 'completado' | 'asignado';
+export interface FiltrosProyectosJefatura {
+  tab: TabProyectosJefatura;
+  q: string;
+  servicioId?: string;
+  especialistaId?: string;
+  estado?: EstadoPortafolio;
+  orden: 'urgentes' | 'recientes' | 'fecha' | 'autor';
+  page: number;
+  pageSize: number;
+}
+export interface PortafolioJefatura {
+  items: ProyectoJefatura[];
+  counts: Record<TabProyectosJefatura, number>;
+  tabCounts: Record<TabProyectosJefatura, number>;
+  filters: { servicios: { id: string; nombre: string }[]; especialistas: { id: string; nombre: string }[] };
+  pagination: { page: number; pageSize: number; pages: number; total: number };
+}
+export interface QuickViewJefatura {
+  proyecto: ProyectoJefatura;
+  contexto: ComparacionAsignacion['contexto'];
+  resumenRrpp: string | null;
+  equipo: { id: string; nombre: string; rol: string; proceso: string | null; asignadoEn: string | null }[];
+  hitos: { id: string; nombre: string; fase: string | null; estado: string; fecha: string | null; gate: string | null }[];
 }

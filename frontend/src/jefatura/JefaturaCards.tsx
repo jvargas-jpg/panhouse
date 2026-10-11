@@ -130,7 +130,7 @@ export function ProjectIdentity({
   return (
     <Link
       className="jf-project-name"
-      to={`/proyectos/${p.id}/ficha-trazabilidad`}
+      to={`/?vista=proyectos&proyecto=${p.id}`}
     >
       <strong>{p.autores}</strong>
       <span>#{p.codigo}</span>

@@ -1,0 +1,100 @@
+{
+  "source": "isolated database fixtures, real API; never development project writes",
+  "checks": [
+    {
+      "label": "Desktop 1440×900",
+      "metrics": {
+        "viewport": 1440,
+        "document": 1440,
+        "content": 1168
+      }
+    },
+    {
+      "label": "Counts from real API",
+      "counts": {
+        "todos": 12,
+        "porAsignar": 3,
+        "enProduccion": 7,
+        "enRiesgo": 1,
+        "express": 1,
+        "completados": 1
+      }
+    },
+    {
+      "label": "Pending opens existing decision flow",
+      "comercial": "Completo",
+      "rrpp": "Completo",
+      "subtipo": "Capítulo"
+    },
+    {
+      "label": "Selection updates URL; detail tabs, browser back/forward work"
+    },
+    {
+      "label": "Confirmed Express and central compression shown",
+      "days": 69
+    },
+    {
+      "label": "Completed has only project and traceability actions"
+    },
+    {
+      "label": "Desktop quick-view actions visible without scrolling",
+      "bounds": {
+        "x": 1080.609375,
+        "y": 773.421875,
+        "width": 320.390625,
+        "height": 90
+      }
+    },
+    {
+      "label": "Pagination shows correct range; selection preserves page 2"
+    },
+    {
+      "label": "Activity failure remains local; retry provided"
+    },
+    {
+      "label": "Tablet list 768×1024",
+      "metrics": {
+        "viewport": 768,
+        "document": 768,
+        "content": 720
+      }
+    },
+    {
+      "label": "Tablet drawer",
+      "metrics": {
+        "viewport": 768,
+        "document": 768,
+        "content": 720,
+        "drawer": 420
+      }
+    },
+    {
+      "label": "Mobile list 375×812",
+      "metrics": {
+        "viewport": 375,
+        "document": 375,
+        "content": 343
+      }
+    },
+    {
+      "label": "Mobile full-screen",
+      "metrics": {
+        "viewport": 375,
+        "document": 375,
+        "content": 343,
+        "drawer": 375
+      }
+    },
+    {
+      "label": "Tablet drawer and mobile full-screen; Escape, close and CTA visible"
+    },
+    {
+      "label": "Assignment via existing decision flow updates quick view and removes recommendation/CTA on return; no reload"
+    },
+    {
+      "label": "No browser JavaScript errors"
+    }
+  ],
+  "unavailableStates": [],
+  "errors": []
+}

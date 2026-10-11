@@ -53,13 +53,13 @@ describe('rutas de proyectos', () => {
   });
 
   describe('POST /api/proyectos', () => {
-    it('permite a jefe_area crear un proyecto (y su ficha vacía)', async () => {
+    it('permite a Comercial crear un proyecto (y su ficha vacía)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
       const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
       const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
-      const cookie = await registrarYLoguear(app, 'jefe_area');
+      const cookie = await registrarYLoguear(app, 'comercial');
 
       const respuesta = await request(app.server)
         .post('/api/proyectos')
@@ -88,7 +88,7 @@ describe('rutas de proyectos', () => {
 
       const [autor, unidad, presupuesto] = await Promise.all([crearAutor(), crearUnidad(), crearPresupuesto()]);
       const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
-      const cookie = await registrarYLoguear(app, 'jefe_area');
+      const cookie = await registrarYLoguear(app, 'comercial');
 
       const datos = { autorIds: [autor.id], servicioId: servicio.id, unidadId: unidad.id, presupuestoId: presupuesto.id, fechaProgramadaInicio: '2026-01-01' };
       const [primero, segundo] = await Promise.all([
@@ -167,7 +167,7 @@ describe('rutas de proyectos', () => {
         crearPresupuesto(),
       ]);
       const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
-      const cookie = await registrarYLoguear(app, 'jefe_area');
+      const cookie = await registrarYLoguear(app, 'comercial');
 
       const respuesta = await request(app.server)
         .post('/api/proyectos')
@@ -195,7 +195,7 @@ describe('rutas de proyectos', () => {
 
       const [unidad, presupuesto] = await Promise.all([crearUnidad(), crearPresupuesto()]);
       const servicio = await crearServicio({ codigo: 'EF', nombre: 'Escritura fantasma', pesoComplejidad: 4, plazoDias: 180 });
-      const cookie = await registrarYLoguear(app, 'jefe_area');
+      const cookie = await registrarYLoguear(app, 'comercial');
 
       const respuesta = await request(app.server)
         .post('/api/proyectos')
@@ -286,9 +286,8 @@ describe('rutas de proyectos', () => {
       await app.close();
     });
 
-    // Cambio de flujo confirmado: jefe_area y comercial crean proyectos,
-    // el especialista no (revierte una decisión anterior a propósito).
-    it('rechaza crear un proyecto a un rol distinto de jefe_area/comercial (ej. especialista)', async () => {
+    // El alta nace exclusivamente en Comercial; Jefatura recibe el handoff.
+    it('rechaza crear un proyecto a un rol distinto de Comercial (ej. especialista)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 

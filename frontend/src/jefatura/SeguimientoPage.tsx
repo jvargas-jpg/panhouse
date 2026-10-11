@@ -1,10 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Modal } from '../autores/Modal';
 import { formatearFecha } from '../proyectos/campos';
 import type { RegistroSeguimiento } from '../types/api';
 import { RegistroSeguimientoForm } from './RegistroSeguimientoForm';
 import { fetchSeguimiento } from './seguimientoApi';
+import { fetchQuickView } from './portafolioApi';
 
 function formatearHora(hora: string | null): string {
   if (!hora) return '—';
@@ -118,12 +120,21 @@ function FilaRegistro({ registro, onEditar }: { registro: RegistroSeguimiento; o
 // conectado al backend (ver seguimiento.routes.ts) — el modal "+ Nuevo
 // Registro" dejó de ser un stub.
 export function SeguimientoPage() {
+  const [params] = useSearchParams();
+  const proyectoId = params.get('proyecto');
+  const contexto = useQuery({ queryKey: ['jefatura', 'quick-view', proyectoId], queryFn: () => fetchQuickView(proyectoId!), enabled: !!proyectoId });
   const query = useQuery({ queryKey: ['seguimiento'], queryFn: fetchSeguimiento });
+  const registros = proyectoId ? query.data?.registros.filter(r => r.proyecto.id === proyectoId) ?? [] : query.data?.registros ?? [];
   const [registroEnEdicion, setRegistroEnEdicion] = useState<RegistroSeguimiento | null>(null);
   const [modalNuevoAbierto, setModalNuevoAbierto] = useState(false);
 
   return (
     <div className="mx-auto w-full max-w-[1600px] overflow-x-auto p-6">
+      {proyectoId && <section className="jf-card mb-4 p-4">
+        <p className="font-semibold">{contexto.data ? `${contexto.data.proyecto.titulo ?? contexto.data.proyecto.autores} · #${contexto.data.proyecto.codigo}` : contexto.isError ? 'Proyecto no disponible en el ámbito de Jefatura' : 'Cargando contexto del proyecto…'}</p>
+        {contexto.data && <p className="mt-2 text-sm text-gray-500">{contexto.data.proyecto.riesgo.causas.join(' · ') || 'Sin alertas operativas registradas.'}</p>}
+        <div className="mt-3 flex flex-wrap gap-4 text-sm"><Link to={`/?vista=proyectos&proyecto=${proyectoId}`}>Volver al proyecto</Link><Link to="/?vista=seguimiento">Ver todo el seguimiento</Link></div>
+      </section>}
       <div className="mb-6 flex items-center justify-between gap-4">
         <h2 className="flex items-center gap-2 text-2xl font-bold text-gray-900">
           <span className="h-2 w-2 rounded-full bg-dorado" /> Control de Tiempos y Producción
@@ -143,13 +154,13 @@ export function SeguimientoPage() {
         </p>
       )}
 
-      {query.data && query.data.registros.length === 0 && (
+      {query.data && registros.length === 0 && (
         <div className="rounded-xl border border-dashed border-gray-200 bg-white p-10 text-center">
-          <p className="text-sm text-gray-500">Todavía no hay registros de seguimiento cargados.</p>
+          <p className="text-sm text-gray-500">{proyectoId ? 'No hay registros de seguimiento cargados para este proyecto.' : 'Todavía no hay registros de seguimiento cargados.'}</p>
         </div>
       )}
 
-      {query.data && query.data.registros.length > 0 && (
+      {query.data && registros.length > 0 && (
         <div className="min-w-[1600px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
           <table className="w-full border-collapse text-left">
             <thead className="border-b border-gray-200 bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500">
@@ -162,7 +173,7 @@ export function SeguimientoPage() {
               </tr>
             </thead>
             <tbody>
-              {query.data.registros.map((registro) => (
+              {registros.map((registro) => (
                 <FilaRegistro key={registro.id} registro={registro} onEditar={() => setRegistroEnEdicion(registro)} />
               ))}
             </tbody>

@@ -182,10 +182,9 @@ export async function proyectosRoutes(app: FastifyInstance) {
       return reply.send({ proyectos });
     },
   );
-  // comercial también puede crear proyectos desde su propio CRM (modal
-  // "Nuevo Proyecto" en AutoresPage.tsx) — mismo endpoint y validación
-  // que jefe_area, ningún campo nuevo.
-  app.post('/', { preHandler: [requireAuth, requireRole('jefe_area', 'comercial')] }, async (request, reply) => {
+  // El alta nace exclusivamente en Comercial (modal del CRM de Autores).
+  // Jefatura recibe los proyectos mediante handoff; no crea registros.
+  app.post('/', { preHandler: [requireAuth, requireRole('comercial')] }, async (request, reply) => {
     const body = parseOrReply(crearProyectoSchema, request.body, reply);
     if (!body) return;
 

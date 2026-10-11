@@ -187,7 +187,9 @@ const destinos: Record<string, string> = {
 
 export async function obtenerDashboardJefatura(
   ahora = new Date(),
+  opciones: { historico?: boolean } = {},
 ): Promise<DashboardJefatura> {
+  const estados = opciones.historico ? [...ESTADOS_ACTIVOS, 'culminado' as const] : ESTADOS_ACTIVOS;
   // Número fijo de lecturas por lotes; nunca una consulta por proyecto/persona.
   const ultimaVersionDiseno = db
     .selectDistinctOn([disenoVersiones.disenoId], {
@@ -215,7 +217,7 @@ export async function obtenerDashboardJefatura(
           fichasTrazabilidad,
           eq(fichasTrazabilidad.proyectoId, proyectos.id),
         )
-        .where(inArray(proyectos.estado, ESTADOS_ACTIVOS)),
+        .where(inArray(proyectos.estado, estados)),
       db
         .select({
           id: users.id,
@@ -255,7 +257,7 @@ export async function obtenerDashboardJefatura(
         )
         .where(
           and(
-            inArray(proyectos.estado, ESTADOS_ACTIVOS),
+            inArray(proyectos.estado, estados),
             inArray(workItems.estado, [
               'pendiente',
               'en_progreso',
@@ -269,7 +271,7 @@ export async function obtenerDashboardJefatura(
         .innerJoin(proyectos, eq(proyectos.id, projectAssignments.proyectoId))
         .where(
           and(
-            inArray(proyectos.estado, ESTADOS_ACTIVOS),
+            inArray(proyectos.estado, estados),
             isNull(projectAssignments.finalizadoEn),
           ),
         ),
@@ -277,7 +279,7 @@ export async function obtenerDashboardJefatura(
         .select({ pausa: pausas })
         .from(pausas)
         .innerJoin(proyectos, eq(proyectos.id, pausas.proyectoId))
-        .where(inArray(proyectos.estado, ESTADOS_ACTIVOS)),
+        .where(inArray(proyectos.estado, estados)),
       db
         .select({
           id: direccionesCreativas.id,
@@ -285,7 +287,7 @@ export async function obtenerDashboardJefatura(
         })
         .from(direccionesCreativas)
         .innerJoin(proyectos, eq(proyectos.id, direccionesCreativas.proyectoId))
-        .where(inArray(proyectos.estado, ESTADOS_ACTIVOS)),
+        .where(inArray(proyectos.estado, estados)),
     ]);
   const autoresPorProyecto = await obtenerAutoresPorProyectos(
     filas.map((f) => f.p.id),
@@ -372,11 +374,14 @@ export async function obtenerDashboardJefatura(
         (pausasPorProyecto.get(p.id) ?? []).map((t) => t.pausa),
         ahora,
       );
+      const express = evaluarExpressJefatura(p, s, deseadaFicha, subtipo, ingreso);
       return {
         id: p.id,
         codigo: p.codigo,
         titulo: p.tituloDefinitivo?.trim() || p.titulo?.trim() || null,
         creadoEn: p.createdAt.toISOString(),
+        portadaUrl: p.portadaDecisionAutor === 'aprobada' ? p.propuestaPortadaUrl : null,
+        fechaObjetivo: p.fechaFinProyectada ?? (express.estado === 'confirmado' ? express.fechaDeseada : express.fechaEstandar),
         entregadoJefatura: p.notificadoJefatura,
         asignacionDesincronizada:
           especialistaActivo.has(p.id) &&
@@ -403,9 +408,9 @@ export async function obtenerDashboardJefatura(
               nombre: nombres.get(especialistaId) ?? 'Especialista asignado',
             }
           : null,
-        porAsignar: p.notificadoJefatura && !especialistaId,
-        express: evaluarExpressJefatura(p, s, deseadaFicha, subtipo, ingreso),
-        riesgo: evaluarAtencionJefatura(
+        porAsignar: ESTADOS_ACTIVOS.includes(p.estado) && p.notificadoJefatura && !especialistaId,
+        express,
+        riesgo: p.estado === 'culminado' ? { atencion: false, causas: [], vencido: false, diasRestantes: 0, diasEfectivos: dias } : evaluarAtencionJefatura(
           evaluarRiesgo(dias, determinarDiasPlazoAlerta(resolverPlazosServicio(s, subtipo) ?? s)),
           p.estado,
           procesos,
@@ -419,7 +424,7 @@ export async function obtenerDashboardJefatura(
     personas
       .filter((u) => u.rol === 'especialista' && u.activo)
       .map((u) => {
-        const propios = todos.filter((p) => p.especialista?.id === u.id);
+        const propios = todos.filter((p) => p.estado !== 'culminado' && p.especialista?.id === u.id);
         const composicion = new Map<
           string,
           CapacidadJefatura['servicios'][number]

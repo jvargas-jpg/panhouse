@@ -1,0 +1,90 @@
+{
+  "source": "development API, no mocked project data",
+  "checks": [
+    {
+      "label": "Desktop 1440×900",
+      "metrics": {
+        "viewport": 1440,
+        "document": 1440,
+        "content": 1168
+      }
+    },
+    {
+      "label": "Counts from real API",
+      "counts": {
+        "todos": 7,
+        "porAsignar": 1,
+        "enProduccion": 6,
+        "enRiesgo": 6,
+        "express": 0,
+        "completados": 0
+      }
+    },
+    {
+      "label": "Pending opens existing decision flow",
+      "comercial": "Completo",
+      "rrpp": "Completo",
+      "subtipo": "Capítulo"
+    },
+    {
+      "label": "Selection updates URL; detail tabs, browser back/forward work"
+    },
+    {
+      "label": "Desktop quick-view actions visible without scrolling",
+      "bounds": {
+        "x": 1080.609375,
+        "y": 773.421875,
+        "width": 320.390625,
+        "height": 90
+      }
+    },
+    {
+      "label": "Activity failure remains local; retry provided"
+    },
+    {
+      "label": "Tablet list 768×1024",
+      "metrics": {
+        "viewport": 768,
+        "document": 768,
+        "content": 720
+      }
+    },
+    {
+      "label": "Tablet drawer",
+      "metrics": {
+        "viewport": 768,
+        "document": 768,
+        "content": 720,
+        "drawer": 420
+      }
+    },
+    {
+      "label": "Mobile list 375×812",
+      "metrics": {
+        "viewport": 375,
+        "document": 375,
+        "content": 343
+      }
+    },
+    {
+      "label": "Mobile full-screen",
+      "metrics": {
+        "viewport": 375,
+        "document": 375,
+        "content": 343,
+        "drawer": 375
+      }
+    },
+    {
+      "label": "Tablet drawer and mobile full-screen; Escape, close and CTA visible"
+    },
+    {
+      "label": "No browser JavaScript errors"
+    }
+  ],
+  "unavailableStates": [
+    "confirmed Express",
+    "completed"
+  ],
+  "errors": []
+}

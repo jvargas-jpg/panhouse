@@ -1,5 +1,6 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { TopBar } from './TopBar';
+import { useMe } from '../auth/useAuth';
 
 // h-screen acá arriba pone un techo real (100vh) y overflow-y-auto es
 // lo único que scrollea a este nivel — antes era min-h-screen (sin
@@ -34,9 +35,12 @@ import { TopBar } from './TopBar';
 // así que este scrollbar nunca aparece y el panel interno de esa página
 // sigue siendo el único que scrollea, como siempre.
 export function AppLayout() {
+  const location = useLocation();
+  const { data: user } = useMe();
+  const explorer = location.pathname === '/' && user?.rol === 'jefe_area' && new URLSearchParams(location.search).get('vista') === 'proyectos';
   return (
     <div className="flex h-screen w-full flex-col overflow-y-auto overflow-x-hidden bg-crema">
-      <TopBar />
+      {!explorer && <TopBar />}
       <main className="mx-auto min-h-0 w-full max-w-4xl flex-1 px-4 py-6 sm:px-6">
         <Outlet />
       </main>

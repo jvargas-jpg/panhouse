@@ -1,0 +1,1406 @@
+.jp-page .jf-page-header {
+  position: relative;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  padding-top: 0;
+}
+.jp-page .jf-page-header h1 {
+  font-size: 34px;
+  letter-spacing: -0.8px;
+  margin: 10px 0 7px;
+}
+.jp-page .jf-eyebrow {
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+.jp-page .jf-page-header > div {
+  padding-top: 0;
+  max-width: calc(100% - 260px);
+}
+.jp-page .jf-page-header p:not(.jf-eyebrow) {
+  font-size: 13px;
+}
+.jp-account {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: #6a7c95;
+}
+.jp-account-avatar {
+  width: 36px !important;
+  height: 36px !important;
+  font-size: 12px !important;
+}
+.jp-account-logout {
+  font-size: 10px;
+  color: #7f8ea3;
+  padding: 4px;
+  border-radius: 4px;
+}
+.jp-account-logout:hover {
+  background: #edf1f6;
+}
+.jp-explorer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 30%);
+  gap: 16px;
+  align-items: start;
+  color: #13243d;
+  font-size: 12px;
+}
+.jp-list-column {
+  min-width: 0;
+}
+.jp-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 9px;
+  margin-bottom: 18px;
+}
+.jp-stat {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-height: 82px;
+  padding: 14px 10px;
+  border: 1px solid #e4eaf1;
+  border-radius: 10px;
+  background: #fff;
+  text-align: left;
+  color: #66758e;
+  transition: background 0.15s;
+}
+.jp-stat:hover {
+  background: #faf7ed;
+}
+.jp-stat > span:last-child {
+  font-size: 10px;
+  line-height: 1.35;
+}
+.jp-stat strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+  color: #12243e;
+}
+.jp-stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  color: #657793;
+  background: #f7f9fc;
+}
+.jp-stat-icon svg {
+  width: 19px;
+  height: 19px;
+}
+.jp-stat-porAsignar .jp-stat-icon,
+.jp-stat-express .jp-stat-icon {
+  color: #b7871b;
+  background: #fff8e6;
+}
+.jp-stat-enProduccion .jp-stat-icon {
+  color: #167cdc;
+  background: #edf7ff;
+}
+.jp-stat-enRiesgo .jp-stat-icon {
+  color: #e3384a;
+  background: #fff1f3;
+}
+.jp-stat-completados .jp-stat-icon {
+  color: #178962;
+  background: #eef9f4;
+}
+.jp-group-tabs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid #e4eaf1;
+  border-radius: 9px;
+  background: #fff;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.jp-group-tabs button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  border-radius: 24px;
+  white-space: nowrap;
+  font-size: 11px;
+  color: #465b7a;
+}
+.jp-group-tabs button.active {
+  color: white;
+  background: #153252;
+  box-shadow: 0 2px 4px #132c4f15;
+  font-weight: 600;
+}
+.jp-group-tabs button > span {
+  padding: 2px 6px;
+  border-radius: 20px;
+  color: #475c76;
+  background: #f0f3f7;
+  font-size: 10px;
+  min-width: 20px;
+  text-align: center;
+}
+.jp-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 15px;
+}
+.jp-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 210px;
+  min-width: 170px;
+  border: 1px solid #dfe6ef;
+  border-radius: 7px;
+  background: #fff;
+  padding: 0 10px;
+  color: #8293ab;
+  height: 35px;
+}
+.jp-search input {
+  min-width: 0;
+  width: 100%;
+  font-size: 11px;
+  border: 0;
+  background: transparent;
+  outline: none;
+  color: #243958;
+}
+.jp-search input::placeholder {
+  color: #9aa8bc;
+}
+.jp-filters select {
+  flex: 1 1 95px;
+  width: 95px;
+  min-width: 0;
+  height: 35px;
+  border: 1px solid #dfe6ef;
+  border-radius: 7px;
+  background: #fff;
+  color: #63748e;
+  font-size: 11px;
+  padding: 0 8px;
+}
+.jp-clear {
+  color: #2375bd;
+  font-size: 11px;
+  padding: 0 4px;
+}
+.jp-list-surface {
+  border: 1px solid #e1e7ef;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 3px 15px #23456503;
+  min-width: 0;
+}
+.jp-table {
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: 10px;
+  text-align: left;
+}
+.jp-table th {
+  height: 42px;
+  padding: 8px;
+  font-weight: 600;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: #556b88;
+  background: #fafbfd;
+  border-bottom: 1px solid #e6ecf3;
+}
+.jp-table th:first-child {
+  border-radius: 10px 0 0 0;
+  width: 24%;
+}
+.jp-table th:nth-child(2) {
+  width: 10%;
+}
+.jp-table th:nth-child(3) {
+  width: 14%;
+}
+.jp-table th:nth-child(4) {
+  width: 13%;
+}
+.jp-table th:nth-child(5) {
+  width: 15%;
+}
+.jp-table th:nth-child(6) {
+  width: 12%;
+}
+.jp-table th:nth-child(7) {
+  width: 9%;
+}
+.jp-table th:last-child {
+  width: 3%;
+  padding: 0;
+  border-radius: 0 10px 0 0;
+}
+.jp-table td {
+  height: 56px;
+  padding: 7px 8px;
+  border-bottom: 1px solid #eef1f6;
+  vertical-align: middle;
+  background: transparent;
+}
+.jp-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+.jp-table tbody tr {
+  cursor: pointer;
+}
+.jp-table tbody tr:hover {
+  background: #fafbfc;
+}
+.jp-table tbody tr.selected {
+  background: #fcf8ed;
+}
+.jp-table tr.selected td {
+  border-top: 1px solid #e7c97d;
+  border-bottom: 1px solid #e7c97d;
+}
+.jp-table tr.selected td:first-child {
+  border-left: 1px solid #e7c97d;
+  border-radius: 7px 0 0 7px;
+}
+.jp-table tr.selected td:last-child {
+  border-right: 1px solid #e7c97d;
+  border-radius: 0 7px 7px 0;
+}
+.jp-project {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.jp-project > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.jp-project-title {
+  font-size: 11px;
+  text-align: left;
+  font-weight: 600;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: #142744;
+}
+.jp-project > div > span {
+  color: #72829b;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jp-cover {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 39px;
+  flex-shrink: 0;
+  border: 1px solid #d9dfe5;
+  border-left: 3px solid #c0c9d4;
+  border-radius: 3px;
+  background: linear-gradient(135deg, #f2f0e9, #e3e7ed);
+  color: #66778b;
+}
+.jp-cover svg {
+  width: 15px;
+  height: 15px;
+}
+.jp-cover small {
+  font-size: 6px;
+  letter-spacing: 1px;
+  margin-top: 4px;
+}
+.jp-cover img {
+  height: 100%;
+  width: 100%;
+  object-fit: cover;
+}
+.jp-code {
+  color: #70819a;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.jp-service {
+  display: flex;
+  flex-direction: column;
+  padding: 5px 7px;
+  border-radius: 7px;
+  background: #fbf4e9;
+  color: #a56718;
+  font-size: 9px;
+  line-height: 1.35;
+  max-width: 100%;
+}
+.jp-service b {
+  font-size: 10px;
+  font-weight: 600;
+}
+.jp-service-GW,
+.jp-service-EF {
+  background: #eef7ff;
+  color: #1879d2;
+}
+.jp-service-SE {
+  background: #eef9f5;
+  color: #0d8665;
+}
+.jp-service-CR {
+  background: #fdf4e7;
+  color: #a76115;
+}
+.jp-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 6px;
+  line-height: 1.25;
+  border-radius: 7px;
+  font-size: 9px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+.jp-state-porAsignar {
+  color: #925e06;
+  background: #fff3cf;
+}
+.jp-state-enProduccion {
+  color: #047758;
+  background: #e1f5ee;
+}
+.jp-state-asignado {
+  color: #456482;
+  background: #edf2f7;
+}
+.jp-state-enRiesgo,
+.jp-express {
+  color: #dc1c36;
+  background: #ffeef1;
+}
+.jp-state-completado {
+  color: #126ab8;
+  background: #e8f4ff;
+}
+.jp-state-pausado,
+.jp-state-standBy {
+  color: #775589;
+  background: #f1edf7;
+}
+.jp-normal {
+  color: #576984;
+  background: #f0f3f8;
+}
+.jp-possible {
+  color: #a86806;
+  background: #fff6e2;
+}
+.jp-specialist {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+}
+.jp-specialist > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9px;
+}
+.jp-avatar {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  background: #e9eef4;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 600;
+  color: #3d5470;
+}
+.jp-muted {
+  color: #8e9bac;
+}
+.jp-date {
+  font-size: 9px;
+  line-height: 1.5;
+}
+.jp-menu-cell {
+  position: relative;
+  padding: 0 !important;
+}
+.jp-menu-trigger {
+  width: 100%;
+  font-size: 19px;
+  line-height: 30px;
+  color: #667c98;
+}
+.jp-row-menu {
+  position: absolute;
+  right: 10px;
+  top: 40px;
+  z-index: 10;
+  width: 185px;
+  padding: 5px;
+  background: #fff;
+  border: 1px solid #e1e7ef;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px #122b5422;
+}
+.jp-row-menu a {
+  display: block;
+  padding: 9px;
+  font-size: 11px;
+  border-radius: 5px;
+}
+.jp-row-menu a:hover {
+  background: #f6f4ec;
+}
+.jp-table tr:nth-last-child(-n + 2) .jp-row-menu {
+  top: auto;
+  bottom: 40px;
+}
+.jp-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 13px;
+  color: #7c8ba3;
+  border-top: 1px solid #e7ecf2;
+  font-size: 10px;
+}
+.jp-pagination > div {
+  display: flex;
+  gap: 5px;
+}
+.jp-pagination button {
+  min-width: 29px;
+  padding: 7px 9px;
+  border: 1px solid #dde5ee;
+  border-radius: 7px;
+  color: #526784;
+  background: #fff;
+}
+.jp-pagination button.active {
+  color: #fff;
+  background: #153252;
+  border-color: #153252;
+}
+.jp-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.jp-quick,
+.jp-quick-empty {
+  position: sticky;
+  top: 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 11px;
+  background: #fff;
+  min-width: 0;
+  box-shadow: 0 3px 15px #23456503;
+}
+.jp-quick {
+  padding: 14px;
+  color: #13243d;
+}
+.jp-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  color: #708198;
+  font-size: 24px;
+  line-height: 24px;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+}
+.jp-close:hover {
+  background: #f0f3f8;
+}
+.jp-quick-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  padding: 2px 17px 18px 2px;
+}
+.jp-cover-large {
+  width: 66px;
+  height: 88px;
+  border-radius: 5px;
+  border-left-width: 5px;
+}
+.jp-cover-large svg {
+  width: 30px;
+  height: 30px;
+}
+.jp-cover-large small {
+  font-size: 10px;
+}
+.jp-quick-header > div {
+  min-width: 0;
+  flex: 1;
+}
+.jp-header-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.jp-quick-header h2 {
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  overflow-wrap: anywhere;
+}
+.jp-quick-header p {
+  color: #687d97;
+  font-size: 11px;
+  margin: 7px 0;
+}
+.jp-quick-header > div > span {
+  display: block;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #7b8ba2;
+}
+.jp-quick-header i {
+  font-style: normal;
+  padding: 0 5px;
+}
+.jp-detail-tabs {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #e9edf4;
+  margin: 0 -2px 14px;
+  gap: 2px;
+}
+.jp-detail-tabs button {
+  padding: 10px 4px 11px;
+  font-size: 10px;
+  color: #62738e;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+}
+.jp-detail-tabs button.active {
+  border-color: #bb9226;
+  color: #11263f;
+  font-weight: 700;
+}
+.jp-quick-content {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+.jp-context {
+  border: 1px solid #e5ebf2;
+  border-radius: 8px;
+  padding: 10px;
+}
+.jp-context > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+}
+.jp-quick h3 {
+  font-size: 12px;
+  font-weight: 700;
+}
+.jp-context p {
+  font-size: 12px;
+  line-height: 1.4;
+  color: #75859e;
+  margin-top: 6px;
+}
+.jp-context .jp-risk-note {
+  color: #ad3043;
+}
+.jp-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.jp-detail-data {
+  border: 1px solid #e5ebf2;
+  border-radius: 8px;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  min-width: 0;
+}
+.jp-detail-data > svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: #5b7393;
+}
+.jp-detail-data > div {
+  min-width: 0;
+}
+.jp-detail-data span {
+  display: block;
+  font-size: 11px;
+  color: #8090a6;
+  margin-bottom: 3px;
+}
+.jp-detail-data strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.jp-intake {
+  padding: 11px;
+  border-radius: 8px;
+  background: #eef7ff;
+}
+.jp-intake h3 {
+  margin-bottom: 9px;
+}
+.jp-intake > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #296852;
+  font-size: 10px;
+  margin-top: 7px;
+}
+.jp-intake > div > span:nth-child(2) {
+  flex: 1;
+}
+.jp-check,
+.jp-incomplete,
+.jp-milestone-pending {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #1a8967;
+  color: white;
+}
+.jp-incomplete {
+  background: #fff1cc;
+  color: #a16a0b;
+}
+.jp-milestone-pending {
+  background: #eef2f7;
+  color: #617692;
+}
+.jp-recommendation {
+  padding: 11px;
+  border-radius: 8px;
+  background: #fcf3ef;
+}
+.jp-recommendation h3 {
+  color: #87491b;
+  margin-bottom: 9px;
+}
+.jp-recommendation > div,
+.jp-coordinator {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.jp-recommendation strong,
+.jp-coordinator strong {
+  font-size: 11px;
+  font-weight: 600;
+  display: block;
+}
+.jp-recommendation p {
+  font-size: 10px;
+  line-height: 1.5;
+  color: #7b889e;
+  margin-top: 3px;
+}
+.jp-recommendation .jp-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 11px;
+}
+.jp-coordinator {
+  padding: 10px;
+  border: 1px solid #e5ebf2;
+  border-radius: 8px;
+}
+.jp-coordinator span:not(.jp-avatar) {
+  display: block;
+  color: #7c8da6;
+  font-size: 10px;
+  margin-bottom: 3px;
+}
+.jp-quick-actions {
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.jp-quick-actions > div {
+  display: flex;
+  gap: 8px;
+}
+.jp-quick-actions a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  flex: 1;
+  min-width: 0;
+  border: 1px solid #9caac0;
+  border-radius: 7px;
+  padding: 11px 5px;
+  font-size: 10px;
+  font-weight: 600;
+  text-align: center;
+}
+.jp-quick-actions a:hover {
+  background: #f4f7fa;
+}
+.jp-quick-actions .jp-primary {
+  color: white;
+  background: linear-gradient(115deg, #bb8c21, #b18a27);
+  border-color: #ba9229;
+  font-size: 11px;
+}
+.jp-quick-actions .jp-primary:hover {
+  background: #a67c21;
+}
+.jp-quick-empty {
+  padding: 60px 24px;
+  text-align: center;
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.jp-empty-book {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 66px;
+  height: 66px;
+  border-radius: 16px;
+  background: #f7f4ea;
+  color: #ab872f;
+  margin-bottom: 24px;
+}
+.jp-quick-empty h2 {
+  font-size: 16px;
+  font-weight: 600;
+}
+.jp-quick-empty p {
+  color: #6f819a;
+  font-size: 12px;
+  line-height: 1.7;
+  margin: 12px 0 22px;
+}
+.jp-quick-empty > span:last-child {
+  font-size: 10px;
+  color: #91a0b4;
+}
+.jp-empty {
+  min-height: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  color: #7e8da2;
+}
+.jp-empty h2 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374d6c;
+  margin-top: 15px;
+}
+.jp-empty p {
+  font-size: 12px;
+  margin-top: 8px;
+}
+.jp-skeleton {
+  display: block;
+  background: linear-gradient(90deg, #eef1f5, #f8fafc, #eef1f5);
+  background-size: 200% 100%;
+  animation: jp-loading 1.5s infinite;
+  border-radius: 7px;
+}
+.jp-stat .jp-skeleton {
+  height: 22px;
+  width: 34px;
+}
+.jp-row-skeletons {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+.jp-row-skeletons > div {
+  height: 42px;
+}
+.jp-panel-skeleton {
+  padding: 10px;
+  display: grid;
+  gap: 15px;
+}
+.jp-panel-skeleton > div {
+  height: 100px;
+}
+.jp-panel-skeleton > div:first-child {
+  height: 85px;
+}
+.jp-mobile-list {
+  display: none;
+}
+.jp-section-head h3 {
+  font-size: 14px;
+}
+.jp-section-head p,
+.jp-detail-footnote {
+  font-size: 11px;
+  color: #7e8ea4;
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.jp-team-list li {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 13px 0;
+  border-bottom: 1px solid #eef1f5;
+}
+.jp-team-list strong {
+  font-size: 12px;
+}
+.jp-team-list span:not(.jp-avatar),
+.jp-team-list small {
+  display: block;
+  font-size: 10px;
+  color: #7889a2;
+  margin-top: 4px;
+}
+.jp-milestone,
+.jp-milestones li {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 9px 0;
+}
+.jp-milestones li {
+  border-top: 1px solid #eef1f5;
+}
+.jp-milestone strong,
+.jp-milestones strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.jp-milestone p,
+.jp-milestones p,
+.jp-milestones time {
+  font-size: 11px;
+  color: #7b8ba3;
+  margin-top: 3px;
+  line-height: 1.5;
+}
+.jp-risk-note {
+  color: #ad3043;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.jp-local-empty {
+  font-size: 12px;
+  line-height: 1.6;
+  color: #7b8ba3;
+  padding: 20px 0;
+}
+.jp-text-link {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a37920;
+  padding: 5px 0;
+}
+.jp-activity-list li {
+  display: flex;
+  gap: 10px;
+  padding: 12px 0;
+  border-top: 1px solid #edf1f6;
+}
+.jp-activity-dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #b89237;
+  margin-top: 5px;
+}
+.jp-activity-list p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.jp-activity-list time {
+  font-size: 10px;
+  color: #8997ad;
+  display: block;
+  margin-top: 5px;
+}
+.jp-explorer button:focus-visible,
+.jp-explorer a:focus-visible,
+.jp-quick button:focus-visible,
+.jp-quick a:focus-visible,
+.jp-explorer select:focus-visible,
+.jp-search:focus-within {
+  outline: 2px solid #bd962f;
+  outline-offset: 2px;
+}
+.jp-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: #0d1d354d;
+  backdrop-filter: blur(2px);
+  z-index: 60;
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+}
+.jp-drawer-overlay .jp-quick {
+  width: 420px;
+  max-width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+}
+.jp-drawer-overlay .jp-quick-header,
+.jp-drawer-overlay .jp-detail-tabs,
+.jp-drawer-overlay .jp-quick-actions {
+  flex-shrink: 0;
+}
+.jp-drawer-overlay .jp-quick-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+.jp-drawer-overlay .jp-quick-actions {
+  background: #fff;
+  border-top: 1px solid #edf1f5;
+  margin-top: 10px;
+}
+@keyframes jp-loading {
+  to {
+    background-position: -200% 0;
+  }
+}
+@media (min-width: 1200px) {
+  .jp-table {
+    font-size: 11px;
+  }
+  .jp-table th {
+    font-size: 10px;
+  }
+  .jp-project-title {
+    font-size: 12px;
+  }
+  .jp-project > div > span,
+  .jp-date,
+  .jp-specialist > span:last-child {
+    font-size: 11px;
+  }
+  .jp-badge {
+    font-size: 10px;
+  }
+  .jp-stat > span:last-child {
+    font-size: 11px;
+  }
+  .jp-service {
+    font-size: 10px;
+  }
+  .jp-service b {
+    font-size: 11px;
+  }
+  .jp-detail-tabs button {
+    font-size: 11px;
+  }
+  .jp-quick-actions a {
+    font-size: 11px;
+  }
+  .jp-intake > div {
+    font-size: 11px;
+  }
+  .jp-quick-header p {
+    font-size: 12px;
+  }
+  .jp-recommendation p {
+    font-size: 11px;
+  }
+}
+@media (min-width: 1600px) {
+  .jp-table {
+    font-size: 12px;
+  }
+  .jp-table td {
+    height: 59px;
+  }
+}
+@media (max-width: 1199px) {
+  .jp-explorer {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .jp-quick-empty {
+    display: none;
+  }
+  .jp-table th {
+    font-size: 10px;
+  }
+  .jp-table td {
+    height: 60px;
+  }
+  .jp-project-title {
+    font-size: 12px;
+  }
+  .jp-badge {
+    font-size: 10px;
+  }
+  .jp-stat > span:last-child {
+    font-size: 11px;
+  }
+  .jp-filters {
+    flex-wrap: nowrap;
+  }
+  .jp-filters select {
+    flex: 1;
+    min-width: 75px;
+  }
+  .jp-search {
+    flex: 2;
+    min-width: 190px;
+  }
+}
+@media (max-width: 767px) {
+  .jp-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+    margin-bottom: 12px;
+  }
+  .jp-stat {
+    min-height: 65px;
+    padding: 10px 8px;
+    gap: 7px;
+  }
+  .jp-stat strong {
+    font-size: 20px;
+    margin-top: 6px;
+  }
+  .jp-stat > span:last-child {
+    font-size: 10px;
+  }
+  .jp-stat-icon {
+    width: 23px;
+    height: 23px;
+  }
+  .jp-stat-icon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .jp-group-tabs {
+    justify-content: flex-start;
+    margin-bottom: 12px;
+  }
+  .jp-group-tabs button {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .jp-filters {
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+  .jp-search {
+    flex-basis: 100%;
+    height: 39px;
+  }
+  .jp-filters select {
+    flex: 1 1 calc(50% - 7px);
+    height: 37px;
+    font-size: 11px;
+  }
+  .jp-clear {
+    margin-left: auto;
+    height: 24px;
+  }
+  .jp-table {
+    display: none;
+  }
+  .jp-mobile-list {
+    display: block;
+  }
+  .jp-mobile-project {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border-bottom: 1px solid #e8edf3;
+    text-align: left;
+  }
+  .jp-mobile-project:hover,
+  .jp-mobile-project[aria-pressed='true'] {
+    background: #fcf8ed;
+  }
+  .jp-mobile-project .jp-project strong {
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .jp-mobile-project .jp-project > div > span {
+    font-size: 11px;
+  }
+  .jp-mobile-project .jp-cover {
+    width: 34px;
+    height: 46px;
+  }
+  .jp-mobile-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+  }
+  .jp-mobile-badges .jp-service {
+    font-size: 10px;
+    min-width: 100px;
+  }
+  .jp-mobile-bottom {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 11px;
+    color: #7889a2;
+    font-size: 11px;
+  }
+  .jp-pagination {
+    flex-direction: column;
+    gap: 10px;
+    padding: 13px;
+  }
+  .jp-pagination > span {
+    align-self: flex-start;
+  }
+  .jp-pagination > div {
+    align-self: flex-end;
+  }
+  .jp-pagination button {
+    padding: 7px 9px;
+  }
+  .jp-drawer-overlay {
+    padding: 0;
+  }
+  .jp-drawer-overlay .jp-quick {
+    width: 100%;
+    border-radius: 0;
+    border: 0;
+    padding: 16px;
+  }
+  .jp-drawer-overlay .jp-quick-header {
+    padding-top: 6px;
+  }
+  .jp-quick-header h2 {
+    font-size: 19px;
+  }
+  .jp-detail-tabs button {
+    font-size: 11px;
+    padding: 11px 5px;
+  }
+  .jp-detail-data {
+    min-height: 60px;
+  }
+  .jp-detail-data strong {
+    font-size: 12px;
+  }
+  .jp-detail-data span {
+    font-size: 11px;
+  }
+  .jp-quick h3 {
+    font-size: 12px;
+  }
+  .jp-quick-actions a {
+    min-height: 42px;
+    font-size: 11px;
+  }
+  .jp-quick-actions .jp-primary {
+    font-size: 12px;
+  }
+  .jp-intake > div {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jp-skeleton {
+    animation: none;
+  }
+}
+.jp-quick-header {
+  padding-bottom: 12px;
+}
+.jp-cover-large {
+  height: 74px;
+}
+.jp-intake h3 {
+  margin-bottom: 6px;
+}
+.jp-recommendation h3 {
+  margin-bottom: 6px;
+}
+.jp-recommendation {
+  padding: 10px;
+}
+.jp-specialist > span:last-child {
+  white-space: nowrap;
+}
+.jp-plan-line {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #7b8ba3;
+  padding: 0 3px;
+}
+.jp-plan-line strong {
+  font-weight: 500;
+  color: #304663;
+}
+.jp-compression {
+  display: block;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #ad3043;
+  margin-top: 3px;
+}
+.jp-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.jp-risk-indicator {
+  color: #dc1c36;
+}
+@media (min-width: 1200px) {
+  .jp-quick-actions {
+    padding-top: 9px;
+    gap: 8px;
+  }
+  .jp-quick-actions a {
+    padding: 9px 5px;
+  }
+  .jp-detail-data {
+    padding: 7px;
+  }
+  .jp-detail-grid {
+    gap: 6px;
+  }
+  .jp-quick-header {
+    padding-bottom: 10px;
+  }
+}
+.jp-activity-actor {
+  display: block;
+  font-size: 10px;
+  color: #71849e;
+  margin-top: 3px;
+}
+.jp-header-badges {
+  margin-bottom: 6px;
+}
+.jp-quick-header p {
+  margin: 5px 0;
+}
+.jp-quick-content {
+  gap: 7px;
+}
+@media (max-width: 767px) {
+  .jp-page .jf-page-header > div {
+    max-width: 100%;
+    padding-top: 44px;
+  }
+  .jp-page .jf-page-header {
+    margin-bottom: 16px;
+  }
+  .jp-page .jf-page-header h1 {
+    font-size: 29px;
+  }
+  .jp-account {
+    top: 0;
+  }
+  .jp-account-avatar {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .jp-page .jf-page-header p:not(.jf-eyebrow) {
+    font-size: 12px;
+  }
+}
+@media (max-width: 767px) {
+  .jp-page .jf-mobile-nav {
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    scrollbar-width: none;
+  }
+  .jp-page .jf-mobile-nav a {
+    flex-shrink: 0;
+  }
+  .jp-page .jf-page-header > div {
+    padding-top: 36px;
+  }
+  .jp-page .jf-page-header h1 {
+    font-size: 27px;
+    margin: 7px 0;
+  }
+  .jp-stat {
+    min-height: 62px;
+  }
+  .jp-drawer-overlay .jp-cover-large {
+    height: 84px;
+  }
+}
