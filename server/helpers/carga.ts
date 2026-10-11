@@ -1,14 +1,44 @@
-import { and, eq, inArray } from 'drizzle-orm';
+import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { EstadoProyecto } from '../db/schema/index.js';
-import { proyectos, servicios, users } from '../db/schema/index.js';
+import {
+  proyectos,
+  projectAssignments,
+  servicios,
+  users,
+} from '../db/schema/index.js';
+
+// Historial activo de proyecto primero; FK como compatibilidad para registros
+// anteriores al historial. Las escrituras centrales mantienen ambos sincronizados.
+export const resolverEspecialistaActual = (
+  activa: string | null | undefined,
+  fk: string | null,
+) => activa ?? fk;
+const scopeEspecialista = () =>
+  and(
+    eq(projectAssignments.proyectoId, proyectos.id),
+    eq(projectAssignments.tipo, 'especialista'),
+    isNull(projectAssignments.workItemId),
+    isNull(projectAssignments.finalizadoEn),
+  );
+const columnaCargaActual = (rol: RolConCarga) =>
+  rol === 'especialista'
+    ? sql<
+        string | null
+      >`coalesce(${projectAssignments.usuarioId}, ${proyectos.especialistaId})`
+    : sql<string | null>`${columnaAsignacion(rol)}`;
 
 // Un proyecto cuenta para la carga de quien esté asignado mientras no
 // esté cerrado. "pausado" y "stand_by" siguen contando: el proyecto
 // sigue asignado aunque hoy no avance. Se exporta porque
 // listarRiesgoProyectosActivos (server/helpers/alertas.ts) reutiliza el
 // mismo concepto de "proyecto activo".
-export const ESTADOS_ACTIVOS: EstadoProyecto[] = ['en_proceso', 'retrasado', 'stand_by', 'pausado'];
+export const ESTADOS_ACTIVOS: EstadoProyecto[] = [
+  'en_proceso',
+  'retrasado',
+  'stand_by',
+  'pausado',
+];
 
 export function calcularCarga(pesosComplejidad: number[]): number {
   return pesosComplejidad.reduce((total, peso) => total + peso, 0);
@@ -31,12 +61,21 @@ export function columnaAsignacion(rol: RolConCarga) {
   return proyectos.disenadorId;
 }
 
-export async function obtenerCargaUsuario(usuarioId: string, rol: RolConCarga): Promise<number> {
+export async function obtenerCargaUsuario(
+  usuarioId: string,
+  rol: RolConCarga,
+): Promise<number> {
   const filas = await db
     .select({ pesoComplejidad: servicios.pesoComplejidad })
     .from(proyectos)
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
-    .where(and(eq(columnaAsignacion(rol), usuarioId), inArray(proyectos.estado, ESTADOS_ACTIVOS)));
+    .leftJoin(projectAssignments, scopeEspecialista())
+    .where(
+      and(
+        eq(columnaCargaActual(rol), usuarioId),
+        inArray(proyectos.estado, ESTADOS_ACTIVOS),
+      ),
+    );
 
   return calcularCarga(filas.map((fila) => fila.pesoComplejidad));
 }
@@ -54,10 +93,21 @@ export interface CargaUsuario {
 // para conservar la misma suma sin consultas por persona. Ordenado de mayor a menor
 // carga: es justo lo que quien reparte trabajo necesita ver primero,
 // no un orden incidental de la consulta.
-export async function listarCargaPorRol(rol: RolConCarga): Promise<CargaUsuario[]> {
-  const usuarios = await db.select({ id: users.id, nombre: users.nombre, email: users.email }).from(users).where(eq(users.rol, rol));
-  const filas = await db.select({ usuarioId: columnaAsignacion(rol), peso: servicios.pesoComplejidad })
-    .from(proyectos).innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
+export async function listarCargaPorRol(
+  rol: RolConCarga,
+): Promise<CargaUsuario[]> {
+  const usuarios = await db
+    .select({ id: users.id, nombre: users.nombre, email: users.email })
+    .from(users)
+    .where(eq(users.rol, rol));
+  const filas = await db
+    .select({
+      usuarioId: columnaCargaActual(rol),
+      peso: servicios.pesoComplejidad,
+    })
+    .from(proyectos)
+    .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
+    .leftJoin(projectAssignments, scopeEspecialista())
     .where(inArray(proyectos.estado, ESTADOS_ACTIVOS));
   const pesos = new Map<string, number[]>();
   for (const fila of filas) {
@@ -66,7 +116,10 @@ export async function listarCargaPorRol(rol: RolConCarga): Promise<CargaUsuario[
     lista.push(fila.peso);
     pesos.set(fila.usuarioId, lista);
   }
-  const conCarga = usuarios.map(usuario => ({ ...usuario, carga: calcularCarga(pesos.get(usuario.id) ?? []) }));
+  const conCarga = usuarios.map((usuario) => ({
+    ...usuario,
+    carga: calcularCarga(pesos.get(usuario.id) ?? []),
+  }));
   return conCarga.sort((a, b) => b.carga - a.carga);
 }
 
@@ -77,7 +130,9 @@ export async function listarCargaPorRol(rol: RolConCarga): Promise<CargaUsuario[
 export type CargaEspecialista = CargaUsuario;
 export const calcularCargaEspecialista = calcularCarga;
 
-export function obtenerCargaEspecialista(especialistaId: string): Promise<number> {
+export function obtenerCargaEspecialista(
+  especialistaId: string,
+): Promise<number> {
   return obtenerCargaUsuario(especialistaId, 'especialista');
 }
 

@@ -4,11 +4,11 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
+import { autores, fichasTrazabilidad, notificaciones, projectAssignments, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
-import { ESTADOS_ACTIVOS } from './carga.js';
+import { ESTADOS_ACTIVOS, resolverEspecialistaActual } from './carga.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItem } from './workItems.js';
@@ -576,41 +576,117 @@ export async function actualizarPropuestaPortada(proyectoId: string, propuestaPo
 // ya lo resuelve). Crea/completa el work item 'asignacion_especialista'
 // (el que RRPP→Jefatura deja 'pendiente', ver notificarJefaturaFichaCompletada)
 // y notifica puntualmente al especialista asignado (no a todo el rol).
-export async function asignarEspecialista(proyectoId: string, especialistaId: string, asignadoPorId: string, opciones: { exigirHandoff?: boolean } = {}): Promise<void> {
+export async function asignarEspecialista(
+  proyectoId: string,
+  especialistaId: string,
+  asignadoPorId: string,
+  opciones: {
+    exigirHandoff?: boolean;
+    especialistaActualEsperado?: string | null;
+  } = {},
+): Promise<void> {
   await db.transaction(async (tx) => {
-    const [proyecto] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1).for('update');
-    if (!proyecto) throw Object.assign(new Error('Proyecto no encontrado'), { statusCode: 404 });
-    if (opciones.exigirHandoff && (!proyecto.notificadoJefatura || !ESTADOS_ACTIVOS.includes(proyecto.estado)))
-      throw Object.assign(new Error('El proyecto debe estar activo y enviado formalmente por RRPP'), { statusCode: 409 });
-    const [candidato] = await tx.select({ rol: users.rol, activo: users.activo }).from(users).where(eq(users.id, especialistaId));
+    const [proyecto] = await tx
+      .select()
+      .from(proyectos)
+      .where(eq(proyectos.id, proyectoId))
+      .limit(1)
+      .for('update');
+    if (!proyecto)
+      throw Object.assign(new Error('Proyecto no encontrado'), {
+        statusCode: 404,
+      });
+    if (
+      opciones.exigirHandoff &&
+      (!proyecto.notificadoJefatura ||
+        !ESTADOS_ACTIVOS.includes(proyecto.estado))
+    )
+      throw Object.assign(
+        new Error(
+          'El proyecto debe estar activo y enviado formalmente por RRPP',
+        ),
+        { statusCode: 409 },
+      );
+    const [candidato] = await tx
+      .select({ rol: users.rol, activo: users.activo })
+      .from(users)
+      .where(eq(users.id, especialistaId));
     if (!candidato || candidato.rol !== 'especialista' || !candidato.activo)
-      throw Object.assign(new Error('Selecciona un Especialista activo'), { statusCode: 409 });
+      throw Object.assign(new Error('Selecciona un Especialista activo'), {
+        statusCode: 409,
+      });
+    if (opciones.especialistaActualEsperado !== undefined) {
+      const [activa] = await tx
+        .select({ usuarioId: projectAssignments.usuarioId })
+        .from(projectAssignments)
+        .where(
+          and(
+            eq(projectAssignments.proyectoId, proyectoId),
+            eq(projectAssignments.tipo, 'especialista'),
+            isNull(projectAssignments.workItemId),
+            isNull(projectAssignments.finalizadoEn),
+          ),
+        )
+        .limit(1);
+      const actual = resolverEspecialistaActual(
+        activa?.usuarioId,
+        proyecto.especialistaId,
+      );
+      // Un retry idéntico conserva idempotencia; una decisión sobre un dueño
+      // anterior se rechaza antes de escribir historial, audit o notificaciones.
+      if (
+        actual !== opciones.especialistaActualEsperado &&
+        actual !== especialistaId
+      )
+        throw Object.assign(
+          new Error(
+            'La asignación cambió. Actualiza la comparación antes de reasignar.',
+          ),
+          { statusCode: 409 },
+        );
+    }
 
-    const { cambio, asignacionId, anteriorUsuarioId } = await asignarConHistorial(tx, {
-      proyectoId,
-      tipo: 'especialista',
-      usuarioId: especialistaId,
-      asignadoPorId,
-    });
+    const { cambio, asignacionId, anteriorUsuarioId } =
+      await asignarConHistorial(tx, {
+        proyectoId,
+        tipo: 'especialista',
+        usuarioId: especialistaId,
+        asignadoPorId,
+      });
 
     // La primera asignación inicia Producción. Reasignar o repetir no
     // reanuda un proyecto pausado ni borra su estado operativo.
-    const estado = anteriorUsuarioId || proyecto.especialistaId || !cambio ? proyecto.estado : 'en_proceso';
-    await tx.update(proyectos).set({ especialistaId, estado }).where(eq(proyectos.id, proyectoId));
+    const estado =
+      anteriorUsuarioId || proyecto.especialistaId || !cambio
+        ? proyecto.estado
+        : 'en_proceso';
+    await tx
+      .update(proyectos)
+      .set({ especialistaId, estado })
+      .where(eq(proyectos.id, proyectoId));
 
     if (!cambio) return;
 
     await registrarEvento(tx, {
       actorId: asignadoPorId,
-      accion: anteriorUsuarioId ? 'ESPECIALISTA_REASIGNADO' : 'ESPECIALISTA_ASIGNADO',
+      accion: anteriorUsuarioId
+        ? 'ESPECIALISTA_REASIGNADO'
+        : 'ESPECIALISTA_ASIGNADO',
       entityType: 'project_assignment',
       entityId: asignacionId,
       proyectoId,
       detalles: { anterior: anteriorUsuarioId, nuevo: especialistaId },
     });
 
-    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'asignacion_especialista' });
-    await transicionarWorkItem(tx, { proyectoId, tipo: 'asignacion_especialista', estado: 'completado' });
+    await crearWorkItemSiNoExiste(tx, {
+      proyectoId,
+      tipo: 'asignacion_especialista',
+    });
+    await transicionarWorkItem(tx, {
+      proyectoId,
+      tipo: 'asignacion_especialista',
+      estado: 'completado',
+    });
 
     await tx.insert(notificaciones).values({
       proyectoId,

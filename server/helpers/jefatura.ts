@@ -24,7 +24,11 @@ import type {
   ProyectoJefatura,
   SolicitudJefatura,
 } from '../../shared/jefatura.js';
-import { ESTADOS_ACTIVOS, calcularCarga } from './carga.js';
+import {
+  ESTADOS_ACTIVOS,
+  calcularCarga,
+  resolverEspecialistaActual,
+} from './carga.js';
 import { calcularCronograma, type PlazosServicio } from './cronograma.js';
 import {
   determinarDiasPlazoAlerta,
@@ -311,8 +315,10 @@ export async function obtenerDashboardJefatura(
   }).format(ahora);
   const todos: ProyectoJefatura[] = filas.map(
     ({ p, s, autor, deseadaFicha }) => {
-      const especialistaId =
-        p.especialistaId ?? especialistaActivo.get(p.id) ?? null;
+      const especialistaId = resolverEspecialistaActual(
+        especialistaActivo.get(p.id),
+        p.especialistaId,
+      );
       const procesos = (porProyecto.get(p.id) ?? [])
         .filter(
           (t) =>
@@ -361,6 +367,13 @@ export async function obtenerDashboardJefatura(
       return {
         id: p.id,
         codigo: p.codigo,
+        titulo: p.tituloDefinitivo?.trim() || p.titulo?.trim() || null,
+        creadoEn: p.createdAt.toISOString(),
+        entregadoJefatura: p.notificadoJefatura,
+        asignacionDesincronizada:
+          especialistaActivo.has(p.id) &&
+          especialistaActivo.get(p.id) !== p.especialistaId,
+        impactoCarga: s.pesoComplejidad,
         autores:
           autoresPorProyecto
             .get(p.id)
@@ -368,6 +381,7 @@ export async function obtenerDashboardJefatura(
             .join(', ') || autor,
         estado: p.estado,
         servicio: {
+          id: s.id,
           codigo: s.codigo,
           nombre: s.nombre,
           peso: s.pesoComplejidad,

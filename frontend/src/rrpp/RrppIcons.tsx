@@ -14,6 +14,15 @@ const PATHS = {
   check: 'm5 12 4 4L19 6',
   externo: 'M14 3h7v7m0-7L10 14M10 3H4v17h17v-6',
   rapido: 'm13 2-9 12h7l-1 8 10-12h-7z',
+  persona: 'M16 7a4 4 0 11-8 0 4 4 0 018 0M5 21v-2a7 7 0 0114 0v2z',
+  equipo:
+    'M15 6a3 3 0 11-6 0 3 3 0 016 0M6 21v-3a6 6 0 0112 0v3M3 9a3 3 0 013 3m12 0a3 3 0 013-3M2 21v-3a4 4 0 013-4m14 0a4 4 0 013 4v3',
+  libro: 'M12 5c-3-2-6-2-9 0v15c3-2 6-2 9 0m0-15c3-2 6-2 9 0v15c-3-2-6-2-9 0V5',
+  capas: 'm12 3 9 5-9 5-9-5zM3 12l9 5 9-5M3 16l9 5 9-5',
+  comparar: 'M12 3v17M6 21h12M4 7h16M6 7l-4 8h8L6 7m12 0-4 8h8l-4-8',
+  riesgo: 'm12 3 10 18H2L12 3m0 6v5m0 3h.01',
+  reasignar:
+    'M4 8a8 8 0 0114-3l3 3M21 3v5h-5M20 16a8 8 0 01-14 3l-3-3M3 21v-5h5',
 } as const;
 export function RrppIcon({
   nombre,

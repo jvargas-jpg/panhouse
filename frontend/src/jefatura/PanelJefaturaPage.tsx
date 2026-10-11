@@ -28,6 +28,8 @@ import {
 import { SeguimientoPage } from './SeguimientoPage';
 import { SeguimientoCorreccionPage } from './SeguimientoCorreccionPage';
 import './jefatura.css';
+import { AsignacionesCargaPage } from './AsignacionesCargaPage';
+import type { ProyectoJefatura } from '../../../shared/jefatura';
 
 export function PanelJefaturaPage() {
   const { data: user } = useMe();
@@ -49,13 +51,15 @@ export function PanelJefaturaPage() {
         : 'porAsignar';
   const [search, setSearch] = useState('');
   const [proyectoId, setProyectoId] = useState<string | null>(null);
+  const [proyectoAsignacion, setProyectoAsignacion] =
+    useState<ProyectoJefatura | null>(null);
   const [aviso, setAviso] = useState('');
   const [correccion, setCorreccion] = useState(false);
   const cache = useQueryClient();
   const dashboard = useQuery({
     queryKey: ['jefatura', 'dashboard'],
     queryFn: fetchDashboardJefatura,
-    enabled: user?.rol === 'jefe_area',
+    enabled: user?.rol === 'jefe_area' && vista !== 'asignaciones',
     staleTime: 0,
     refetchOnMount: 'always',
     refetchInterval: 60000,
@@ -63,10 +67,13 @@ export function PanelJefaturaPage() {
   const actividad = useQuery({
     queryKey: ['jefatura', 'actividad'],
     queryFn: fetchActividadJefatura,
-    enabled: user?.rol === 'jefe_area',
+    enabled: user?.rol === 'jefe_area' && vista === 'inicio',
     refetchInterval: 60000,
   });
-  const close = useCallback(() => setProyectoId(null), []);
+  const close = useCallback(() => {
+    setProyectoId(null);
+    setProyectoAsignacion(null);
+  }, []);
   useEffect(() => {
     if (!aviso) return;
     const timer = setTimeout(() => setAviso(''), 5000);
@@ -91,7 +98,10 @@ export function PanelJefaturaPage() {
     setParams({ tab: t });
     setSearch('');
   }
-  const proyecto = dashboard.data?.proyectos.find((p) => p.id === proyectoId);
+  const proyecto =
+    vista === 'asignaciones'
+      ? proyectoAsignacion
+      : dashboard.data?.proyectos.find((p) => p.id === proyectoId);
   if (user && user.rol !== 'jefe_area')
     return <p role="alert">No tienes acceso a Jefatura.</p>;
   const titulos: Record<VistaJefatura, string> = {
@@ -109,12 +119,16 @@ export function PanelJefaturaPage() {
         <img
           src="/brand/panhouse-logo.webp"
           alt="PanHouse Casa Editorial"
-          className="h-auto w-[132px] object-contain"
+          className={`h-auto object-contain ${vista === 'asignaciones' ? 'w-[176px]' : 'w-[132px]'}`}
         />
       }
       footer={
         <div className="border-t border-gray-800/80 px-6 py-5">
-          <p className="text-xs italic text-gray-500">Historias que conectan</p>
+          <p
+            className={`${vista === 'asignaciones' ? 'text-sm' : 'text-xs'} italic text-gray-500`}
+          >
+            Historias que conectan
+          </p>
         </div>
       }
       contentMaxWidth="max-w-[1760px]"
@@ -126,7 +140,6 @@ export function PanelJefaturaPage() {
             <AssignmentCandidateDrawer
               key={proyecto.id}
               proyecto={proyecto}
-              equipo={dashboard.data?.teamCapacity ?? []}
               onClose={close}
               onCambio={cambio}
             />
@@ -141,26 +154,28 @@ export function PanelJefaturaPage() {
     >
       <div className="jefatura">
         <JefaturaSidebar vista={vista} mobile />
-        <header className="jf-page-header">
-          <div>
-            <p className="jf-eyebrow">JEFATURA · OPERACIÓN EDITORIAL</p>
-            <h1>{titulos[vista]}</h1>
-            <p>
-              {vista === 'inicio'
-                ? 'Supervisa la operación editorial, distribuye la carga del equipo y atiende los proyectos que requieren decisión.'
-                : vista === 'asignaciones'
-                  ? 'Compara carga ponderada y composición antes de distribuir el trabajo.'
+        {vista !== 'asignaciones' && (
+          <header className="jf-page-header">
+            <div>
+              <p className="jf-eyebrow">JEFATURA · OPERACIÓN EDITORIAL</p>
+              <h1>{titulos[vista]}</h1>
+              <p>
+                {vista === 'inicio'
+                  ? 'Supervisa la operación editorial, distribuye la carga del equipo y atiende los proyectos que requieren decisión.'
                   : 'Revisa el contexto operativo y continúa desde el expediente del proyecto.'}
-            </p>
-          </div>
-          {vista === 'inicio' && (
-            <span className="jf-snapshot">
-              <span />
-              Estado actual
-            </span>
-          )}
-        </header>
-        {vista === 'indicadores' ? (
+              </p>
+            </div>
+            {vista === 'inicio' && (
+              <span className="jf-snapshot">
+                <span />
+                Estado actual
+              </span>
+            )}
+          </header>
+        )}
+        {vista === 'asignaciones' ? (
+          <AsignacionesCargaPage onCompare={setProyectoAsignacion} />
+        ) : vista === 'indicadores' ? (
           <section className="jf-card jf-placeholder">
             <RrppIcon nombre="indicadores" className="h-8 w-8" />
             <h2>Un espacio para medir Producción</h2>
@@ -306,11 +321,7 @@ export function PanelJefaturaPage() {
                 <section className="jf-card">
                   <div className="jf-card-head">
                     <div>
-                      <h2>
-                        {vista === 'asignaciones'
-                          ? 'Distribución de proyectos'
-                          : 'Proyectos recibidos de RRPP'}
-                      </h2>
+                      <h2>Proyectos recibidos de RRPP</h2>
                       <p>
                         Abre el expediente para supervisar; compara al equipo
                         antes de asignar.
@@ -341,14 +352,6 @@ export function PanelJefaturaPage() {
                             </strong>
                             <span className="jf-meta">{p.servicio.nombre}</span>
                           </div>
-                          {vista === 'asignaciones' && (
-                            <button
-                              className="jf-button jf-button-small"
-                              onClick={() => setProyectoId(p.id)}
-                            >
-                              {p.porAsignar ? 'Asignar' : 'Reasignar'}
-                            </button>
-                          )}
                         </li>
                       ))}
                     </ul>

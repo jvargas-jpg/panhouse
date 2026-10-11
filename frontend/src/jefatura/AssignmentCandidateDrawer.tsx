@@ -1,28 +1,48 @@
 import { useEffect, useRef, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import type {
-  CapacidadJefatura,
-  ProyectoJefatura,
-} from '../../../shared/jefatura';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import type { ProyectoJefatura } from '../../../shared/jefatura';
 import { RrppIcon } from '../rrpp/RrppIcons';
-import { asignarDesdeJefatura, decidirExpress } from './commandCenterApi';
-import { ExpressBadge, fechaJefatura } from './JefaturaCards';
+import {
+  asignarDesdeJefatura,
+  decidirExpress,
+  fetchComparacionAsignacion,
+} from './commandCenterApi';
+import { ErrorJefatura, ExpressBadge, fechaJefatura } from './JefaturaCards';
 
 export function AssignmentCandidateDrawer({
-  proyecto,
-  equipo,
+  proyecto: inicial,
   onClose,
   onCambio,
 }: {
   proyecto: ProyectoJefatura;
-  equipo: CapacidadJefatura[];
   onClose: () => void;
   onCambio: (mensaje: string, cerrar?: boolean) => Promise<void>;
 }) {
+  const comparacion = useQuery({
+    queryKey: ['jefatura', 'candidatos', inicial.id],
+    queryFn: () => fetchComparacionAsignacion(inicial.id),
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+  const proyecto = comparacion.data?.proyecto ?? inicial;
+  const equipo = comparacion.isError
+    ? []
+    : (comparacion.data?.candidatos ?? []);
+  const sinDatos =
+    !comparacion.data || comparacion.isError || comparacion.isFetching;
+  const [confirmando, setConfirmando] = useState(false);
   const [seleccion, setSeleccion] = useState(
     proyecto.especialista?.id ?? proyecto.recomendacion?.especialistaId ?? '',
   );
   const [motivo, setMotivo] = useState('');
+  useEffect(() => {
+    if (!seleccion && comparacion.data)
+      setSeleccion(
+        comparacion.data.proyecto.especialista?.id ??
+          comparacion.data.proyecto.recomendacion?.especialistaId ??
+          '',
+      );
+  }, [comparacion.data, seleccion]);
   const dialog = useRef<HTMLDivElement>(null);
   const antes = useRef<HTMLElement | null>(null);
   const busy = useRef(false);
@@ -64,10 +84,15 @@ export function AssignmentCandidateDrawer({
     };
   }, [onClose]);
   const asignacion = useMutation({
-    mutationFn: () => asignarDesdeJefatura(proyecto.id, seleccion),
+    mutationFn: () =>
+      asignarDesdeJefatura(
+        proyecto.id,
+        seleccion,
+        proyecto.especialista?.id ?? null,
+      ),
     onSuccess: () =>
       onCambio(
-        'Especialista asignado. El historial y la carga están actualizados.',
+        'Asignación registrada. El historial y la carga están actualizados.',
         true,
       ),
   });
@@ -102,11 +127,7 @@ export function AssignmentCandidateDrawer({
         <header className="jf-drawer-head">
           <div>
             <p className="jf-eyebrow">DECISIÓN DE JEFATURA</p>
-            <h2 id="jf-drawer-title">
-              {proyecto.especialista
-                ? 'Reasignar Especialista'
-                : 'Asignar Especialista'}
-            </h2>
+            <h2 id="jf-drawer-title">Comparar especialistas</h2>
           </div>
           <button
             type="button"
@@ -122,13 +143,30 @@ export function AssignmentCandidateDrawer({
           <section className="jf-project-context">
             <div className="jf-context-title">
               <div>
-                <h3>{proyecto.autores}</h3>
+                <h3>{proyecto.titulo || proyecto.autores}</h3>
                 <p>
                   #{proyecto.codigo} · {proyecto.servicio.nombre}
                 </p>
               </div>
               <ExpressBadge express={proyecto.express} />
             </div>
+            <p className="jf-context-note">
+              Asignación actual:{' '}
+              <strong>{proyecto.especialista?.nombre ?? 'Sin asignar'}</strong>{' '}
+              · Impacto del proyecto:{' '}
+              <strong>
+                +{proyecto.impactoCarga} punto
+                {proyecto.impactoCarga === 1 ? '' : 's'}
+              </strong>
+            </p>
+            <p className="jf-context-note">
+              Estado: {proyecto.estado.replace('_', ' ')}
+            </p>
+            {proyecto.riesgo.atencion && (
+              <p className="jf-context-note jf-text-danger">
+                Requiere atención: {proyecto.riesgo.causas.join(' · ')}
+              </p>
+            )}
             <dl className="jf-date-grid">
               <div>
                 <dt>Fecha estándar</dt>
@@ -167,7 +205,7 @@ export function AssignmentCandidateDrawer({
                     className="jf-button"
                     type="button"
                     onClick={() => express.mutate('confirmado')}
-                    disabled={ocupado}
+                    disabled={ocupado || sinDatos}
                   >
                     Confirmar Express
                   </button>
@@ -175,7 +213,7 @@ export function AssignmentCandidateDrawer({
                     className="jf-button jf-button-secondary"
                     type="button"
                     onClick={() => express.mutate('normal')}
-                    disabled={ocupado}
+                    disabled={ocupado || sinDatos}
                   >
                     Mantener prioridad normal
                   </button>
@@ -193,10 +231,29 @@ export function AssignmentCandidateDrawer({
               <h3>Compara al equipo</h3>
               <p>La carga ponderada considera la composición de servicios.</p>
             </div>
-            <span>{equipo.length} especialistas</span>
+            <span>
+              {comparacion.isLoading
+                ? 'Consultando equipo'
+                : comparacion.isError
+                  ? 'Equipo no disponible'
+                  : `${equipo.length} especialistas`}
+            </span>
           </div>
           <fieldset className="jf-candidates">
             <legend className="sr-only">Elige Especialista responsable</legend>
+            {comparacion.isError && (
+              <ErrorJefatura
+                retry={() => {
+                  void comparacion.refetch();
+                }}
+                texto="No pudimos actualizar los candidatos. Reintenta antes de asignar."
+              />
+            )}
+            {comparacion.isLoading && (
+              <div className="jf-list-skeleton">
+                <div className="jf-skeleton" />
+              </div>
+            )}
             {equipo.map((c) => {
               const recomendado =
                 proyecto.recomendacion?.especialistaId === c.id;
@@ -210,8 +267,11 @@ export function AssignmentCandidateDrawer({
                     name="especialista"
                     value={c.id}
                     checked={seleccion === c.id}
-                    onChange={() => setSeleccion(c.id)}
-                    disabled={ocupado}
+                    onChange={() => {
+                      setSeleccion(c.id);
+                      setConfirmando(false);
+                    }}
+                    disabled={ocupado || sinDatos}
                   />
                   <div className="jf-avatar">
                     {c.nombre
@@ -223,6 +283,7 @@ export function AssignmentCandidateDrawer({
                   <div className="jf-candidate-info">
                     <div className="jf-candidate-name">
                       <strong>{c.nombre}</strong>
+                      <span className="jf-meta">Activo</span>
                       {recomendado && (
                         <span className="jf-recommended">Recomendado</span>
                       )}
@@ -235,7 +296,8 @@ export function AssignmentCandidateDrawer({
                         <b>{c.carga}</b> puntos ponderados
                       </span>
                       <span>
-                        <b>{c.activos}</b> activos
+                        <b>{c.activos}</b>{' '}
+                        {c.activos === 1 ? 'activo' : 'activos'}
                       </span>
                       <span>
                         <b>{c.express}</b> Express
@@ -253,6 +315,17 @@ export function AssignmentCandidateDrawer({
                             )
                             .join(' / ')
                         : 'Sin proyectos activos asignados'}
+                    </p>
+                    <p className="jf-candidate-projection">
+                      Carga actual <b>{c.carga}</b> + impacto{' '}
+                      <b>{c.impactoCarga}</b> →{' '}
+                      <strong>
+                        {c.cargaProyectada}{' '}
+                        {c.cargaProyectada === 1
+                          ? 'punto proyectado'
+                          : 'puntos proyectados'}
+                      </strong>
+                      {c.esActual && <span>· Proyecto ya incluido</span>}
                     </p>
                     {recomendado && (
                       <ul className="jf-reasons">
@@ -272,7 +345,7 @@ export function AssignmentCandidateDrawer({
               );
             })}
           </fieldset>
-          {!equipo.length && (
+          {!equipo.length && !comparacion.isLoading && !comparacion.isError && (
             <p className="jf-empty">
               No hay Especialistas activos disponibles para asignación.
             </p>
@@ -283,6 +356,17 @@ export function AssignmentCandidateDrawer({
             </div>
           )}
         </div>
+        {confirmando && elegido && (
+          <section
+            className="jf-reassign-confirmation"
+            aria-label="Confirmar cambio de responsable"
+          >
+            <strong>
+              {proyecto.especialista?.nombre} → {elegido.nombre}
+            </strong>
+            <p>La asignación anterior quedará registrada en el historial.</p>
+          </section>
+        )}
         <footer className="jf-drawer-footer">
           <p>
             {elegido ? (
@@ -297,23 +381,32 @@ export function AssignmentCandidateDrawer({
             <button
               className="jf-button jf-button-secondary"
               type="button"
-              onClick={onClose}
+              onClick={() => (confirmando ? setConfirmando(false) : onClose())}
               disabled={ocupado}
             >
-              Cancelar
+              {confirmando ? 'Volver a comparar' : 'Cancelar'}
             </button>
             <button
               className="jf-button"
               type="button"
               disabled={
-                !elegido || ocupado || proyecto.especialista?.id === seleccion
+                !elegido ||
+                ocupado ||
+                sinDatos ||
+                !proyecto.entregadoJefatura ||
+                proyecto.especialista?.id === seleccion
               }
-              onClick={() => asignacion.mutate()}
+              onClick={() => {
+                if (proyecto.especialista && !confirmando) setConfirmando(true);
+                else asignacion.mutate();
+              }}
             >
               {asignacion.isPending
                 ? 'Asignando…'
                 : proyecto.especialista
-                  ? 'Confirmar reasignación'
+                  ? confirmando
+                    ? 'Confirmar reasignación'
+                    : 'Reasignar proyecto'
                   : 'Asignar Especialista'}
             </button>
           </div>

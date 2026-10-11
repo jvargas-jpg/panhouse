@@ -8,6 +8,10 @@ import {
 import { asignarEspecialista } from '../helpers/proyectos.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import { parseOrReply } from '../helpers/validate.js';
+import {
+  compararAsignacionJefatura,
+  obtenerAsignacionesJefatura,
+} from '../helpers/jefaturaAsignaciones.js';
 
 const idSchema = z.object({ id: z.string().uuid() });
 const fecha = z
@@ -27,6 +31,47 @@ const expressSchema = z
   .strict();
 export async function jefaturaRoutes(app: FastifyInstance) {
   const preHandler = [requireAuth, requireRole('jefe_area')];
+  app.get('/asignaciones', { preHandler }, async (req, reply) => {
+    const f = parseOrReply(
+      z
+        .object({
+          tab: z
+            .enum(['porAsignar', 'asignados', 'express', 'enRiesgo'])
+            .default('porAsignar'),
+          q: z.string().trim().max(160).default(''),
+          servicioId: z.string().uuid().optional(),
+          especialistaId: z.string().uuid().optional(),
+          orden: z
+            .enum(['urgentes', 'recientes', 'mayorImpacto', 'menorImpacto'])
+            .default('urgentes'),
+          page: z.coerce.number().int().min(1).max(100000).default(1),
+          pageSize: z.coerce.number().int().min(1).max(25).default(20),
+        })
+        .strict(),
+      req.query,
+      reply,
+    );
+    if (!f) return;
+    return obtenerAsignacionesJefatura({
+      ...f,
+      tab: f.tab ?? 'porAsignar',
+      q: f.q ?? '',
+      orden: f.orden ?? 'urgentes',
+      page: f.page ?? 1,
+      pageSize: f.pageSize ?? 20,
+    });
+  });
+  app.get('/proyectos/:id/candidatos', { preHandler }, async (req, reply) => {
+    const p = parseOrReply(idSchema, req.params, reply);
+    if (!p) return;
+    const comparacion = await compararAsignacionJefatura(p.id);
+    return (
+      comparacion ??
+      reply.code(404).send({
+        error: 'Proyecto no disponible en el ámbito activo de Jefatura',
+      })
+    );
+  });
   app.get('/dashboard', { preHandler }, async () => obtenerDashboardJefatura());
   app.get('/actividad', { preHandler }, async () => ({
     actividad: await obtenerActividadJefatura(),
@@ -48,13 +93,21 @@ export async function jefaturaRoutes(app: FastifyInstance) {
       const p = parseOrReply(idSchema, req.params, reply);
       if (!p) return;
       const b = parseOrReply(
-        z.object({ especialistaId: z.string().uuid() }).strict(),
+        z
+          .object({
+            especialistaId: z.string().uuid(),
+            especialistaActualEsperado: z.string().uuid().nullable().optional(),
+          })
+          .strict(),
         req.body,
         reply,
       );
       if (!b) return;
       await asignarEspecialista(p.id, b.especialistaId, req.user!.id, {
         exigirHandoff: true,
+        ...(b.especialistaActualEsperado !== undefined
+          ? { especialistaActualEsperado: b.especialistaActualEsperado }
+          : {}),
       });
       return { ok: true };
     },

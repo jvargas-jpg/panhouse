@@ -3,15 +3,36 @@ import type {
   ActividadJefatura,
   DashboardJefatura,
   ExpressJefatura,
+  AsignacionesJefatura,
+  FiltrosAsignaciones,
+  ComparacionAsignacion,
 } from '../../../shared/jefatura';
 export const fetchDashboardJefatura = () =>
   apiFetch<DashboardJefatura>('/jefatura/dashboard');
 export const fetchActividadJefatura = () =>
   apiFetch<{ actividad: ActividadJefatura[] }>('/jefatura/actividad');
-export const asignarDesdeJefatura = (id: string, especialistaId: string) =>
+export const fetchAsignacionesJefatura = (f: FiltrosAsignaciones) => {
+  const params = new URLSearchParams();
+  Object.entries(f).forEach(([k, v]) => {
+    if (v !== undefined && v !== '') params.set(k, String(v));
+  });
+  return apiFetch<AsignacionesJefatura>(`/jefatura/asignaciones?${params}`);
+};
+export const fetchComparacionAsignacion = (id: string) =>
+  apiFetch<ComparacionAsignacion>(`/jefatura/proyectos/${id}/candidatos`);
+export const asignarDesdeJefatura = (
+  id: string,
+  especialistaId: string,
+  especialistaActualEsperado?: string | null,
+) =>
   apiFetch<{ ok: true }>(`/jefatura/proyectos/${id}/especialista`, {
     method: 'PATCH',
-    body: JSON.stringify({ especialistaId }),
+    body: JSON.stringify({
+      especialistaId,
+      ...(especialistaActualEsperado !== undefined
+        ? { especialistaActualEsperado }
+        : {}),
+    }),
   });
 export const decidirExpress = (
   id: string,

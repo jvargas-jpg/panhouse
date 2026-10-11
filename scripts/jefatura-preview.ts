@@ -22,7 +22,16 @@ await admin.end();
 target.pathname = `/${previewName}`;
 process.env.DATABASE_URL = target.toString();
 process.env.NODE_ENV = 'development';
-const { db } = await import('../server/db/client.js');
+const { db, pool } = await import('../server/db/client.js');
+if (process.env.PREVIEW_CLEANUP === 'true') {
+  // Only the fixed local disposable database selected above can be cleaned.
+  await db.execute(
+    sql`TRUNCATE TABLE usuarios, autores, servicios, unidades, presupuestos CASCADE`,
+  );
+  await pool.end();
+  console.log('Isolated QA data cleaned: panhouse_jefatura_preview');
+  process.exit(0);
+}
 const {
   users,
   servicios,
@@ -34,9 +43,8 @@ const {
 const { crearAutor, crearUnidad, crearPresupuesto, crearProyecto } =
   await import('../tests/helpers/fixtures.js');
 const { hashPassword } = await import('../server/helpers/password.js');
-const { decidirExpressJefatura } = await import(
-  '../server/helpers/jefatura.js'
-);
+const { decidirExpressJefatura } =
+  await import('../server/helpers/jefatura.js');
 const { asignarEspecialista } = await import('../server/helpers/proyectos.js');
 await migrate(db, { migrationsFolder: './server/db/migrations' });
 if (process.env.PREVIEW_REUSE_DATA !== 'true') {
@@ -138,14 +146,21 @@ if (process.env.PREVIEW_REUSE_DATA !== 'true') {
   const posible = await proyecto('Elena Márquez y Martín Ortega', ef!.id, {
     fechaDeseadaAutor: '2027-01-05',
   });
-  await db
-    .insert(workItems)
-    .values({
-      proyectoId: posible.id,
-      tipo: 'asignacion_especialista',
-      estado: 'pendiente',
-    });
+  await db.insert(workItems).values({
+    proyectoId: posible.id,
+    tipo: 'asignacion_especialista',
+    estado: 'pendiente',
+  });
   await proyecto('Sofía Álvarez', cr!.id);
+  await proyecto('Teresa Peña', ef!.id, {
+    tituloDefinitivo: 'La memoria de los caminos',
+  });
+  await proyecto('Iván Ferrer', se!.id, {
+    tituloDefinitivo: 'Cuadernos de una ciudad',
+  });
+  await proyecto('Nora Castillo', cr!.id, {
+    tituloDefinitivo: 'Semillas del mañana',
+  });
   const confirmado = await proyecto('Gabriel Rivas', se!.id, {
     fechaProgramadaInicio: '2026-10-01',
     fechaDeseadaAutor: '2026-12-01',
@@ -182,15 +197,13 @@ if (process.env.PREVIEW_REUSE_DATA !== 'true') {
       },
     ])
     .returning();
-  await db
-    .insert(projectAssignments)
-    .values({
-      proyectoId: riesgo.id,
-      workItemId: edicion!.id,
-      tipo: 'editor',
-      usuarioId: editor!.id,
-      asignadoPorId: jefe!.id,
-    });
+  await db.insert(projectAssignments).values({
+    proyectoId: riesgo.id,
+    workItemId: edicion!.id,
+    tipo: 'editor',
+    usuarioId: editor!.id,
+    asignadoPorId: jefe!.id,
+  });
   const solicitado = await proyecto('Mariana Solís', cr!.id, {
     especialistaId: beatriz!.id,
   });
@@ -205,13 +218,11 @@ if (process.env.PREVIEW_REUSE_DATA !== 'true') {
   await db
     .insert(direccionesCreativas)
     .values({ proyectoId: solicitado.id, workItemId: solicitud!.id });
-  await db
-    .insert(workItems)
-    .values({
-      proyectoId: solicitado.id,
-      tipo: 'edicion',
-      estado: 'pendiente',
-    });
+  await db.insert(workItems).values({
+    proyectoId: solicitado.id,
+    tipo: 'edicion',
+    estado: 'pendiente',
+  });
 }
 const { buildApp } = await import('../server/app.js');
 const app = buildApp();

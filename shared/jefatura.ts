@@ -1,8 +1,5 @@
 export type EstadoExpressJefatura =
-  | 'normal'
-  | 'posible'
-  | 'confirmado'
-  | 'normal_confirmado';
+  'normal' | 'posible' | 'confirmado' | 'normal_confirmado';
 export interface ExpressJefatura {
   estado: EstadoExpressJefatura;
   fechaEstandar: string;
@@ -23,9 +20,14 @@ export interface ProcesoJefatura {
 export interface ProyectoJefatura {
   id: string;
   codigo: string;
+  titulo: string | null;
+  creadoEn: string;
+  entregadoJefatura: boolean;
+  asignacionDesincronizada: boolean;
+  impactoCarga: number;
   autores: string;
   estado: string;
-  servicio: { codigo: string; nombre: string; peso: number };
+  servicio: { id: string; codigo: string; nombre: string; peso: number };
   especialista: { id: string; nombre: string } | null;
   porAsignar: boolean;
   express: ExpressJefatura;
@@ -42,6 +44,46 @@ export interface ProyectoJefatura {
     nombre: string;
     razones: string[];
   } | null;
+}
+export type TabAsignaciones =
+  'porAsignar' | 'asignados' | 'express' | 'enRiesgo';
+export type OrdenAsignaciones =
+  'urgentes' | 'recientes' | 'mayorImpacto' | 'menorImpacto';
+export interface FiltrosAsignaciones {
+  tab: TabAsignaciones;
+  q: string;
+  servicioId?: string;
+  especialistaId?: string;
+  orden: OrdenAsignaciones;
+  page: number;
+  pageSize: number;
+}
+export interface EquipoAsignaciones extends CapacidadJefatura {
+  barraRelativa: number;
+}
+export interface AsignacionesJefatura {
+  actualizadoEn: string;
+  proyectos: ProyectoJefatura[];
+  contadores: Record<TabAsignaciones, number>;
+  equipo: EquipoAsignaciones[];
+  servicios: { id: string; nombre: string }[];
+  especialistas: { id: string; nombre: string }[];
+  referenciaBarra: number;
+  total: number;
+  page: number;
+  pageSize: number;
+  pages: number;
+}
+export interface CandidatoAsignacion extends CapacidadJefatura {
+  esActual: boolean;
+  impactoCarga: number;
+  cargaProyectada: number;
+  recomendado: boolean;
+  razones: string[];
+}
+export interface ComparacionAsignacion {
+  proyecto: ProyectoJefatura;
+  candidatos: CandidatoAsignacion[];
 }
 export interface CapacidadJefatura {
   id: string;
