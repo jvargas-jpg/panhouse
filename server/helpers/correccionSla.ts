@@ -55,7 +55,7 @@ export function calcularDueAtCorreccion(instanteAsignacion: string, alcance: Alc
 // guarda (mismo criterio que evaluarRiesgoProyecto en alertas.ts).
 export type EstadoPlazoCorreccion = 'en_tiempo' | 'proximo_a_vencer' | 'vencido';
 
-const UMBRAL_PROXIMO_A_VENCER_HORAS = 24;
+export const UMBRAL_PROXIMO_A_VENCER_HORAS = 24;
 
 // Nuevas entregas: comparar instantes exactos. Históricos sin hora conservan
 // su comparación por día; nunca se inventa la hora de un DATE legacy.

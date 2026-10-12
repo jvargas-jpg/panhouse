@@ -1,5 +1,8 @@
 import { disenoRoutes } from './routes/diseno.routes.js';
 import { calidadRoutes } from './routes/calidad.routes.js';
+import { projectCommandCenterRoutes } from './routes/projectCommandCenter.routes.js';
+import { especialistaInicioRoutes } from './routes/especialistaInicio.routes.js';
+import { especialistaCarteraRoutes } from './routes/especialistaCartera.routes.js';
 import cookie from '@fastify/cookie';
 import Fastify from 'fastify';
 import { autoresRoutes } from './routes/autores.routes.js';
@@ -37,7 +40,10 @@ export function buildApp() {
   app.register(autoresRoutes, { prefix: '/api/autores' });
   app.register(catalogosRoutes, { prefix: '/api/catalogos' });
   app.register(proyectosRoutes, { prefix: '/api/proyectos' });
+  app.register(projectCommandCenterRoutes, { prefix: '/api/proyectos' });
   app.register(especialistasRoutes, { prefix: '/api/especialistas' });
+  app.register(especialistaInicioRoutes, { prefix: '/api/especialistas' });
+  app.register(especialistaCarteraRoutes, { prefix: '/api/especialistas' });
   app.register(editoresRoutes, { prefix: '/api/editores' });
   app.register(disenoRoutes, { prefix: '/api/diseno' });
   app.register(calidadRoutes, { prefix: '/api/calidad' });

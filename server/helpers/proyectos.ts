@@ -4,11 +4,11 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { autores, fichasTrazabilidad, notificaciones, projectAssignments, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
+import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
-import { ESTADOS_ACTIVOS, resolverEspecialistaActual, obtenerEspecialistaActual } from './carga.js';
+import { ESTADOS_ACTIVOS, obtenerEspecialistaActual } from './carga.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItem } from './workItems.js';
@@ -426,12 +426,21 @@ export function validarCambioEstadoProyecto(estado?: EstadoProyecto): void {
 // confirmada a cargo del especialista. "Especificaciones especiales"
 // (jefe de área) queda como categoría abierta para más adelante: hoy
 // ningún campo de proyectos cae ahí.
-export async function actualizarProyecto(proyectoId: string, datos: DatosActualizarProyecto) {
+export async function actualizarProyecto(proyectoId: string, datos: DatosActualizarProyecto, actor?: { id: string; rol: Rol }) {
   validarCambioEstadoProyecto(datos.estado);
 
-  const [fila] = await db.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
-  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
-  return fila;
+  return db.transaction(async (tx) => {
+    const [antes] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+    if (!antes) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    const responsable = actor && datos.estado && datos.estado !== antes.estado
+      ? await obtenerEspecialistaActual(proyectoId, antes.especialistaId, tx) : null;
+    const [fila] = await tx.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
+    if (actor && datos.estado && datos.estado !== antes.estado) {
+      await registrarEvento(tx, { actorId: actor.id, accion: 'PROYECTO_ESTADO_CAMBIADO', entityType: 'proyecto', entityId: proyectoId, proyectoId,
+        detalles: { anterior: antes.estado, nuevo: datos.estado, especialistaId: responsable } });
+    }
+    return fila!;
+  });
 }
 
 export interface DatosReasignarProyecto {
@@ -617,22 +626,7 @@ export async function asignarEspecialista(
         statusCode: 409,
       });
     if (opciones.especialistaActualEsperado !== undefined) {
-      const [activa] = await tx
-        .select({ usuarioId: projectAssignments.usuarioId })
-        .from(projectAssignments)
-        .where(
-          and(
-            eq(projectAssignments.proyectoId, proyectoId),
-            eq(projectAssignments.tipo, 'especialista'),
-            isNull(projectAssignments.workItemId),
-            isNull(projectAssignments.finalizadoEn),
-          ),
-        )
-        .limit(1);
-      const actual = resolverEspecialistaActual(
-        activa?.usuarioId,
-        proyecto.especialistaId,
-      );
+      const actual = await obtenerEspecialistaActual(proyectoId, proyecto.especialistaId, tx);
       // Un retry idéntico conserva idempotencia; una decisión sobre un dueño
       // anterior se rechaza antes de escribir historial, audit o notificaciones.
       if (

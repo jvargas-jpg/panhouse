@@ -1,0 +1,9 @@
+{
+  "exitCode": 0,
+  "source": "Arbol staged congelado",
+  "database": "panhouse_test",
+  "container": "panhouse-cartera-regression-qa",
+  "storage": "tmpfs",
+  "constraints": "Sin cambios",
+  "report": "C:/Users/Jhose/OneDrive/Documentos/panhouse/docs/evidencias/especialista-mis-proyectos/regresion-final-staged.json"
+}

@@ -61,6 +61,7 @@ export function CrmSidebarLayout({
   contentClassName = 'px-6 py-10',
   sidebarBreakpoint = 'md',
   sidebarCompact = false,
+  sidebarWidth,
 }: {
   nav: ReactNode;
   children: ReactNode;
@@ -72,10 +73,11 @@ export function CrmSidebarLayout({
   contentClassName?: string;
   sidebarBreakpoint?: 'md' | 'lg';
   sidebarCompact?: boolean;
+  sidebarWidth?: number;
 }) {
   return (
     <div className={`${contexto === 'fullscreen' ? 'h-full w-full' : `${FULL_BLEED} ${ALTO_LLENO_MAIN}`} flex overflow-hidden bg-[#F8F9FA]`}>
-      <aside className={`z-20 hidden h-full ${sidebarCompact ? 'w-56' : 'w-64'} flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl ${sidebarBreakpoint === 'lg' ? 'lg:flex' : 'md:flex'}`}>
+      <aside style={sidebarWidth ? { width: sidebarWidth } : undefined} className={`z-20 hidden h-full ${sidebarCompact ? 'w-56' : 'w-64'} flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl ${sidebarBreakpoint === 'lg' ? 'lg:flex' : 'md:flex'}`}>
         <div className="flex h-20 items-center border-b border-gray-800 px-6">
           {logo ?? (
             <h1 className="text-xl font-light uppercase tracking-widest text-white">

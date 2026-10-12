@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import type { AreaFicha, ResumenFichaViva } from '../../../../shared/fichaViva';
 import { useMe } from '../../auth/useAuth';
 import { CrmSidebarLayout } from '../../layout/CrmSidebarLayout';
@@ -25,6 +25,11 @@ function Operativa({data,onArea,onHistory}:{data:ResumenFichaViva;onArea:(id:Are
   </div>;
 }
 export function FichaVivaPage(){
+  const {id}=useParams(), {data:user}=useMe(), location=useLocation();
+  if(user && ['especialista','jefe_area'].includes(user.rol)) return <Navigate to={'/proyectos/'+id+'/ficha'+location.search+location.hash} replace/>;
+  return <FichaVivaLegacyPage/>;
+}
+function FichaVivaLegacyPage(){
   const {id=''}=useParams<{id:string}>();
   const {data:user}=useMe();
   const identity=user?user.id+':'+user.rol:undefined;

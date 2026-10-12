@@ -14,6 +14,10 @@ export const rrppEnviadoAtSql = sql<string | null>`(select min(evento.created_at
 // Mantener este tipo sincronizado es responsabilidad de quien agrega un
 // evento nuevo; no es una validación de runtime.
 export type AccionAuditoria =
+  | 'PROYECTO_AVANCE_REGISTRADO'
+  | 'PROYECTO_TITULOS_REGISTRADOS'
+  | 'AMAZON_ACTIVACION_HABILITADA' | 'AMAZON_ACTIVACION_REGISTRADA'
+  | 'PROYECTO_ESTADO_CAMBIADO'
   | 'SEGUIMIENTO_NOTA_REGISTRADA' | 'SEGUIMIENTO_EVALUACION_REGISTRADA'
   | 'SEGUIMIENTO_PAGO_REGISTRADO' | 'SEGUIMIENTO_DATOS_REGISTRADOS'
   | 'EXPRESS_CONFIRMADO'

@@ -1,0 +1,8 @@
+﻿{
+    "passed":  4,
+    "exitCode":  0,
+    "failed":  0,
+    "command":  "npm test -- tests/especialistaCarteraUrlState.test.ts",
+    "durationSeconds":  10.77,
+    "tests":  4
+}

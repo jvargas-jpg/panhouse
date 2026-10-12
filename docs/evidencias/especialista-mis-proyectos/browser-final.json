@@ -1,0 +1,160 @@
+{
+  "checks": [
+    {
+      "name": "15 proyectos en una sola tabla",
+      "passed": true
+    },
+    {
+      "name": "Sin CTA de creación",
+      "passed": true
+    },
+    {
+      "name": "Estado, Crudo Tripa, Express, riesgo y next action simultáneos",
+      "passed": true
+    },
+    {
+      "name": "Popup incluye tres procesos paralelos",
+      "passed": true
+    },
+    {
+      "name": "Riesgo explica una causa real",
+      "passed": true
+    },
+    {
+      "name": "Crudo Tripa y riesgo combinados en servidor",
+      "passed": true
+    },
+    {
+      "name": "Búsqueda por autor sin acento",
+      "passed": true
+    },
+    {
+      "name": "Gestionar abre Command Center con origen completo",
+      "passed": true
+    },
+    {
+      "name": "Breadcrumb nombra Mis proyectos",
+      "passed": true
+    },
+    {
+      "name": "Regreso conserva búsqueda, servicio, subtipo, riesgo y orden",
+      "passed": true
+    },
+    {
+      "name": "Primera página tiene 10 proyectos",
+      "passed": true
+    },
+    {
+      "name": "Segunda página tiene cinco proyectos",
+      "passed": true
+    },
+    {
+      "name": "Regreso conserva página 2 y tamaño 10",
+      "passed": true
+    },
+    {
+      "name": "Mi trabajo enumera acciones y no cartera",
+      "passed": true
+    },
+    {
+      "name": "1440x900: siete filas completas y sidebar 216",
+      "passed": true
+    },
+    {
+      "name": "Tablet: cards en dos columnas sin overflow",
+      "passed": true
+    },
+    {
+      "name": "Móvil: cards en una columna sin tabla horizontal",
+      "passed": true
+    },
+    {
+      "name": "Escape cierra sheet y devuelve foco",
+      "passed": true
+    },
+    {
+      "name": "Error contextual ofrece reintento",
+      "passed": true
+    },
+    {
+      "name": "Carga usa skeleton de resumen y filas",
+      "passed": true
+    },
+    {
+      "name": "Reintentar recupera cartera",
+      "passed": true
+    },
+    {
+      "name": "Tab Requieren acción: 4 proyectos",
+      "passed": true
+    },
+    {
+      "name": "Tab En riesgo: 3 proyectos",
+      "passed": true
+    },
+    {
+      "name": "Tab Express: 2 proyectos",
+      "passed": true
+    },
+    {
+      "name": "Tab Pausados: 1 proyectos",
+      "passed": true
+    },
+    {
+      "name": "Tab Por iniciar: 2 proyectos",
+      "passed": true
+    },
+    {
+      "name": "Tab Cerrados: 1 proyectos",
+      "passed": true
+    },
+    {
+      "name": "Tab Todos: 15 proyectos",
+      "passed": true
+    },
+    {
+      "name": "Búsqueda vacía ofrece limpiar filtros",
+      "passed": true
+    },
+    {
+      "name": "Cartera 0 explica asignación de Jefatura",
+      "passed": true
+    },
+    {
+      "name": "Cuenta de un proyecto muestra exactamente una fila",
+      "passed": true
+    },
+    {
+      "name": "Inicio pasa filtro Express contextual a la cartera",
+      "passed": true
+    },
+    {
+      "name": "Command Center directo vuelve a Mis proyectos",
+      "passed": true
+    }
+  ],
+  "desktop": {
+    "accountPosition": "static",
+    "overflow": false,
+    "sidebar": 216,
+    "viewport": {
+      "height": 900,
+      "width": 1440
+    },
+    "visibleRows": 7
+  },
+  "tablet": {
+    "cardsDisplay": "grid",
+    "grid": "333.5px 333.5px",
+    "overflow": false,
+    "tableDisplay": "none"
+  },
+  "mobile": {
+    "cardsDisplay": "grid",
+    "grid": "310px",
+    "overflow": false,
+    "tableDisplay": "none"
+  },
+  "fixtures": "Base local desechable, login real; verificación adicional de retorno directo en sesión local existente",
+  "networkSimulationRestored": true
+}

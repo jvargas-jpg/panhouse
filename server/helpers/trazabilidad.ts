@@ -1,5 +1,6 @@
 import { auditarCambioFicha, type ActorFicha } from './intakeRrpp.js';
-import { and, desc, eq, inArray, isNull, notInArray, type SQL } from 'drizzle-orm';
+import { workItems } from '../db/schema/index.js';
+import { and, desc, eq, inArray, isNull, notInArray, or, sql, type SQL } from 'drizzle-orm';
 import { evaluarPreparacionComercial } from './preparacionComercial.js';
 import { proyectarIngreso } from './cronograma.js';
 import { listarProyectosActivosResumen } from './proyectos.js';
@@ -201,11 +202,13 @@ export async function listarProyectosPendientesContrato() {
 // perfil/contrato: las tres columnas de la sección siguen vacías.
 export function listarProyectosPendientesSoporteDigital(): Promise<ProyectoPendienteSeccion1[]> {
   return listarProyectosPendientesSeccion1(
+    or(
+      sql`exists (select 1 from work_items wi where wi.proyecto_id=${proyectos.id} and wi.tipo='soporte_digital' and wi.business_key='activacion_amazon' and wi.estado in ('pendiente','en_progreso','bloqueado'))`,
     and(
       isNull(fichasTrazabilidad.soporteDigitalCuentaAmazon),
       isNull(fichasTrazabilidad.soporteDigitalFechaEnvioFormulario),
       isNull(fichasTrazabilidad.soporteDigitalFechaActivacion),
-    ),
+    )),
   );
 }
 
@@ -640,14 +643,24 @@ export interface DatosSeccionSoporteDigital {
   soporteDigitalFechaActivacion?: string | null;
 }
 
-export async function actualizarSeccionSoporteDigital(proyectoId: string, datos: DatosSeccionSoporteDigital) {
-  const [fila] = await db
+export async function actualizarSeccionSoporteDigital(proyectoId: string, datos: DatosSeccionSoporteDigital, actorId?: string) {
+  return db.transaction(async tx => {
+  await tx.select({id:proyectos.id}).from(proyectos).where(eq(proyectos.id,proyectoId)).for('update');
+  const [fila] = await tx
     .update(fichasTrazabilidad)
     .set(datos)
     .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
     .returning();
   if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
+  if (datos.soporteDigitalFechaActivacion) {
+    const [trabajo] = await tx.select().from(workItems).where(and(eq(workItems.proyectoId, proyectoId), eq(workItems.tipo, 'soporte_digital'), eq(workItems.businessKey, 'activacion_amazon')));
+    if (trabajo && trabajo.estado !== 'completado') {
+      await tx.update(workItems).set({estado:'completado',fechaFinReal:datos.soporteDigitalFechaActivacion}).where(eq(workItems.id,trabajo.id));
+      await registrarEvento(tx,{actorId:actorId??null,accion:'AMAZON_ACTIVACION_REGISTRADA',entityType:'work_item',entityId:trabajo.id,proyectoId});
+    }
+  }
   return fila;
+  });
 }
 
 // Sección 6 (parte 2) — Soporte digital, estatus agregado (macro). Dueño

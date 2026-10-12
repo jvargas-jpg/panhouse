@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import {
   auditLogs,
@@ -28,6 +28,7 @@ import {
   ESTADOS_ACTIVOS,
   calcularCarga,
   resolverEspecialistaActual,
+  especialistaActualSql,
 } from './carga.js';
 import { calcularCronograma, resolverPlazosServicio, type PlazosServicio } from './cronograma.js';
 import { resumenDecisiones } from './decisiones.js';
@@ -191,9 +192,10 @@ const destinos: Record<string, string> = {
 
 export async function obtenerDashboardJefatura(
   ahora = new Date(),
-  opciones: { historico?: boolean } = {},
+  opciones: { historico?: boolean; incluirRetirados?: boolean; proyectoId?: string; especialistaId?: string } = {},
 ): Promise<DashboardJefatura> {
-  const estados = opciones.historico ? [...ESTADOS_ACTIVOS, 'culminado' as const] : ESTADOS_ACTIVOS;
+  const estados = opciones.historico ? [...ESTADOS_ACTIVOS, 'culminado' as const, ...(opciones.incluirRetirados ? ['retirado' as const] : [])] : ESTADOS_ACTIVOS;
+  const ambito = and(inArray(proyectos.estado, estados), opciones.proyectoId ? eq(proyectos.id, opciones.proyectoId) : undefined, opciones.especialistaId ? eq(especialistaActualSql, opciones.especialistaId) : undefined);
   // Número fijo de lecturas por lotes; nunca una consulta por proyecto/persona.
   const ultimaVersionDiseno = db
     .selectDistinctOn([disenoVersiones.disenoId], {
@@ -221,7 +223,7 @@ export async function obtenerDashboardJefatura(
           fichasTrazabilidad,
           eq(fichasTrazabilidad.proyectoId, proyectos.id),
         )
-        .where(inArray(proyectos.estado, estados)),
+        .where(ambito),
       db
         .select({
           id: users.id,
@@ -262,7 +264,7 @@ export async function obtenerDashboardJefatura(
         )
         .where(
           and(
-            inArray(proyectos.estado, estados),
+            ambito,
             inArray(workItems.estado, [
               'pendiente',
               'en_progreso',
@@ -276,15 +278,15 @@ export async function obtenerDashboardJefatura(
         .innerJoin(proyectos, eq(proyectos.id, projectAssignments.proyectoId))
         .where(
           and(
-            inArray(proyectos.estado, estados),
-            isNull(projectAssignments.finalizadoEn),
+            ambito,
+            or(isNull(projectAssignments.finalizadoEn), and(eq(projectAssignments.tipo, 'especialista'), isNull(projectAssignments.workItemId))),
           ),
         ),
       db
         .select({ pausa: pausas })
         .from(pausas)
         .innerJoin(proyectos, eq(proyectos.id, pausas.proyectoId))
-        .where(inArray(proyectos.estado, estados)),
+        .where(ambito),
       db
         .select({
           id: direccionesCreativas.id,
@@ -292,7 +294,7 @@ export async function obtenerDashboardJefatura(
         })
         .from(direccionesCreativas)
         .innerJoin(proyectos, eq(proyectos.id, direccionesCreativas.proyectoId))
-        .where(inArray(proyectos.estado, estados)),
+        .where(ambito),
     ]);
   const autoresPorProyecto = await obtenerAutoresPorProyectos(
     filas.map((f) => f.p.id),
@@ -312,12 +314,13 @@ export async function obtenerDashboardJefatura(
   }
   const especialistaActivo = new Map(
     asignaciones
-      .filter((t) => t.a.tipo === 'especialista' && !t.a.workItemId)
+      .filter((t) => t.a.tipo === 'especialista' && !t.a.workItemId && !t.a.finalizadoEn)
       .map((t) => [t.a.proyectoId, t.a.usuarioId]),
   );
+  const historialEspecialista = new Set(asignaciones.filter(t => t.a.tipo === 'especialista' && !t.a.workItemId).map(t => t.a.proyectoId));
   const responsables = new Map<string, string[]>();
   for (const { a } of asignaciones)
-    if (a.workItemId) {
+    if (a.workItemId && !a.finalizadoEn) {
       const lista = responsables.get(a.workItemId) ?? [];
       lista.push(nombres.get(a.usuarioId) ?? 'Responsable asignado');
       responsables.set(a.workItemId, lista);
@@ -333,6 +336,7 @@ export async function obtenerDashboardJefatura(
       const especialistaId = resolverEspecialistaActual(
         especialistaActivo.get(p.id),
         p.especialistaId,
+        historialEspecialista.has(p.id),
       );
       const procesos = (porProyecto.get(p.id) ?? [])
         .filter(
@@ -361,6 +365,7 @@ export async function obtenerDashboardJefatura(
             nombre: NOMBRES_PROCESO[item.tipo] ?? 'Proceso editorial',
             estado: decisionId && item.tipo==='correccion' ? 'bloqueado' : item.estado,
             vence: limite?.toISOString() ?? item.fechaFinPautada,
+            entregado: !!(correccion?.fechaEntrega || correccion?.entregadoEn || entregaDiseno || calidad?.revisadoEn),
             vencido: limite
               ? plazo === 'vencido'
               : !!item.fechaFinPautada && item.fechaFinPautada < hoy,
@@ -416,7 +421,7 @@ export async function obtenerDashboardJefatura(
           : null,
         porAsignar: ESTADOS_ACTIVOS.includes(p.estado) && p.notificadoJefatura && !especialistaId,
         express,
-        riesgo: p.estado === 'culminado' ? { atencion: false, causas: [], vencido: false, diasRestantes: 0, diasEfectivos: dias } : evaluarAtencionJefatura(
+        riesgo: !ESTADOS_ACTIVOS.includes(p.estado) ? { atencion: false, causas: [], vencido: false, diasRestantes: 0, diasEfectivos: dias } : evaluarAtencionJefatura(
           evaluarRiesgo(dias, determinarDiasPlazoAlerta(resolverPlazosServicio(s, subtipo) ?? s)),
           p.estado,
           procesos,
@@ -428,9 +433,9 @@ export async function obtenerDashboardJefatura(
   );
   const teamCapacity = ordenarCandidatos(
     personas
-      .filter((u) => u.rol === 'especialista' && u.activo)
+      .filter((u) => u.rol === 'especialista' && u.activo && (!opciones.especialistaId || u.id === opciones.especialistaId))
       .map((u) => {
-        const propios = todos.filter((p) => p.estado !== 'culminado' && p.especialista?.id === u.id);
+        const propios = todos.filter((p) => ESTADOS_ACTIVOS.includes(p.estado as typeof ESTADOS_ACTIVOS[number]) && p.especialista?.id === u.id);
         const composicion = new Map<
           string,
           CapacidadJefatura['servicios'][number]
@@ -523,7 +528,7 @@ export async function obtenerDashboardJefatura(
       ];
     })
     .sort((a, b) => b.creadaEn.localeCompare(a.creadaEn));
-  const resumenDec = await resumenDecisiones();
+  const resumenDec = opciones.especialistaId ? { pendientes: 0 } : await resumenDecisiones();
   return {
     actualizadoEn: ahora.toISOString(),
     summary: {

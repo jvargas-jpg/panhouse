@@ -17,6 +17,7 @@ export interface ProcesoJefatura {
   estado: string;
   vence: string | null;
   vencido: boolean;
+  entregado?: boolean;
   responsable: string | null;
 }
 export interface ProyectoJefatura {

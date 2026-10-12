@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { Tx } from './tx.js';
 import type { EstadoProyecto } from '../db/schema/index.js';
@@ -14,11 +14,13 @@ import {
 export const resolverEspecialistaActual = (
   activa: string | null | undefined,
   fk: string | null,
-) => activa ?? fk;
+  tieneHistorial = false,
+) => activa ?? (tieneHistorial ? null : fk);
 export async function obtenerEspecialistaActual(proyectoId: string, fk: string | null, client: typeof db | Tx = db) {
-  const [activa] = await client.select({ usuarioId: projectAssignments.usuarioId }).from(projectAssignments)
-    .where(and(eq(projectAssignments.proyectoId, proyectoId), eq(projectAssignments.tipo, 'especialista'), isNull(projectAssignments.workItemId), isNull(projectAssignments.finalizadoEn))).limit(1);
-  return resolverEspecialistaActual(activa?.usuarioId, fk);
+  const [ultima] = await client.select({ usuarioId: projectAssignments.usuarioId, finalizadoEn: projectAssignments.finalizadoEn }).from(projectAssignments)
+    .where(and(eq(projectAssignments.proyectoId, proyectoId), eq(projectAssignments.tipo, 'especialista'), isNull(projectAssignments.workItemId)))
+    .orderBy(desc(isNull(projectAssignments.finalizadoEn)), desc(projectAssignments.asignadoEn), desc(projectAssignments.id)).limit(1);
+  return resolverEspecialistaActual(ultima && !ultima.finalizadoEn ? ultima.usuarioId : null, fk, !!ultima);
 }
 export const scopeEspecialista = () =>
   and(
@@ -27,7 +29,11 @@ export const scopeEspecialista = () =>
     isNull(projectAssignments.workItemId),
     isNull(projectAssignments.finalizadoEn),
   );
-export const especialistaActualSql = sql<string | null>`coalesce(${projectAssignments.usuarioId}, ${proyectos.especialistaId})`;
+// La subconsulta sirve tanto con JOIN como sin él. FK solo para registros sin historial.
+export const especialistaActualSql = sql<string | null>`coalesce(
+  (SELECT pa.usuario_id FROM project_assignments pa WHERE pa.proyecto_id="proyectos"."id" AND pa.tipo='especialista' AND pa.work_item_id IS NULL AND pa.finalizado_en IS NULL),
+  CASE WHEN NOT EXISTS (SELECT 1 FROM project_assignments ph WHERE ph.proyecto_id="proyectos"."id" AND ph.tipo='especialista' AND ph.work_item_id IS NULL) THEN ${proyectos.especialistaId} ELSE NULL END
+)`;
 const columnaCargaActual = (rol: RolConCarga) =>
   rol === 'especialista'
     ? especialistaActualSql

@@ -22,6 +22,7 @@ import { RrppLanzamientosPage } from './rrpp/RrppLanzamientosPage';
 
 // Los gráficos se comparten entre Indicadores Comerciales y RRPP.
 const MetricasPage = lazy(() => import('./comercial/MetricasPage').then((m) => ({ default: m.MetricasPage })));
+const ProyectoCommandCenterPage = lazy(() => import('./proyectos/ProyectoCommandCenterPage').then(m => ({ default: m.ProyectoCommandCenterPage })));
 const RrppMetricasPage = lazy(() => import('./rrpp/RrppMetricasPage').then((m) => ({ default: m.RrppMetricasPage })));
 
 export function App() {
@@ -64,6 +65,7 @@ export function App() {
             mismo TopBar, layout hermano, no una página sin autenticar. */}
         <Route element={<FullscreenLayout />}>
           <Route path="/proyectos/:id" element={<ProyectoDetallePage />} />
+          {['operacion', 'equipo', 'ficha', 'actividad'].map(tab => <Route key={tab} path={'/proyectos/:id/'+tab} element={<Suspense fallback={<p role="status">Abriendo proyecto…</p>}><ProyectoCommandCenterPage /></Suspense>} />)}
           {/* "Ficha de Trazabilidad": módulo independiente, fuera de la
               vista unificada del proyecto — ver el comentario completo en
               FichaTrazabilidadPage.tsx (antes Fase 1 del stepper, y antes

@@ -901,7 +901,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(soporteDigitalSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionSoporteDigital(params.proyectoId, body);
+      const ficha = await actualizarSeccionSoporteDigital(params.proyectoId, body, request.user?.id);
       return reply.send({ ficha });
     },
   );

@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { useMe } from '../auth/useAuth';
 import { TopBar } from './TopBar';
 
 // Igual que AppLayout.tsx pero sin el <main max-w-4xl> centrado: para
@@ -10,9 +11,11 @@ import { TopBar } from './TopBar';
 // vive ahí y no en <main>; se repite acá para que las dos páginas full-
 // bleed que ya existían (AutoresPage.tsx, etc.) y esta no diverjan.
 export function FullscreenLayout() {
+  const { data: user } = useMe(), location = useLocation();
+  const command = !!user && ['especialista', 'jefe_area'].includes(user.rol) && /^\/proyectos\/[^/]+(?:\/(operacion|equipo|ficha|actividad|ficha-trazabilidad))?$/.test(location.pathname);
   return (
     <div className="flex h-screen w-full flex-col overflow-y-auto overflow-x-hidden bg-crema">
-      <TopBar />
+      {!command && <TopBar />}
       <main className="min-h-0 w-full flex-1">
         <Outlet />
       </main>

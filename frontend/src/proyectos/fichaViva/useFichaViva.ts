@@ -14,5 +14,5 @@ export function useActividadFicha(id:string,identity:string|undefined,enabled:bo
 }
 export function useGuardarDocumental(id:string){
   const cache=useQueryClient();
-  return useMutation({mutationFn:({area,key,value}:{area:AreaFicha;key:string;value:string|number|boolean|null})=>apiFetch<{ok:boolean}>(base(id)+'/documental/'+area,{method:'PATCH',body:JSON.stringify({datos:{[key]:value}})}),onSuccess:()=>cache.invalidateQueries({queryKey:['ficha-viva',id]})});
+  return useMutation({mutationFn:({area,key,value}:{area:AreaFicha;key:string;value:string|number|boolean|null})=>apiFetch<{ok:boolean}>(base(id)+'/documental/'+area,{method:'PATCH',body:JSON.stringify({datos:{[key]:value}})}),onSuccess:()=>{cache.invalidateQueries({queryKey:['ficha-viva',id]});cache.invalidateQueries({queryKey:['proyecto',id]});}});
 }

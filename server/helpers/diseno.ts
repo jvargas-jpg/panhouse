@@ -1,3 +1,4 @@
+import { habilitarActivacionAmazon } from './activacionAmazon.js';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { autores, correcciones, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, fichaDisenoPropuestas, fichasTrazabilidad, notificaciones, projectAssignments, proyectos, servicios, users, workItems } from '../db/schema/index.js';
@@ -190,6 +191,7 @@ export async function coordinarVersion(id: string, versionId: string, datos: { a
         .from(fichaCalidadFases).innerJoin(disenoVersiones, eq(fichaCalidadFases.disenoVersionId, disenoVersiones.id))
         .where(eq(disenoVersiones.disenoId, d.id)).orderBy(desc(fichaCalidadFases.solicitadoEn)).limit(1);
       const numeroFase = anterior ? (anterior.fase.numeroFase >= 3 ? 4 : 2) : 1;
+      if (numeroFase === 1) await habilitarActivacionAmazon(tx, p.id, actor.id);
       if (anterior) exigir(anterior.fase.revisadoEn, 'La revisión anterior aún no se ha resuelto');
       const ronda = Math.max(0, ...anteriores.filter(x => x.numeroFase === numeroFase).map(x => x.ronda)) + 1;
       const wi = await crearWorkItemSiNoExiste(tx, { proyectoId: p.id, tipo: 'calidad', businessKey: `diseno-version:${v.id}` });

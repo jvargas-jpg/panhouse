@@ -611,7 +611,7 @@ export async function proyectosRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: error instanceof Error ? error.message : 'Datos inválidos' });
     }
 
-    const proyecto = await actualizarProyecto(params.id, body);
+    const proyecto = await actualizarProyecto(params.id, body, request.user);
     return reply.send({ proyecto });
   });
 

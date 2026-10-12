@@ -1,4 +1,4 @@
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { AutoresPage } from './autores/AutoresPage';
 import { useMe } from './auth/useAuth';
 import { AuditoriaPagosPage } from './cobranzas/AuditoriaPagosPage';
@@ -10,6 +10,8 @@ import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
 import { PanelJefaturaPage } from './jefatura/PanelJefaturaPage';
 import { MisDireccionesCreativasPage } from './liderCreativo/MisDireccionesCreativasPage';
 import { MisProyectosPage } from './proyectos/MisProyectosPage';
+import { lazy, Suspense } from 'react';
+const EspecialistaInicioPage = lazy(() => import('./especialista/EspecialistaInicioPage').then(m => ({default:m.EspecialistaInicioPage})));
 import { RrppHomePage } from './rrpp/RrppHomePage';
 import { SoporteDigitalHomePage } from './soporteDigital/SoporteDigitalHomePage';
 import { SoporteEditorialHomePage } from './soporteEditorial/SoporteEditorialHomePage';
@@ -19,9 +21,10 @@ import { SoporteEditorialHomePage } from './soporteEditorial/SoporteEditorialHom
 // usuario antes de llegar acá.
 export function HomePage() {
   const { data: user } = useMe();
+  const location = useLocation();
 
   if (user?.rol === 'especialista') {
-    return <MisProyectosPage />;
+    return ['mis-proyectos', 'metricas'].includes(new URLSearchParams(location.search).get('vista') ?? '') ? <MisProyectosPage /> : <Suspense fallback={<p role="status">Cargando Inicio…</p>}><EspecialistaInicioPage /></Suspense>;
   }
 
   if (user?.rol === 'jefe_area') {
