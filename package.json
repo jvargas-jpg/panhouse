@@ -15,6 +15,7 @@
     "db:generate": "tsx node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "tsx server/db/migrate.ts",
     "db:seed": "tsx server/db/seed.ts",
+    "db:seed:demo": "tsx scripts/panhouse-datos-demo.ts",
     "db:create-user": "tsx server/db/createUser.ts",
     "test": "vitest run",
     "test:watch": "vitest"

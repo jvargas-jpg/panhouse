@@ -1,0 +1,679 @@
+{
+  "creadoEn": "2026-10-13T12:44:59.955Z",
+  "fechaReferencia": "2026-10-13",
+  "demo": true,
+  "base": "panhouse local",
+  "proyectosNuevos": 80,
+  "autoresNuevos": 80,
+  "originalesConservados": true,
+  "resumen": {
+    "Comercial: ficha a mitad": 8,
+    "Comercial: listo para enviar": 8,
+    "RRPP: recibido, por iniciar": 8,
+    "RRPP: diagnóstico a mitad": 8,
+    "RRPP: listo para Jefatura": 8,
+    "Jefatura: recibido, por asignar": 8,
+    "Especialista: asignado, inicio pendiente": 8,
+    "Especialista: capítulos a mitad": 8,
+    "Especialista y Jefatura: solicitudes y decisiones": 8,
+    "Especialista y RRPP: entregas y lanzamiento": 8
+  },
+  "trabajos": {
+    "intake_rrpp: pendiente": 8,
+    "intake_rrpp: en_progreso": 16,
+    "asignacion_especialista: pendiente": 8,
+    "intake_rrpp: completado": 40,
+    "asignacion_especialista: completado": 32,
+    "edicion: en_progreso": 14,
+    "correccion: pendiente": 7,
+    "edicion: pendiente": 2,
+    "edicion: completado": 6,
+    "direccion_creativa: pendiente": 2,
+    "lanzamiento: en_progreso": 8,
+    "correccion: en_progreso": 3,
+    "direccion_creativa: en_progreso": 6,
+    "correccion: completado": 4
+  },
+  "casos": [
+    {
+      "id": "f4af08a0-6523-4f11-9d17-ffffd5fe589f",
+      "codigo": "43C4D5",
+      "autor": "DEMO VARIOS · Marina Solís 01",
+      "servicio": "EF",
+      "escenario": "Comercial: ficha a mitad",
+      "especialista": null
+    },
+    {
+      "id": "f27cd66e-ea10-45fb-843a-6d62af2056ae",
+      "codigo": "1FB45E",
+      "autor": "DEMO VARIOS · Tomás Méndez 02",
+      "servicio": "CR",
+      "escenario": "Comercial: ficha a mitad",
+      "especialista": null
+    },
+    {
+      "id": "fd62f907-341e-4670-b221-63d82bbc8bbf",
+      "codigo": "ACB291",
+      "autor": "DEMO VARIOS · Lucía Rojas 03",
+      "servicio": "SE",
+      "escenario": "Comercial: ficha a mitad",
+      "especialista": null
+    },
+    {
+      "id": "5573f8ab-68ad-49da-ae40-a5f99c89373d",
+      "codigo": "754A66",
+      "autor": "DEMO VARIOS · Samuel Vargas 04",
+      "servicio": "EF",
+      "escenario": "Comercial: ficha a mitad",
+      "especialista": null
+    },
+    {
+      "id": "4343a641-6eb7-4afb-9964-16b3c6e4770b",
+      "codigo": "D5C6E1",
+      "autor": "DEMO VARIOS · Daniela Acosta 05",
+      "servicio": "CR",
+      "escenario": "Comercial: ficha a mitad",
+      "especialista": null
+    },
+    {
+      "id": "1b714d2b-d1bd-408f-a151-162972cf3f25",
+      "codigo": "10EB10",
+      "autor": "DEMO VARIOS · Sofía Cabrera 06",
+      "servicio": "SE",
+      "escenario": "Comercial: ficha a mitad",
+      "especialista": null
+    },
+    {
+      "id": "6487a07c-8185-4835-b098-1daa16054f42",
+      "codigo": "ADD5C7",
+      "autor": "DEMO VARIOS · Andrés Herrera 07",
+      "servicio": "EF",
+      "escenario": "Comercial: ficha a mitad",
+      "especialista": null
+    },
+    {
+      "id": "d629fd90-89dc-4cd7-94b7-bf759090d584",
+      "codigo": "C41BD0",
+      "autor": "DEMO VARIOS · Valeria Ríos 08",
+      "servicio": "CR",
+      "escenario": "Comercial: ficha a mitad",
+      "especialista": null
+    },
+    {
+      "id": "fde9eaf2-229c-425a-bfab-1b02532e8d3b",
+      "codigo": "5A8F04",
+      "autor": "DEMO VARIOS · Javier Molina 09",
+      "servicio": "SE",
+      "escenario": "Comercial: listo para enviar",
+      "especialista": null
+    },
+    {
+      "id": "52110eee-e4d0-4933-aefb-3080f1f5770a",
+      "codigo": "EC9E7F",
+      "autor": "DEMO VARIOS · Paula Benítez 10",
+      "servicio": "EF",
+      "escenario": "Comercial: listo para enviar",
+      "especialista": null
+    },
+    {
+      "id": "b622ef3a-cc9b-4ba7-ae50-e67b68b7dce6",
+      "codigo": "CAA6A7",
+      "autor": "DEMO VARIOS · Elisa Vega 11",
+      "servicio": "CR",
+      "escenario": "Comercial: listo para enviar",
+      "especialista": null
+    },
+    {
+      "id": "5fc04f87-fd59-455b-b672-9a54a45cd813",
+      "codigo": "82DB04",
+      "autor": "DEMO VARIOS · Gabriel Silva 12",
+      "servicio": "SE",
+      "escenario": "Comercial: listo para enviar",
+      "especialista": null
+    },
+    {
+      "id": "b0fc5df4-fa81-4db2-999c-b50c385c2ffc",
+      "codigo": "7C848F",
+      "autor": "DEMO VARIOS · Camila Duarte 13",
+      "servicio": "EF",
+      "escenario": "Comercial: listo para enviar",
+      "especialista": null
+    },
+    {
+      "id": "f4bbebeb-495d-4b46-b4f9-7e30b62d614a",
+      "codigo": "78B82F",
+      "autor": "DEMO VARIOS · Diego Paredes 14",
+      "servicio": "CR",
+      "escenario": "Comercial: listo para enviar",
+      "especialista": null
+    },
+    {
+      "id": "9eed2de0-5e81-45b0-b3a1-136c4ec2d014",
+      "codigo": "E14B38",
+      "autor": "DEMO VARIOS · Isabel Medina 15",
+      "servicio": "SE",
+      "escenario": "Comercial: listo para enviar",
+      "especialista": null
+    },
+    {
+      "id": "5a71533d-b122-46f4-9a3b-4e4b1b15d964",
+      "codigo": "AE9945",
+      "autor": "DEMO VARIOS · Mateo Suárez 16",
+      "servicio": "EF",
+      "escenario": "Comercial: listo para enviar",
+      "especialista": null
+    },
+    {
+      "id": "f6a5026e-e94f-4dfd-b9da-309c6c084473",
+      "codigo": "ECC9B0",
+      "autor": "DEMO VARIOS · Marina Solís 17",
+      "servicio": "CR",
+      "escenario": "RRPP: recibido, por iniciar",
+      "especialista": null
+    },
+    {
+      "id": "b82e28a0-c910-4817-97b4-d9b5091344f5",
+      "codigo": "FF8D8B",
+      "autor": "DEMO VARIOS · Tomás Méndez 18",
+      "servicio": "SE",
+      "escenario": "RRPP: recibido, por iniciar",
+      "especialista": null
+    },
+    {
+      "id": "81829e12-9b76-4fe9-82b3-709d4eac67c8",
+      "codigo": "F7DD7F",
+      "autor": "DEMO VARIOS · Lucía Rojas 19",
+      "servicio": "EF",
+      "escenario": "RRPP: recibido, por iniciar",
+      "especialista": null
+    },
+    {
+      "id": "817f3aab-4688-4d7c-b29f-1c9f39f32f12",
+      "codigo": "7D24D9",
+      "autor": "DEMO VARIOS · Samuel Vargas 20",
+      "servicio": "CR",
+      "escenario": "RRPP: recibido, por iniciar",
+      "especialista": null
+    },
+    {
+      "id": "f342acb5-589f-4657-9692-859f98dbf08f",
+      "codigo": "A98506",
+      "autor": "DEMO VARIOS · Daniela Acosta 21",
+      "servicio": "SE",
+      "escenario": "RRPP: recibido, por iniciar",
+      "especialista": null
+    },
+    {
+      "id": "f5e891d1-eda2-4683-8189-f8556019e471",
+      "codigo": "FBB525",
+      "autor": "DEMO VARIOS · Sofía Cabrera 22",
+      "servicio": "EF",
+      "escenario": "RRPP: recibido, por iniciar",
+      "especialista": null
+    },
+    {
+      "id": "091eccd2-811c-4e27-98ac-6547653767c7",
+      "codigo": "DF151A",
+      "autor": "DEMO VARIOS · Andrés Herrera 23",
+      "servicio": "CR",
+      "escenario": "RRPP: recibido, por iniciar",
+      "especialista": null
+    },
+    {
+      "id": "597468a4-e45f-4aa0-a8ed-53bf78379dfe",
+      "codigo": "3F59E9",
+      "autor": "DEMO VARIOS · Valeria Ríos 24",
+      "servicio": "SE",
+      "escenario": "RRPP: recibido, por iniciar",
+      "especialista": null
+    },
+    {
+      "id": "e17d1e5c-7b20-4e21-9adf-36fb2668cc5e",
+      "codigo": "825717",
+      "autor": "DEMO VARIOS · Javier Molina 25",
+      "servicio": "EF",
+      "escenario": "RRPP: diagnóstico a mitad",
+      "especialista": null
+    },
+    {
+      "id": "a8a195e9-d7a6-429f-95f7-43fff956d6ed",
+      "codigo": "EAC7AA",
+      "autor": "DEMO VARIOS · Paula Benítez 26",
+      "servicio": "CR",
+      "escenario": "RRPP: diagnóstico a mitad",
+      "especialista": null
+    },
+    {
+      "id": "2d5c9a14-db06-45c4-8deb-adb915ccab90",
+      "codigo": "FC7C12",
+      "autor": "DEMO VARIOS · Elisa Vega 27",
+      "servicio": "SE",
+      "escenario": "RRPP: diagnóstico a mitad",
+      "especialista": null
+    },
+    {
+      "id": "befef2f4-da4b-4904-aa47-cc561ce0b489",
+      "codigo": "DC6641",
+      "autor": "DEMO VARIOS · Gabriel Silva 28",
+      "servicio": "EF",
+      "escenario": "RRPP: diagnóstico a mitad",
+      "especialista": null
+    },
+    {
+      "id": "933dec15-5b2c-4ec0-bb2d-34e7526602e0",
+      "codigo": "645404",
+      "autor": "DEMO VARIOS · Camila Duarte 29",
+      "servicio": "CR",
+      "escenario": "RRPP: diagnóstico a mitad",
+      "especialista": null
+    },
+    {
+      "id": "ff321020-fa4f-4e4a-81bb-6bc2e54d9478",
+      "codigo": "DB8152",
+      "autor": "DEMO VARIOS · Diego Paredes 30",
+      "servicio": "SE",
+      "escenario": "RRPP: diagnóstico a mitad",
+      "especialista": null
+    },
+    {
+      "id": "b4007f27-9103-407b-811d-3182af499fb9",
+      "codigo": "BB2FEE",
+      "autor": "DEMO VARIOS · Isabel Medina 31",
+      "servicio": "EF",
+      "escenario": "RRPP: diagnóstico a mitad",
+      "especialista": null
+    },
+    {
+      "id": "18a34805-05ad-41b2-ab28-611943fbf556",
+      "codigo": "0D328F",
+      "autor": "DEMO VARIOS · Mateo Suárez 32",
+      "servicio": "CR",
+      "escenario": "RRPP: diagnóstico a mitad",
+      "especialista": null
+    },
+    {
+      "id": "df239c45-ded1-452a-87ae-a89e9526977c",
+      "codigo": "FCBC88",
+      "autor": "DEMO VARIOS · Marina Solís 33",
+      "servicio": "SE",
+      "escenario": "RRPP: listo para Jefatura",
+      "especialista": null
+    },
+    {
+      "id": "cbed592a-e34e-42ab-bbdb-a4c723e15b8c",
+      "codigo": "1355EA",
+      "autor": "DEMO VARIOS · Tomás Méndez 34",
+      "servicio": "EF",
+      "escenario": "RRPP: listo para Jefatura",
+      "especialista": null
+    },
+    {
+      "id": "f0ba8368-18e4-4ca7-984a-eef9a984c378",
+      "codigo": "1B742F",
+      "autor": "DEMO VARIOS · Lucía Rojas 35",
+      "servicio": "CR",
+      "escenario": "RRPP: listo para Jefatura",
+      "especialista": null
+    },
+    {
+      "id": "2d9a33af-5243-4193-8d58-5acbe8224c4e",
+      "codigo": "8F8BDB",
+      "autor": "DEMO VARIOS · Samuel Vargas 36",
+      "servicio": "SE",
+      "escenario": "RRPP: listo para Jefatura",
+      "especialista": null
+    },
+    {
+      "id": "f5be6ef1-2fcb-4b97-9720-6dd149c7fe48",
+      "codigo": "C0ED52",
+      "autor": "DEMO VARIOS · Daniela Acosta 37",
+      "servicio": "EF",
+      "escenario": "RRPP: listo para Jefatura",
+      "especialista": null
+    },
+    {
+      "id": "55c1da8f-4d2c-442c-9686-a648c644e8a8",
+      "codigo": "CCB904",
+      "autor": "DEMO VARIOS · Sofía Cabrera 38",
+      "servicio": "CR",
+      "escenario": "RRPP: listo para Jefatura",
+      "especialista": null
+    },
+    {
+      "id": "0f4d9f14-a737-405e-8292-4ecdeb540a6a",
+      "codigo": "911DCB",
+      "autor": "DEMO VARIOS · Andrés Herrera 39",
+      "servicio": "SE",
+      "escenario": "RRPP: listo para Jefatura",
+      "especialista": null
+    },
+    {
+      "id": "f413f72b-9d25-41f0-93c8-436738a12f68",
+      "codigo": "EB4BCB",
+      "autor": "DEMO VARIOS · Valeria Ríos 40",
+      "servicio": "EF",
+      "escenario": "RRPP: listo para Jefatura",
+      "especialista": null
+    },
+    {
+      "id": "a86ce89a-a88c-479c-ba96-b3052d07a396",
+      "codigo": "DAAF7A",
+      "autor": "DEMO VARIOS · Javier Molina 41",
+      "servicio": "CR",
+      "escenario": "Jefatura: recibido, por asignar",
+      "especialista": null
+    },
+    {
+      "id": "d9a00220-963f-42ab-81ed-20b03abb9a82",
+      "codigo": "660AE0",
+      "autor": "DEMO VARIOS · Paula Benítez 42",
+      "servicio": "SE",
+      "escenario": "Jefatura: recibido, por asignar",
+      "especialista": null
+    },
+    {
+      "id": "4a357b12-92d6-45ac-a4b1-47cf13565847",
+      "codigo": "AC5FD0",
+      "autor": "DEMO VARIOS · Elisa Vega 43",
+      "servicio": "EF",
+      "escenario": "Jefatura: recibido, por asignar",
+      "especialista": null
+    },
+    {
+      "id": "bede39f0-6150-48f4-93f0-acd81de06652",
+      "codigo": "996239",
+      "autor": "DEMO VARIOS · Gabriel Silva 44",
+      "servicio": "CR",
+      "escenario": "Jefatura: recibido, por asignar",
+      "especialista": null
+    },
+    {
+      "id": "e4b27709-aebc-496f-9630-3285be5758df",
+      "codigo": "1B606F",
+      "autor": "DEMO VARIOS · Camila Duarte 45",
+      "servicio": "SE",
+      "escenario": "Jefatura: recibido, por asignar",
+      "especialista": null
+    },
+    {
+      "id": "ff082dca-d77f-4918-bb04-f15ce4f52915",
+      "codigo": "302E8C",
+      "autor": "DEMO VARIOS · Diego Paredes 46",
+      "servicio": "EF",
+      "escenario": "Jefatura: recibido, por asignar",
+      "especialista": null
+    },
+    {
+      "id": "6fdf387c-f44b-4c77-883c-abcd7e935546",
+      "codigo": "9EC02A",
+      "autor": "DEMO VARIOS · Isabel Medina 47",
+      "servicio": "CR",
+      "escenario": "Jefatura: recibido, por asignar",
+      "especialista": null
+    },
+    {
+      "id": "4d1d7876-d791-47c8-b571-1a1c91fa748d",
+      "codigo": "0DDD84",
+      "autor": "DEMO VARIOS · Mateo Suárez 48",
+      "servicio": "SE",
+      "escenario": "Jefatura: recibido, por asignar",
+      "especialista": null
+    },
+    {
+      "id": "b874cd02-f4c5-4080-9a6c-186ac2972db2",
+      "codigo": "5611F3",
+      "autor": "DEMO VARIOS · Marina Solís 49",
+      "servicio": "EF",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "ac04c691-221e-4e2e-93fa-883a99b461d8",
+      "codigo": "E7B3D0",
+      "autor": "DEMO VARIOS · Tomás Méndez 50",
+      "servicio": "CR",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Elena Torres"
+    },
+    {
+      "id": "360aa5f2-48bd-4450-b98d-2c064d70ef5e",
+      "codigo": "F36D68",
+      "autor": "DEMO VARIOS · Lucía Rojas 51",
+      "servicio": "SE",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "87c6a901-c2b2-4b3d-8b2b-90e067138f37",
+      "codigo": "4BF871",
+      "autor": "DEMO VARIOS · Samuel Vargas 52",
+      "servicio": "EF",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Carlos Mendoza"
+    },
+    {
+      "id": "ff1ec396-e37a-49b6-8ade-66ad95b67b58",
+      "codigo": "C3BBC5",
+      "autor": "DEMO VARIOS · Daniela Acosta 53",
+      "servicio": "CR",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "14041059-a73b-4b7b-900f-0da07dae1ec0",
+      "codigo": "3FE89B",
+      "autor": "DEMO VARIOS · Sofía Cabrera 54",
+      "servicio": "SE",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Roberto Salazar"
+    },
+    {
+      "id": "21c6634b-7ccc-4566-8757-0ab3a7e14f5c",
+      "codigo": "75C5F5",
+      "autor": "DEMO VARIOS · Andrés Herrera 55",
+      "servicio": "EF",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "49252a5c-67b1-48df-9672-a9f05681590c",
+      "codigo": "98B194",
+      "autor": "DEMO VARIOS · Valeria Ríos 56",
+      "servicio": "CR",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Sofia Vargas"
+    },
+    {
+      "id": "94db02f6-814c-4d9e-b926-649f931d1fb6",
+      "codigo": "24E3A1",
+      "autor": "DEMO VARIOS · Javier Molina 57",
+      "servicio": "EF",
+      "escenario": "Especialista: capítulos a mitad",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "85b71a0d-ecd2-4fd4-bac0-197f89ff5413",
+      "codigo": "420C93",
+      "autor": "DEMO VARIOS · Paula Benítez 58",
+      "servicio": "CR",
+      "escenario": "Especialista: capítulos a mitad",
+      "especialista": "Laura Gil"
+    },
+    {
+      "id": "32f1f3bb-8d0a-4df8-90c1-5965e8afc374",
+      "codigo": "87C816",
+      "autor": "DEMO VARIOS · Elisa Vega 59",
+      "servicio": "EF",
+      "escenario": "Especialista: capítulos a mitad",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "46c36eb5-b2a1-4708-a410-cee0d675d8ad",
+      "codigo": "2F5DB9",
+      "autor": "DEMO VARIOS · Gabriel Silva 60",
+      "servicio": "CR",
+      "escenario": "Especialista: capítulos a mitad",
+      "especialista": "Elena Torres"
+    },
+    {
+      "id": "c8ddccff-dd10-49e8-b17a-1ff4b7f22a79",
+      "codigo": "A42159",
+      "autor": "DEMO VARIOS · Camila Duarte 61",
+      "servicio": "EF",
+      "escenario": "Especialista: capítulos a mitad",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "34c7a084-721c-447a-a6df-283764b43810",
+      "codigo": "0436B6",
+      "autor": "DEMO VARIOS · Diego Paredes 62",
+      "servicio": "CR",
+      "escenario": "Especialista: capítulos a mitad",
+      "especialista": "Carlos Mendoza"
+    },
+    {
+      "id": "0813e447-60b5-42ea-aa50-3da025a4c46b",
+      "codigo": "E50DE9",
+      "autor": "DEMO VARIOS · Isabel Medina 63",
+      "servicio": "EF",
+      "escenario": "Especialista: capítulos a mitad · stand-by",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "5a503dd2-09b9-4069-929c-803c091bb7f2",
+      "codigo": "632192",
+      "autor": "DEMO VARIOS · Mateo Suárez 64",
+      "servicio": "CR",
+      "escenario": "Especialista: capítulos a mitad · retrasado",
+      "especialista": "Roberto Salazar"
+    },
+    {
+      "id": "8a8f0413-9b50-43bb-88c5-8f5696addfa2",
+      "codigo": "6917DC",
+      "autor": "DEMO VARIOS · Marina Solís 65",
+      "servicio": "EF",
+      "escenario": "Especialista: solicitud de Editor enviada",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "80479c85-84d6-4870-a207-9be68b0cd796",
+      "codigo": "756025",
+      "autor": "DEMO VARIOS · Tomás Méndez 66",
+      "servicio": "CR",
+      "escenario": "Especialista: solicitud de Editor enviada",
+      "especialista": "Sofia Vargas"
+    },
+    {
+      "id": "be915cc7-b6ba-46be-b562-2a3005d7d72f",
+      "codigo": "5D8DA3",
+      "autor": "DEMO VARIOS · Lucía Rojas 67",
+      "servicio": "EF",
+      "escenario": "Decisión pendiente",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "b1ce3636-9d83-46f8-abc0-f0e81bb456c0",
+      "codigo": "5F4718",
+      "autor": "DEMO VARIOS · Samuel Vargas 68",
+      "servicio": "CR",
+      "escenario": "Decisión en revisión",
+      "especialista": "Laura Gil"
+    },
+    {
+      "id": "488d81b8-1091-45d6-a5ea-caae96339266",
+      "codigo": "F432B1",
+      "autor": "DEMO VARIOS · Daniela Acosta 69",
+      "servicio": "EF",
+      "escenario": "Decisión esperando información",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "387456d5-e0eb-43e7-acf2-dc60396d134d",
+      "codigo": "4F5425",
+      "autor": "DEMO VARIOS · Sofía Cabrera 70",
+      "servicio": "CR",
+      "escenario": "Respuesta enviada a Jefatura",
+      "especialista": "Elena Torres"
+    },
+    {
+      "id": "0e934268-a98e-4cd6-827e-b104e7cd8123",
+      "codigo": "BDE6DD",
+      "autor": "DEMO VARIOS · Andrés Herrera 71",
+      "servicio": "EF",
+      "escenario": "Decisión aprobada",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "cce3c774-3910-4bf5-b54a-dcd0b7b62b8a",
+      "codigo": "026A76",
+      "autor": "DEMO VARIOS · Valeria Ríos 72",
+      "servicio": "CR",
+      "escenario": "Decisión rechazada",
+      "especialista": "Carlos Mendoza"
+    },
+    {
+      "id": "18004448-218e-4f3a-9a33-da5528f2ec7b",
+      "codigo": "912CC3",
+      "autor": "DEMO VARIOS · Javier Molina 73",
+      "servicio": "EF",
+      "escenario": "Corrección solicitada · creativa y lanzamiento en paralelo",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "d9e47e5d-b9b4-4a94-a644-727a9e3e8a78",
+      "codigo": "B58CAE",
+      "autor": "DEMO VARIOS · Paula Benítez 74",
+      "servicio": "CR",
+      "escenario": "Corrector asignado · creativa y lanzamiento en paralelo",
+      "especialista": "Roberto Salazar"
+    },
+    {
+      "id": "14515148-3b5b-4fd6-8729-78a9e22317a8",
+      "codigo": "3A26C4",
+      "autor": "DEMO VARIOS · Elisa Vega 75",
+      "servicio": "SE",
+      "escenario": "Corrección a mitad · creativa y lanzamiento en paralelo",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "36bfb0fe-1f53-4755-bd35-d4556d95386e",
+      "codigo": "311F97",
+      "autor": "DEMO VARIOS · Gabriel Silva 76",
+      "servicio": "EF",
+      "escenario": "Corrección a mitad · creativa y lanzamiento en paralelo",
+      "especialista": "Sofia Vargas"
+    },
+    {
+      "id": "a59f1c97-1bae-4dbc-b6d9-2a08ac2719a8",
+      "codigo": "8CB054",
+      "autor": "DEMO VARIOS · Camila Duarte 77",
+      "servicio": "CR",
+      "escenario": "Corrección entregada, por revisar · creativa y lanzamiento en paralelo",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "fbdd8edf-076f-497f-80cf-a740f6d16367",
+      "codigo": "5FB150",
+      "autor": "DEMO VARIOS · Diego Paredes 78",
+      "servicio": "SE",
+      "escenario": "Corrección entregada, por revisar · creativa y lanzamiento en paralelo",
+      "especialista": "Laura Gil"
+    },
+    {
+      "id": "add313c7-81e1-4404-930d-c941c68f8ff2",
+      "codigo": "F0D854",
+      "autor": "DEMO VARIOS · Isabel Medina 79",
+      "servicio": "EF",
+      "escenario": "Corrección cerrada · creativa y lanzamiento en paralelo",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "fea56b00-90f9-4d5f-a3d1-34d01f8975a1",
+      "codigo": "29350D",
+      "autor": "DEMO VARIOS · Mateo Suárez 80",
+      "servicio": "CR",
+      "escenario": "Corrección cerrada · creativa y lanzamiento en paralelo",
+      "especialista": "Elena Torres"
+    }
+  ]
+}
