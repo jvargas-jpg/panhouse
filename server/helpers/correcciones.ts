@@ -1,7 +1,8 @@
 import { and, desc, eq, isNull, ne } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { Rol } from '../db/schema/index.js';
-import { autores, correcciones, decisiones, notificaciones, projectAssignments, proyectos, servicios, users, workItems as workItemsTable } from '../db/schema/index.js';
+import { autores, contratosCorreccion, correcciones, decisiones, notificaciones, projectAssignments, proyectos, servicios, users, workItems as workItemsTable } from '../db/schema/index.js';
+import { obtenerEspecialistaActual } from './carga.js';
 import { asignarConHistorial } from './assignments.js';
 import { registrarEvento } from './auditLog.js';
 import {
@@ -129,7 +130,7 @@ export interface DatosAsignarCorrector {
   contratoConfirmado: boolean;
 }
 
-export type ResultadoAsignacion = { ok: true } | { ok: false; status: 400 | 403; error: string };
+export type ResultadoAsignacion = { ok: true } | { ok: false; status: 400 | 403 | 409; error: string };
 
 // Paso 2 (Manual §3.1, hasta "se realiza la asignación formal por
 // correo electrónico al corrector"): lo decide el propio Especialista
@@ -150,6 +151,11 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
   }
 
   return db.transaction(async (tx) => {
+    const [origen] = await tx.select({proyectoId:correcciones.proyectoId}).from(correcciones).where(eq(correcciones.id,correccionId));
+    if(!origen)return {ok:false,status:400,error:'Corrección no encontrada'};
+    const [p] = await tx.select().from(proyectos).where(eq(proyectos.id,origen.proyectoId)).for('update');
+    if(!p || await obtenerEspecialistaActual(p.id,p.especialistaId,tx)!==actorId)return {ok:false,status:403,error:'Proyecto de otro especialista'};
+    if(['culminado','retirado'].includes(p.estado))return {ok:false,status:409,error:'Proyecto cerrado'};
     const correccion = await obtenerCorreccion(tx, correccionId);
     if (!correccion) return { ok: false, status: 400, error: 'Corrección no encontrada' };
 
@@ -164,6 +170,10 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
       revisionPreviaConfirmada: correccion.revisionPreviaConfirmada,
     });
     if (!gate.desbloqueado) return { ok: false, status: 400, error: gate.motivo ?? 'Gate bloqueado' };
+
+    const [contrato] = await tx.select().from(contratosCorreccion).where(eq(contratosCorreccion.correccionId,correccionId)).orderBy(desc(contratosCorreccion.ronda)).limit(1);
+    if(datos.freelance && !contrato && !correccion.contratoConfirmado)return {ok:false,status:409,error:'Solicita el contrato a Talento Humano y espera su confirmación antes de asignar al freelance'};
+    if(contrato && (contrato.estado!=='resuelta' || !datos.freelance || datos.correctorId || datos.correctorNombre?.trim()!==contrato.correctorNombre))return {ok:false,status:409,error:'El contrato de Talento debe estar confirmado para este corrector antes de formalizar la asignación'};
 
     const ahora = new Date();
     if (datos.correctorId) {
@@ -183,7 +193,7 @@ export async function asignarCorrector(correccionId: string, datos: DatosAsignar
         correctorId: datos.correctorId ?? null,
         correctorNombre: datos.correctorId ? null : (datos.correctorNombre?.trim() ?? null),
         freelance: datos.freelance,
-        contratoConfirmado: datos.contratoConfirmado,
+        contratoConfirmado: contrato ? true : correccion.contratoConfirmado,
         fechaAsignada,
         asignadoEn: correccion.asignadoEn ?? ahora,
         dueAt,

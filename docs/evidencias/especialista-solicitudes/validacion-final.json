@@ -1,0 +1,60 @@
+{
+  "date": "2026-10-13T02:56:13.537Z",
+  "revisionTree": "75a3aa68876aed22c19bc44b6d0c134fda9af318",
+  "backendAndTestsUnchangedSinceFreeze": true,
+  "directed": {
+    "uniquePassed": 47,
+    "total": 47,
+    "firstRunPassed": 46,
+    "firstRunTimeouts": 1,
+    "retryPassed": 1,
+    "retryCodeUnchanged": true,
+    "files": [
+      "dirigidos-final.json",
+      "dirigidos-reintento.json"
+    ]
+  },
+  "builds": {
+    "backend": "passed",
+    "frontend": "passed",
+    "includesTypecheck": true,
+    "frontendBundleWarning": true
+  },
+  "httpE2E": {
+    "status": "passed",
+    "file": "e2e-http-final.json"
+  },
+  "visual": {
+    "status": "incomplete",
+    "desktopInitial": "desktop-qa-primera.png",
+    "desktopFinal": "blocked",
+    "tablet": "blocked",
+    "mobile": "blocked",
+    "reason": "Chrome detected but page control did not respond"
+  },
+  "services": {
+    "frontend": "http://localhost:5173",
+    "backend": "http://localhost:3000",
+    "health": "ok"
+  },
+  "fullRegression": {
+    "status": "running",
+    "pid": 14372,
+    "file": "regresion-final.json",
+    "log": "regresion-final.log",
+    "completedFiles": [
+      "✓ tests/trazabilidad.routes.test.ts (158 tests) 728871ms",
+      "✓ tests/proyectos.routes.test.ts (111 tests) 593961ms",
+      "✓ tests/rrppLanzamientos.routes.test.ts (60 tests) 439538ms",
+      "✓ tests/correcciones.test.ts (22 tests) 98534ms",
+      "✓ tests/decisiones.test.ts (23 tests) 161634ms",
+      "✓ tests/jefatura.test.ts (23 tests) 51108ms"
+    ]
+  },
+  "cleanup": {
+    "visualQaServicesStopped": true,
+    "privateQaCredentialsRemoved": true,
+    "isolatedContainer": "pending-full-regression"
+  },
+  "commit": "see git log"
+}

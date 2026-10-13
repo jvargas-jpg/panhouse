@@ -2,6 +2,7 @@ import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { autores, colecciones, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, fichasTrazabilidad, notificaciones, proyectos, users, workItems, type Rol } from '../db/schema/index.js';
 import { registrarEvento, type AccionAuditoria } from './auditLog.js';
+import { obtenerEspecialistaActual } from './carga.js';
 import { crearDecisionColeccionInconsistente } from './decisiones.js';
 import { ErrorDiseno } from './diseno.js';
 import { plazoDiseno } from './disenoSla.js';
@@ -21,7 +22,7 @@ async function conRonda<T>(id: string, actor: Actor, rol: Rol, fn: (tx: Tx, q: t
     exigir(relacion, 'Ronda no encontrada', 404);
     const [p] = await tx.select().from(proyectos).where(eq(proyectos.id, relacion.proyectoId)).for('update');
     exigir(p, 'Proyecto no encontrado', 404);
-    if (rol === 'especialista') exigir(p.especialistaId === actor.id, 'Proyecto de otro especialista', 403);
+    if (rol === 'especialista') exigir(await obtenerEspecialistaActual(p.id,p.especialistaId,tx) === actor.id, 'Proyecto de otro especialista', 403);
     const [q] = await tx.select().from(fichaCalidadFases).where(eq(fichaCalidadFases.id, id));
     exigir(q?.workItemId && q.disenoVersionId, 'Ronda histórica: use la consulta legacy', 400);
     const [v] = await tx.select().from(disenoVersiones).where(eq(disenoVersiones.id, q.disenoVersionId));

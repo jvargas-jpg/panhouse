@@ -4,7 +4,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
+import { auditLogs, autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
@@ -702,7 +702,7 @@ export async function asignarEspecialista(
 // fantasma en 'pendiente' después de que ya hay editor trabajando.
 export async function asignarEditor(proyectoId: string, editorId: string, asignadoPorId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo,especialistaId:proyectos.especialistaId }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
 
     const { cambio, asignacionId, anteriorUsuarioId } = await asignarConHistorial(tx, {
@@ -727,6 +727,9 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
 
     await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
     await transicionarWorkItem(tx, { proyectoId, tipo: 'edicion', estado: 'en_progreso' });
+    const [pedido]=await tx.select({id:auditLogs.id}).from(auditLogs).where(and(eq(auditLogs.proyectoId,proyectoId),eq(auditLogs.accion,'EDITOR_SOLICITADO'))).limit(1);
+    const owner=pedido?await obtenerEspecialistaActual(proyectoId,proyecto.especialistaId,tx):null;
+    if(owner)await tx.insert(notificaciones).values({proyectoId,rolDestino:'especialista',usuarioDestinoId:owner,mensaje:'Jefatura de Edición asignó Editor a tu solicitud.'});
 
     await tx.insert(notificaciones).values({
       proyectoId,
@@ -747,16 +750,23 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
 // (ver existeNotificacionNoLeida, mismo guardián que manuscritoUrl).
 export async function solicitarEditor(proyectoId: string, actorId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo, editorId: proyectos.editorId }).from(proyectos).where(eq(proyectos.id, proyectoId)).limit(1);
+    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo, editorId: proyectos.editorId,especialistaId:proyectos.especialistaId,estado:proyectos.estado,servicioId:proyectos.servicioId }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    if(await obtenerEspecialistaActual(proyectoId,proyecto.especialistaId,tx)!==actorId)throw Object.assign(new Error('Proyecto de otro Especialista'),{statusCode:403});
+    if(['culminado','retirado'].includes(proyecto.estado))throw Object.assign(new Error('Proyecto cerrado'),{statusCode:409});
     if (proyecto.editorId) return; // Ya tiene editor — pedir de nuevo no tiene efecto.
+    const [servicio]=await tx.select({codigo:servicios.codigo}).from(servicios).where(eq(servicios.id,proyecto.servicioId));
+    if(servicio?.codigo==='SE'){
+      const [existente]=await tx.select({id:workItems.id}).from(workItems).where(and(eq(workItems.proyectoId,proyectoId),eq(workItems.tipo,'edicion'))).limit(1);
+      if(!existente)throw Object.assign(new Error('Edición no aplica a Sello editorial sin una intervención registrada'),{statusCode:400});
+    }
 
     const workItemId = await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
 
     const [yaNotificado] = await tx
-      .select({ id: notificaciones.id })
-      .from(notificaciones)
-      .where(and(eq(notificaciones.proyectoId, proyectoId), eq(notificaciones.rolDestino, 'jefe_edicion'), eq(notificaciones.leido, false)))
+      .select({ id: auditLogs.id })
+      .from(auditLogs)
+      .where(and(eq(auditLogs.entityId,workItemId),eq(auditLogs.accion,'EDITOR_SOLICITADO')))
       .limit(1);
     if (yaNotificado) return;
 

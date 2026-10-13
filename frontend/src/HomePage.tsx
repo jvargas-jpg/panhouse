@@ -10,6 +10,8 @@ import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
 import { PanelJefaturaPage } from './jefatura/PanelJefaturaPage';
 import { MisDireccionesCreativasPage } from './liderCreativo/MisDireccionesCreativasPage';
 import { MisProyectosPage } from './proyectos/MisProyectosPage';
+import { MiTrabajoPage } from './especialista/MiTrabajoPage';
+import { SolicitudesPage } from './especialista/SolicitudesPage';
 import { lazy, Suspense } from 'react';
 const EspecialistaInicioPage = lazy(() => import('./especialista/EspecialistaInicioPage').then(m => ({default:m.EspecialistaInicioPage})));
 import { RrppHomePage } from './rrpp/RrppHomePage';
@@ -24,12 +26,17 @@ export function HomePage() {
   const location = useLocation();
 
   if (user?.rol === 'especialista') {
-    return ['mis-proyectos', 'metricas'].includes(new URLSearchParams(location.search).get('vista') ?? '') ? <MisProyectosPage /> : <Suspense fallback={<p role="status">Cargando Inicio…</p>}><EspecialistaInicioPage /></Suspense>;
+    const vista = new URLSearchParams(location.search).get('vista') ?? '';
+    if (['mis-proyectos', 'metricas'].includes(vista)) return <MisProyectosPage />;
+    if (vista === 'mi-trabajo') return <MiTrabajoPage />;
+    if (vista === 'solicitudes') return <SolicitudesPage />;
+    return <Suspense fallback={<p role="status">Cargando Inicio…</p>}><EspecialistaInicioPage /></Suspense>;
   }
 
   if (user?.rol === 'jefe_area') {
     return <PanelJefaturaPage />;
   }
+  if (user?.rol === 'talento_humano') return <SolicitudesPage />;
 
   // Separados a pedido explícito del negocio: comercial tiene su propio
   // Inicio/Dashboard (ComercialDashboardPage.tsx) con lo que necesita

@@ -1,7 +1,7 @@
-import { accionesEspecialista } from './atencionEspecialista.js';
+import { obtenerColaTrabajoEspecialista } from './especialistaMiTrabajo.js';
 import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { fases, pasos, servicioFases, projectAssignments, users, workItems, pagos, proyectos, decisiones, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, capitulos } from '../db/schema/index.js';
+import { fases, pasos, servicioFases, projectAssignments, users, workItems, pagos, proyectos, decisiones } from '../db/schema/index.js';
 import { ErrorFichaViva, resumenFichaViva, verificarAccesoFichaViva } from './fichaViva.js';
 import { NOMBRES_PROCESO, obtenerDashboardJefatura } from './jefatura.js';
 import { registrarEvento } from './auditLog.js';
@@ -26,7 +26,7 @@ export function agruparProcesos(trabajos: TrabajoProyecto[]): ProcesoProyecto[] 
 
 export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promise<ProjectCommandCenter> {
   const p = await accesoCommandCenter(id, actor);
-  const [ficha, snapshot, rows, assignments, configuracion, paymentStates, cases, creatives, versions, reviews, chapters] = await Promise.all([
+  const [ficha, snapshot, rows, assignments, configuracion, paymentStates, cases] = await Promise.all([
     resumenFichaViva(id, actor),
     obtenerDashboardJefatura(new Date(), { historico: true, incluirRetirados: true, proyectoId: id }),
     db.select({ item: workItems, paso: pasos.nombre, fase: fases.nombre }).from(workItems)
@@ -41,10 +41,6 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       .orderBy(asc(servicioFases.orden)),
     db.select({ estado: pagos.estatus }).from(pagos).where(eq(pagos.proyectoId, id)),
     db.select({id:decisiones.id,subject:decisiones.subject,status:decisiones.status,requester:decisiones.requestedByUserId}).from(decisiones).where(and(eq(decisiones.proyectoId,id),eq(decisiones.targetRole,'jefe_area'),ne(decisiones.status,'resuelta'))),
-    db.select({id:direccionesCreativas.id,brief:direccionesCreativas.fechaBriefEnviadoEspecialista,autor:direccionesCreativas.fechaBriefAprobadoAutor,enviado:direccionesCreativas.fechaBriefEnviadoAutor,workId:direccionesCreativas.workItemId}).from(direccionesCreativas).where(and(eq(direccionesCreativas.proyectoId,id),isNull(direccionesCreativas.fechaCierre))),
-    db.selectDistinctOn([disenos.id],{id:disenos.id,tipo:disenos.tipo,enviado:disenoVersiones.enviadaAutorEn,aprobado:disenoVersiones.aprobadaAutorEn,feedback:disenoVersiones.feedbackEn,handoff:disenoVersiones.handoffEn,venceAutor:disenoVersiones.feedbackAutorDueAt,calidadId:disenoVersiones.calidadFaseId}).from(disenos).innerJoin(disenoVersiones,eq(disenoVersiones.disenoId,disenos.id)).where(eq(disenos.proyectoId,id)).orderBy(asc(disenos.id),desc(disenoVersiones.numero)),
-    db.select({id:fichaCalidadFases.id,revisado:fichaCalidadFases.revisadoEn,aprobado:fichaCalidadFases.aprobado,autor:disenoVersiones.aprobadaAutorEn,fase:fichaCalidadFases.numeroFase}).from(fichaCalidadFases).innerJoin(disenoVersiones,eq(disenoVersiones.calidadFaseId,fichaCalidadFases.id)).innerJoin(disenos,eq(disenos.id,disenoVersiones.disenoId)).where(eq(disenos.proyectoId,id)),
-    db.select({numero:capitulos.numero,entrega:capitulos.fechaEntregaEditor,envio:capitulos.fechaEnvioAutor,respuesta:capitulos.fechaRespuestaReal,vence:capitulos.fechaPautadaFeedback}).from(capitulos).where(eq(capitulos.proyectoId,id)),
   ]);
   const salud = snapshot.proyectos[0] ?? null;
   const procesos = agruparProcesos(rows.map(({ item, paso, fase }) => {
@@ -75,7 +71,9 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       if (salud?.porAsignar) atencion.push({id:'asignacion',titulo:'Asignar Especialista',detalle:'Ingreso completo y pendiente de distribución',href:`/?vista=asignaciones&proyecto=${id}`});
       for(const request of snapshot.requests.filter(r=>r.requiereJefatura)) atencion.push({id:request.id,titulo:request.titulo,detalle:'Solicitud operativa pendiente',href:'/?vista=solicitudes'});
     } else if (salud) {
-      atencion.push(...accionesEspecialista(salud, { titulo: p.tituloDefinitivo, subtitulo: p.subtituloDefinitivo, editorId: p.editorId, capitulos: chapters, decisiones: cases, creativas: creatives, versiones: versions, revisiones: reviews.filter(q=>versions.some(v=>v.calidadId===q.id)) }, actor.id));
+      atencion.length=0;
+      const cola=await obtenerColaTrabajoEspecialista(actor.id,{tab:'pendientes',search:'',page:1,pageSize:50},new Date(),id,snapshot);
+      atencion.push(...cola.items.map(i=>({id:i.id,titulo:i.accion,detalle:i.detalle,proceso:i.proceso,href:i.href,editarContexto:i.editarContexto})));
     }
   }
   return { atencion, ficha, salud: salud ? { especialista: salud.especialista, express: salud.express, riesgo: salud.riesgo, fechaObjetivo: salud.fechaObjetivo } : null,

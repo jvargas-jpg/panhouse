@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../server/db/client.js';
 import { auditLogs, correcciones, decisiones, notificaciones, projectAssignments, workItems } from '../server/db/schema/index.js';
 import { resolverDecision } from '../server/helpers/decisiones.js';
+import { solicitarContrato,gestionarContrato } from '../server/helpers/contratosCorreccion.js';
 import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 import { crearProyectoDePrueba, crearUsuario } from './helpers/fixtures.js';
@@ -17,6 +18,11 @@ function obtenerCookie(respuestaLogin: request.Response): string {
   const cookie = respuestaLogin.headers['set-cookie'];
   if (!cookie) throw new Error('El login no devolvió cookie de sesión');
   return cookie;
+}
+async function confirmarContratoDePrueba(correccionId:string,especialistaId:string) {
+  const talento=await crearUsuario('talento_humano');
+  const r=await solicitarContrato(correccionId,'Genesis Herrera',{id:especialistaId,rol:'especialista'});
+  await gestionarContrato(r.id,{accion:'confirmar'},talento);
 }
 
 async function solicitarCorreccionDePrueba(
@@ -177,6 +183,7 @@ describe('Fase 5B — Corrección', () => {
       const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
       const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
       const correccionId = await solicitarCorreccionDePrueba(app, cookie, proyecto.id);
+      await confirmarContratoDePrueba(correccionId,me.body.user.id);
 
       const respuesta = await request(app.server)
         .patch(`/api/correcciones/${correccionId}/asignar`)
@@ -231,6 +238,7 @@ describe('Fase 5B — Corrección', () => {
       const jefe = await crearUsuario('jefe_area');
       const resuelta = await resolverDecision(decision!.id, jefe, 'approved', 'Costo aceptado.', decision!.version);
       expect(resuelta.ok).toBe(true);
+      await confirmarContratoDePrueba(correccionId,me.body.user.id);
 
       const respuestaConfirmada = await request(app.server)
         .patch(`/api/correcciones/${correccionId}/asignar`)
@@ -422,6 +430,7 @@ describe('Fase 5B — Corrección', () => {
       const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
       const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
       const correccionId = await solicitarCorreccionDePrueba(app, cookie, proyecto.id);
+      await confirmarContratoDePrueba(correccionId,me.body.user.id);
 
       await request(app.server)
         .patch(`/api/correcciones/${correccionId}/asignar`)
@@ -463,6 +472,7 @@ describe('Fase 5B — Corrección', () => {
       const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
       const proyecto = await crearProyectoDePrueba({ especialistaId: me.body.user.id });
       const correccionId = await solicitarCorreccionDePrueba(app, cookie, proyecto.id);
+      await confirmarContratoDePrueba(correccionId,me.body.user.id);
 
       await request(app.server)
         .patch(`/api/correcciones/${correccionId}/asignar`)

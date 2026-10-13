@@ -1,0 +1,212 @@
+{
+  "source": "tests-integracion-final.json",
+  "tests": 18,
+  "passed": 18,
+  "testResult": {
+    "assertionResults": [
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos 401 sin sesión y 403 para roles ajenos",
+        "status": "passed",
+        "title": "401 sin sesión y 403 para roles ajenos",
+        "duration": 4098.141100000001,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos Especialista ajeno no obtiene contexto, pagos ni actividad",
+        "status": "passed",
+        "title": "Especialista ajeno no obtiene contexto, pagos ni actividad",
+        "duration": 1592.1961999999985,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos assignment vigente prevalece sobre FK obsoleto para lectura y escritura",
+        "status": "passed",
+        "title": "assignment vigente prevalece sobre FK obsoleto para lectura y escritura",
+        "duration": 2841.483799999998,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos Jefatura y Especialista reciben los mismos procesos, equipo, salud y administración",
+        "status": "passed",
+        "title": "Jefatura y Especialista reciben los mismos procesos, equipo, salud y administración",
+        "duration": 2355.591199999999,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos cuenta rondas reales, excluye ingreso/asignación y conserva canceladas",
+        "status": "passed",
+        "title": "cuenta rondas reales, excluye ingreso/asignación y conserva canceladas",
+        "duration": 1994.010299999998,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos Sello sin Edición muestra No aplica y no pendientes ficticios",
+        "status": "passed",
+        "title": "Sello sin Edición muestra No aplica y no pendientes ficticios",
+        "duration": 2107.624100000001,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos atención proviene de feedback y solicitudes reales; no enlaces generales",
+        "status": "passed",
+        "title": "atención proviene de feedback y solicitudes reales; no enlaces generales",
+        "duration": 2060.2534000000014,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos historial paginado conserva eventos con la misma fecha sin repetición",
+        "status": "passed",
+        "title": "historial paginado conserva eventos con la misma fecha sin repetición",
+        "duration": 2303.8099,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos conserva procesos históricos aun si cambia aplicabilidad del servicio",
+        "status": "passed",
+        "title": "conserva procesos históricos aun si cambia aplicabilidad del servicio",
+        "duration": 2725.335900000002,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos respeta configuración activa de servicio sin poblar catálogo inventado",
+        "status": "passed",
+        "title": "respeta configuración activa de servicio sin poblar catálogo inventado",
+        "duration": 2911.0175000000017,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos avance inmutable conserva eventos anteriores y muestra texto humano escapable",
+        "status": "passed",
+        "title": "avance inmutable conserva eventos anteriores y muestra texto humano escapable",
+        "duration": 2493.337800000001,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos títulos pertenecen al Especialista vigente, quedan auditados y no duplican eventos",
+        "status": "passed",
+        "title": "títulos pertenecen al Especialista vigente, quedan auditados y no duplican eventos",
+        "duration": 4943.445500000002,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos Jefatura no puede registrar avance del Especialista ni enviar campos financieros",
+        "status": "passed",
+        "title": "Jefatura no puede registrar avance del Especialista ni enviar campos financieros",
+        "duration": 2910.023500000003,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos proyecto cerrado se consulta sin permitir avance nuevo",
+        "status": "passed",
+        "title": "proyecto cerrado se consulta sin permitir avance nuevo",
+        "duration": 3091.9133,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos pagos se consultan sin inferir solvencia ni seis cuotas obligatorias",
+        "status": "passed",
+        "title": "pagos se consultan sin inferir solvencia ni seis cuotas obligatorias",
+        "duration": 2002.1906999999992,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos número de consultas constante al crecer las intervenciones; no N+1",
+        "status": "passed",
+        "title": "número de consultas constante al crecer las intervenciones; no N+1",
+        "duration": 2370.731599999999,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos activación Amazon paralela idempotente, notificada y cerrada solo por Digital",
+        "status": "passed",
+        "title": "activación Amazon paralela idempotente, notificada y cerrada solo por Digital",
+        "duration": 3009.767399999997,
+        "failureMessages": [],
+        "meta": {}
+      },
+      {
+        "ancestorTitles": [
+          "Project Command Center: verdad compartida y permisos"
+        ],
+        "fullName": "Project Command Center: verdad compartida y permisos bandeja Digital conserva la activación pendiente aunque formulario ya esté enviado",
+        "status": "passed",
+        "title": "bandeja Digital conserva la activación pendiente aunque formulario ya esté enviado",
+        "duration": 5246.2964000000065,
+        "failureMessages": [],
+        "meta": {}
+      }
+    ],
+    "startTime": 1791856818766,
+    "endTime": 1791856869825.2964,
+    "status": "passed",
+    "message": "",
+    "name": "C:/Users/Jhose/OneDrive/Documentos/panhouse/tests/projectCommandCenter.test.ts"
+  }
+}

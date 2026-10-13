@@ -1,0 +1,17 @@
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
+import { Modal } from '../autores/Modal';
+import { apiFetch } from '../lib/api';
+import type { SolicitudesEspecialista } from '../../../shared/especialistaSolicitudes';
+export function ContratoCorreccion({correccionId,workItemId,proyectoId,bloqueado,asignado=false}:{correccionId:string;workItemId:string;proyectoId:string;bloqueado:boolean;asignado?:boolean}) {
+  const [open,setOpen]=useState(false),[nombre,setNombre]=useState(''),[aceptado,setAceptado]=useState(false),cache=useQueryClient();
+  const query=useQuery({queryKey:['contratos-correccion',proyectoId],queryFn:()=>apiFetch<SolicitudesEspecialista>('/especialistas/solicitudes?tipo=contrato&tab=todas&pageSize=50&proyecto='+proyectoId)});
+  const request=query.data?.solicitudes.find(s=>s.workItemId===workItemId);
+  const mutation=useMutation({mutationFn:()=>apiFetch<{id:string}>('/especialistas/correcciones/'+correccionId+'/solicitar-contrato',{method:'POST',body:JSON.stringify({correctorNombre:nombre,disponibilidadConfirmada:aceptado})}),onSuccess:()=>{for(const key of ['contratos-correccion','solicitudes','mi-trabajo','especialista-inicio','correcciones'])cache.invalidateQueries({queryKey:[key]});setOpen(false);}});
+  return <div className="mt-3 rounded-lg border border-gray-200 p-3 text-sm"><strong>Contrato freelance · Talento Humano</strong>{query.isPending?<p role="status">Consultando contrato…</p>:query.isError?<p role="alert">No se pudo consultar el contrato. <button onClick={()=>query.refetch()}>Reintentar</button></p>:<>
+    {request&&<p className="mt-2">{request.estado==='resuelta'?'Contrato confirmado. Puedes formalizar la asignación.':request.estado==='requiere_informacion'?'Talento necesita una respuesta tuya.':request.estado==='rechazada'?'Solicitud rechazada. Revisa el motivo antes de volver a solicitar.':'Solicitud enviada; esperando a Talento.'} <Link className="underline" to={'/?'+new URLSearchParams({vista:'solicitudes',tab:'todas',request:request.id})}>Ver solicitud</Link></p>}
+    {(!request||request.estado==='rechazada'||asignado&&request.estado==='resuelta')&&<button className="fv-button mt-2" disabled={bloqueado} onClick={()=>setOpen(true)}>{request?.estado==='resuelta'?'Solicitar contrato para otro corrector':'Solicitar contrato freelance'}</button>}
+    {bloqueado&&<p className="mt-2 text-xs text-amber-700">Primero debe resolverse la revisión previa de Jefatura.</p>}
+  </>}{open&&<Modal titulo="Solicitar contrato freelance" subtitulo="Corrección · Talento Humano" onClose={()=>setOpen(false)}><form className="flex flex-col gap-4 p-6" onSubmit={e=>{e.preventDefault();mutation.mutate();}}><label>Nombre del corrector freelance<input className="mt-2 w-full rounded border p-2" required minLength={3} maxLength={200} value={nombre} onChange={e=>setNombre(e.target.value)}/></label><label className="flex items-start gap-2"><input type="checkbox" required checked={aceptado} onChange={e=>setAceptado(e.target.checked)}/>Confirmé con el corrector su disponibilidad y aceptación de esta intervención.</label><p className="text-xs text-gray-500">Talento debe confirmar la recepción del contrato firmado antes de la asignación formal.</p>{mutation.isError&&<p role="alert" className="text-red-700">{mutation.error.message}</p>}<button className="fv-button fv-primary" disabled={mutation.isPending}>Enviar solicitud a Talento</button></form></Modal>}</div>;
+}

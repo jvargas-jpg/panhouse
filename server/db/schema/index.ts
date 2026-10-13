@@ -22,3 +22,4 @@ export * from './diseno.js';
 export * from './rrppLanzamientos.js';
 export * from './fichaDocumental.js';
 export * from './decisiones.js';
+export * from './contratosCorreccion.js';

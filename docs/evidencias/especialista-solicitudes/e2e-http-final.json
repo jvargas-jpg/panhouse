@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-13T02:47:11.953Z",
+  "database": "panhouse_solicitudes_visual_qa",
+  "revisionTree": "75a3aa68876aed22c19bc44b6d0c134fda9af318",
+  "results": [
+    {
+      "check": "browser-response-persisted",
+      "estado": "resuelta",
+      "respondida": true
+    },
+    {
+      "check": "contract-http-lifecycle",
+      "passed": true,
+      "scope": true,
+      "role": true,
+      "formalization": true,
+      "candidateGate": true,
+      "resolvedReadonly": true
+    },
+    {
+      "check": "editor-http-lifecycle",
+      "passed": true,
+      "concurrentDuplicate": true,
+      "assignedWhileProcessContinues": true
+    }
+  ],
+  "success": true
+}

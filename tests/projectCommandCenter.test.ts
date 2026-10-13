@@ -66,9 +66,9 @@ describe('Project Command Center: verdad compartida y permisos', () => {
   });
   it('atención proviene de feedback y solicitudes reales; no enlaces generales', async () => {
     const p=await fixture({tituloDefinitivo:'Título cerrado',subtituloDefinitivo:'Subtítulo cerrado'});
-    expect((await get(p.id)).json().atencion).toEqual([]);
+    expect((await get(p.id)).json().atencion.some((a:{titulo:string})=>a.titulo==='Solicitar Editor')).toBe(true);
     await db.insert(capitulos).values([{proyectoId:p.id,numero:1,fechaEntregaEditor:'2026-10-10',fechaEnvioAutor:'2026-10-11',fechaPautadaFeedback:'2026-10-10'},{proyectoId:p.id,numero:2,fechaEntregaEditor:'2026-10-10',fechaEnvioAutor:'2026-10-11',fechaPautadaFeedback:'2026-10-10'}]);
-    const a=(await get(p.id)).json().atencion;expect(a).toHaveLength(1);expect(a[0].detalle).toContain('1, 2');expect(a[0].proceso).toBe('edicion');
+    const a=(await get(p.id)).json().atencion.filter((a:{titulo:string})=>a.titulo.startsWith('Dar seguimiento: Feedback del autor'));expect(a).toHaveLength(2);expect(new Set(a.map((i:{id:string})=>i.id)).size).toBe(2);expect(a.every((i:{proceso:string})=>i.proceso==='edicion')).toBe(true);
     expect((await get(p.id,jefeCookie)).json().atencion).toEqual([]);
   });
   it('historial paginado conserva eventos con la misma fecha sin repetición', async () => {

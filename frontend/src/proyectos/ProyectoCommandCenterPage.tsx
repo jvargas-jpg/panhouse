@@ -63,6 +63,9 @@ export function ProyectoCommandCenterPage() {
       cache.invalidateQueries({ queryKey: ['especialista-inicio', identity] });
       cache.invalidateQueries({ queryKey: ['especialista-inicio-actividad', identity] });
       cache.invalidateQueries({ queryKey: ['especialista-cartera', user?.id] });
+       cache.invalidateQueries({ queryKey: ['mi-trabajo', user?.id] });
+       cache.invalidateQueries({ queryKey: ['solicitudes', user?.id] });
+       cache.invalidateQueries({ queryKey: ['contratos-correccion', id] });
     }
   }), [cache, id, identity]);
   const to = (target: string, extra?: Record<string, string>) => { const p = new URLSearchParams(params); p.delete('proceso'); p.delete('modo'); for (const [k, v] of Object.entries(extra ?? {})) p.set(k, v); return '/proyectos/'+id+(target?'/'+target:'')+(p.size?'?'+p:''); };

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Modal } from '../autores/Modal';
 import type { AlcanceCorreccion, Correccion, EstadoPlazoCorreccion, ResultadoCorreccion } from '../types/api';
@@ -12,6 +12,9 @@ import {
   solicitarCorreccion,
 } from './correccionesApi';
 import { fetchPersonalEquipo } from './proyectoDetalleApi';
+import { ContratoCorreccion } from './ContratoCorreccion';
+import { apiFetch } from '../lib/api';
+import type { SolicitudesEspecialista } from '../../../shared/especialistaSolicitudes';
 
 const ALCANCES: { value: AlcanceCorreccion; label: string }[] = [
   { value: 'tripa_completa', label: 'Tripa Completa' },
@@ -133,13 +136,17 @@ function FormularioSolicitar({ proyectoId, onCerrar }: { proyectoId: string; onC
 }
 
 function ModalAsignar({ correccion, proyectoId, onClose }: { correccion: Correccion; proyectoId: string; onClose: () => void }) {
+  const contracts=useQuery({queryKey:['contratos-correccion',proyectoId],queryFn:()=>apiFetch<SolicitudesEspecialista>('/especialistas/solicitudes?tipo=contrato&tab=todas&pageSize=50&proyecto='+proyectoId)});
+  const currentContract=contracts.data?.solicitudes.find(s=>s.workItemId===correccion.workItemId);
   const personalQuery = useQuery({ queryKey: ['usuarios'], queryFn: fetchPersonalEquipo });
   const correctoresInternos = personalQuery.data?.usuarios.filter((u) => u.rol === 'corrector') ?? [];
 
-  const [modo, setModo] = useState<'interno' | 'freelance'>('interno');
+  const [modo, setModo] = useState<'interno' | 'freelance'>(correccion.freelance ? 'freelance' : 'interno');
   const [correctorId, setCorrectorId] = useState('');
-  const [correctorNombre, setCorrectorNombre] = useState('');
-  const [contratoConfirmado, setContratoConfirmado] = useState(false);
+  const [correctorNombre, setCorrectorNombre] = useState(correccion.correctorNombre ?? '');
+  const contratoConfirmado = currentContract ? currentContract.estado==='resuelta' : correccion.contratoConfirmado;
+  const detail=useQuery({queryKey:['solicitud-corrector',currentContract?.id],queryFn:()=>apiFetch<import('../../../shared/especialistaSolicitudes').DetalleSolicitud>('/especialistas/solicitudes/'+currentContract!.id),enabled:currentContract?.estado==='resuelta'});
+  useEffect(()=>{const candidate=detail.data?.contexto.find(c=>c.label==='Corrector freelance')?.value;if(candidate){setCorrectorNombre(candidate);setModo('freelance');}},[detail.data]);
   const queryClient = useQueryClient();
 
   const mutacion = useMutation({
@@ -230,15 +237,12 @@ function ModalAsignar({ correccion, proyectoId, onClose }: { correccion: Correcc
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={contratoConfirmado} onChange={(event) => setContratoConfirmado(event.target.checked)} />
-          Talento Humano confirmó la recepción del contrato firmado
-        </label>
+        {modo==='freelance'&&<p className="text-sm text-gray-600">{contratoConfirmado?'Talento Humano confirmó el contrato de esta intervención.':'Solicita el contrato desde Corrección y espera la confirmación de Talento antes de asignar.'}</p>}
 
         <div className="mt-2 flex items-center gap-3">
           <button
             type="submit"
-            disabled={mutacion.isPending}
+            disabled={mutacion.isPending || modo==='freelance' && !contratoConfirmado}
             className="rounded-md bg-tinta px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-800 disabled:opacity-60"
           >
             {mutacion.isPending ? 'Guardando…' : yaTeniaCorrector ? 'Reasignar' : 'Asignar'}
@@ -453,7 +457,8 @@ function TarjetaCorreccion({ correccion, proyectoId, puedeOperar }: { correccion
         </div>
       )}
 
-      {puedeOperar && !tieneCorrector && (
+      {puedeOperar && !correccion.fechaEntrega && correccion.estado!=='cancelado' && <ContratoCorreccion correccionId={correccion.id} workItemId={correccion.workItemId} proyectoId={proyectoId} asignado={!!correccion.fechaAsignada} bloqueado={correccion.requiereRevisionPrevia && !correccion.revisionPreviaConfirmada}/>}
+      {puedeOperar && !correccion.fechaAsignada && (
         <button
           type="button"
           onClick={() => setModalActivo('asignar')}
@@ -463,13 +468,13 @@ function TarjetaCorreccion({ correccion, proyectoId, puedeOperar }: { correccion
         </button>
       )}
 
-      {puedeOperar && tieneCorrector && correccion.estado !== 'completado' && (
+      {puedeOperar && correccion.fechaAsignada && tieneCorrector && correccion.estado !== 'completado' && (
         <button type="button" onClick={() => setModalActivo('asignar')} className="mt-3 text-xs font-medium text-dorado underline">
           Reasignar
         </button>
       )}
 
-      {puedeOperar && correccion.freelance && correccion.estado !== 'completado' && tieneCorrector && (
+      {puedeOperar && correccion.fechaAsignada && correccion.freelance && correccion.estado !== 'completado' && tieneCorrector && (
         <AccionesEjecucionFreelance correccion={correccion} proyectoId={proyectoId} />
       )}
 

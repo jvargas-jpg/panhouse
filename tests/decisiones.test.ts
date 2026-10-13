@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as auditoria from '../server/helpers/auditLog.js';
 import { pool } from '../server/db/client.js';
 import { listarDecisiones } from '../server/helpers/decisiones.js';
+import { solicitarContrato,gestionarContrato } from '../server/helpers/contratosCorreccion.js';
 import { buildApp } from '../server/app.js';
 import { db } from '../server/db/client.js';
 import {
@@ -149,6 +150,9 @@ describe('Jefatura · Decisiones', () => {
       .from(decisiones)
       .where(eq(decisiones.proyectoId, p.id));
     expect(filas).toHaveLength(0);
+    const talento=await crearUsuario('talento_humano');
+    const contrato=await solicitarContrato(r.body.id,'Freelance QA',especialista);
+    await gestionarContrato(contrato.id,{accion:'confirmar'},talento);
     const asignar = await call(
       'PATCH',
       `/correcciones/${r.body.id}/asignar`,
@@ -252,6 +256,9 @@ describe('Jefatura · Decisiones', () => {
       .from(correcciones)
       .where(eq(correcciones.id, crear.body.id));
     expect(correccionTrasAprobar?.revisionPreviaConfirmada).toBe(true);
+    const talento=await crearUsuario('talento_humano');
+    const contrato=await solicitarContrato(crear.body.id,'Freelance QA',especialista);
+    await gestionarContrato(contrato.id,{accion:'confirmar'},talento);
     const asignar = await call(
       'PATCH',
       `/correcciones/${crear.body.id}/asignar`,

@@ -1,3 +1,4 @@
+import {randomUUID} from 'node:crypto';
 import {
   afterAll,
   beforeAll,
@@ -25,6 +26,7 @@ import {
   workItems,
 } from '../server/db/schema/index.js';
 import { createSession } from '../server/helpers/session.js';
+import { solicitarContrato,gestionarContrato } from '../server/helpers/contratosCorreccion.js';
 import {
   solicitarCorreccion,
   asignarCorrector,
@@ -38,6 +40,7 @@ import { crearProyectoDePrueba } from './helpers/fixtures.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
 
 const app = crearAppDePrueba();
+async function crearUsuario(rol:typeof users.$inferInsert.rol){const [u]=await db.insert(users).values({rol,email:randomUUID()+'@test.local',nombre:'Talento QA',passwordHash:'session-only'}).returning();return u!;}
 let jefe: typeof users.$inferSelect,
   especialista: typeof users.$inferSelect,
   corrector: typeof users.$inferSelect,
@@ -196,6 +199,9 @@ describe('Seguimiento operativo integrado', () => {
       { correctorId: corrector.id, freelance: false, contratoConfirmado: true },
       especialista.id,
     );
+    const talentoContrato=await crearUsuario('talento_humano');
+    const contrato=await solicitarContrato(id,'Ana Externa',especialista);
+    await gestionarContrato(contrato.id,{accion:'confirmar'},talentoContrato);
     await asignarCorrector(
       id,
       {
@@ -466,6 +472,9 @@ describe('Seguimiento operativo integrado', () => {
     expect(
       (await patch(id, { pago80: true, expectedUpdatedAt: null })).status,
     ).toBe(403);
+    const talentoContrato=await crearUsuario('talento_humano');
+    const contrato=await solicitarContrato(id,'Corrector externo',especialista);
+    await gestionarContrato(contrato.id,{accion:'confirmar'},talentoContrato);
     await asignarCorrector(
       id,
       {
@@ -563,6 +572,9 @@ describe('Seguimiento operativo integrado', () => {
       { correctorId: corrector.id, freelance: false, contratoConfirmado: true },
       especialista.id,
     );
+    const talentoContrato=await crearUsuario('talento_humano');
+    const contrato=await solicitarContrato(id,'Externo actual',especialista);
+    await gestionarContrato(contrato.id,{accion:'confirmar'},talentoContrato);
     await asignarCorrector(
       id,
       {

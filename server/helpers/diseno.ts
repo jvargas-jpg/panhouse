@@ -5,6 +5,7 @@ import { autores, correcciones, direccionesCreativas, disenos, disenoVersiones, 
 import type { Rol } from '../db/schema/index.js';
 import type { Tx } from './tx.js';
 import { asignarConHistorial } from './assignments.js';
+import { obtenerEspecialistaActual, especialistaActualSql } from './carga.js';
 import { registrarEvento, type AccionAuditoria } from './auditLog.js';
 import { evaluarGateTituloAprobado } from './gates.js';
 import { diasReferenciaDiseno, plazoDiseno, type TipoDiseno } from './disenoSla.js';
@@ -29,7 +30,7 @@ async function conDiseno<T>(id: string, actor: Actor, rol: Rol, fn: (tx: Tx, d: 
     exigir(d, 'Trabajo de Diseño no encontrado', 404);
     const p = await proyectoBloqueado(tx, d.proyectoId);
     exigir(actor.rol === rol, 'Rol no autorizado', 403);
-    if (rol === 'especialista') exigir(p.especialistaId === actor.id, 'Proyecto de otro especialista', 403);
+    if (rol === 'especialista') exigir(await obtenerEspecialistaActual(p.id,p.especialistaId,tx) === actor.id, 'Proyecto de otro especialista', 403);
     if (rol === 'disenador') exigir(p.disenadorId === actor.id, 'Proyecto de otro diseñador', 403);
     const [actual] = await tx.select().from(disenos).where(eq(disenos.id, id));
     exigir(actual, 'Trabajo no encontrado', 404);
@@ -63,7 +64,7 @@ export interface SolicitudDiseno {
 export async function solicitarDiseno(proyectoId: string, datos: SolicitudDiseno, actor: Actor) {
   return db.transaction(async tx => {
     const p = await proyectoBloqueado(tx, proyectoId);
-    exigir(actor.rol === 'especialista' && p.especialistaId === actor.id, 'Proyecto de otro especialista', 403);
+    exigir(actor.rol === 'especialista' && await obtenerEspecialistaActual(p.id,p.especialistaId,tx) === actor.id, 'Proyecto de otro especialista', 403);
     const [retry] = await tx.select().from(disenos).where(and(eq(disenos.proyectoId, proyectoId), eq(disenos.solicitudKey, datos.solicitudKey)));
     if (retry) {
       exigir(retry.tipo === datos.tipo && retry.fuenteUrl === datos.fuenteUrl, 'Clave de solicitud ya usada para otro trabajo');
@@ -252,14 +253,14 @@ export async function revisarCubierta(id: string, versionId: string, datos: { ap
 }
 export async function listarDisenos(actor: Actor, proyectoId?: string, revisiones = false) {
   const condiciones = proyectoId ? [eq(proyectos.id, proyectoId)] : [];
-  if (actor.rol === 'especialista') condiciones.push(eq(proyectos.especialistaId, actor.id));
+  if (actor.rol === 'especialista') condiciones.push(eq(especialistaActualSql, actor.id));
   else if (actor.rol === 'disenador') condiciones.push(eq(proyectos.disenadorId, actor.id));
   else exigir(['jefe_area', 'jefe_edicion', 'lider_creativo', 'soporte_editorial'].includes(actor.rol), 'Rol no autorizado', 403);
   if (actor.rol === 'lider_creativo' || revisiones) condiciones.push(eq(disenos.tipo, 'cubierta_extendida'));
   if (proyectoId && ['especialista', 'disenador'].includes(actor.rol)) {
     const [p] = await db.select().from(proyectos).where(eq(proyectos.id, proyectoId));
     exigir(p, 'Proyecto no encontrado', 404);
-    exigir(actor.rol === 'especialista' ? p.especialistaId === actor.id : p.disenadorId === actor.id, 'Proyecto ajeno', 403);
+    exigir(actor.rol === 'especialista' ? await obtenerEspecialistaActual(p.id,p.especialistaId) === actor.id : p.disenadorId === actor.id, 'Proyecto ajeno', 403);
   }
   const filas = await db.select({ trabajo: disenos, proyecto: proyectos, autorNombre: autores.nombre, servicioCodigo: servicios.codigo, creativa: direccionesCreativas, disenadorNombre: users.nombre, modalidad: fichasTrazabilidad.ingresoServicioSubtipoCrudo })
     .from(disenos).innerJoin(proyectos, eq(disenos.proyectoId, proyectos.id)).innerJoin(autores, eq(proyectos.autorId, autores.id))

@@ -14,6 +14,8 @@ export const rrppEnviadoAtSql = sql<string | null>`(select min(evento.created_at
 // Mantener este tipo sincronizado es responsabilidad de quien agrega un
 // evento nuevo; no es una validación de runtime.
 export type AccionAuditoria =
+  | 'CONTRATO_CORRECCION_SOLICITADO' | 'CONTRATO_REVISION_INICIADA' | 'CONTRATO_INFORMACION_SOLICITADA'
+  | 'CONTRATO_INFORMACION_RESPONDIDA' | 'CONTRATO_CONFIRMADO' | 'CONTRATO_RECHAZADO'
   | 'PROYECTO_AVANCE_REGISTRADO'
   | 'PROYECTO_TITULOS_REGISTRADOS'
   | 'AMAZON_ACTIVACION_HABILITADA' | 'AMAZON_ACTIVACION_REGISTRADA'
@@ -65,7 +67,7 @@ export type AccionAuditoria =
 export interface RegistrarEventoInput {
   actorId: string | null;
   accion: AccionAuditoria;
-  entityType: 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision';
+  entityType: 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision' | 'solicitud';
   entityId: string;
   proyectoId?: string | null;
   detalles?: Record<string, unknown>;
