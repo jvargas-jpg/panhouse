@@ -115,7 +115,7 @@ describe('Workflow Core: Comercial → RRPP → Jefatura → Especialista', () =
     await request(app.server).patch(`/api/proyectos/${proyecto.id}/especialista`).set('Cookie', cookieJefeArea).send({ especialistaId: especialista.id });
 
     const workItemsDelProyecto = await db.select().from(workItems).where(eq(workItems.proyectoId, proyecto.id));
-    expect(workItemsDelProyecto).toHaveLength(2); // intake_rrpp + asignacion_especialista, cada uno UNA fila
+    expect(workItemsDelProyecto).toHaveLength(3); // intake_rrpp + asignacion_especialista + preparacion_inicial, cada uno UNA fila
 
     const eventos = await db.select().from(auditLogs).where(eq(auditLogs.proyectoId, proyecto.id));
     expect(eventos).toHaveLength(3); // RRPP_NOTIFICADO + JEFATURA_NOTIFICADA + ESPECIALISTA_ASIGNADO, cada uno UNA vez

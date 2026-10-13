@@ -15,6 +15,12 @@ import {
   users,
 } from '../../server/db/schema/index.js';
 import { hashPassword } from '../../server/helpers/password.js';
+import { preparacionesProyecto } from '../../server/db/schema/index.js';
+// Aísla las pruebas de procesos posteriores de los nuevos pendientes de recepción.
+export async function completarPreparacionDePrueba(proyectoId: string) {
+  await db.insert(preparacionesProyecto).values({ proyectoId, recibidoEn:new Date('2026-10-01'),expedienteRevisadoEn:new Date('2026-10-01'),primerContactoEn:new Date('2026-10-01'),reunionOperativaFecha:new Date('2026-10-01'),reunionOperativaRealizada:true,
+    driveCarpetaUrl:'https://drive.google.com/drive/folders/fixture',grabacionUrl:'https://example.test/grabacion',transcripcionUrl:'https://example.test/transcripcion',minutaUrl:'https://example.test/minuta',cronogramaUrl:'https://example.test/cronograma' });
+}
 
 let contador = 0;
 function siguiente(prefijo: string): string {

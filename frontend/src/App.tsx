@@ -19,6 +19,7 @@ import { RrppIndicadoresLoading } from './rrpp/RrppIndicadoresLoading';
 import { RrppIngresosPage } from './rrpp/RrppIngresosPage';
 import { RrppProyectosPage } from './rrpp/RrppProyectosPage';
 import { RrppLanzamientosPage } from './rrpp/RrppLanzamientosPage';
+import { SolicitudesPage } from './especialista/SolicitudesPage';
 
 // Los gráficos se comparten entre Indicadores Comerciales y RRPP.
 const MetricasPage = lazy(() => import('./comercial/MetricasPage').then((m) => ({ default: m.MetricasPage })));
@@ -58,6 +59,7 @@ export function App() {
           <Route path="/rrpp/ingresos" element={<RrppIngresosPage />} />
           <Route path="/rrpp/proyectos" element={<RrppProyectosPage />} />
           <Route path="/rrpp/lanzamientos" element={<RrppLanzamientosPage />} />
+          <Route path="/rrpp/solicitudes" element={<SolicitudesPage />} />
         </Route>
 
         {/* Detalle de proyecto: fuera de AppLayout (sin su <main

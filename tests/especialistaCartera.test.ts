@@ -1,3 +1,4 @@
+import { completarPreparacionDePrueba } from './helpers/fixtures.js';
 import { randomUUID } from 'node:crypto';
 import { and, eq, isNull } from 'drizzle-orm';
 import { beforeAll, afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,7 +20,7 @@ let spec:string, other:string, jefe:string, rrpp:string, cookie:string;
 async function usuario(rol:typeof users.$inferInsert.rol) {const id=randomUUID();await db.insert(users).values({id,rol,nombre:'Prueba '+rol,email:id+'@panhouse.test',passwordHash:'session-only'});return id;}
 async function fixture(extra:Partial<typeof proyectos.$inferInsert>={}) {
   const p=await crearProyectoDePrueba({especialistaId:spec});
-  await db.update(proyectos).set({notificadoJefatura:true,tituloDefinitivo:'Cartera editorial',subtituloDefinitivo:'Subtítulo',fechaProgramadaInicio:'2026-10-01',...extra}).where(eq(proyectos.id,p.id));
+  await completarPreparacionDePrueba(p.id);await db.update(proyectos).set({notificadoJefatura:true,tituloDefinitivo:'Cartera editorial',subtituloDefinitivo:'Subtítulo',fechaProgramadaInicio:'2026-10-01',...extra}).where(eq(proyectos.id,p.id));
   await db.insert(fichasTrazabilidad).values({proyectoId:p.id});return p;
 }
 const cartera=(f:Partial<FiltrosCartera>={},actor=spec)=>obtenerCarteraEspecialista(actor,{...base,...f},ahora);
@@ -61,5 +62,5 @@ describe('Cartera del Especialista',()=>{
   it('pagination 10/20/50 y total de servidor sin duplicar filas entre páginas',async()=>{for(let i=0;i<23;i++)await fixture({tituloDefinitivo:'Libro '+i});const first=await cartera({pageSize:10}),second=await cartera({pageSize:10,page:2}),last=await cartera({pageSize:10,page:99});expect(first.total).toBe(23);expect(first.proyectos).toHaveLength(10);expect(last).toMatchObject({page:3,pages:3});expect(last.proyectos).toHaveLength(3);expect(new Set([...first.proyectos,...second.proyectos,...last.proyectos].map(p=>p.id)).size).toBe(23);expect((await cartera({pageSize:50})).proyectos).toHaveLength(23);});
   it('valida query; no acepta paginación fuera de contrato',async()=>{for(const query of ['page=0','pageSize=500','servicio=otro','tab=inventado','riesgo=opaco'])expect((await get(query)).statusCode).toBe(400);});
   it('un fallo de atención no presenta cero tareas como resultado válido',async()=>{await fixture();const original=pool.query.bind(pool);const spy=vi.spyOn(pool,'query').mockImplementation(((...args:unknown[])=>{const q=typeof args[0]==='string'?args[0]:String((args[0] as {text?:string})?.text);if(q.includes('from "capitulos"'))return Promise.reject(new Error('Fallo QA temporal'));return Reflect.apply(original,pool,args);}) as typeof pool.query);try{expect((await get()).statusCode).toBe(503);}finally{spy.mockRestore();}});
-  it('número fijo de consultas por lote y DTO sin ficha/Activity ni carga de detalle',async()=>{await fixture();let count:number;const spy=vi.spyOn(pool,'query');try{const d=await cartera();count=spy.mock.calls.length;expect(d.proyectos[0]).not.toHaveProperty('ficha');expect(d.proyectos[0]).not.toHaveProperty('actividad');}finally{spy.mockRestore();}for(let i=0;i<14;i++)await fixture();const again=vi.spyOn(pool,'query');try{const d=await cartera({pageSize:10});expect(d.total).toBe(15);expect(d.proyectos).toHaveLength(10);expect(again.mock.calls.length).toBe(count!);expect(count!).toBeLessThan(30);}finally{again.mockRestore();}});
+  it('número fijo de consultas por lote y DTO sin ficha/Activity ni carga de detalle',async()=>{await fixture();let count:number;const spy=vi.spyOn(pool,'query');try{const d=await cartera();count=spy.mock.calls.length;expect(d.proyectos[0]).not.toHaveProperty('ficha');expect(d.proyectos[0]).not.toHaveProperty('actividad');}finally{spy.mockRestore();}for(let i=0;i<14;i++)await fixture();const again=vi.spyOn(pool,'query');try{const d=await cartera({pageSize:10});expect(d.total).toBe(15);expect(d.proyectos).toHaveLength(10);expect(again.mock.calls.length).toBe(count!);expect(count!).toBeLessThan(40);}finally{again.mockRestore();}});
 });

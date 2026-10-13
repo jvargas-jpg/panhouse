@@ -871,7 +871,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
   // soporte_digital mantiene acceso de grupo en el resto de esta sección.
   app.patch(
     '/:proyectoId/digital-control',
-    { preHandler: [requireAuth, requireRole('especialista', 'soporte_digital')] },
+    { preHandler: [requireAuth, requireRole('soporte_digital')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -914,7 +914,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
   // resto de esta sección.
   app.patch(
     '/:proyectoId/lanzamiento-control',
-    { preHandler: [requireAuth, requireRole('especialista', 'rrpp')] },
+    { preHandler: [requireAuth, requireRole('rrpp')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -930,7 +930,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(lanzamientoControlSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionLanzamientoControl(params.proyectoId, body);
+      const ficha = await actualizarSeccionLanzamientoControl(params.proyectoId, body, request.user);
       return reply.send({ ficha });
     },
   );
@@ -1008,7 +1008,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
   // comercial desde la Matriz de Asesorías, sin actualizar su avance.
   app.patch(
     '/:proyectoId/impresion',
-    { preHandler: [requireAuth, requireRole('impresion')] },
+    { preHandler: [requireAuth, requireRole('rrpp', 'impresion')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -1024,7 +1024,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
       const body = parseOrReply(seccionImpresionSchema, request.body, reply);
       if (!body) return;
 
-      const ficha = await actualizarSeccionImpresion(params.proyectoId, body);
+      const ficha = await actualizarSeccionImpresion(params.proyectoId, body, request.user);
       return reply.send({ ficha });
     },
   );

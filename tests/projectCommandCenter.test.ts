@@ -32,7 +32,7 @@ beforeEach(async () => { vi.useFakeTimers({toFake:['Date']});vi.setSystemTime(ne
 describe('Project Command Center: verdad compartida y permisos', () => {
   it('401 sin sesión y 403 para roles ajenos', async () => {
     const p = await fixture(); expect((await get(p.id, '')).statusCode).toBe(401);
-    const rrpp = await user('rrpp'); expect((await get(p.id, 'panhouse_sid='+await createSession(rrpp))).statusCode).toBe(403);
+    const rrpp = await user('comercial'); expect((await get(p.id, 'panhouse_sid='+await createSession(rrpp))).statusCode).toBe(403);
   });
   it('Especialista ajeno no obtiene contexto, pagos ni actividad', async () => {
     const p = await fixture({ especialistaId: other }); const r = await get(p.id);
@@ -49,7 +49,8 @@ describe('Project Command Center: verdad compartida y permisos', () => {
   it('Jefatura y Especialista reciben los mismos procesos, equipo, salud y administración', async () => {
     const p = await fixture(); await db.insert(workItems).values([{ proyectoId: p.id, tipo: 'edicion', estado: 'en_progreso' }, { proyectoId: p.id, tipo: 'direccion_creativa', estado: 'en_progreso' }, { proyectoId: p.id, tipo: 'correccion', estado: 'pendiente' }, { proyectoId: p.id, tipo: 'lanzamiento', businessKey: 'planificacion' }]);
     const a = (await get(p.id)).json(), b = (await get(p.id, jefeCookie)).json();
-    for (const key of ['procesos', 'salud', 'administracion']) expect(a[key]).toEqual(b[key]);
+    for (const key of ['salud', 'administracion']) expect(a[key]).toEqual(b[key]);
+    expect(a.procesos.map(({action,...p}:Record<string,unknown>)=>p).sort((a:Record<string,string>,b:Record<string,string>)=>(a.tipo ?? '').localeCompare(b.tipo ?? ''))).toEqual(b.procesos.map(({action,...p}:Record<string,unknown>)=>p).sort((a:Record<string,string>,b:Record<string,string>)=>(a.tipo ?? '').localeCompare(b.tipo ?? '')));
     expect(a.ficha.team).toEqual(b.ficha.team); expect(a.ficha.project).toEqual(b.ficha.project);
     expect(a.ficha.summary.active).toBe(2); expect(a.ficha.summary.launchEnabled).toBe(true);
     expect(a.capabilities.registrarAvance).toBe(true); expect(b.capabilities.registrarAvance).toBe(false);

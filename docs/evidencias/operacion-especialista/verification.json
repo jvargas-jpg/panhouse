@@ -1,0 +1,32 @@
+{
+  "fecha": "2026-10-13",
+  "files": 67,
+  "tests": 1267,
+  "passed": 1267,
+  "failed": 0,
+  "typecheckBackend": 0,
+  "typecheckFrontend": 0,
+  "buildBackend": 0,
+  "buildFrontend": 0,
+  "qaViewports": [
+    [
+      1440,
+      900
+    ],
+    [
+      768,
+      1024
+    ],
+    [
+      375,
+      812
+    ]
+  ],
+  "qaDatabaseRemoved": true,
+  "developmentCounts": {
+    "proyectos": "88",
+    "autores": "82",
+    "solicitudes_area": "0",
+    "preparaciones_proyecto": "0"
+  }
+}

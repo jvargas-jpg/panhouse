@@ -4,7 +4,7 @@ import { BadgeEstatus, CampoResumen, formatearFecha, INPUT_CLASS, LABEL_CLASS } 
 import type { FichaCompleta } from '../types/api';
 import { actualizarSeccionImpresion } from './proyectoDetalleApi';
 
-const ESTATUS_OPCIONES = ['Pendiente', 'En imprenta', 'Control de calidad físico', 'Completado'] as const;
+const ESTATUS_OPCIONES = ['Pendiente', 'En coordinación', 'En imprenta', 'Control de calidad físico', 'Completado'] as const;
 
 // Sección 8 (parte 2) — Impresión, estatus agregado (macro). Coexiste
 // con la solicitud de cotización puntual (ver SeccionImpresion.tsx,

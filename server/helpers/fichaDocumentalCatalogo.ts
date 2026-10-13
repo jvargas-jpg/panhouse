@@ -2692,7 +2692,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Reunión de impresión",
     "type": "fecha",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B7"
   },
@@ -2702,7 +2703,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Tamaño del libro (pulgadas)",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B14"
   },
@@ -2712,7 +2714,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Páginas del archivo de imprenta",
     "type": "numero",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B15"
   },
@@ -2722,7 +2725,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Tipo de papel",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B16"
   },
@@ -2732,7 +2736,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Material de portada",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B17"
   },
@@ -2742,7 +2747,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Color de impresión del papel",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B18"
   },
@@ -2752,7 +2758,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Formato de portada",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B19"
   },
@@ -2762,7 +2769,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Color de impresión de portada",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B20"
   },
@@ -2772,7 +2780,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Acabado de portada",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B21"
   },
@@ -2782,7 +2791,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Criterios especiales de portada",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B22"
   },
@@ -2792,7 +2802,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Solapas",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B23"
   },
@@ -2802,7 +2813,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Termosellado",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B24"
   },
@@ -2812,7 +2824,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Encuadernación",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B25"
   },
@@ -2822,7 +2835,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Cantidad de libros a imprimir",
     "type": "numero",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!B26"
   },
@@ -2832,7 +2846,8 @@ export const CAMPOS_DOCUMENTALES: CampoDocumental[] = [
     "label": "Otro material de portada",
     "type": "texto",
     "roles": [
-      "impresion"
+      "impresion",
+      "rrpp"
     ],
     "ref": "IMPRESIÓN!E17"
   },

@@ -7,6 +7,8 @@ import { accionesEspecialista, diaCaracas } from './atencionEspecialista.js';
 import { UMBRAL_PROXIMO_A_VENCER_HORAS } from './correccionSla.js';
 import { etiquetaEventoFicha } from './fichaViva.js';
 import type { ActividadInicio, EspecialistaInicio, VencimientoEspecialista } from '../../shared/especialistaInicio.js';
+import { obtenerColaTrabajoEspecialista } from './especialistaMiTrabajo.js';
+import { listarSolicitudes } from './especialistaSolicitudes.js';
 
 export function clasificarVencimiento(fecha: string, ahora: Date) {
   const precision = /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? 'dia' as const : 'instante' as const;
@@ -45,13 +47,18 @@ export async function obtenerInicioEspecialista(actorId: string, ahora = new Dat
     seguro(['cierres'], pool.query<{count: string}>(`SELECT count(*)::text count FROM (SELECT DISTINCT ON (proyecto_id) detalles,created_at FROM audit_logs WHERE accion='PROYECTO_ESTADO_CAMBIADO' AND detalles->>'nuevo'='culminado' AND created_at <= $3::timestamptz ORDER BY proyecto_id,created_at,id) c WHERE detalles->>'especialistaId'=$1 AND to_char(created_at AT TIME ZONE 'America/Caracas','YYYY-MM')=$2`, [actorId, mes, ahora.toISOString()]).then(r=>r.rows), []),
     seguro(['cierres'], cartera.length ? db.selectDistinct({proyectoId: auditLogs.proyectoId}).from(auditLogs).where(and(inArray(auditLogs.proyectoId, cartera.map(p=>p.id)), eq(auditLogs.accion,'PROYECTO_ESTADO_CAMBIADO'),sql`${auditLogs.detalles}->>'nuevo'='culminado'`)) : Promise.resolve([]), []),
   ]);
-  const acciones = activos.flatMap(p => {
+  let acciones = activos.flatMap(p => {
     const d = datos.find(d => d.id === p.id);if(!d)return [];
     const vs = versions.filter(v => v.proyectoId === p.id);
     return accionesEspecialista(p, { ...d, capitulos: chapters.filter(c => c.proyectoId === p.id), decisiones: cases.filter(c => c.proyectoId === p.id), creativas: creatives.filter(c => c.proyectoId === p.id), versiones: vs,
       revisiones: vs.flatMap(v => v.revisionId ? [{id: v.revisionId, revisado: v.revisado, aprobado: v.calidadAprobada, autor: v.aprobado, fase: v.fase!}] : []),
     }, actorId, ahora);
   });
+  const [cola,bandeja]=await Promise.all([
+    seguro(['acciones'],obtenerColaTrabajoEspecialista(actorId,{tab:'pendientes',search:'',page:1,pageSize:50},ahora,undefined,snapshot),null),
+    seguro(['solicitudes'],listarSolicitudes({id:actorId,rol:'especialista'},{tab:'abiertas',search:'',page:1,pageSize:50},ahora),null),
+  ]);
+  if(cola)acciones.push(...cola.items.filter(i=>['preparacion_inicial','lanzamiento','impresion'].includes(i.proceso)).map(i=>({id:i.id,proyectoId:i.proyectoId,titulo:i.accion,detalle:i.detalle,proceso:i.proceso,fecha:i.fecha,prioridad:i.estado==='vencida'?'vencida' as const:'pendiente' as const,href:i.href,editarContexto:i.editarContexto})));
   const vencimientos: VencimientoEspecialista[] = [];
   const add = (id: string, proyectoId: string, proceso: string, titulo: string, fecha: string) => vencimientos.push({id, proyectoId, proceso, titulo, fecha, ...clasificarVencimiento(fecha, ahora)});
   for (const p of activos) for (const t of p.procesos) if(t.vence && !t.entregado) add(t.id, p.id, t.tipo, 'Entrega de '+t.nombre, t.vence);
@@ -70,7 +77,7 @@ export async function obtenerInicioEspecialista(actorId: string, ahora = new Dat
       express: activos.filter(p => p.express.estado === 'confirmado').length, cerrados: fallos.has('cierres') ? null : Number(closures[0]?.count ?? 0),
       cierresSinFecha: cartera.filter(p => p.estado === 'culminado' && !cierresRegistrados.some(c=>c.proyectoId===p.id)).length },
     proyectos: cartera.sort((a,b) => b.creadoEn.localeCompare(a.creadoEn) || a.id.localeCompare(b.id)), acciones, vencimientos,
-    solicitudes: [...requests.map(r => ({id:r.id, proyectoId:r.proyectoId, proceso:r.tipo, titulo:r.tipo === 'soporte_digital' ? 'Activación Amazon' : NOMBRES_PROCESO[r.tipo] ?? 'Intervención editorial', destino:destino[r.tipo]!, estado:r.estado, fecha:r.fecha.toISOString()})),
+    solicitudes: [...(bandeja?bandeja.solicitudes.map(r=>({id:r.id,proyectoId:r.proyecto.id,proceso:r.proceso,titulo:r.titulo,destino:r.destino.nombre,estado:r.estado,fecha:r.requestedAt,href:'/?vista=solicitudes&request='+r.id})):requests.map(r => ({id:r.id, proyectoId:r.proyectoId, proceso:r.tipo, titulo:r.tipo === 'soporte_digital' ? 'Activación Amazon' : NOMBRES_PROCESO[r.tipo] ?? 'Intervención editorial', destino:destino[r.tipo]!, estado:r.estado, fecha:r.fecha.toISOString()}))),
       ...cases.map(c => ({id:c.id, proyectoId:c.proyectoId, titulo:c.subject, destino:'Jefatura', estado:c.status, fecha:c.fecha.toISOString(), proceso:'correccion', ...(c.requester === actorId ? {href:'/decisiones/'+c.id+'/responder'} : {})}))].sort((a,b) => b.fecha.localeCompare(a.fecha) || a.id.localeCompare(b.id)),
     errores: [...fallos], carga: calcularCarga(activos.map(p => p.servicio.peso)), horizonteHoras: UMBRAL_PROXIMO_A_VENCER_HORAS,
     objetivos: { disponible:false, motivo:'La matriz contiene compromisos mensuales, pero todavía no existe un registro de objetivos conectado ni está definido quién los establece. Esta consulta estará disponible cuando se confirme ese modelo.' },

@@ -12,7 +12,8 @@ import { TopBar } from './TopBar';
 // bleed que ya existían (AutoresPage.tsx, etc.) y esta no diverjan.
 export function FullscreenLayout() {
   const { data: user } = useMe(), location = useLocation();
-  const command = !!user && ['especialista', 'jefe_area'].includes(user.rol) && /^\/proyectos\/[^/]+(?:\/(operacion|equipo|ficha|actividad|ficha-trazabilidad))?$/.test(location.pathname);
+  const command = !!user && (['especialista', 'jefe_area'].includes(user.rol) && /^\/proyectos\/[^/]+(?:\/(operacion|equipo|ficha|actividad|ficha-trazabilidad))?$/.test(location.pathname)
+    || user.rol === 'rrpp' && /^\/proyectos\/[^/]+\/(operacion|equipo|ficha|actividad)$/.test(location.pathname));
   return (
     <div className="flex h-screen w-full flex-col overflow-y-auto overflow-x-hidden bg-crema">
       {!command && <TopBar />}

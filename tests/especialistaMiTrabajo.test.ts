@@ -1,3 +1,4 @@
+import { completarPreparacionDePrueba } from './helpers/fixtures.js';
 import { randomUUID } from 'node:crypto';
 import { beforeAll,afterAll,beforeEach,describe,expect,it,vi } from 'vitest';
 import { eq } from 'drizzle-orm';
@@ -14,7 +15,7 @@ import type { FiltrosMiTrabajo } from '../shared/especialistaMiTrabajo.js';
 const app=buildApp(),ahora=new Date('2026-10-12T03:30:00Z'),base:FiltrosMiTrabajo={tab:'pendientes',search:'',page:1,pageSize:20};
 let spec:string,other:string,jefe:string,editor:string,corrector:string,cookie:string;
 async function user(rol:typeof users.$inferInsert.rol){const id=randomUUID();await db.insert(users).values({id,rol,nombre:'Prueba '+rol,email:id+'@panhouse.test',passwordHash:'session-only'});return id;}
-async function fixture(extra:Partial<typeof proyectos.$inferInsert>={},sinCreativa=false){const p=await crearProyectoDePrueba({especialistaId:spec,jefeAreaId:jefe});await db.update(proyectos).set({notificadoJefatura:true,tituloDefinitivo:'Libro real',subtituloDefinitivo:'Subtítulo real',editorId:editor,...extra}).where(eq(proyectos.id,p.id));const [f]=await db.insert(fichasTrazabilidad).values({proyectoId:p.id}).returning();if(!sinCreativa){const [wi]=await db.insert(workItems).values({proyectoId:p.id,tipo:'direccion_creativa',estado:'completado'}).returning();await db.insert(direccionesCreativas).values({proyectoId:p.id,workItemId:wi!.id,fechaCierre:'2026-10-01'});}return {...p,fichaId:f!.id};}
+async function fixture(extra:Partial<typeof proyectos.$inferInsert>={},sinCreativa=false){const p=await crearProyectoDePrueba({especialistaId:spec,jefeAreaId:jefe});await completarPreparacionDePrueba(p.id);await db.update(proyectos).set({notificadoJefatura:true,tituloDefinitivo:'Libro real',subtituloDefinitivo:'Subtítulo real',editorId:editor,...extra}).where(eq(proyectos.id,p.id));const [f]=await db.insert(fichasTrazabilidad).values({proyectoId:p.id}).returning();if(!sinCreativa){const [wi]=await db.insert(workItems).values({proyectoId:p.id,tipo:'direccion_creativa',estado:'completado'}).returning();await db.insert(direccionesCreativas).values({proyectoId:p.id,workItemId:wi!.id,fechaCierre:'2026-10-01'});}return {...p,fichaId:f!.id};}
 const queue=(f:Partial<FiltrosMiTrabajo>={},actor=spec)=>obtenerColaTrabajoEspecialista(actor,{...base,...f},ahora);
 const get=(q='',auth=cookie)=>app.inject({method:'GET',url:'/api/especialistas/mi-trabajo'+(q?'?'+q:''),headers:{cookie:auth}});
 beforeAll(()=>app.ready());afterAll(()=>app.close());beforeEach(async()=>{await limpiarBaseDeDatos();spec=await user('especialista');other=await user('especialista');jefe=await user('jefe_area');editor=await user('editor');corrector=await user('corrector');cookie='panhouse_sid='+await createSession(spec);});

@@ -7,7 +7,7 @@ import { obtenerCommandCenter, registrarAvanceProyecto, guardarDatosEditoriales 
 const params = z.object({ proyectoId: z.string().uuid() });
 const avance = z.object({ texto: z.string().trim().min(10).max(2000) }).strict();
 export async function projectCommandCenterRoutes(app: FastifyInstance) {
-  const preHandler = [requireAuth, requireRole('especialista', 'jefe_area')];
+  const preHandler = [requireAuth, requireRole('especialista', 'jefe_area', 'rrpp')];
   app.patch('/:proyectoId/datos-editoriales', {preHandler}, async (req,reply) => {
     try { const {proyectoId}=params.parse(req.params); const datos=z.object({titulo:z.string().trim().min(1).max(300).nullable(),subtitulo:z.string().trim().min(1).max(300).nullable()}).strict().parse(req.body); return await guardarDatosEditoriales(proyectoId,datos,req.user!); }
     catch(e) {if(e instanceof ErrorFichaViva)return reply.code(e.status).send({error:e.message});if(e instanceof z.ZodError)return reply.code(400).send({error:'Títulos inválidos'});throw e;}

@@ -561,6 +561,13 @@
       "when": 1791838219591,
       "tag": "0079_damp_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1791900267883,
+      "tag": "0080_far_greymalkin",
+      "breakpoints": true
     }
   ]
 }

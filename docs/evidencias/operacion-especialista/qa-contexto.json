@@ -1,0 +1,55 @@
+{
+  "database": "panhouse_operacion_visual_qa",
+  "frontend": "http://localhost:5178",
+  "backend": "http://localhost:3007",
+  "copiados": [
+    "b874cd02-f4c5-4080-9a6c-186ac2972db2",
+    "94db02f6-814c-4d9e-b926-649f931d1fb6",
+    "18004448-218e-4f3a-9a33-da5528f2ec7b",
+    "14515148-3b5b-4fd6-8729-78a9e22317a8",
+    "add313c7-81e1-4404-930d-c941c68f8ff2"
+  ],
+  "casos": [
+    {
+      "id": "b874cd02-f4c5-4080-9a6c-186ac2972db2",
+      "codigo": "5611F3",
+      "autor": "DEMO VARIOS · Marina Solís 49",
+      "servicio": "EF",
+      "escenario": "Especialista: asignado, inicio pendiente",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "94db02f6-814c-4d9e-b926-649f931d1fb6",
+      "codigo": "24E3A1",
+      "autor": "DEMO VARIOS · Javier Molina 57",
+      "servicio": "EF",
+      "escenario": "Especialista: capítulos a mitad",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "18004448-218e-4f3a-9a33-da5528f2ec7b",
+      "codigo": "912CC3",
+      "autor": "DEMO VARIOS · Javier Molina 73",
+      "servicio": "EF",
+      "escenario": "Corrección solicitada · creativa y lanzamiento en paralelo",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "14515148-3b5b-4fd6-8729-78a9e22317a8",
+      "codigo": "3A26C4",
+      "autor": "DEMO VARIOS · Elisa Vega 75",
+      "servicio": "SE",
+      "escenario": "Corrección a mitad · creativa y lanzamiento en paralelo",
+      "especialista": "Especialista Demo"
+    },
+    {
+      "id": "add313c7-81e1-4404-930d-c941c68f8ff2",
+      "codigo": "F0D854",
+      "autor": "DEMO VARIOS · Isabel Medina 79",
+      "servicio": "EF",
+      "escenario": "Corrección cerrada · creativa y lanzamiento en paralelo",
+      "especialista": "Especialista Demo"
+    }
+  ],
+  "sinNuevosAutoresProyectos": true
+}

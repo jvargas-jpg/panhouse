@@ -533,7 +533,7 @@ async function verificarPlan(id: string) {
       "El proyecto está cerrado o suspendido; su planificación es de consulta",
     );
 }
-async function bloquearPlan(tx: Tx, id: string) {
+async function bloquearPlan(tx: Tx, id: string, actorId?: string) {
   const [p] = await tx
     .select()
     .from(proyectos)
@@ -558,6 +558,10 @@ async function bloquearPlan(tx: Tx, id: string) {
     );
   if (w?.estado === "cancelado")
     throw new OperacionLanzamientoError(409, "La planificación fue cancelada");
+  if(actorId) {
+    const {activarSolicitudAreaEnTransaccion}=await import('./solicitudesArea.js');
+    await activarSolicitudAreaEnTransaccion(tx,id,'lanzamiento',actorId);
+  }
 }
 export async function actualizarPlanificacion(
   id: string,
@@ -574,7 +578,7 @@ export async function actualizarPlanificacion(
     { ...datos },
     actorId,
     async (tx, _p, f, patch) => {
-      await bloquearPlan(tx, id);
+      await bloquearPlan(tx, id, actorId);
       const hoy = hoyLanzamientoRrpp();
       for (const n of ["Primera", "Segunda"] as const) {
         const fk = `lanzamientoPromocionFecha${n}Reunion` as const;
@@ -610,7 +614,7 @@ export async function asignarResponsableLanzamiento(
   await verificarPlan(id);
   await validarResponsables([responsableId]);
   return db.transaction(async (tx) => {
-    await bloquearPlan(tx, id);
+    await bloquearPlan(tx, id, actorId);
     const asignacion = await asignarConHistorial(tx, {
       proyectoId: id,
       tipo: "rrpp",
@@ -642,7 +646,7 @@ export async function registrarReunionLanzamiento(
       "Una reunión futura no puede marcarse realizada",
     );
   return db.transaction(async (tx) => {
-    await bloquearPlan(tx, id);
+    await bloquearPlan(tx, id, actorId);
     const [f] = await tx
       .select({ id: fichasTrazabilidad.id })
       .from(fichasTrazabilidad)
@@ -700,7 +704,7 @@ export async function guardarEventoRrpp(
   await validarResponsables([datos.responsableId]);
   await validarResponsables([datos.representanteId], true);
   return db.transaction(async (tx) => {
-    await bloquearPlan(tx, datos.proyectoId);
+    await bloquearPlan(tx, datos.proyectoId, actorId);
     const [anterior] = await tx
       .select()
       .from(rrppEventos)
@@ -749,7 +753,7 @@ export async function guardarPublicacionRrpp(
   await verificarPlan(datos.proyectoId);
   await validarResponsables([datos.responsableId]);
   return db.transaction(async (tx) => {
-    await bloquearPlan(tx, datos.proyectoId);
+    await bloquearPlan(tx, datos.proyectoId, actorId);
     const [anterior] = await tx
       .select()
       .from(rrppPublicaciones)

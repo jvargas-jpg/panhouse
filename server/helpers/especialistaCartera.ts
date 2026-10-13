@@ -27,7 +27,7 @@ export async function obtenerCarteraEspecialista(actorId: string, filtros: Filtr
     ids.length ? db.select({ id: proyectos.id, inicio: proyectos.fechaRealInicio,
       // Calificar explícitamente: Drizzle descalifica Column en selecciones
       // de una tabla, lo que dentro del subquery haría referencia a wi.id.
-      operativo: sql<boolean>`EXISTS (SELECT 1 FROM work_items wi WHERE wi.proyecto_id="proyectos"."id" AND wi.tipo NOT IN ('intake_rrpp','asignacion_especialista') AND wi.estado <> 'cancelado')`,
+      operativo: sql<boolean>`EXISTS (SELECT 1 FROM work_items wi WHERE wi.proyecto_id="proyectos"."id" AND (wi.tipo NOT IN ('intake_rrpp','asignacion_especialista','preparacion_inicial') OR wi.tipo='preparacion_inicial' AND wi.estado<>'pendiente') AND wi.estado <> 'cancelado')`,
     }).from(proyectos).where(inArray(proyectos.id, ids)) : Promise.resolve([]),
     ids.length ? db.select({ proyectoId: pausas.proyectoId }).from(pausas).where(and(inArray(pausas.proyectoId, ids), isNull(pausas.fechaFin), eq(pausas.esPausadoFormal, true))) : Promise.resolve([]),
     ids.length ? db.selectDistinctOn([auditLogs.proyectoId], { proyectoId: auditLogs.proyectoId, responsable: sql<string | null>`${auditLogs.detalles}->>'especialistaId'` }).from(auditLogs)

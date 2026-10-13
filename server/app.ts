@@ -31,6 +31,7 @@ import { usuariosRoutes } from './routes/usuarios.routes.js';
 import { rrppRoutes } from './routes/rrpp.routes.js';
 import { rrppLanzamientosRoutes } from './routes/rrppLanzamientos.routes.js';
 import { jefaturaRoutes } from './routes/jefatura.routes.js';
+import { operacionEspecialistaRoutes } from './routes/operacionEspecialista.routes.js';
 
 export function buildApp() {
   const app = Fastify({
@@ -38,6 +39,7 @@ export function buildApp() {
   });
 
   app.register(cookie);
+  app.register(operacionEspecialistaRoutes, { prefix: '/api' });
 
   app.register(authRoutes, { prefix: '/api/auth' });
   app.register(autoresRoutes, { prefix: '/api/autores' });

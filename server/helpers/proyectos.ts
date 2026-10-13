@@ -689,6 +689,7 @@ export async function asignarEspecialista(
       usuarioDestinoId: especialistaId,
       mensaje: `Se te asignó el proyecto #${proyecto.codigo}.`,
     });
+    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'preparacion_inicial' });
   });
 }
 

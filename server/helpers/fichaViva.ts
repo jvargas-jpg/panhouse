@@ -8,6 +8,7 @@ import { evaluarPreparacionComercial } from './preparacionComercial.js';
 import { obtenerEspecialistaActual } from './carga.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { fechasLanzamientoCanonicas } from './rrppLanzamientoFicha.js';
+import { preparacionesProyecto, solicitudesArea } from '../db/schema/index.js';
 import { registrarEvento } from './auditLog.js';
 import { criteriosDeFase } from './calidad.js';
 import type { Tx } from './tx.js';
@@ -32,7 +33,8 @@ export const AREAS_FICHA: {
     { id: 'distribucion', name: 'Distribución', types: ['distribucion'], prefix: 'distribucion' },
 ];
 export class ErrorFichaViva extends Error {
-    constructor(public status: number, message: string) { super(message); }
+    readonly statusCode: number;
+    constructor(public status: number, message: string) { super(message); this.statusCode = status; }
 }
 export async function verificarAccesoFichaViva(id: string, actor: ActorFicha, client: typeof db | Tx = db) {
     if (!ROLES_FICHA_VIVA.includes(actor.rol))
@@ -64,6 +66,14 @@ function areaEvento(action: string) { if (/RRPP|DIAGNOSTICO|REUNION_LANZAMIENTO|
     return 'Calidad'; if (/COMERCIAL/.test(action))
     return 'Comercial'; return 'Proyecto'; }
 export function etiquetaEventoFicha(action: string, details: unknown): string {
+    const operacion: Record<string,string> = {
+      PREPARACION_INICIAL_ACTUALIZADA: 'El Especialista actualizó la preparación inicial',
+      SOLICITUD_AREA_CREADA: 'El Especialista solicitó '+((details as {tipo?:string})?.tipo === 'impresion' ? 'coordinación de Impresión' : 'Lanzamiento y promoción'),
+      SOLICITUD_AREA_ACTIVADA: 'RRPP inició '+((details as {tipo?:string})?.tipo === 'impresion' ? 'la coordinación de Impresión' : 'la planificación de Lanzamiento'),
+      SOLICITUD_AREA_ACTUALIZADA: (details as {accion?:string})?.accion === 'responder' ? 'El Especialista respondió la información solicitada por RRPP' : (details as {accion?:string})?.accion === 'informacion' ? 'RRPP solicitó información adicional' : (details as {accion?:string})?.accion === 'rechazar' ? 'RRPP rechazó la solicitud con motivo' : 'RRPP inició la revisión de la solicitud',
+      IMPRESION_COORDINACION_ACTUALIZADA: 'Se actualizó la coordinación de Impresión',
+    };
+    if(operacion[action])return operacion[action];
     const d = details as { texto?: unknown; anterior?: string; nuevo?: string; resolutionType?: string } | null;
     if (action === 'PROYECTO_AVANCE_REGISTRADO' && typeof d?.texto === 'string') return d.texto;
     const estados: Record<string,string> = {en_proceso:'En proceso',retrasado:'Retrasado',stand_by:'Stand-by',pausado:'Pausado',culminado:'Culminado',retirado:'Retirado'};
@@ -105,7 +115,7 @@ export async function historialFicha(id: string, cursor?: string, limit = 20): P
         const cambio = r.details as {anterior?:string;nuevo?:string} | null;
         const estados: Record<string,string> = {en_proceso:'En proceso',retrasado:'Retrasado',stand_by:'Stand-by',pausado:'Pausado',culminado:'Culminado',retirado:'Retirado'};
         const macro = r.action === 'PROYECTO_ESTADO_CAMBIADO' && cambio?.anterior && cambio.nuevo && estados[cambio.anterior] && estados[cambio.nuevo] ? `El proyecto cambió: ${estados[cambio.anterior]} → ${estados[cambio.nuevo]}` : undefined;
-        return { id: r.id, date: r.date.toISOString(), label: avance ?? macro ?? decisionLabel ?? assignmentLabel(r) ?? EVENTOS[r.action] ?? EVENTOS_PROYECTO_RRPP[r.action]?.titulo ?? `Se registró un avance de ${areaEvento(r.action).toLowerCase()}`, actor: r.name ?? 'Sistema', area: areaEvento(r.action) };
+        return { id: r.id, date: r.date.toISOString(), label: avance ?? macro ?? decisionLabel ?? assignmentLabel(r) ?? (r.action.startsWith('SOLICITUD_AREA') || r.action.startsWith('PREPARACION_INICIAL') || r.action==='IMPRESION_COORDINACION_ACTUALIZADA' ? etiquetaEventoFicha(r.action,r.details) : undefined) ?? EVENTOS[r.action] ?? EVENTOS_PROYECTO_RRPP[r.action]?.titulo ?? `Se registró un avance de ${areaEvento(r.action).toLowerCase()}`, actor: r.name ?? 'Sistema', area: areaEvento(r.action) };
     });
     const last = items.at(-1);
     return { items, nextCursor: rows.length > limit && last ? Buffer.from(JSON.stringify({ date: last.date, id: last.id })).toString('base64url') : null };
@@ -158,7 +168,7 @@ function workspace(area: AreaFicha, p: Base['p'], actor: ActorFicha, launchEnabl
     } if (area === 'proyecto' && actor.rol === 'comercial')
     return { label: 'Gestionar datos de la venta', href: `/proyectos/${p.id}/ingreso-comercial` }; if (area === 'proyecto' && actor.rol === 'rrpp' && p.notificadoRrpp)
     return { label: 'Abrir ingreso RRPP', href: `/rrpp/ingresos?proyecto=${p.id}` }; if (area === 'lanzamiento' && actor.rol === 'rrpp' && launchEnabled)
-    return { label: 'Abrir planificación', href: `/rrpp/lanzamientos?proyecto=${p.id}` }; const owners: Record<AreaFicha, Rol[]> = { proyecto: ['comercial', 'especialista', 'jefe_area'], edicion: ['especialista', 'editor', 'jefe_edicion'], correccion: ['especialista', 'corrector', 'jefe_area'], diseno: ['especialista', 'disenador'], calidad: ['especialista', 'soporte_editorial'], digital: ['soporte_digital'], lanzamiento: [], impresion: ['impresion'], distribucion: ['distribucion'] }; if (!owners[area].includes(actor.rol))
+    return { label: 'Abrir planificación', href: `/rrpp/lanzamientos?proyecto=${p.id}` }; const owners: Record<AreaFicha, Rol[]> = { proyecto: ['comercial', 'especialista', 'jefe_area'], edicion: ['especialista', 'editor', 'jefe_edicion'], correccion: ['especialista', 'corrector', 'jefe_area'], diseno: ['especialista', 'disenador'], calidad: ['especialista', 'soporte_editorial'], digital: ['soporte_digital'], lanzamiento: [], impresion: ['rrpp','impresion'], distribucion: ['distribucion'] }; if (!owners[area].includes(actor.rol))
     return; return { label: area === 'proyecto' ? 'Abrir gestión del proyecto' : `Gestionar ${AREAS_FICHA.find(a => a.id === area)?.name.toLowerCase()}`, href: ['editor', 'corrector', 'disenador', 'soporte_editorial'].includes(actor.rol) ? '/' : `/proyectos/${p.id}#${area}` }; }
 export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<ResumenFichaViva> {
     const fichaColumns = {
@@ -416,10 +426,17 @@ export async function expedienteFichaViva(id: string, actor: ActorFicha): Promis
         return value as T;
     } errors.push(jobs[index]!.name); return fallback; }
     const supplemental = read<typeof fichaDocumentalDatos.$inferSelect[]>(0, []);
+    const [printingRequest] = actor.rol==='rrpp' ? await db.select({estado:solicitudesArea.estado}).from(solicitudesArea).where(and(eq(solicitudesArea.proyectoId,id),eq(solicitudesArea.tipo,'impresion'))).limit(1) : [];
+    const printingEditable = actor.rol!=='rrpp' || printingRequest?.estado==='resuelta' || !printingRequest && !!(f.impresionFechaInicio || f.impresionEstatus);
+    const [preparacion] = await db.select().from(preparacionesProyecto).where(eq(preparacionesProyecto.proyectoId,id));
+    if(preparacion) for(const [key,value] of Object.entries(preparacion)) {
+      if(['proyectoId','updatedAt'].includes(key))continue;
+      add('proyecto','preparacion.'+key,value instanceof Date?value.toISOString():value,'preparaciones_proyecto',etiquetaCampo(key),'Preparación inicial · Especialista');
+    }
     for (const def of CAMPOS_DOCUMENTALES) {
         const value = supplemental.find(r => r.seccion === def.area)?.datos[def.key] ?? null;
         const group = def.area === 'correccion' ? def.label.split(' · ')[0] : 'Campos de la ficha original';
-        byArea(def.area as AreaFicha).fields!.push({ key: def.key, label: def.label, value, source: 'ficha_documental_datos', type: def.type, editable: def.roles.includes(actor.rol) && (correctionScopes === null || correctionScopes.some(prefix => def.key.startsWith(prefix))), group });
+        byArea(def.area as AreaFicha).fields!.push({ key: def.key, label: def.label, value, source: 'ficha_documental_datos', type: def.type, editable: def.roles.includes(actor.rol) && (def.area!=='impresion'||printingEditable) && (correctionScopes === null || correctionScopes.some(prefix => def.key.startsWith(prefix))), group });
     }
     const contactsAllowed = ['comercial', 'rrpp', 'especialista', 'jefe_area', 'direccion'].includes(actor.rol);
     for (const a of read<Awaited<ReturnType<typeof autoresFicha>>>(1, [])) {
@@ -545,6 +562,10 @@ export async function guardarDatosDocumentales(id: string, area: string, input: 
         await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, id)).for('update');
         const [before] = await tx.select().from(fichaDocumentalDatos).where(and(eq(fichaDocumentalDatos.proyectoId, id), eq(fichaDocumentalDatos.seccion, area)));
         await verificarAccesoFichaViva(id, actor, tx);
+        if(area==='impresion'&&actor.rol==='rrpp') {
+          const {verificarOperacionImpresion}=await import('./solicitudesArea.js');
+          await verificarOperacionImpresion(tx,id,actor);
+        }
         const scopes = await alcancesCorrector(id, actor, tx);
         if (scopes !== null && keys.some(key => !scopes.some(prefix => key.startsWith(prefix))))
             throw new ErrorFichaViva(403, 'Este criterio corresponde a otra intervención de corrección');

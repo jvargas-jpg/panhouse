@@ -18,7 +18,9 @@ export type VistaRrpp =
   | 'proyectos'
   | 'lanzamientos'
   | 'indicadores'
+  | 'solicitudes'
   | 'actividad';
+// Las solicitudes son handoffs; Lanzamientos sigue siendo el proceso operativo.
 export function RrppSidebarNav({ vista }: { vista: VistaRrpp }) {
   return (
     <>
@@ -49,6 +51,11 @@ export function RrppSidebarNav({ vista }: { vista: VistaRrpp }) {
           </Link>
         </div>
       ))}
+      <Link
+        to="/rrpp/solicitudes"
+        aria-current={vista === 'solicitudes' ? 'page' : undefined}
+        className={`flex items-center gap-3 rounded-lg px-3.5 py-3 text-sm ${vista==='solicitudes'?'border border-dorado/20 bg-dorado/10 font-semibold text-dorado':'font-medium text-gray-400 hover:bg-white/5 hover:text-white'}`}
+      ><RrppIcon nombre="ingreso" className="h-[18px] w-[18px]"/>Solicitudes recibidas</Link>
       <Link
         to="/rrpp/metricas"
         aria-current={vista === 'indicadores' ? 'page' : undefined}

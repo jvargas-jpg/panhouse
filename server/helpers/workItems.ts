@@ -15,7 +15,7 @@ import type { Tx } from './tx.js';
 // medida que cada pipeline de Fase 5 se implementa sobre fuentes reales
 // (Manual del Especialista, matrices de Editores/Corrección/Creativa),
 // nunca especulativamente.
-export const TIPOS_WORK_ITEM_SINGLETON = ['intake_rrpp', 'asignacion_especialista'] as const;
+export const TIPOS_WORK_ITEM_SINGLETON = ['intake_rrpp', 'asignacion_especialista', 'preparacion_inicial'] as const;
 
 // 'direccion_creativa' (Fase 5, 5C) es deliberadamente distinto de
 // 'diseno': Fase 4 del Manual agrupa Dirección Creativa (4.1 — reunión,

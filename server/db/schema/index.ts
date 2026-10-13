@@ -23,3 +23,4 @@ export * from './rrppLanzamientos.js';
 export * from './fichaDocumental.js';
 export * from './decisiones.js';
 export * from './contratosCorreccion.js';
+export * from './operacionEspecialista.js';

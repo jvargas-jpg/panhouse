@@ -167,6 +167,7 @@ export function recomendarEspecialista(equipo: CapacidadJefatura[]) {
 export const NOMBRES_PROCESO: Record<string, string> = {
   intake_rrpp: 'Ingreso RRPP',
   asignacion_especialista: 'Asignación de Especialista',
+  preparacion_inicial: 'Preparación inicial',
   edicion: 'Edición',
   correccion: 'Corrección',
   direccion_creativa: 'Dirección Creativa',

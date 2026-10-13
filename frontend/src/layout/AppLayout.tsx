@@ -40,7 +40,7 @@ export function AppLayout() {
   const explorer = location.pathname === '/' && user?.rol === 'jefe_area' && ['proyectos', 'seguimiento', 'decisiones', 'indicadores'].includes(new URLSearchParams(location.search).get('vista') ?? '');
   return (
     <div className="flex h-screen w-full flex-col overflow-y-auto overflow-x-hidden bg-crema">
-      {!explorer && !(location.pathname === '/' && (user?.rol === 'especialista' || user?.rol === 'talento_humano') && new URLSearchParams(location.search).get('vista') !== 'metricas') && <TopBar />}
+      {!explorer && location.pathname !== '/rrpp/solicitudes' && !(location.pathname === '/' && (user?.rol === 'especialista' || user?.rol === 'talento_humano') && new URLSearchParams(location.search).get('vista') !== 'metricas') && <TopBar />}
       <main className="mx-auto min-h-0 w-full max-w-4xl flex-1 px-4 py-6 sm:px-6">
         <Outlet />
       </main>

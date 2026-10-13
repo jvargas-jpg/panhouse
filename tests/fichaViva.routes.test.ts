@@ -1,3 +1,4 @@
+import { solicitarProcesoArea } from '../server/helpers/solicitudesArea.js';
 import { randomUUID } from 'node:crypto';
 import { and, eq } from 'drizzle-orm';
 import request from 'supertest';
@@ -121,6 +122,9 @@ describe('Expediente vivo: fuente única, ownership e historia', () => {
         const designer = await crearUsuario('disenador'), specialist = await crearUsuario('especialista');
         await asignarDisenador(p.id, designer.id, specialist.id);
         await asignarDisenador(p.id, designer.id, specialist.id);
+        expect((await get(p.id, 'resumen')).body.summary.launchEnabled).toBe(false);
+        await db.update(proyectos).set({especialistaId:specialist.id}).where(eq(proyectos.id,p.id));
+        await solicitarProcesoArea(p.id,'lanzamiento',{id:specialist.id,rol:'especialista'});
         const summary = (await get(p.id, 'resumen')).body;
         expect(summary.summary.launchEnabled).toBe(true);
         expect(summary.myActions.some((a: {
@@ -135,7 +139,7 @@ describe('Expediente vivo: fuente única, ownership e historia', () => {
     it('RRPP no escribe campos creativos ni operativos de impresión/distribución por ninguna superficie nueva', async () => {
         const p = await crearProyectoDePrueba();
         await crearFichaComercialCompleta(p.id);
-        expect((await patch(p.id, 'impresion', { cantidadLibros: 50 })).status).toBe(403);
+        expect((await patch(p.id, 'impresion', { cantidadLibros: 50 })).status).toBe(409);
         expect((await patch(p.id, 'distribucion', { nuevoIsbn: '123' })).status).toBe(403);
         expect((await patch(p.id, 'diseno', { archivosCargados: true })).status).toBe(400);
         expect((await patch(p.id, 'diseno', { paqueteFinalCargado: true })).status).toBe(403);

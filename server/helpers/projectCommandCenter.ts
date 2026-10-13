@@ -1,7 +1,10 @@
 import { obtenerColaTrabajoEspecialista } from './especialistaMiTrabajo.js';
 import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { fases, pasos, servicioFases, projectAssignments, users, workItems, pagos, proyectos, decisiones } from '../db/schema/index.js';
+import { fases, pasos, servicioFases, projectAssignments, users, workItems, pagos, proyectos, decisiones, preparacionesProyecto, fichasTrazabilidad } from '../db/schema/index.js';
+import { PROCESOS_OPERATIVOS } from '../../shared/operacionEspecialista.js';
+import { proyectarPreparacion } from './preparacionInicial.js';
+import { contextosActivacion } from './solicitudesArea.js';
 import { ErrorFichaViva, resumenFichaViva, verificarAccesoFichaViva } from './fichaViva.js';
 import { NOMBRES_PROCESO, obtenerDashboardJefatura } from './jefatura.js';
 import { registrarEvento } from './auditLog.js';
@@ -10,7 +13,7 @@ import type { ProjectCommandCenter, ProcesoProyecto, TrabajoProyecto } from '../
 
 const activos = ['en_proceso', 'retrasado', 'stand_by', 'pausado'];
 export async function accesoCommandCenter(id: string, actor: ActorFicha) {
-  if (!['especialista', 'jefe_area'].includes(actor.rol)) throw new ErrorFichaViva(403, 'No autorizado para el centro del proyecto');
+  if (!['especialista', 'jefe_area', 'rrpp'].includes(actor.rol)) throw new ErrorFichaViva(403, 'No autorizado para el centro del proyecto');
   return verificarAccesoFichaViva(id, actor);
 }
 
@@ -26,13 +29,13 @@ export function agruparProcesos(trabajos: TrabajoProyecto[]): ProcesoProyecto[] 
 
 export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promise<ProjectCommandCenter> {
   const p = await accesoCommandCenter(id, actor);
-  const [ficha, snapshot, rows, assignments, configuracion, paymentStates, cases] = await Promise.all([
+  const [ficha, snapshot, rows, assignments, configuracion, paymentStates, cases, preparaciones, activaciones, control] = await Promise.all([
     resumenFichaViva(id, actor),
     obtenerDashboardJefatura(new Date(), { historico: true, incluirRetirados: true, proyectoId: id }),
     db.select({ item: workItems, paso: pasos.nombre, fase: fases.nombre }).from(workItems)
       .leftJoin(pasos, eq(pasos.id, workItems.pasoId)).leftJoin(fases, eq(fases.id, pasos.faseId))
       .where(eq(workItems.proyectoId, id)).orderBy(asc(workItems.createdAt), asc(workItems.id)),
-    db.select({ workItemId: projectAssignments.workItemId, nombre: users.nombre }).from(projectAssignments)
+    db.select({ proyectoId: projectAssignments.proyectoId, finalizadoEn: projectAssignments.finalizadoEn, workItemId: projectAssignments.workItemId, nombre: users.nombre, tipo: projectAssignments.tipo, asignadoEn: projectAssignments.asignadoEn }).from(projectAssignments)
       .innerJoin(users, eq(users.id, projectAssignments.usuarioId))
       .where(and(eq(projectAssignments.proyectoId, id), isNull(projectAssignments.finalizadoEn))),
     db.select({ codigo: fases.codigo, nombre: fases.nombre }).from(servicioFases)
@@ -40,10 +43,13 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       .where(and(eq(servicioFases.servicioId, p.servicioId), eq(servicioFases.activo, true), eq(fases.activo, true)))
       .orderBy(asc(servicioFases.orden)),
     db.select({ estado: pagos.estatus }).from(pagos).where(eq(pagos.proyectoId, id)),
-    db.select({id:decisiones.id,subject:decisiones.subject,status:decisiones.status,requester:decisiones.requestedByUserId}).from(decisiones).where(and(eq(decisiones.proyectoId,id),eq(decisiones.targetRole,'jefe_area'),ne(decisiones.status,'resuelta'))),
+    db.select().from(decisiones).where(and(eq(decisiones.proyectoId,id),eq(decisiones.targetRole,'jefe_area'),ne(decisiones.status,'resuelta'))),
+    db.select().from(preparacionesProyecto).where(eq(preparacionesProyecto.proyectoId, id)),
+    contextosActivacion([id]),
+    db.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, id)),
   ]);
   const salud = snapshot.proyectos[0] ?? null;
-  const procesos = agruparProcesos(rows.map(({ item, paso, fase }) => {
+  const procesos = agruparProcesos(rows.filter(({item}) => !['intake_rrpp', 'asignacion_especialista', 'preparacion_inicial'].includes(item.tipo)).map(({ item, paso, fase }) => {
     const central = salud?.procesos.find(t => t.id === item.id);
     return { id: item.id, tipo: item.tipo, nombre: NOMBRES_PROCESO[item.tipo] ?? fase ?? paso ?? 'Proceso registrado',
       instancia: paso ?? (item.businessKey.startsWith('diseno-version:') ? 'Versión diagramada' : item.businessKey === 'activacion_amazon' ? 'Activación de cuenta Amazon' : item.businessKey === 'default' ? 'Intervención inicial' : item.businessKey === 'planificacion' ? 'Planificación de lanzamiento' : item.businessKey === 'revision-adicional-demo' ? 'Revisión adicional' : item.businessKey.startsWith('tripa_completa') ? 'Tripa completa' : item.businessKey.startsWith('preliminares') ? 'Preliminares' : item.businessKey.startsWith('cubierta') ? 'Cubierta' : 'Intervención editorial'), estado: central?.estado ?? item.estado,
@@ -56,27 +62,75 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
   for (const [key, estado] of [['active', 'en_progreso'], ['pending', 'pendiente'], ['blocked', 'bloqueado'], ['completed', 'completado']] as const)
     ficha.summary[key] = editoriales.filter(t => t.estado === estado).length;
   // Existing work always wins over applicability: preserve historical/legacy cases.
-  for (const c of configuracion) if (!procesos.some(g => g.tipo === c.codigo))
+  for (const c of configuracion) if (!['intake_rrpp', 'asignacion_especialista', 'proyecto', 'ingreso'].includes(c.codigo) && !procesos.some(g => g.tipo === c.codigo))
     procesos.push({ tipo: c.codigo, nombre: c.nombre, estado: 'No iniciado', detalle: 'Configuración activa del servicio; sin intervención registrada', trabajos: [] });
   // Native area projection distinguishes No aplica / not enabled; never ten fake phases.
   const tipos: Record<string, string> = { proyecto: 'intake_rrpp', edicion: 'edicion', correccion: 'correccion', diseno: 'diseno', calidad: 'calidad', digital: 'soporte_digital', lanzamiento: 'lanzamiento', impresion: 'impresion', distribucion: 'distribucion' };
-  for (const area of ficha.traceability) if (!procesos.some(g => g.tipo === tipos[area.id]))
+  for (const area of ficha.traceability) if (area.id !== 'proyecto' && !procesos.some(g => g.tipo === tipos[area.id]))
     procesos.push({ tipo: tipos[area.id]!, nombre: area.name, estado: area.state, detalle: area.detail, trabajos: [] });
   if (!procesos.some(g => g.tipo === 'direccion_creativa')) procesos.push({ tipo: 'direccion_creativa', nombre: 'Dirección creativa', estado: 'No iniciado', detalle: 'Brief, conceptos y aprobaciones mediante el flujo creativo', trabajos: [] });
+  const assigned = assignments.find(a => a.tipo === 'especialista' && !a.workItemId);
+  const preparacion = proyectarPreparacion(preparaciones[0], assigned?.asignadoEn ?? null, actor.rol === 'especialista' && activos.includes(p.estado));
+  if (p.especialistaId || assigned) procesos.unshift({ tipo: 'preparacion_inicial', nombre: 'Preparación inicial', estado: preparacion.estado,
+    detalle: [preparacion.primerContactoEn ? 'Primer contacto registrado' : 'Primer contacto pendiente', preparacion.reunionOperativaRealizada ? 'Reunión realizada' : preparacion.reunionOperativaFecha ? 'Reunión programada' : 'Reunión por programar', preparacion.driveCarpetaUrl ? 'Drive configurado' : 'Drive sin configurar'].join(' · '), trabajos: [] });
+  for (const proceso of procesos) {
+    const owner = PROCESOS_OPERATIVOS[proceso.tipo];
+    proceso.nombre = owner?.nombre ?? proceso.nombre;
+    proceso.ownerRole = owner?.ownerRole; proceso.ownerLabel = owner?.ownerLabel;
+    proceso.coordinacion = owner?.coordinacion;
+    proceso.assignee = assignments.filter(a => a.tipo === owner?.ownerRole && (!a.workItemId || proceso.trabajos.some(t => t.id === a.workItemId))).map(a => a.nombre).join(', ') || null;
+    if(proceso.tipo === 'impresion')proceso.assignee = control[0]?.impresionResponsable ?? null;
+    if(proceso.detalle === 'Sin procesos operativos registrados')proceso.detalle = 'Aún no iniciado';
+    const ctx = activaciones.get(id)?.find(c => c.tipo === proceso.tipo);
+    if (ctx) {
+      if(proceso.tipo==='impresion')proceso.assignee=control[0]?.impresionResponsable ?? ctx.operadoPor ?? null;
+      const keys = proceso.tipo === 'lanzamiento' ? ['asesoriaFase', 'lanzamientoPromocionFechaPrimeraReunion', 'lanzamientoPromocionFechaSegundaReunion', 'lanzamientoPromocionFechaTentativa', 'lanzamientoPromocionObservaciones']
+        : ['impresionEstatus', 'impresionResponsable', 'impresionEstadoCotizacion', 'impresionFechaInicio', 'impresionFechaEntrega', 'impresionObservaciones'];
+      proceso.seguimiento = keys.map(key => ({ key, label: key === 'asesoriaFase' ? 'Estado de planificación' : key.replace(/^(lanzamientoPromocion|impresion)/, '').replace(/([a-z])([A-Z])/g, '$1 $2'), value: control[0]?.[key as keyof typeof fichasTrazabilidad.$inferSelect] ?? null, source: 'fichas_trazabilidad', editable: false }));
+      proceso.activacion = ctx;
+      if (ctx.solicitud && !ctx.activo) proceso.estado = ctx.solicitud.estado === 'requiere_informacion' ? 'Requiere información' : ctx.solicitud.estado === 'rechazada' ? 'Solicitud rechazada' : 'Pendiente RRPP';
+      else if (ctx.activo) proceso.estado = proceso.tipo === 'lanzamiento' ? control[0]?.asesoriaFase ?? 'En planificación' : control[0]?.impresionEstatus ?? 'En coordinación';
+      else proceso.estado = ctx.gate.desbloqueado ? 'Disponible para solicitar' : 'Aún no habilitado';
+      proceso.detalle = ctx.solicitud && !ctx.activo ? 'Solicitud enviada; RRPP recibe y coordina' : ctx.activo ? 'Proceso operado por RRPP; consulta y seguimiento del Especialista' : ctx.gate.motivo;
+      proceso.action = ctx.solicitud && !ctx.activo ? actor.rol === 'jefe_area' ? { label: 'Ver seguimiento', kind: 'seguimiento' } : { label: ctx.solicitud.estado === 'requiere_informacion' && actor.rol === 'especialista' ? 'Responder solicitud' : 'Ver solicitud', kind: 'solicitud', href: `/${actor.rol === 'rrpp' ? 'rrpp/solicitudes' : ''}?${actor.rol === 'rrpp' ? '' : 'vista=solicitudes&'}request=${ctx.solicitud.id}` }
+        : ctx.activo ? { label: 'Ver seguimiento', kind: 'seguimiento' }
+        : ctx.gate.desbloqueado && actor.rol === 'especialista' && activos.includes(p.estado) ? { label: proceso.tipo === 'lanzamiento' ? 'Solicitar activación' : 'Solicitar impresión', kind: 'solicitar' } : null;
+    } else if (proceso.tipo === 'preparacion_inicial') proceso.action = { label: preparacion.editable ? 'Continuar preparación' : 'Ver preparación', kind: 'abrir' };
+    else if (proceso.estado === 'No aplica') proceso.action = null;
+    else {
+      proceso.action = owner ? { label: actor.rol === 'especialista' && proceso.trabajos.some(t => t.estado === 'pendiente') ? 'Continuar coordinación' : 'Ver seguimiento', kind: 'abrir' } : null;
+    }
+  }
   const atencion: ProjectCommandCenter['atencion'] = [];
   if (activos.includes(p.estado)) {
-    for (const c of cases) atencion.push({id:c.id,titulo:actor.rol==='jefe_area'?'Revisar decisión: '+c.subject:c.status==='informacion_solicitada'&&c.requester===actor.id?'Responder a Jefatura':'Decisión pendiente: '+c.subject,detalle:c.status==='informacion_solicitada'?'Información adicional solicitada':'Revisión de Jefatura en curso',href:actor.rol==='jefe_area'?`/?vista=decisiones&decision=${c.id}`:c.requester===actor.id?`/decisiones/${c.id}/responder`:undefined,proceso:c.requester===actor.id?undefined:'correccion'});
+    for (const c of cases) atencion.push({id:c.id,titulo:actor.rol==='jefe_area'?'Revisar decisión: '+c.subject:c.status==='informacion_solicitada'&&c.requestedByUserId===actor.id?'Responder a Jefatura':'Decisión pendiente: '+c.subject,detalle:c.status==='informacion_solicitada'?'Información adicional solicitada':'Revisión de Jefatura en curso',href:actor.rol==='jefe_area'?`/?vista=decisiones&decision=${c.id}`:c.requestedByUserId===actor.id?`/decisiones/${c.id}/responder`:undefined,proceso:c.requestedByUserId===actor.id?undefined:'correccion'});
     if(actor.rol === 'jefe_area') for (const trabajo of editoriales.filter(t=>['pendiente','en_progreso','bloqueado'].includes(t.estado)&&t.vencido)) atencion.push({id:'vence-'+trabajo.id,titulo:trabajo.nombre+' · entrega vencida',detalle:trabajo.responsable??'Consultar responsable del proceso',proceso:trabajo.tipo});
     if (actor.rol === 'jefe_area') {
       if (salud?.porAsignar) atencion.push({id:'asignacion',titulo:'Asignar Especialista',detalle:'Ingreso completo y pendiente de distribución',href:`/?vista=asignaciones&proyecto=${id}`});
       for(const request of snapshot.requests.filter(r=>r.requiereJefatura)) atencion.push({id:request.id,titulo:request.titulo,detalle:'Solicitud operativa pendiente',href:'/?vista=solicitudes'});
-    } else if (salud) {
+    } else if (salud && actor.rol === 'especialista') {
       atencion.length=0;
-      const cola=await obtenerColaTrabajoEspecialista(actor.id,{tab:'pendientes',search:'',page:1,pageSize:50},new Date(),id,snapshot);
+      const cola=await obtenerColaTrabajoEspecialista(actor.id,{tab:'pendientes',search:'',page:1,pageSize:50},new Date(),id,snapshot,{
+        trabajos:rows.map(r=>r.item),datos:[{id:p.id,titulo:p.tituloDefinitivo,subtitulo:p.subtituloDefinitivo,editorId:p.editorId,feedbackTripa:p.fechaFeedbackTripa}],
+        casos:cases,activaciones,preparaciones,asignaciones:assignments.filter(a=>a.tipo==='especialista'),
+      });
       atencion.push(...cola.items.map(i=>({id:i.id,titulo:i.accion,detalle:i.detalle,proceso:i.proceso,href:i.href,editarContexto:i.editarContexto})));
     }
   }
+  for(const proceso of procesos) {
+    if(proceso.activacion || proceso.tipo==='preparacion_inicial')continue;
+    const decision=proceso.trabajos.find(t=>t.decisionId)?.decisionId;
+    const own=atencion.find(a=>a.proceso===proceso.tipo&&!a.href);
+    if(decision)proceso.action={kind:'abrir',label:'Ver decisión',href:actor.rol==='jefe_area'?`/?vista=decisiones&decision=${decision}`:`/decisiones/${decision}/responder`};
+    else if(own&&actor.rol==='especialista')proceso.action={kind:'abrir',label:own.titulo.startsWith('Revisar entrega')?'Revisar entrega':own.titulo};
+  }
+  const prioridad=(proceso:ProcesoProyecto)=>proceso.tipo==='preparacion_inicial'?0:proceso.action?.kind==='solicitar'?1:atencion.some(a=>a.proceso===proceso.tipo)?2:['En curso','En planificación','En coordinación'].includes(proceso.estado)?3:proceso.estado==='Requiere información'?4:proceso.estado==='Pendiente RRPP'?5:proceso.estado==='Completo'?8:proceso.estado==='No aplica'?9:6;
+  procesos.sort((a,b)=>prioridad(a)-prioridad(b));
   return { atencion, ficha, salud: salud ? { especialista: salud.especialista, express: salud.express, riesgo: salud.riesgo, fechaObjetivo: salud.fechaObjetivo } : null,
+    preparacion, contextoPrevio: [
+      { key: 'rrpp', label: 'Entrega de RRPP a Jefatura', value: p.notificadoJefatura ? 'Registrada · ver Actividad' : 'Sin entrega registrada', source: 'proyectos.notificadoJefatura', editable: false },
+      { key: 'asignacion', label: 'Asignación del Especialista', value: assigned?.asignadoEn.toISOString() ?? (p.especialistaId ? 'Asignación anterior sin fecha auditada' : 'Pendiente'), source: 'project_assignments.asignadoEn', editable: false },
+    ],
     datosEditoriales: { titulo: p.tituloDefinitivo, subtitulo: p.subtituloDefinitivo, manuscritoUrl: p.manuscritoUrl },
     procesos, capabilities: { supervisar: actor.rol === 'jefe_area', registrarAvance: actor.rol === 'especialista' && activos.includes(p.estado) },
     administracion: [

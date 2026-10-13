@@ -716,14 +716,14 @@ export interface DatosSeccionLanzamientoControl {
   lanzamientoObservaciones?: string | null;
 }
 
-export async function actualizarSeccionLanzamientoControl(proyectoId: string, datos: DatosSeccionLanzamientoControl) {
-  const [fila] = await db
-    .update(fichasTrazabilidad)
-    .set(datos)
-    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
-    .returning();
-  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return fila;
+export async function actualizarSeccionLanzamientoControl(proyectoId: string, datos: DatosSeccionLanzamientoControl, actor?: ActorFicha) {
+  if(actor) {
+    const {ErrorFichaViva}=await import('./fichaViva.js');
+    if(actor.rol!=='rrpp')throw new ErrorFichaViva(403,'Lanzamiento corresponde a RRPP');
+    const [wi]=await db.select().from(workItems).where(and(eq(workItems.proyectoId,proyectoId),eq(workItems.tipo,'lanzamiento'),eq(workItems.businessKey,'planificacion')));
+    if(!wi)throw new ErrorFichaViva(409,'Lanzamiento aún no fue solicitado');
+  }
+  return guardarFichaLanzamiento(proyectoId,{...datos},actor?.id ?? null);
 }
 
 export interface DatosReunionLanzamiento {
@@ -788,14 +788,25 @@ export interface DatosSeccionImpresion {
   impresionObservaciones?: string | null;
 }
 
-export async function actualizarSeccionImpresion(proyectoId: string, datos: DatosSeccionImpresion) {
-  const [fila] = await db
-    .update(fichasTrazabilidad)
-    .set(datos)
-    .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
-    .returning();
-  if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
-  return fila;
+export async function actualizarSeccionImpresion(proyectoId: string, datos: DatosSeccionImpresion, actor?: ActorFicha) {
+  return db.transaction(async tx => {
+    await tx.select({id:proyectos.id}).from(proyectos).where(eq(proyectos.id,proyectoId)).for('update');
+    if(actor) {
+      const { verificarOperacionImpresion } = await import('./solicitudesArea.js');
+      await verificarOperacionImpresion(tx,proyectoId,actor);
+    }
+    const [fila]=await tx.update(fichasTrazabilidad).set(datos).where(eq(fichasTrazabilidad.proyectoId,proyectoId)).returning();
+    if(!fila)throw new Error(`Ficha de trazabilidad no encontrada: ${proyectoId}`);
+    const [wi]=await tx.select().from(workItems).where(and(eq(workItems.proyectoId,proyectoId),eq(workItems.tipo,'impresion'),eq(workItems.businessKey,'coordinacion')));
+    if(wi) await tx.update(workItems).set({
+      ...(datos.impresionEstatus ? {estado:datos.impresionEstatus==='Completado'?'completado' as const:'en_progreso' as const}:{}),
+      ...(datos.impresionFechaInicio!==undefined?{fechaInicioReal:datos.impresionFechaInicio}:{}),
+      ...(datos.impresionFechaEntrega!==undefined?{fechaFinReal:datos.impresionFechaEntrega}:{}),
+      ...(datos.impresionObservaciones!==undefined?{observaciones:datos.impresionObservaciones}:{}),
+    }).where(eq(workItems.id,wi.id));
+    if(actor)await registrarEvento(tx,{actorId:actor.id,accion:'IMPRESION_COORDINACION_ACTUALIZADA',entityType:'proyecto',entityId:proyectoId,proyectoId,detalles:{campos:Object.keys(datos)}});
+    return fila;
+  });
 }
 
 // Sección 9 (parte 2) — Distribución, estatus agregado (macro). Dueño

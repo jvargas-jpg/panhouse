@@ -1,3 +1,4 @@
+import { contextosActivacion, solicitarProcesoArea } from '../server/helpers/solicitudesArea.js';
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import request from "supertest";
@@ -99,12 +100,23 @@ describe("Centro operativo de lanzamientos RRPP", () => {
     return { p, f };
   }
   async function comprobarGate(id: string) {
-    const items = await db
+    let items = await db
       .select()
       .from(workItems)
       .where(
         and(eq(workItems.proyectoId, id), eq(workItems.tipo, "lanzamiento")),
       );
+    if(!items.length) {
+      expect((await contextosActivacion([id])).get(id)?.[0]?.gate.desbloqueado).toBe(true);
+      expect(await db.select().from(notificaciones).where(eq(notificaciones.rolDestino,'rrpp'))).toHaveLength(0);
+      const actor=await crearUsuario('especialista');
+      await db.update(proyectos).set({especialistaId:actor.id}).where(eq(proyectos.id,id));
+      await solicitarProcesoArea(id,'lanzamiento',{id:actor.id,rol:'especialista'});
+      items=await db.select().from(workItems).where(and(eq(workItems.proyectoId,id),eq(workItems.tipo,'lanzamiento')));
+    } else if(items[0]?.estado==='en_progreso') {
+      expect((await get()).body.proyectos.some((p:{id:string})=>p.id===id)).toBe(true);
+      return;
+    }
     expect(items).toHaveLength(1);
     expect(items[0]?.businessKey).toBe("planificacion");
     const audit = await db
@@ -113,7 +125,7 @@ describe("Centro operativo de lanzamientos RRPP", () => {
       .where(
         and(
           eq(auditLogs.proyectoId, id),
-          eq(auditLogs.accion, "PLANIFICACION_RRPP_CREADA"),
+          eq(auditLogs.accion, "SOLICITUD_AREA_CREADA"),
         ),
       );
     expect(audit).toHaveLength(1);
@@ -239,6 +251,7 @@ describe("Centro operativo de lanzamientos RRPP", () => {
         .for("update");
       await habilitarPlanificacionRrpp(tx, p.id);
     });
+    await db.insert(workItems).values({proyectoId:p.id,tipo:'lanzamiento',businessKey:'planificacion'});
     await db
       .update(workItems)
       .set({ estado: "en_progreso" })
@@ -905,9 +918,9 @@ describe("Centro operativo de lanzamientos RRPP", () => {
       ).toBe(403);
     },
   );
-  it("RRPP no opera Impresión, Distribución, Diseño ni Líder Creativo", async () => {
+  it("RRPP conserva coordinación de Impresión, sin operar Distribución, Diseño ni Líder Creativo", async () => {
     const { p } = await preparado();
-    for (const path of ["impresion", "distribucion-control"])
+    for (const path of ["distribucion-control"])
       expect(
         (
           await request(app.server)

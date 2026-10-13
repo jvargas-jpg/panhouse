@@ -9,6 +9,7 @@ import { registrarEvento, type AccionAuditoria } from "./auditLog.js";
 import { transicionarWorkItem } from "./workItems.js";
 import { PLANIFICACION_RRPP_KEY } from "./rrppLanzamientoGate.js";
 import type { Tx } from "./tx.js";
+import { activarSolicitudAreaEnTransaccion } from './solicitudesArea.js';
 
 export function fechasLanzamientoCanonicas<
   T extends typeof fichasTrazabilidad.$inferSelect,
@@ -72,6 +73,7 @@ export async function guardarFichaLanzamiento(
         JSON.stringify(datos[k as keyof typeof datos]),
     );
     if (!cambios.length) return fechasLanzamientoCanonicas(antes);
+    if (actorId) await activarSolicitudAreaEnTransaccion(tx, id, 'lanzamiento', actorId);
     const [despues] = await tx
       .update(fichasTrazabilidad)
       .set(datos)

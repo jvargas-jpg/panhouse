@@ -1,3 +1,4 @@
+import { workItems } from '../server/db/schema/index.js';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import request from 'supertest';
@@ -1205,7 +1206,7 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/digital-control', () => {
-    it('permite al especialista dueño del proyecto editar el control digital', async () => {
+    it('rechaza al especialista asignado editar el control digital', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const cookie = await registrarYLoguear(app, 'especialista');
@@ -1217,9 +1218,8 @@ describe('rutas de la ficha de trazabilidad', () => {
         .set('Cookie', cookie)
         .send({ digitalEstatus: 'Maquetando ePub', digitalTotalDias: '2.00' });
 
-      expect(respuesta.status).toBe(200);
-      expect(respuesta.body.ficha.digitalEstatus).toBe('Maquetando ePub');
-      expect(respuesta.body.ficha.digitalTotalDias).toBe('2.00');
+      expect(respuesta.status).toBe(403);
+      expect(respuesta.body).not.toHaveProperty('ficha');
       await app.close();
     });
 
@@ -1257,7 +1257,7 @@ describe('rutas de la ficha de trazabilidad', () => {
     it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const cookie = await registrarYLoguear(app, 'especialista');
+      const cookie = await registrarYLoguear(app, 'soporte_digital');
       const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
       const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
 
@@ -1347,7 +1347,7 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/lanzamiento-control', () => {
-    it('permite al especialista dueño del proyecto editar el control de lanzamiento', async () => {
+    it('rechaza al especialista asignado editar el control de lanzamiento', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const cookie = await registrarYLoguear(app, 'especialista');
@@ -1359,9 +1359,8 @@ describe('rutas de la ficha de trazabilidad', () => {
         .set('Cookie', cookie)
         .send({ lanzamientoEstatus: 'Tramitando ISBN', lanzamientoTotalDias: '1.50' });
 
-      expect(respuesta.status).toBe(200);
-      expect(respuesta.body.ficha.lanzamientoEstatus).toBe('Tramitando ISBN');
-      expect(respuesta.body.ficha.lanzamientoTotalDias).toBe('1.50');
+      expect(respuesta.status).toBe(403);
+      expect(respuesta.body).not.toHaveProperty('ficha');
       await app.close();
     });
 
@@ -1370,6 +1369,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.ready();
       const proyecto = await crearProyectoConFicha();
       const cookie = await registrarYLoguear(app, 'rrpp');
+      await db.insert(workItems).values({proyectoId:proyecto.id,tipo:'lanzamiento',businessKey:'planificacion',estado:'en_progreso'});
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/lanzamiento-control`)
@@ -1399,7 +1399,7 @@ describe('rutas de la ficha de trazabilidad', () => {
     it('devuelve 400 (no 500) si el body no trae ningún campo reconocido', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const cookie = await registrarYLoguear(app, 'especialista');
+      const cookie = await registrarYLoguear(app, 'rrpp');
       const me = await request(app.server).get('/api/auth/me').set('Cookie', cookie);
       const proyecto = await crearProyectoConFichaYEspecialista(me.body.user.id);
 

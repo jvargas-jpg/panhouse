@@ -14,11 +14,12 @@ import { ExpedienteDocumental } from './fichaViva/ExpedienteDocumental';
 import { useActividadFicha } from './fichaViva/useFichaViva';
 import { CommandCenterProceso } from './CommandCenterProceso';
 import { CommandCenterContexto } from './CommandCenterContexto';
+import { invalidarOperacion } from './operacionQueries';
 import './fichaViva/fichaViva.css';
 import './commandCenter.css';
 
 const tabs = [{ id: '', label: 'Resumen' }, { id: 'operacion', label: 'Operación' }, { id: 'equipo', label: 'Equipo' }, { id: 'ficha', label: 'Ficha' }, { id: 'actividad', label: 'Actividad' }];
-const operables = ['edicion', 'correccion', 'direccion_creativa', 'diseno', 'revision_interna_cubierta', 'calidad', 'soporte_digital', 'lanzamiento', 'impresion', 'distribucion'];
+const operables = ['preparacion_inicial', 'edicion', 'correccion', 'direccion_creativa', 'diseno', 'revision_interna_cubierta', 'calidad', 'soporte_digital', 'lanzamiento', 'impresion', 'distribucion'];
 const hashes: Record<string, string> = { digital: 'soporte_digital', creativa: 'direccion_creativa', 'proceso-creativo': 'direccion_creativa' };
 function procesoHash(value: string) { return hashes[value] ?? value; }
 function origenLabel(origen: string | null, jefe: boolean) {
@@ -33,8 +34,9 @@ function DialogProceso({ title, onClose, children }: { title: string; onClose: (
 function ProcesoCard({ proceso, onOpen }: { proceso: ProcesoProyecto; onOpen: () => void }) {
   const active = proceso.trabajos.filter(t => ['pendiente', 'en_progreso', 'bloqueado'].includes(t.estado));
   return <article className="cc-process"><header><h3>{proceso.nombre}</h3><Estado state={proceso.estado}/></header><p>{proceso.detalle}</p>
-    {active.slice(0, 3).map(t => <div className={'cc-work '+(t.vencido?'cc-work-late':'')} key={t.id}><strong>{t.responsable ?? 'Sin asignación individual'}</strong><span>{t.vence ? 'Entrega · '+dateFicha(t.vence) : 'Sin entrega pautada'}{t.vencido?' · Vencida':''}</span>{(t.gate || t.decisionId) && <small>{t.decisionId ? 'Pendiente de decisión de Jefatura' : 'Condicionado por un gate del proceso'}</small>}</div>)}
-    {operables.includes(proceso.tipo) && proceso.estado !== 'No aplica' && <button onClick={onOpen} className="cc-process-link">Consultar proceso <span aria-hidden="true">↗</span></button>}
+    {active.slice(0, 3).map(t => <div className={'cc-work '+(t.vencido?'cc-work-late':'')} key={t.id}>{t.responsable&&t.responsable!==proceso.assignee&&<strong>{t.responsable}</strong>}<span>{t.vence ? 'Entrega · '+dateFicha(t.vence) : 'Sin entrega pautada'}{t.vencido?' · Vencida':''}</span>{(t.gate || t.decisionId) && <small>{t.decisionId ? 'Pendiente de decisión de Jefatura' : 'Condicionado por un gate del proceso'}</small>}</div>)}
+    {proceso.ownerLabel && <p className="cc-owner">{proceso.ownerLabel}{proceso.assignee&&<strong>{proceso.assignee}</strong>}</p>}
+    {proceso.action && (proceso.action.href ? <Link className="cc-process-link" to={proceso.action.href}>{proceso.action.label} <span aria-hidden="true">↗</span></Link> : <button onClick={onOpen} className="cc-process-link">{proceso.action.label} <span aria-hidden="true">↗</span></button>)}
   </article>;
 }
 function ActividadProyecto({ id, identity, canWrite }: { id: string; identity: string; canWrite: boolean }) {
@@ -48,7 +50,7 @@ export function ProyectoCommandCenterPage() {
   const { id = '' } = useParams(), { data: user } = useMe();
   const [params, setParams] = useSearchParams(), location = useLocation(), cache = useQueryClient();
   const identity = user ? user.id+':'+user.rol : undefined;
-  const allowed = user && ['especialista', 'jefe_area'].includes(user.rol);
+  const allowed = user && ['especialista', 'jefe_area', 'rrpp'].includes(user.rol);
   const query = useQuery({ queryKey: ['proyecto', id, 'command-center', identity], queryFn: () => apiFetch<ProjectCommandCenter>('/proyectos/'+id+'/command-center'), enabled: !!allowed, staleTime: 15000 });
   const tab = location.pathname.split('/')[3] ?? '';
   const origen = retornoProyecto(params.get('volver')), jefe = user?.rol === 'jefe_area';
@@ -58,12 +60,13 @@ export function ProyectoCommandCenterPage() {
   // Native workflows mutate through their existing APIs. Refresh only this project's projections.
   useEffect(() => cache.getMutationCache().subscribe(event => {
     if (event.type === 'updated' && event.action.type === 'success') {
+      invalidarOperacion(cache, id);
       cache.invalidateQueries({ queryKey: ['proyecto', id] });
       cache.invalidateQueries({ queryKey: ['ficha-viva', id] });
       cache.invalidateQueries({ queryKey: ['especialista-inicio', identity] });
       cache.invalidateQueries({ queryKey: ['especialista-inicio-actividad', identity] });
       cache.invalidateQueries({ queryKey: ['especialista-cartera', user?.id] });
-       cache.invalidateQueries({ queryKey: ['mi-trabajo', user?.id] });
+       cache.invalidateQueries({ queryKey: ['mi-trabajo'] });
        cache.invalidateQueries({ queryKey: ['solicitudes', user?.id] });
        cache.invalidateQueries({ queryKey: ['contratos-correccion', id] });
     }
@@ -81,7 +84,7 @@ export function ProyectoCommandCenterPage() {
     <div className="cc-global-bar"><span>Operación editorial</span><TopBar compacto/></div><RoleProjectNavigation rol={user?.rol} origen={origen} mobile/>
     <div className="cc-body"><nav className="cc-breadcrumb" aria-label="Ubicación"><Link to={back}>← {origenLabel(origen, jefe)}</Link><span>/</span><span>Proyecto editorial</span></nav>
     {query.isPending ? <div className="cc-skeleton" role="status" aria-label="Cargando proyecto"><div/><div/><div/></div> : query.isError ? <Card title="No se pudo abrir el proyecto"><p role="alert">{query.error.message}</p><button className="fv-button" onClick={() => query.refetch()}>Reintentar</button></Card> : ficha && data && <>
-      <header className="cc-header"><div><span className="cc-eyebrow">{jefe ? 'JEFATURA · SUPERVISIÓN EDITORIAL' : 'ESPECIALISTA · COORDINACIÓN EDITORIAL'} <span>#{ficha.project.code}</span></span><h1>{ficha.project.title}</h1><p>{ficha.authors.map(a => a.name).join(' · ')}</p><div className="cc-meta"><span>{ficha.project.service}</span><span>{ficha.project.unit}</span><Estado state={ficha.project.macroState}/>{data.salud?.express.estado === 'confirmado' && <span className="cc-express">⚡ Express</span>}</div></div><div className="cc-header-side"><span>Fecha objetivo</span><strong>{dateFicha(data.salud?.fechaObjetivo ?? null)}</strong><small>Actualizado {dateFicha(ficha.project.updatedAt)}</small></div></header>
+      <header className="cc-header"><div><span className="cc-eyebrow">{jefe ? 'JEFATURA · SUPERVISIÓN EDITORIAL' : user?.rol==='rrpp' ? 'RRPP · COORDINACIÓN EDITORIAL' : 'ESPECIALISTA · COORDINACIÓN EDITORIAL'} <span>#{ficha.project.code}</span></span><h1>{ficha.project.title}</h1><p>{ficha.authors.map(a => a.name).join(' · ')}</p><div className="cc-meta"><span>{ficha.project.service}</span><span>{ficha.project.unit}</span><Estado state={ficha.project.macroState}/>{data.salud?.express.estado === 'confirmado' && <span className="cc-express">⚡ Express</span>}</div></div><div className="cc-header-side"><span>Fecha objetivo</span><strong>{dateFicha(data.salud?.fechaObjetivo ?? null)}</strong><small>Actualizado {dateFicha(ficha.project.updatedAt)}</small></div></header>
       <nav className="cc-tabs" aria-label="Vistas del proyecto">{tabs.map(t => <Link key={t.id} to={to(t.id)} aria-current={tab === t.id ? 'page' : undefined}>{t.label}</Link>)}</nav>
       {ficha.secondaryErrors.length > 0 && <p role="status" className="fv-notice">Consultas pendientes: {ficha.secondaryErrors.join(', ')}. <button onClick={() => query.refetch()}>Reintentar</button></p>}
       {tab === '' && <>
@@ -92,7 +95,7 @@ export function ProyectoCommandCenterPage() {
           { key: 'margen', label: 'Margen del plazo interno', value: ['culminado','retirado'].includes(ficha.project.macroState) ? 'Proyecto cerrado' : data.salud ? new Intl.NumberFormat('es',{maximumFractionDigits:1}).format(data.salud.riesgo.diasRestantes)+' días' : null, source: 'Motor central de plazos' },
           { key: 'ejecucion', label: 'Días efectivos', value: data.salud ? new Intl.NumberFormat('es',{maximumFractionDigits:1}).format(data.salud.riesgo.diasEfectivos) : null, source: 'Duración efectiva descontando pausas' },
           ...ficha.overview.filter(f => ['ingresoFechaIngreso', 'coleccionPanhouse'].includes(f.key)),
-        ]}/>{data.capabilities.registrarAvance && <CommandCenterContexto id={id} data={data} abierto={editarContexto}/>}</Card></div>
+        ]}/><details className="cc-historical"><summary>Ingreso y asignación · contexto previo</summary><ReadFields fields={data.contextoPrevio}/></details>{data.capabilities.registrarAvance && <CommandCenterContexto id={id} data={data} abierto={editarContexto}/>}</Card></div>
         <section className="cc-section"><div className="cc-section-head"><div><span className="cc-eyebrow">TRABAJO EN PARALELO</span><h2>Operación editorial</h2></div><Link to={to('operacion')}>Ver todos los procesos →</Link></div><div className="cc-process-grid">{data.procesos.filter(p => p.trabajos.some(t => ['pendiente', 'en_progreso', 'bloqueado'].includes(t.estado)) && operables.includes(p.tipo)).map(p => <ProcesoCard key={p.tipo} proceso={p} onOpen={() => open(p.tipo)}/>)}</div>{!data.procesos.some(p => operables.includes(p.tipo) && p.trabajos.some(t => ['pendiente', 'en_progreso', 'bloqueado'].includes(t.estado))) && <p className="cc-caption">No hay intervenciones editoriales abiertas. Consulta Operación para ver el historial y las áreas aún no iniciadas.</p>}</section>
         <div className="cc-summary-grid"><Card title="Actividad reciente" icon="clock" action={<Link to={to('actividad')}>Ver historial</Link>}><Actividad items={ficha.recentActivity}/></Card><Card title="Administración" icon="document"><p className="cc-caption">Datos de Comercial y Cobranzas · consulta</p><ReadFields fields={data.administracion}/></Card></div>
       </>}
@@ -101,8 +104,8 @@ export function ProyectoCommandCenterPage() {
       {tab === 'ficha' && fichaEnShell && <ExpedienteDocumental id={id} identity={identity} summary={fichaEnShell} selected={areaSeleccionada} onSelect={value => { setArea(value); setParams(prev => { const p = new URLSearchParams(prev); p.set('area', value); return p; }); }}/>}
       {tab === 'actividad' && identity && <ActividadProyecto id={id} identity={identity} canWrite={data.capabilities.registrarAvance}/>}
       {selected && process && <DialogProceso title={process.nombre} onClose={close}>
-        <p className="cc-caption">{process.detalle}</p><div className="cc-work-history">{process.trabajos.map(t => <div key={t.id}><Estado state={t.estado}/><strong>{t.responsable ?? 'Sin asignación individual'}</strong><span>{t.instancia === 'default' ? 'Intervención inicial' : t.instancia}</span><small>Entrega: {dateFicha(t.vence)} · Cierre: {dateFicha(t.cierre)}</small>{t.decisionId && <Link to={jefe ? '/?vista=decisiones&decision='+t.decisionId : '/decisiones/'+t.decisionId+'/responder'}>Consultar decisión</Link>}</div>)}</div>
-        {operables.includes(process.tipo) && process.estado !== 'No aplica' && <CommandCenterProceso id={id} tipo={process.tipo} especialista={!jefe}/>}
+        {!['lanzamiento','impresion'].includes(process.tipo)&&<p className="cc-caption">{process.detalle}</p>}<div className="cc-work-history">{(!['lanzamiento','impresion'].includes(process.tipo)?process.trabajos:[]).map(t => <div key={t.id}><Estado state={t.estado}/><strong>{t.responsable ?? 'Sin asignación individual'}</strong><span>{t.instancia === 'default' ? 'Intervención inicial' : t.instancia}</span><small>Entrega: {dateFicha(t.vence)} · Cierre: {dateFicha(t.cierre)}</small>{t.decisionId && <Link to={jefe ? '/?vista=decisiones&decision='+t.decisionId : '/decisiones/'+t.decisionId+'/responder'}>Consultar decisión</Link>}</div>)}</div>
+        {operables.includes(process.tipo) && process.estado !== 'No aplica' && <CommandCenterProceso id={id} tipo={process.tipo} especialista={user?.rol==='especialista'} rrpp={user?.rol==='rrpp'} data={data} proceso={process}/>}
       </DialogProceso>}
     </>}</div>
   </CrmSidebarLayout>;

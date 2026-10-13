@@ -4,25 +4,42 @@ import { capitulos, contratosCorreccion, correcciones, decisiones, direccionesCr
 import { diaCaracas } from './atencionEspecialista.js';
 import { clasificarVencimiento } from './tiempoEspecialista.js';
 import { obtenerDashboardJefatura, NOMBRES_PROCESO } from './jefatura.js';
+import { preparacionesProyecto, projectAssignments } from '../db/schema/index.js';
+import { contextosActivacion } from './solicitudesArea.js';
+import { proyectarPreparacion } from './preparacionInicial.js';
+import type { ContextoActivacion } from '../../shared/operacionEspecialista.js';
+interface ColaPrecargada {
+  trabajos: typeof workItems.$inferSelect[];
+  datos: {id:string;titulo:string|null;subtitulo:string|null;editorId:string|null;feedbackTripa:string|null}[];
+  casos: typeof decisiones.$inferSelect[];
+  activaciones: Map<string,ContextoActivacion[]>;
+  preparaciones: typeof preparacionesProyecto.$inferSelect[];
+  asignaciones: {proyectoId:string;workItemId:string|null;finalizadoEn:Date|null;asignadoEn:Date}[];
+}
 import { evaluarGateMomentoReunionCreativa, evaluarGateRevisionPreviaCorreccion } from './gates.js';
 import type { FiltrosMiTrabajo, ItemTrabajoEspecialista, MiTrabajo, TabMiTrabajo } from '../../shared/especialistaMiTrabajo.js';
 import { TABS_MI_TRABAJO } from '../../shared/especialistaMiTrabajo.js';
 const texto=(s:string)=>s.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase('es');
 const DESTINOS:Record<string,{tipo:string;nombre:string}>={edicion:{tipo:'editor',nombre:'Editor'},correccion:{tipo:'corrector',nombre:'Corrector'},direccion_creativa:{tipo:'lider_creativo',nombre:'Líder Creativo'},diseno:{tipo:'disenador',nombre:'Diseño'},calidad:{tipo:'soporte_editorial',nombre:'Soporte Editorial'},soporte_digital:{tipo:'soporte_digital',nombre:'Soporte Digital'},lanzamiento:{tipo:'rrpp',nombre:'RRPP'}};
 const dia=(s:string)=>s.length===10?s:diaCaracas(new Date(s));
-export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiTrabajo,ahora=new Date(),proyectoScope?:string,snapshotProporcionado?:Awaited<ReturnType<typeof obtenerDashboardJefatura>>):Promise<MiTrabajo> {
+export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiTrabajo,ahora=new Date(),proyectoScope?:string,snapshotProporcionado?:Awaited<ReturnType<typeof obtenerDashboardJefatura>>,precargada?:ColaPrecargada):Promise<MiTrabajo> {
   const snapshot=snapshotProporcionado ?? await obtenerDashboardJefatura(ahora,{especialistaId:actorId,...(proyectoScope?{proyectoId:proyectoScope}:{})});
   const activos=snapshot.proyectos.filter(p=>p.especialista?.id===actorId&&['en_proceso','retrasado','pausado','stand_by'].includes(p.estado)),ids=activos.map(p=>p.id),hoy=diaCaracas(ahora);
   const [datos,chapters,corrections,creatives,versions,works,cases,contracts]=ids.length?await Promise.all([
-    db.select({id:proyectos.id,titulo:proyectos.tituloDefinitivo,subtitulo:proyectos.subtituloDefinitivo,editorId:proyectos.editorId,feedbackTripa:proyectos.fechaFeedbackTripa}).from(proyectos).where(inArray(proyectos.id,ids)),
+    precargada?.datos ?? db.select({id:proyectos.id,titulo:proyectos.tituloDefinitivo,subtitulo:proyectos.subtituloDefinitivo,editorId:proyectos.editorId,feedbackTripa:proyectos.fechaFeedbackTripa}).from(proyectos).where(inArray(proyectos.id,ids)),
     db.select().from(capitulos).where(inArray(capitulos.proyectoId,ids)),
     db.select().from(correcciones).where(inArray(correcciones.proyectoId,ids)),
     db.select().from(direccionesCreativas).where(inArray(direccionesCreativas.proyectoId,ids)),
     db.selectDistinctOn([disenos.id],{d:disenos,v:disenoVersiones,q:fichaCalidadFases,c:direccionesCreativas}).from(disenos).innerJoin(disenoVersiones,eq(disenoVersiones.disenoId,disenos.id)).leftJoin(fichaCalidadFases,eq(fichaCalidadFases.id,disenoVersiones.calidadFaseId)).leftJoin(direccionesCreativas,eq(direccionesCreativas.id,disenoVersiones.revisionCreativaId)).where(inArray(disenos.proyectoId,ids)).orderBy(asc(disenos.id),desc(disenoVersiones.numero)),
-    db.select().from(workItems).where(inArray(workItems.proyectoId,ids)),
-    db.select().from(decisiones).where(and(inArray(decisiones.proyectoId,ids),inArray(decisiones.status,['pendiente','en_revision','informacion_solicitada']))),
+    precargada?.trabajos ?? db.select().from(workItems).where(inArray(workItems.proyectoId,ids)),
+    precargada?.casos ?? db.select().from(decisiones).where(and(inArray(decisiones.proyectoId,ids),inArray(decisiones.status,['pendiente','en_revision','informacion_solicitada']))),
     db.select({r:contratosCorreccion,proyectoId:correcciones.proyectoId}).from(contratosCorreccion).innerJoin(correcciones,eq(correcciones.id,contratosCorreccion.correccionId)).where(inArray(correcciones.proyectoId,ids)).orderBy(desc(contratosCorreccion.ronda)),
   ]):[[],[],[],[],[],[],[],[]];
+  const [activaciones,preparaciones,asignaciones]=await Promise.all([
+    precargada?.activaciones ?? contextosActivacion(ids),
+    precargada?.preparaciones ?? (ids.length?db.select().from(preparacionesProyecto).where(inArray(preparacionesProyecto.proyectoId,ids)):[]),
+    precargada?.asignaciones ?? (ids.length?db.select().from(projectAssignments).where(and(inArray(projectAssignments.proyectoId,ids),eq(projectAssignments.tipo,'especialista'))):[]),
+  ]);
   const items:ItemTrabajoEspecialista[]=[];
   for(const p of activos) {
     const meta=datos.find(d=>d.id===p.id)!,allWork=works.filter(w=>w.proyectoId===p.id),pw=allWork.filter(w=>['pendiente','en_progreso','bloqueado'].includes(w.estado)),handled=new Set<string>();
@@ -35,6 +52,17 @@ export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiT
     function wait(key:string,proceso:string,accion:string,detalle:string,destino:{tipo:string;nombre:string},fecha:string|null,since:string|null,extra:Partial<ItemTrabajoEspecialista>={}) {
       const late=fecha?clasificarVencimiento(fecha,ahora).vencido:false;
       add(key,proceso,late?'Dar seguimiento: '+accion:accion,detalle,{estado:late?'vencida':'esperando',fecha,waitingOn:late?null:destino.nombre,waitingOnType:late?null:destino.tipo,waitingSince:since,ctaLabel:late?'Dar seguimiento':null,...extra});
+    }
+    const preparacion=proyectarPreparacion(preparaciones.find(r=>r.proyectoId===p.id),asignaciones.find(a=>a.proyectoId===p.id&&a.finalizadoEn===null&&a.workItemId===null)?.asignadoEn??null,true);
+    if(!preparacion.primerContactoEn)add('preparacion-contacto','preparacion_inicial','Realizar primer contacto con el autor','Presentarse y coordinar la reunión operativa',{fecha:preparacion.primerContactoDueAt,ctaLabel:'Registrar contacto'});
+    if(!preparacion.recibidoEn||!preparacion.expedienteRevisadoEn)add('preparacion-expediente','preparacion_inicial','Revisar el expediente recibido','Registrar recepción y revisión del diagnóstico inicial',{ctaLabel:'Continuar preparación'});
+    if(!preparacion.driveCarpetaUrl)add('preparacion-drive','preparacion_inicial','Registrar carpeta del proyecto en Drive','Registra el espacio documental real; integración automática pendiente',{ctaLabel:'Registrar carpeta'});
+    if(!preparacion.reunionOperativaRealizada)add('preparacion-reunion','preparacion_inicial',preparacion.reunionOperativaFecha?'Registrar reunión operativa':'Programar reunión operativa','Reunión, grabación, transcripción, minuta y cronograma',{fecha:preparacion.reunionOperativaFecha,ctaLabel:'Continuar preparación'});
+    if(preparacion.reunionOperativaRealizada&&preparacion.estado!=='Completo')add('preparacion-documentos','preparacion_inicial','Completar documentos de preparación','Registrar grabación, transcripción, minuta y cronograma',{ctaLabel:'Continuar preparación'});
+    for(const ctx of activaciones.get(p.id)??[]) {
+      if(ctx.solicitud || !ctx.legacy)for(const wi of allWork.filter(w=>w.tipo===ctx.tipo))handled.add(wi.id);
+      if(ctx.solicitud?.estado==='requiere_informacion')add('area-responder:'+ctx.solicitud.id,ctx.tipo,'Responder información a RRPP','RRPP necesita información adicional para activar el proceso',{href:'/?vista=solicitudes&request='+ctx.solicitud.id,ctaLabel:'Responder',source:{tipo:'solicitud',id:ctx.solicitud.id,businessKey:ctx.tipo}});
+      else if(!ctx.solicitud&&!ctx.activo&&ctx.gate.desbloqueado)add('area-solicitar:'+ctx.tipo,ctx.tipo,ctx.tipo==='lanzamiento'?'Solicitar activación de Lanzamiento':'Solicitar Impresión',ctx.gate.motivo,{ctaLabel:'Solicitar'});
     }
     for(const d of cases.filter(d=>d.proyectoId===p.id&&d.status==='informacion_solicitada'&&d.requestedByUserId===actorId))add('decision:'+d.id,'correccion','Responder a Jefatura',d.subject,{href:'/decisiones/'+d.id+'/responder',ctaLabel:'Responder',source:{tipo:'decision',id:d.id,businessKey:d.id}});
     if(p.servicio.codigo!=='SE'&&!meta.editorId&&!allWork.some(w=>w.tipo==='edicion'))add('editor-solicitar','edicion','Solicitar Editor','La asignación corresponde a Jefatura de Edición',{ctaLabel:'Solicitar'});
