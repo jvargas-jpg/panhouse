@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
-import { readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -9,7 +9,8 @@ import { tmpdir } from 'node:os';
 const source = new URL(process.env.DATABASE_URL);
 if (!['localhost','127.0.0.1'].includes(source.hostname)) throw Error('Local QA only');
 source.port = '5434';
-const dir='docs/evidencias/decisiones-jefatura';
+const dir=process.env.PANHOUSE_QA_OUTPUT ?? 'docs/evidencias/decisiones-jefatura';
+await mkdir(dir,{recursive:true});
 const started=Date.now();
 const runs=await Promise.all([1,2,3].map(shard=>new Promise((resolve,reject)=>{
   const filename=`${dir}/tests-shard-${shard}.json`;

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "desktop",
+    "width": 1536,
+    "overflow": false,
+    "kpis": ""
+  },
+  {
+    "name": "laptop",
+    "width": 1366,
+    "overflow": false,
+    "kpis": "26\nProyectos activos\n\nCartera actual · incluye pausados\n\n3\nPor asignar\n\nRecibidos por Jefatura\n\n11\nEn riesgo\n\nAlertas de proyecto o proceso\n\n1\nExpress confirmados\n\n3 por confirmar\n\n70\nCarga del equipo\n\nPuntos · 9 sin asignar\n\n2\nCierres registrados\n\nEn el período seleccionado"
+  },
+  {
+    "name": "tablet",
+    "width": 768,
+    "overflow": false,
+    "kpis": "26\nProyectos activos\n\nCartera actual · incluye pausados\n\n3\nPor asignar\n\nRecibidos por Jefatura\n\n11\nEn riesgo\n\nAlertas de proyecto o proceso\n\n1\nExpress confirmados\n\n3 por confirmar\n\n70\nCarga del equipo\n\nPuntos · 9 sin asignar\n\n2\nCierres registrados\n\nEn el período seleccionado"
+  },
+  {
+    "name": "mobile",
+    "width": 375,
+    "overflow": true,
+    "kpis": "26\nProyectos activos\n\nCartera actual · incluye pausados\n\n3\nPor asignar\n\nRecibidos por Jefatura\n\n11\nEn riesgo\n\nAlertas de proyecto o proceso\n\n1\nExpress confirmados\n\n3 por confirmar\n\n70\nCarga del equipo\n\nPuntos · 9 sin asignar\n\n2\nCierres registrados\n\nEn el período seleccionado"
+  }
+]

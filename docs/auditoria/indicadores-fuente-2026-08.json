@@ -1,0 +1,19 @@
+{
+  "fuente": "INDICADORES AGOSTO 2026.pptx",
+  "lectura": "Solo lectura; ninguna cifra ni identidad importada al producto",
+  "slides": 32,
+  "sha256": "4ed6de57e2b578fd1b9af449dcfee39fb6afa2f9f0965c1835b63692f4a020be",
+  "conceptos": [
+    "Cartera activa por estado",
+    "Culminados por mes e ingresos frente a culminados",
+    "Desempeno por especialista",
+    "Servicios y subtipos Crudo",
+    "Margen de plazo y dias de ejecucion",
+    "Edicion y Correccion como bloques futuros segun cobertura nativa"
+  ],
+  "criterios": [
+    "El GAP del documento usa el signo opuesto al margen nativo: se conserva el margen nativo y se etiqueta con claridad",
+    "Los totales del documento no se usan como datos de la aplicacion",
+    "La ficha del proyecto y la auditoria nativa determinan los resultados"
+  ]
+}

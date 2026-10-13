@@ -57,7 +57,7 @@ const hoyCaracas = (d: Date) =>
 
 // Una proyección SQL, no otro workflow. Las notas se enlazan sin copiar
 // assignments, autores, fechas ni campos del origen. Identidad = origen + id.
-const FUENTES = `
+const fuentesIntervenciones = (incluirRetirados = false) => `
 WITH intervenciones AS (
  SELECT c.id, 'correccion'::text origen, c.proyecto_id, c.work_item_id,
  c.alcance material, 'correccion'::text proceso,
@@ -130,7 +130,7 @@ WITH intervenciones AS (
  LEFT JOIN LATERAL (SELECT usuario_id FROM project_assignments WHERE work_item_id=r.work_item_id AND finalizado_en IS NULL
  AND tipo=CASE WHEN r.origen='correccion' THEN 'corrector' ELSE 'validador' END::tipo_asignacion ORDER BY asignado_en DESC,id LIMIT 1) anal ON true
  LEFT JOIN usuarios an ON an.id=coalesce(anal.usuario_id,r.responsable_id)
- WHERE p.estado IN ('en_proceso','retrasado','pausado','stand_by','culminado')
+ WHERE p.estado IN ('en_proceso','retrasado','pausado','stand_by','culminado'${incluirRetirados ? ",'retirado'" : ''})
  AND (p.notificado_jefatura OR coalesce(esp.usuario_id,p.especialista_id) IS NOT NULL)
 )
 `;
@@ -495,7 +495,7 @@ export async function listarIntervenciones(
         : `(estado='bloqueado') DESC,(${vencida}) DESC,vence ASC NULLS LAST,created_at DESC,id`;
   const size = bind(f.pageSize),
     pagina = bind(f.page);
-  const consulta = `${FUENTES}, filtradas AS (SELECT * FROM contexto WHERE ${where.length ? where.join(' AND ') : 'true'}),
+  const consulta = `${fuentesIntervenciones()}, filtradas AS (SELECT * FROM contexto WHERE ${where.length ? where.join(' AND ') : 'true'}),
  elegidas AS (SELECT * FROM filtradas WHERE ${grupoWhere}),
  meta AS (SELECT count(*)::int total,greatest(1,ceil(count(*)::numeric/${size}))::int pages,least(${pagina}::int,greatest(1,ceil(count(*)::numeric/${size}))::int) page FROM elegidas),
  paginadas AS (SELECT * FROM elegidas ORDER BY ${orden} LIMIT ${size} OFFSET ((SELECT page FROM meta)-1)*${size})
@@ -538,6 +538,17 @@ const defaults: FiltrosIntervenciones = {
   page: 1,
   pageSize: 10,
 };
+/** Batch projection shared by analytics; retains the same timing and SLA rules. */
+export async function obtenerIntervencionesIndicadores(proyectoIds: string[], ahora: Date) {
+  if (!proyectoIds.length) return [];
+  const [{ rows }, rangos] = await Promise.all([
+    pool.query<FilaIntervencion>(`${fuentesIntervenciones(true)} SELECT contexto.*, fecha_asignada::text fecha_asignada, fecha_inicio::text fecha_inicio, fecha_entrega::text fecha_entrega FROM contexto WHERE proyecto_id=ANY($1::uuid[]) AND origen IN ('correccion','calidad')`, [proyectoIds]),
+    db.select().from(pausas).where(inArray(pausas.proyectoId, proyectoIds)),
+  ]);
+  const porProyecto = new Map<string, typeof rangos>();
+  for (const rango of rangos) { const list = porProyecto.get(rango.proyectoId) ?? []; list.push(rango); porProyecto.set(rango.proyectoId, list); }
+  return rows.map(r => proyectarIntervencion(r, porProyecto.get(r.proyecto_id) ?? [], ahora));
+}
 export async function obtenerIntervencion(
   origen: OrigenIntervencion,
   id: string,

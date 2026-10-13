@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
@@ -32,6 +32,8 @@ import { AsignacionesCargaPage } from './AsignacionesCargaPage';
 import { ProyectosJefaturaPage } from './ProyectosJefaturaPage';
 import { TopBar } from '../layout/TopBar';
 import type { ProyectoJefatura } from '../../../shared/jefatura';
+
+const IndicadoresPage = lazy(() => import('./IndicadoresPage').then(m => ({ default: m.IndicadoresPage })));
 
 export function PanelJefaturaPage() {
   const { data: user } = useMe();
@@ -67,7 +69,7 @@ export function PanelJefaturaPage() {
   const dashboard = useQuery({
     queryKey: ['jefatura', 'dashboard'],
     queryFn: fetchDashboardJefatura,
-    enabled: user?.rol === 'jefe_area' && vista !== 'asignaciones' && vista !== 'proyectos' && vista !== 'seguimiento' && vista !== 'decisiones',
+    enabled: user?.rol === 'jefe_area' && vista !== 'asignaciones' && vista !== 'proyectos' && vista !== 'seguimiento' && vista !== 'decisiones' && vista !== 'indicadores',
     staleTime: 0,
     refetchOnMount: 'always',
     refetchInterval: 60000,
@@ -121,7 +123,7 @@ export function PanelJefaturaPage() {
     seguimiento: 'Seguimiento',
     solicitudes: 'Solicitudes',
     decisiones: 'Decisiones y escalaciones',
-    indicadores: 'Indicadores de Jefatura',
+    indicadores: 'Indicadores',
   };
   return (
     <CrmSidebarLayout
@@ -130,7 +132,7 @@ export function PanelJefaturaPage() {
         <img
           src="/brand/panhouse-logo.webp"
           alt="PanHouse Casa Editorial"
-          className={`h-auto object-contain ${vista === 'asignaciones' || vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' ? 'w-[176px]' : 'w-[132px]'}`}
+          className="h-auto w-[176px] object-contain"
         />
       }
       footer={
@@ -143,9 +145,9 @@ export function PanelJefaturaPage() {
         </div>
       }
       contentMaxWidth="max-w-[1760px]"
-      contentClassName={vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' ? 'p-4 sm:px-6 sm:py-4' : 'p-4 sm:p-7'}
+      contentClassName={vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' || vista === 'indicadores' ? 'p-4 sm:px-6 sm:py-4' : 'p-4 sm:p-7'}
       sidebarBreakpoint="lg"
-      sidebarCompact={vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones'}
+      sidebarCompact
       overlays={
         <>
           {proyecto && (
@@ -165,7 +167,7 @@ export function PanelJefaturaPage() {
         </>
       }
     >
-      <div className={`jefatura ${vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' ? 'jp-page' : ''} ${vista === 'seguimiento' ? 'js-page' : ''} ${vista === 'decisiones' ? 'jd-page' : ''}`}>
+      <div className={`jefatura ${vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' || vista === 'indicadores' ? 'jp-page' : ''} ${vista === 'seguimiento' ? 'js-page' : ''} ${vista === 'decisiones' ? 'jd-page' : ''} ${vista === 'indicadores' ? 'ji-page' : ''}`}>
         <JefaturaSidebar vista={vista} mobile />
         {vista !== 'asignaciones' && (
           <header className="jf-page-header">
@@ -175,7 +177,7 @@ export function PanelJefaturaPage() {
               <p>
                 {vista === 'inicio'
                   ? 'Supervisa la operación editorial, distribuye la carga del equipo y atiende los proyectos que requieren decisión.'
-                  : vista === 'seguimiento' ? 'Supervisa los procesos editoriales, sus tiempos y los asuntos que requieren atención.' : vista === 'proyectos' ? 'Vista global de los proyectos de Producción. Consulta su estado, equipo asignado y próximos hitos.' : vista === 'decisiones' ? 'Resuelve excepciones, revisiones y casos que necesitan la intervención de Jefatura para que el proceso pueda continuar.' : 'Revisa el contexto operativo y continúa desde el expediente del proyecto.'}
+                  : vista === 'indicadores' ? 'Analiza rendimiento, capacidad y tiempos de la operación editorial.' : vista === 'seguimiento' ? 'Supervisa los procesos editoriales, sus tiempos y los asuntos que requieren atención.' : vista === 'proyectos' ? 'Vista global de los proyectos de Producción. Consulta su estado, equipo asignado y próximos hitos.' : vista === 'decisiones' ? 'Resuelve excepciones, revisiones y casos que necesitan la intervención de Jefatura para que el proceso pueda continuar.' : 'Revisa el contexto operativo y continúa desde el expediente del proyecto.'}
               </p>
             </div>
             {vista === 'inicio' && (
@@ -184,7 +186,7 @@ export function PanelJefaturaPage() {
                 Estado actual
               </span>
             )}
-            {(vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones') && <TopBar compacto />}
+            {(vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' || vista === 'indicadores') && <TopBar compacto />}
           </header>
         )}
         {vista === 'asignaciones' ? (
@@ -198,17 +200,7 @@ export function PanelJefaturaPage() {
         ) : vista === 'proyectos' ? (
           <ProyectosJefaturaPage />
         ) : vista === 'indicadores' ? (
-          <section className="jf-card jf-placeholder">
-            <RrppIcon nombre="indicadores" className="h-8 w-8" />
-            <h2>Un espacio para medir Producción</h2>
-            <p>
-              Los indicadores históricos de Jefatura se implementarán en una
-              etapa posterior.
-            </p>
-            <Link className="jf-button" to="/">
-              Volver al Inicio
-            </Link>
-          </section>
+          <Suspense fallback={<p className="jf-empty" role="status">Cargando indicadores…</p>}><IndicadoresPage /></Suspense>
         ) : vista === 'seguimiento' ? (
           <SeguimientoPage />
         ) : vista === 'decisiones' ? (

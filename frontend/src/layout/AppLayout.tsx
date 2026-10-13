@@ -37,7 +37,7 @@ import { useMe } from '../auth/useAuth';
 export function AppLayout() {
   const location = useLocation();
   const { data: user } = useMe();
-  const explorer = location.pathname === '/' && user?.rol === 'jefe_area' && ['proyectos', 'seguimiento', 'decisiones'].includes(new URLSearchParams(location.search).get('vista') ?? '');
+  const explorer = location.pathname === '/' && user?.rol === 'jefe_area' && ['proyectos', 'seguimiento', 'decisiones', 'indicadores'].includes(new URLSearchParams(location.search).get('vista') ?? '');
   return (
     <div className="flex h-screen w-full flex-col overflow-y-auto overflow-x-hidden bg-crema">
       {!explorer && !(location.pathname === '/' && (user?.rol === 'especialista' || user?.rol === 'talento_humano') && new URLSearchParams(location.search).get('vista') !== 'metricas') && <TopBar />}

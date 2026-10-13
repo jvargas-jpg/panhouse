@@ -1,0 +1,90 @@
+{
+  "vistas": [
+    {
+      "vista": "inicio",
+      "login": true
+    },
+    {
+      "vista": "asignaciones",
+      "login": true
+    },
+    {
+      "vista": "proyectos",
+      "login": true
+    },
+    {
+      "vista": "seguimiento",
+      "login": true
+    },
+    {
+      "vista": "decisiones",
+      "login": true
+    },
+    {
+      "vista": "indicadores",
+      "login": true
+    }
+  ],
+  "resumen": {
+    "activos": 60,
+    "porAsignar": 9,
+    "enRiesgo": 20,
+    "express": 6,
+    "expressPosibles": 5,
+    "cargaEquipo": 126,
+    "cargaSinAsignar": 26,
+    "cierres": 5
+  },
+  "actividad": {
+    "ingresos": 67,
+    "asignaciones": 62,
+    "cierres": 5,
+    "anterior": {
+      "ingresos": 0,
+      "asignaciones": 0,
+      "cierres": 0
+    }
+  },
+  "equipo": [
+    {
+      "nombre": "Laura Gil",
+      "activos": 8,
+      "carga": 32
+    },
+    {
+      "nombre": "Carlos Mendoza",
+      "activos": 7,
+      "carga": 27
+    },
+    {
+      "nombre": "Elena Torres",
+      "activos": 9,
+      "carga": 23
+    },
+    {
+      "nombre": "Roberto Salazar",
+      "activos": 7,
+      "carga": 21
+    },
+    {
+      "nombre": "Especialista Demo",
+      "activos": 15,
+      "carga": 18
+    },
+    {
+      "nombre": "Sofia Vargas",
+      "activos": 5,
+      "carga": 5
+    }
+  ],
+  "sla": {
+    "entregas": 16,
+    "medibles": 16,
+    "enPlazo": 15,
+    "fueraPlazo": 1,
+    "cumplimiento": 93.8,
+    "promedioHoras": 10.4,
+    "muestrasTiempo": 16
+  },
+  "errors": []
+}

@@ -57,7 +57,7 @@ La primera regresión congelada obtuvo 1.226/1.228: una expectativa antigua de c
 
 Backend y frontend de la revisión congelada compilan; sus builds incluyen typecheck. Vite mantiene el aviso de tamaño de bundle existente. El ciclo HTTP sobre el backend compilado verificó contrato y Editor: login real, RBAC/IDOR, respuesta conservada, confirmación de Talento, candidato autorizado, formalización, resuelta de solo lectura y petición de Editor concurrente sin duplicación. Editor asignado resuelve la petición mientras su work item continúa en progreso. Evidencia: [e2e-http-final.json](../evidencias/especialista-solicitudes/e2e-http-final.json).
 
-La segunda regresión completa sigue en ejecución independiente al cerrar esta parte de la entrega. No se declara aprobada todavía. `../evidencias/especialista-solicitudes/validacion-final.json` registra su estado y se actualiza al terminar. Los tests usan PostgreSQL aislado en el puerto 6545; no truncan la base principal.
+La segunda regresión completa fue interrumpida al congelar y subir todos los cambios a petición del usuario. No se declara aprobada. `../evidencias/especialista-solicitudes/validacion-final.json` registra el estado final de esta ejecución. Los tests usan PostgreSQL aislado en el puerto 6545; no truncan la base principal.
 
 ## QA visual y límites (AH–AP)
 

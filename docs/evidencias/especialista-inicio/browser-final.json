@@ -1,0 +1,161 @@
+{
+  "checks": [
+    {
+      "name": "15: API autorizada",
+      "passed": true
+    },
+    {
+      "name": "15: conteo real de activos",
+      "passed": true
+    },
+    {
+      "name": "15: sin desborde de pagina",
+      "passed": true
+    },
+    {
+      "name": "15: una cuenta/campana",
+      "passed": true
+    },
+    {
+      "name": "15: cinco KPIs",
+      "passed": true
+    },
+    {
+      "name": "15: cinco destinos globales",
+      "passed": true
+    },
+    {
+      "name": "15: Express confirmado y riesgo reales",
+      "passed": true
+    },
+    {
+      "name": "Cuenta contenida en el header",
+      "passed": true
+    },
+    {
+      "name": "Cartera pagina y filtro nativos",
+      "passed": true
+    },
+    {
+      "name": "Proyecto abre Command Center con origen y filtro",
+      "passed": true
+    },
+    {
+      "name": "Regreso mantiene busqueda",
+      "passed": true
+    },
+    {
+      "name": "Mi trabajo muestra lista completa de vencimientos",
+      "passed": true
+    },
+    {
+      "name": "Solicitudes operativas reales",
+      "passed": true
+    },
+    {
+      "name": "Solicitud abre proceso y conserva origen",
+      "passed": true
+    },
+    {
+      "name": "Objetivos sin metas o edicion inventada",
+      "passed": true
+    },
+    {
+      "name": "Busqueda global funcional",
+      "passed": true
+    },
+    {
+      "name": "tablet: sin desborde",
+      "passed": true
+    },
+    {
+      "name": "tablet: navegacion global accesible",
+      "passed": true
+    },
+    {
+      "name": "mobile: sin desborde",
+      "passed": true
+    },
+    {
+      "name": "mobile: navegacion global accesible",
+      "passed": true
+    },
+    {
+      "name": "mobile: prioridad accion-vencimiento-solicitud-actividad-proyectos",
+      "passed": true
+    },
+    {
+      "name": "0: API autorizada",
+      "passed": true
+    },
+    {
+      "name": "0: conteo real de activos",
+      "passed": true
+    },
+    {
+      "name": "0: sin desborde de pagina",
+      "passed": true
+    },
+    {
+      "name": "0: una cuenta/campana",
+      "passed": true
+    },
+    {
+      "name": "0: cinco KPIs",
+      "passed": true
+    },
+    {
+      "name": "0: cinco destinos globales",
+      "passed": true
+    },
+    {
+      "name": "0: acciones/solicitudes vacias",
+      "passed": true
+    },
+    {
+      "name": "0: no acceso al proyecto de otro Especialista",
+      "passed": true
+    },
+    {
+      "name": "1: API autorizada",
+      "passed": true
+    },
+    {
+      "name": "1: conteo real de activos",
+      "passed": true
+    },
+    {
+      "name": "1: sin desborde de pagina",
+      "passed": true
+    },
+    {
+      "name": "1: una cuenta/campana",
+      "passed": true
+    },
+    {
+      "name": "1: cinco KPIs",
+      "passed": true
+    },
+    {
+      "name": "1: cinco destinos globales",
+      "passed": true
+    },
+    {
+      "name": "1: sin falsa fase ni porcentaje",
+      "passed": true
+    },
+    {
+      "name": "Fallo de actividad conserva KPIs y cartera",
+      "passed": true
+    },
+    {
+      "name": "Reintento de actividad recupera el bloque",
+      "passed": true
+    },
+    {
+      "name": "Sin errores JavaScript",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

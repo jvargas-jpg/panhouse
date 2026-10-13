@@ -1,0 +1,30 @@
+{
+  "summaries": [
+    {
+      "path": "docs/evidencias/especialista-inicio/tests-dirigidos-finales.json",
+      "passed": 37,
+      "failed": 0
+    },
+    {
+      "path": "docs/evidencias/especialista-inicio/browser-final.json",
+      "passed": 39,
+      "failed": 0
+    },
+    {
+      "path": "docs/evidencias/project-command-center/browser-final.json",
+      "passed": 43,
+      "failed": 0
+    }
+  ],
+  "build": {
+    "backend": "passed",
+    "frontend": "passed",
+    "frontendHomeChunkKb": 17.36,
+    "commandCenterChunkKb": 21.08,
+    "warning": "Chunk principal 748.45 kB, advertencia existente de Vite >500 kB; compilacion correcta."
+  },
+  "typecheck": {
+    "backend": "passed",
+    "frontend": "passed"
+  }
+}

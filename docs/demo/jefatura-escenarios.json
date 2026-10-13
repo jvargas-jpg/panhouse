@@ -1,0 +1,370 @@
+{
+  "creadoEn": "2026-10-12T01:47:46.154Z",
+  "base": "panhouse local",
+  "demo": true,
+  "proyectosNuevos": 60,
+  "proyectosOriginales": 30,
+  "originalesConservados": true,
+  "casos": [
+    {
+      "id": "a879a86f-a32d-4bab-9a28-3fc7c87146c4",
+      "codigo": "D65A26",
+      "nombre": "DEMO · La brújula del viento 1",
+      "escenario": "Por asignar"
+    },
+    {
+      "id": "91fc4aca-463a-4225-abeb-9929cc26bc06",
+      "codigo": "B06EDA",
+      "nombre": "DEMO · Las voces del jardín 2",
+      "escenario": "Por asignar"
+    },
+    {
+      "id": "8cdab06f-de21-4cf6-93b5-b3ec7e8657c4",
+      "codigo": "105ED6",
+      "nombre": "DEMO · El mapa interior 3",
+      "escenario": "Por asignar"
+    },
+    {
+      "id": "8ed3f990-dde5-46b7-867c-0d142cc515be",
+      "codigo": "F52C22",
+      "nombre": "DEMO · Cuadernos del sur 4",
+      "escenario": "Por asignar"
+    },
+    {
+      "id": "323ab2d1-a696-422c-883e-edd8a01b75f5",
+      "codigo": "94DDB5",
+      "nombre": "DEMO · El último puerto 5",
+      "escenario": "Por asignar"
+    },
+    {
+      "id": "ce251a4e-2948-4f6e-8e65-b6324437e761",
+      "codigo": "C21405",
+      "nombre": "DEMO · Los días azules 6",
+      "escenario": "Por asignar"
+    },
+    {
+      "id": "0031b663-99b3-4630-b324-994c5d087d1d",
+      "codigo": "450CD9",
+      "nombre": "DEMO · Memorias de agua 7",
+      "escenario": "Por asignar"
+    },
+    {
+      "id": "4c934a22-8ce4-4d3e-a962-e9f3eb6fbfa8",
+      "codigo": "63B83F",
+      "nombre": "DEMO · La estación de las luces 8",
+      "escenario": "Por asignar"
+    },
+    {
+      "id": "e34d679b-a1bb-41c5-8bdc-dca7b4a293fa",
+      "codigo": "5698B1",
+      "nombre": "DEMO · El hilo de la memoria 9",
+      "escenario": "Asignado, listo para iniciar"
+    },
+    {
+      "id": "51b914ea-debe-43e9-834b-a1c02bb22061",
+      "codigo": "FFD23B",
+      "nombre": "DEMO · El atlas del tiempo 10",
+      "escenario": "Asignado, listo para iniciar"
+    },
+    {
+      "id": "bd6868e0-bf8c-40da-b2d8-40dbad2f34e2",
+      "codigo": "C3B3A9",
+      "nombre": "DEMO · La casa del horizonte 11",
+      "escenario": "Reasignado a otro especialista"
+    },
+    {
+      "id": "5d1194f7-0f76-4de0-ab7d-5692e7c66791",
+      "codigo": "D60CD2",
+      "nombre": "DEMO · Paisajes del recuerdo 12",
+      "escenario": "Asignado, listo para iniciar"
+    },
+    {
+      "id": "36d5547c-727b-4ecb-99e4-a83897edd85f",
+      "codigo": "1A058C",
+      "nombre": "DEMO · La brújula del viento 13",
+      "escenario": "Reasignado a otro especialista"
+    },
+    {
+      "id": "4301ceea-8e28-480c-8787-79232447beaf",
+      "codigo": "9AC1F1",
+      "nombre": "DEMO · Las voces del jardín 14",
+      "escenario": "Asignado, listo para iniciar"
+    },
+    {
+      "id": "39d1c607-77ac-4750-8f62-0b503699b0e5",
+      "codigo": "4FEE8C",
+      "nombre": "DEMO · El mapa interior 15",
+      "escenario": "Edición a mitad; capítulos en diferentes etapas"
+    },
+    {
+      "id": "06aedd10-9024-4775-8b56-f7d0fc7342dc",
+      "codigo": "1343A7",
+      "nombre": "DEMO · Cuadernos del sur 16",
+      "escenario": "Edición a mitad; capítulos en diferentes etapas"
+    },
+    {
+      "id": "a0603de4-f48a-4639-8c8d-511275d93c3f",
+      "codigo": "1093A0",
+      "nombre": "DEMO · El último puerto 17",
+      "escenario": "Paralelo: Edición adicional + Creativa activa + Corrección pendiente + Lanzamiento habilitado"
+    },
+    {
+      "id": "8787b41c-7fed-4316-a59b-6e2e5576370f",
+      "codigo": "2BF093",
+      "nombre": "DEMO · Los días azules 18",
+      "escenario": "Edición a mitad; capítulos en diferentes etapas"
+    },
+    {
+      "id": "dc7876b1-cc76-4ceb-8964-eabf7b3b6029",
+      "codigo": "16EF0F",
+      "nombre": "DEMO · Memorias de agua 19",
+      "escenario": "Edición a mitad; capítulos en diferentes etapas"
+    },
+    {
+      "id": "660d151a-2d06-4379-a54e-8a42bb8f2871",
+      "codigo": "F9EEC3",
+      "nombre": "DEMO · La estación de las luces 20",
+      "escenario": "Edición bloqueada por respuesta pendiente"
+    },
+    {
+      "id": "8a9f0ac4-a735-4f65-ba6d-f02945935c3c",
+      "codigo": "43FB18",
+      "nombre": "DEMO · El hilo de la memoria 21",
+      "escenario": "Corrección solicitada, sin corrector"
+    },
+    {
+      "id": "4022615c-55ff-42ff-855f-2456193bb44c",
+      "codigo": "AFB9C0",
+      "nombre": "DEMO · El atlas del tiempo 22",
+      "escenario": "Corrector asignado, por iniciar"
+    },
+    {
+      "id": "85f9d7a9-7d09-41b2-a8c7-781b6f6aabdc",
+      "codigo": "AD3BC6",
+      "nombre": "DEMO · La casa del horizonte 23",
+      "escenario": "Corrección en curso"
+    },
+    {
+      "id": "e5928087-4679-4ccb-ab49-020a0dd7a85f",
+      "codigo": "FD73C7",
+      "nombre": "DEMO · Paisajes del recuerdo 24",
+      "escenario": "Corrección vencida, en curso"
+    },
+    {
+      "id": "a01b752f-5ac4-496d-b3b1-2155e08b2d57",
+      "codigo": "E2C292",
+      "nombre": "DEMO · La brújula del viento 25",
+      "escenario": "Freelance entregado, evaluación pendiente"
+    },
+    {
+      "id": "60569b0c-c15b-4ed7-8e73-eb7ddd56bda3",
+      "codigo": "166313",
+      "nombre": "DEMO · Las voces del jardín 26",
+      "escenario": "Corrección cerrada y evaluada"
+    },
+    {
+      "id": "20a27c62-e982-4796-8cef-15bebfbb104c",
+      "codigo": "012C81",
+      "nombre": "DEMO · El mapa interior 27",
+      "escenario": "Calidad F1 pendiente"
+    },
+    {
+      "id": "cf53a019-dac7-44a6-9dcc-9504d5917c26",
+      "codigo": "B7F8A8",
+      "nombre": "DEMO · Cuadernos del sur 28",
+      "escenario": "Calidad F1 en curso y vencida"
+    },
+    {
+      "id": "7af4b3e6-54a5-4d21-abe3-0fb4d5f94032",
+      "codigo": "47C3B2",
+      "nombre": "DEMO · El último puerto 29",
+      "escenario": "Calidad F1 con decisión de colección pendiente"
+    },
+    {
+      "id": "a774347a-6cef-499d-bd1d-7ab7dd713c3a",
+      "codigo": "B0B379",
+      "nombre": "DEMO · Los días azules 30",
+      "escenario": "Validación V2 en progreso"
+    },
+    {
+      "id": "7f40c932-18a7-468c-b3f6-966dca25c18d",
+      "codigo": "818136",
+      "nombre": "DEMO · Memorias de agua 31",
+      "escenario": "Calidad aprobada, esperando autor"
+    },
+    {
+      "id": "ac82826f-bdaa-4766-b80f-562a8eebdb23",
+      "codigo": "700A59",
+      "nombre": "DEMO · La estación de las luces 32",
+      "escenario": "Revisión final con consulta de colección"
+    },
+    {
+      "id": "f68aa4ed-8be9-457b-b910-1df740ac5fee",
+      "codigo": "230948",
+      "nombre": "DEMO · El hilo de la memoria 33",
+      "escenario": "Decisión pendiente, gate bloqueado"
+    },
+    {
+      "id": "2b6b49b0-33cc-4af7-b759-e0141443a6d0",
+      "codigo": "B45B21",
+      "nombre": "DEMO · El atlas del tiempo 34",
+      "escenario": "Decisión en revisión"
+    },
+    {
+      "id": "eb0b57fd-25db-43dd-9132-d593607f983e",
+      "codigo": "623780",
+      "nombre": "DEMO · La casa del horizonte 35",
+      "escenario": "Decisión esperando información"
+    },
+    {
+      "id": "c1508a8d-b772-4fe5-8525-ad80bdf728ec",
+      "codigo": "A7137B",
+      "nombre": "DEMO · Paisajes del recuerdo 36",
+      "escenario": "Información respondida, revisión a mitad"
+    },
+    {
+      "id": "b411c41f-8298-4faf-b1ee-7a7fd34c55f8",
+      "codigo": "FBADB8",
+      "nombre": "DEMO · La brújula del viento 37",
+      "escenario": "Decisión aprobada y corrección iniciada"
+    },
+    {
+      "id": "37c17f7b-afaa-4f2c-bd71-faeec5b4a829",
+      "codigo": "205B8C",
+      "nombre": "DEMO · Las voces del jardín 38",
+      "escenario": "Decisión rechazada con motivo"
+    },
+    {
+      "id": "a03b5b3d-6f2f-42fa-b1b0-7bbd433b0a96",
+      "codigo": "F2B605",
+      "nombre": "DEMO · El mapa interior 39",
+      "escenario": "Decisión pendiente, gate bloqueado"
+    },
+    {
+      "id": "feba5fee-580d-46e4-b002-2c6750813fcc",
+      "codigo": "80983F",
+      "nombre": "DEMO · Cuadernos del sur 40",
+      "escenario": "Decisión en revisión"
+    },
+    {
+      "id": "3ab7d8d2-207e-422f-85c7-33c1fab6cb9a",
+      "codigo": "1430E4",
+      "nombre": "DEMO · El último puerto 41",
+      "escenario": "Decisión esperando información"
+    },
+    {
+      "id": "587b353b-39b9-42c4-bc05-6aac1fd7f11c",
+      "codigo": "74E0AF",
+      "nombre": "DEMO · Los días azules 42",
+      "escenario": "Información respondida, revisión a mitad"
+    },
+    {
+      "id": "790a80e6-0648-471f-a575-a2dce8748884",
+      "codigo": "6B8D43",
+      "nombre": "DEMO · Memorias de agua 43",
+      "escenario": "Decisión aprobada y corrección iniciada"
+    },
+    {
+      "id": "914a98bd-d375-4b1d-91b9-5eb11e4fc768",
+      "codigo": "AC29A9",
+      "nombre": "DEMO · La estación de las luces 44",
+      "escenario": "Decisión rechazada con motivo"
+    },
+    {
+      "id": "48d107af-c010-4f36-8631-a15bdb3ee1fc",
+      "codigo": "E48BC6",
+      "nombre": "DEMO · El hilo de la memoria 45",
+      "escenario": "Pausa formal por autor; retoma pendiente"
+    },
+    {
+      "id": "56207847-cd80-445d-90d9-6581b82f25ae",
+      "codigo": "EEAB3F",
+      "nombre": "DEMO · El atlas del tiempo 46",
+      "escenario": "Pausa formal por autor; retoma pendiente"
+    },
+    {
+      "id": "146e1a30-395d-45cd-9437-db9fa51817be",
+      "codigo": "599CA8",
+      "nombre": "DEMO · La casa del horizonte 47",
+      "escenario": "Pausa formal por autor; retoma pendiente"
+    },
+    {
+      "id": "189253ff-26fb-420a-bd1c-af61262d0dc2",
+      "codigo": "ED691F",
+      "nombre": "DEMO · Paisajes del recuerdo 48",
+      "escenario": "Stand-by, conserva carga asignada"
+    },
+    {
+      "id": "f80c40e2-e8a7-4028-836a-02e71033e20c",
+      "codigo": "43D3D9",
+      "nombre": "DEMO · La brújula del viento 49",
+      "escenario": "Stand-by, conserva carga asignada"
+    },
+    {
+      "id": "1a59ec0f-e33c-4ac3-a817-0fbf5556b7a5",
+      "codigo": "4102B4",
+      "nombre": "DEMO · Las voces del jardín 50",
+      "escenario": "Stand-by, conserva carga asignada"
+    },
+    {
+      "id": "54d873a8-8a7d-4a1e-9a43-11c15c31d74e",
+      "codigo": "641116",
+      "nombre": "DEMO · El mapa interior 51",
+      "escenario": "Retrasado, seguimiento de plazo y dependencia"
+    },
+    {
+      "id": "014f030e-85bb-4944-b14c-bfe3eb564311",
+      "codigo": "9E3D10",
+      "nombre": "DEMO · Cuadernos del sur 52",
+      "escenario": "Retrasado, seguimiento de plazo y dependencia"
+    },
+    {
+      "id": "c06f70a5-1515-48e4-9692-342d824027be",
+      "codigo": "D506C2",
+      "nombre": "DEMO · El último puerto 53",
+      "escenario": "Retrasado, seguimiento de plazo y dependencia"
+    },
+    {
+      "id": "f845ce23-6cf0-452d-844d-e9a54eea8f7f",
+      "codigo": "F49C57",
+      "nombre": "DEMO · Los días azules 54",
+      "escenario": "Culminado con cierre registrado"
+    },
+    {
+      "id": "9ed6c146-892f-48a2-9e70-f536c3e92f6a",
+      "codigo": "A81E17",
+      "nombre": "DEMO · Memorias de agua 55",
+      "escenario": "Culminado con cierre registrado"
+    },
+    {
+      "id": "04643360-f428-4444-9f23-b2532df3b7f8",
+      "codigo": "CEB9E5",
+      "nombre": "DEMO · La estación de las luces 56",
+      "escenario": "Culminado con cierre registrado"
+    },
+    {
+      "id": "fba1a17c-3650-45f5-b4e9-39f6fa0abff4",
+      "codigo": "6A320F",
+      "nombre": "DEMO · El hilo de la memoria 57",
+      "escenario": "Culminado con cierre registrado"
+    },
+    {
+      "id": "27f30a9b-b463-4e0e-9b36-ef520ffcde1a",
+      "codigo": "47B6D9",
+      "nombre": "DEMO · El atlas del tiempo 58",
+      "escenario": "Culminado con cierre registrado"
+    },
+    {
+      "id": "24284c9d-ef58-4dd8-897b-968a4f457146",
+      "codigo": "08F150",
+      "nombre": "DEMO · La casa del horizonte 59",
+      "escenario": "Retirado, fuera de carga activa"
+    },
+    {
+      "id": "f225d470-473b-4802-ac3a-602d9703b6a0",
+      "codigo": "5B550F",
+      "nombre": "DEMO · Paisajes del recuerdo 60",
+      "escenario": "Retirado, fuera de carga activa"
+    }
+  ]
+}

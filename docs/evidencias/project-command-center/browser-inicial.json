@@ -1,0 +1,33 @@
+{
+  "checks": [
+    {
+      "name": "especialista: login nativo y shell",
+      "passed": true
+    },
+    {
+      "name": "especialista: resumen API autorizado",
+      "passed": true
+    },
+    {
+      "name": "especialista: paralelo real",
+      "passed": true
+    },
+    {
+      "name": "jefe_area: login nativo y shell",
+      "passed": true
+    },
+    {
+      "name": "jefe_area: resumen API autorizado",
+      "passed": true
+    },
+    {
+      "name": "jefe_area: paralelo real",
+      "passed": true
+    },
+    {
+      "name": "Sin errores JavaScript",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

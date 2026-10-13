@@ -1,0 +1,22 @@
+{
+  "status": 200,
+  "resumen": {
+    "activos": 7,
+    "porAsignar": 1,
+    "enRiesgo": 6,
+    "express": 0,
+    "expressPosibles": 0,
+    "cargaEquipo": 6,
+    "cargaSinAsignar": 3,
+    "cierres": 0
+  },
+  "cobertura": {
+    "ingresosSinFecha": 0,
+    "culminadosSinFecha": 0,
+    "cierresSinResponsable": 0,
+    "sinPlazo": 0
+  },
+  "actualizadoEn": "2026-10-11T23:28:57.796Z",
+  "errors": [],
+  "mutations": false
+}

@@ -1,0 +1,25 @@
+import 'dotenv/config';
+import { Pool } from 'pg';
+import { execFileSync } from 'node:child_process';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomBytes } from 'node:crypto';
+const name='panhouse_command_center_qa';
+const source=new URL(process.env.DATABASE_URL!);
+if(!['localhost','127.0.0.1'].includes(source.hostname)||source.pathname!=='/panhouse')throw Error('Solo QA local desde panhouse');
+const admin=new Pool({connectionString:source.toString()});
+if((await admin.query('SELECT 1 FROM pg_database WHERE datname=$1',[name])).rowCount)throw Error('QA ya existe; no se sobrescribe');
+await admin.query('CREATE DATABASE panhouse_command_center_qa');await admin.end();
+execFileSync('docker',['exec','panhouse-postgres-1','sh','-c','set -e; pg_dump -U panhouse panhouse -f /tmp/panhouse-command-center.sql; psql -U panhouse -d panhouse_command_center_qa -q -v ON_ERROR_STOP=1 -f /tmp/panhouse-command-center.sql; rm /tmp/panhouse-command-center.sql'],{stdio:'ignore'});
+source.pathname='/'+name;process.env.DATABASE_URL=source.toString();process.env.NODE_ENV='development';
+const {db,pool}=await import('../server/db/client.js');
+if((await pool.query('SELECT current_database() nombre')).rows[0].nombre!==name)throw Error('Base incorrecta');
+const {users,proyectos}=await import('../server/db/schema/index.js');const {eq}=await import('drizzle-orm');
+const {hashPassword}=await import('../server/helpers/password.js');
+const manifest=JSON.parse(await readFile('docs/demo/jefatura-escenarios.json','utf8'));const caso=manifest.casos.find((c:{codigo:string})=>c.codigo==='1093A0');
+const [p]=await db.select().from(proyectos).where(eq(proyectos.id,caso.id));if(!p?.especialistaId||!p.jefeAreaId)throw Error('Faltan responsables QA');
+const identities=[];
+for(const [rol,id] of [['especialista',p.especialistaId],['jefe_area',p.jefeAreaId]]){const password='QA-'+randomBytes(18).toString('base64url');await db.update(users).set({passwordHash:await hashPassword(password)}).where(eq(users.id,id));const [u]=await db.select({email:users.email,nombre:users.nombre}).from(users).where(eq(users.id,id));identities.push({rol,...u,password});}
+const folder=join(tmpdir(),'panhouse-browser-qa');await mkdir(folder,{recursive:true});await writeFile(join(folder,'command-center-private.json'),JSON.stringify({identities,id:p.id,codigo:p.codigo}));
+const {buildApp}=await import('../server/app.js');await buildApp().listen({host:'127.0.0.1',port:3008});console.log('QA aislado listo: API 3008, proyecto DEMO '+p.codigo+'; credenciales solo en TEMP');

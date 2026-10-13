@@ -13,6 +13,7 @@ import { capitulosRoutes } from './routes/capitulos.routes.js';
 import { catalogosRoutes } from './routes/catalogos.routes.js';
 import { correccionesRoutes } from './routes/correcciones.routes.js';
 import { decisionesRoutes } from './routes/decisiones.routes.js';
+import { indicadoresJefaturaRoutes } from './routes/indicadoresJefatura.routes.js';
 import { direccionCreativaRoutes } from './routes/direccionCreativa.routes.js';
 import { disenadoresRoutes } from './routes/disenadores.routes.js';
 import { editoresRoutes } from './routes/editores.routes.js';
@@ -62,6 +63,7 @@ export function buildApp() {
   app.register(usuariosRoutes, { prefix: '/api/usuarios' });
   app.register(seguimientoRoutes, { prefix: '/api/seguimiento' });
   app.register(decisionesRoutes, { prefix: '/api/decisiones' });
+  app.register(indicadoresJefaturaRoutes, { prefix: '/api/jefatura' });
   app.register(pagosRoutes, { prefix: '/api/pagos' });
   app.register(notificacionesRoutes, { prefix: '/api/notificaciones' });
   app.register(metricasRoutes, { prefix: '/api/metricas' });

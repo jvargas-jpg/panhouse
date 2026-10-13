@@ -1,0 +1,13 @@
+{
+  "sql": 15,
+  "durationMs": 1306,
+  "active": 15,
+  "actions": 1,
+  "confirmedExpress": 2,
+  "weightedLoad": 18,
+  "deadlines": 1,
+  "requests": 16,
+  "errors": [],
+  "source": "Main local, lectura solamente",
+  "at": "2026-10-12T04:28:50.151Z"
+}

@@ -1,0 +1,154 @@
+{
+  "environment": "Disposable panhouse_indicadores_qa; synthetic fixtures only",
+  "checks": [
+    {
+      "name": "desktop: no horizontal document overflow",
+      "passed": true
+    },
+    {
+      "name": "desktop: Equipo y capacidad without overflow",
+      "passed": true
+    },
+    {
+      "name": "desktop: Tiempos y SLA without overflow",
+      "passed": true
+    },
+    {
+      "name": "laptop: no horizontal document overflow",
+      "passed": true
+    },
+    {
+      "name": "laptop: Equipo y capacidad without overflow",
+      "passed": true
+    },
+    {
+      "name": "laptop: Tiempos y SLA without overflow",
+      "passed": true
+    },
+    {
+      "name": "tablet: no horizontal document overflow",
+      "passed": true
+    },
+    {
+      "name": "tablet: Equipo y capacidad without overflow",
+      "passed": true
+    },
+    {
+      "name": "tablet: Tiempos y SLA without overflow",
+      "passed": true
+    },
+    {
+      "name": "mobile: no horizontal document overflow",
+      "passed": true
+    },
+    {
+      "name": "mobile: Equipo y capacidad without overflow",
+      "passed": true
+    },
+    {
+      "name": "mobile: Tiempos y SLA without overflow",
+      "passed": true
+    },
+    {
+      "name": "Native snapshot matches KPI",
+      "passed": true
+    },
+    {
+      "name": "Detail pagination changes URL",
+      "passed": true
+    },
+    {
+      "name": "Detail pagination changes project rows",
+      "passed": true
+    },
+    {
+      "name": "Detail page survives reload",
+      "passed": true
+    },
+    {
+      "name": "Horizon persists in URL",
+      "passed": true
+    },
+    {
+      "name": "Horizon survives reload",
+      "passed": true
+    },
+    {
+      "name": "Service filter applied",
+      "passed": true
+    },
+    {
+      "name": "Confirmed Express filter applied",
+      "passed": true
+    },
+    {
+      "name": "Empty selection displayed",
+      "passed": true
+    },
+    {
+      "name": "Local team search",
+      "passed": true
+    },
+    {
+      "name": "Specialist detail preserved in URL",
+      "passed": true
+    },
+    {
+      "name": "Closing detail tab",
+      "passed": true
+    },
+    {
+      "name": "Closing detail contains an audited project",
+      "passed": true
+    },
+    {
+      "name": "Project link uses native detail route",
+      "passed": true
+    },
+    {
+      "name": "Native project detail is accessible to Jefatura",
+      "passed": true
+    },
+    {
+      "name": "Project navigation works",
+      "passed": true
+    },
+    {
+      "name": "CSV real route includes all specialists",
+      "passed": true
+    },
+    {
+      "name": "CSV has UTF-8 BOM",
+      "passed": true
+    },
+    {
+      "name": "Print action works",
+      "passed": true
+    },
+    {
+      "name": "Print is not clipped by application viewport",
+      "passed": true
+    },
+    {
+      "name": "Print includes period and hides navigation",
+      "passed": true
+    },
+    {
+      "name": "Loading state appears",
+      "passed": true
+    },
+    {
+      "name": "Error state appears",
+      "passed": true
+    },
+    {
+      "name": "Retry recovers real data",
+      "passed": true
+    },
+    {
+      "name": "No browser runtime errors",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

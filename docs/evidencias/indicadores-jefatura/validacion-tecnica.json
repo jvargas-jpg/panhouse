@@ -1,0 +1,50 @@
+{
+  "tipo": "Resumen de ejecuciones observadas; no es un reporte bruto de Vitest",
+  "backend": {
+    "typecheck": 0,
+    "build": 0
+  },
+  "frontend": {
+    "typecheck": 0,
+    "build": 0,
+    "aviso": "Chunk principal existente >500 kB; Indicadores se carga de forma diferida"
+  },
+  "tests": {
+    "archivos": 7,
+    "aprobados": 220,
+    "fallidos": 0,
+    "nuevos_indicadores": 17,
+    "grupos": [
+      {
+        "archivos": [
+          "proyectos.routes.test.ts",
+          "jefatura.test.ts",
+          "seguimientoOperativo.test.ts",
+          "indicadoresJefatura.test.ts",
+          "proyectos.test.ts",
+          "seguimiento.routes.test.ts"
+        ],
+        "aprobados": 197,
+        "segundos": 480.79
+      },
+      {
+        "archivos": [
+          "decisiones.test.ts"
+        ],
+        "aprobados": 23,
+        "segundos": 108.83
+      }
+    ]
+  },
+  "browser": {
+    "checks": 37,
+    "errors": 0,
+    "fuente": "verificacion-browser.json"
+  },
+  "base_principal": {
+    "proyectos": 30,
+    "correcciones": 0,
+    "decisiones": 0,
+    "datos_qa_insertados": false
+  }
+}

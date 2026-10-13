@@ -38,7 +38,7 @@
     "health": "ok"
   },
   "fullRegression": {
-    "status": "running",
+    "status": "interrupted_for_repository_sync",
     "pid": 14372,
     "file": "regresion-final.json",
     "log": "regresion-final.log",
@@ -48,13 +48,18 @@
       "✓ tests/rrppLanzamientos.routes.test.ts (60 tests) 439538ms",
       "✓ tests/correcciones.test.ts (22 tests) 98534ms",
       "✓ tests/decisiones.test.ts (23 tests) 161634ms",
-      "✓ tests/jefatura.test.ts (23 tests) 51108ms"
-    ]
+      "✓ tests/jefatura.test.ts (23 tests) 51108ms",
+      "✓ tests/direccionCreativa.test.ts (19 tests) 100406ms",
+      "✓ tests/seguimientoOperativo.test.ts (28 tests) 105981ms",
+      "✓ tests/jefaturaAsignaciones.test.ts (18 tests) 69245ms"
+    ],
+    "reason": "Background run stopped to freeze and upload all repository changes at user request. No full-suite pass is claimed.",
+    "stoppedAt": "2026-10-13T03:04:34.131042+00:00"
   },
   "cleanup": {
     "visualQaServicesStopped": true,
     "privateQaCredentialsRemoved": true,
-    "isolatedContainer": "pending-full-regression"
+    "isolatedContainer": "stopped"
   },
   "commit": "see git log"
 }
