@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useLogout, useMe } from '../auth/useAuth';
 import { NotificacionesCampana } from './NotificacionesCampana';
 
@@ -17,6 +17,7 @@ export function TopBar({ compacto = false }: { compacto?: boolean }) {
       {!compacto && <span className="min-w-0 text-sm font-semibold text-tinta sm:text-base">Panhouse Gestor Editorial</span>}
 
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+        {user?.rol === 'direccion' && <Link to="/configuracion/integraciones/google-drive" className="rounded-md px-2 py-1.5 text-xs font-medium text-tinta hover:bg-tinta/5">Integraciones</Link>}
         <NotificacionesCampana />
         <span className="hidden text-sm text-tinta/70 sm:inline">{user?.nombre}</span>
         {compacto && <span className="jp-avatar jp-account-avatar" aria-hidden="true">{user?.nombre.split(/\s+/).slice(0, 2).map(n => n[0]).join('')}</span>}

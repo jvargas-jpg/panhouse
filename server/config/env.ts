@@ -9,6 +9,12 @@ const envSchema = z.object({
   SESSION_COOKIE_NAME: z.string().default('panhouse_sid'),
   SESSION_TTL_HOURS: z.coerce.number().int().positive().default(24),
   COOKIE_SECURE: z.enum(['true', 'false']).default('false'),
+  APP_FRONTEND_URL: z.string().default('http://localhost:5173'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_REDIRECT_URI: z.string().default('http://localhost:3000/api/auth/google/callback'),
+  GOOGLE_DRIVE_SCOPE: z.string().default('https://www.googleapis.com/auth/drive.file'),
+  GOOGLE_TOKEN_ENCRYPTION_KEY: z.string().optional(),
   // SSO con el portal de pago (ver server/helpers/pagos.ts). Clave
   // compartida pendiente de coordinar con el equipo de pagos — no
   // tiene valor por defecto real a propósito.

@@ -33,13 +33,20 @@ import { rrppLanzamientosRoutes } from './routes/rrppLanzamientos.routes.js';
 import { jefaturaRoutes } from './routes/jefatura.routes.js';
 import { operacionEspecialistaRoutes } from './routes/operacionEspecialista.routes.js';
 import { monthlyGoalsRoutes } from './routes/monthlyGoals.routes.js';
+import { googleDriveRoutes } from './modules/integrations/google-drive/routes.js';
+import { safeRequestUrl } from './modules/integrations/google-drive/logging.js';
 
 export function buildApp() {
   const app = Fastify({
-    logger: process.env.NODE_ENV !== 'test',
+    logger: process.env.NODE_ENV === 'test' ? false : {
+      serializers: { req: request => ({ method:request.method, url:safeRequestUrl(request.url), hostname:request.hostname,
+        remoteAddress:request.ip, remotePort:request.socket?.remotePort }) },
+      redact: ['req.headers.authorization','req.headers.cookie','res.headers.set-cookie'],
+    },
   });
 
   app.register(cookie);
+  app.register(googleDriveRoutes, { prefix: '/api' });
   app.register(monthlyGoalsRoutes, { prefix: '/api/monthly-goals' });
   app.register(operacionEspecialistaRoutes, { prefix: '/api' });
 

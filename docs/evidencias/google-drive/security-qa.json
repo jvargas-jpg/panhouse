@@ -1,0 +1,178 @@
+{
+  "checkedFiles": 1233,
+  "localEnvIgnored": true,
+  "references": [
+    {
+      "file": ".env.example",
+      "counts": {
+        "client_secret": 1,
+        "refresh_token": 0,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": ".gitignore",
+      "counts": {
+        "client_secret": 1,
+        "refresh_token": 0,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "docs/arquitectura/25-google-drive-integration.md",
+      "counts": {
+        "client_secret": 1,
+        "refresh_token": 0,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "docs/evidencias/google-drive/security-qa.json",
+      "counts": {
+        "client_secret": 19,
+        "refresh_token": 19,
+        "access_token": 19,
+        "private_key": 19
+      }
+    },
+    {
+      "file": "docs/reportes/25-google-drive-integration.md",
+      "counts": {
+        "client_secret": 2,
+        "refresh_token": 1,
+        "access_token": 1,
+        "private_key": 1
+      }
+    },
+    {
+      "file": "frontend/src/integrations/GoogleDrivePage.tsx",
+      "counts": {
+        "client_secret": 0,
+        "refresh_token": 1,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "scripts/google-drive-local-setup.mjs",
+      "counts": {
+        "client_secret": 1,
+        "refresh_token": 0,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "scripts/google-drive-security-qa.mjs",
+      "counts": {
+        "client_secret": 1,
+        "refresh_token": 1,
+        "access_token": 1,
+        "private_key": 1
+      }
+    },
+    {
+      "file": "scripts/google-drive-verify-real.ts",
+      "counts": {
+        "client_secret": 0,
+        "refresh_token": 1,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "server/config/env.ts",
+      "counts": {
+        "client_secret": 1,
+        "refresh_token": 0,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "server/db/migrations/0082_lean_leo.sql",
+      "counts": {
+        "client_secret": 0,
+        "refresh_token": 2,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "server/db/migrations/meta/0082_snapshot.json",
+      "counts": {
+        "client_secret": 0,
+        "refresh_token": 3,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "server/db/schema/integrations.ts",
+      "counts": {
+        "client_secret": 0,
+        "refresh_token": 1,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "server/modules/integrations/google-drive/config.ts",
+      "counts": {
+        "client_secret": 1,
+        "refresh_token": 0,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "server/modules/integrations/google-drive/errors.ts",
+      "counts": {
+        "client_secret": 0,
+        "refresh_token": 2,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "server/modules/integrations/google-drive/oauth.ts",
+      "counts": {
+        "client_secret": 0,
+        "refresh_token": 0,
+        "access_token": 2,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "server/modules/integrations/google-drive/service.ts",
+      "counts": {
+        "client_secret": 0,
+        "refresh_token": 5,
+        "access_token": 0,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "tests/googleDrive.routes.test.ts",
+      "counts": {
+        "client_secret": 3,
+        "refresh_token": 5,
+        "access_token": 3,
+        "private_key": 0
+      }
+    },
+    {
+      "file": "tests/googleDrive.security.test.ts",
+      "counts": {
+        "client_secret": 3,
+        "refresh_token": 0,
+        "access_token": 3,
+        "private_key": 0
+      }
+    }
+  ],
+  "findings": []
+}

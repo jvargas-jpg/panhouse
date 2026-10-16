@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-10-16T14:11:40.709Z",
+  "accountEmail": "jvargas@editorialpanhouse.com",
+  "connected": true,
+  "scope": [
+    "https://www.googleapis.com/auth/drive.file"
+  ],
+  "offlineRefreshVerified": true,
+  "encryptedRefreshProtected": true,
+  "pendingTestRoots": 0,
+  "deletions": [
+    {
+      "id": "1ibibgFE4uJHRPRSK8woI2-xnKM5gH6Nt",
+      "notFound": true
+    },
+    {
+      "id": "1tSMh3YaCDP1W5HhdeuyQh7WQojZt_Cfg",
+      "notFound": true
+    },
+    {
+      "id": "1yGK_zIlsd3U3rb4cE10yhibWP4IJ7zcl",
+      "notFound": true
+    },
+    {
+      "id": "15cMBJXXabeT20T4F9sX3RV2Wzy_86S_T",
+      "notFound": true
+    }
+  ],
+  "lastEndpointTest": {
+    "rootId": "1yGK_zIlsd3U3rb4cE10yhibWP4IJ7zcl",
+    "childId": "15cMBJXXabeT20T4F9sX3RV2Wzy_86S_T",
+    "success": true,
+    "rootName": "PANHOUSE_API_TEST_1792159831394_7f71a760",
+    "checkedAt": "2026-10-16T14:10:22.731Z",
+    "cleanedUp": true,
+    "errorCode": null,
+    "cleanupErrorCode": null
+  }
+}

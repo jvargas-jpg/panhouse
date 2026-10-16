@@ -1,0 +1,78 @@
+{
+  "source": "HTTP fixtures, no Google calls",
+  "checks": [
+    {
+      "label": "Estado desconectado",
+      "passed": true
+    },
+    {
+      "label": "Prueba deshabilitada sin conexión",
+      "passed": true
+    },
+    {
+      "label": "Connect navega a URL del backend",
+      "passed": true
+    },
+    {
+      "label": "Callback muestra confirmación y elimina query",
+      "passed": true
+    },
+    {
+      "label": "Cuenta/estado reales desde status",
+      "passed": true
+    },
+    {
+      "label": "Test muestra creación y limpieza",
+      "passed": true
+    },
+    {
+      "label": "tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "tablet controles accesibles",
+      "passed": true
+    },
+    {
+      "label": "mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "mobile controles accesibles",
+      "passed": true
+    },
+    {
+      "label": "Error y limpieza pendiente visibles",
+      "passed": true
+    },
+    {
+      "label": "Cancelar desconexión conserva conexión",
+      "passed": true
+    },
+    {
+      "label": "Confirmar desconexión actualiza status",
+      "passed": true
+    },
+    {
+      "label": "Sin env bloquea conectar",
+      "passed": true
+    },
+    {
+      "label": "Especialista sin controles de integración",
+      "passed": true
+    },
+    {
+      "label": "Especialista no consulta status",
+      "passed": true
+    },
+    {
+      "label": "Sin errores JavaScript",
+      "passed": true
+    },
+    {
+      "label": "Google tokens no se guardan en browser storage",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

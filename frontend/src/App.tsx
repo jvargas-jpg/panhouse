@@ -20,6 +20,7 @@ import { RrppIngresosPage } from './rrpp/RrppIngresosPage';
 import { RrppProyectosPage } from './rrpp/RrppProyectosPage';
 import { RrppLanzamientosPage } from './rrpp/RrppLanzamientosPage';
 import { SolicitudesPage } from './especialista/SolicitudesPage';
+import { GoogleDrivePage } from './integrations/GoogleDrivePage';
 
 // Los gráficos se comparten entre Indicadores Comerciales y RRPP.
 const MetricasPage = lazy(() => import('./comercial/MetricasPage').then((m) => ({ default: m.MetricasPage })));
@@ -34,6 +35,7 @@ export function App() {
       <Route element={<RequireAuth />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/configuracion/integraciones/google-drive" element={<GoogleDrivePage />} />
           <Route path="/decisiones/:id/responder" element={<RespuestaDecisionPage />} />
           {/* Rutas explícitas del CRM que antes solo se veía como pestaña
               interna de AutoresPage.tsx en "/" — a pedido explícito del

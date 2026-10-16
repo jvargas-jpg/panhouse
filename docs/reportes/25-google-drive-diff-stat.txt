@@ -1,0 +1,53 @@
+ .env.example                                       |   10 +
+ .gitignore                                         |    7 +
+ docs/arquitectura/25-google-drive-integration.md   |   77 +
+ .../evidencias/google-drive/drive-real-cleanup.png |  Bin 0 -> 23513 bytes
+ .../google-drive/drive-real-inspection.png         |  Bin 0 -> 75918 bytes
+ docs/evidencias/google-drive/frontend-qa.json      |   78 +
+ .../google-drive/panhouse-real-connected.png       |  Bin 0 -> 66030 bytes
+ docs/evidencias/google-drive/real-smoke.json       |   10 +
+ docs/evidencias/google-drive/real-status.json      |   39 +
+ docs/evidencias/google-drive/security-qa.json      |  178 +
+ .../google-drive/ui-conectado-fixture.png          |  Bin 0 -> 51562 bytes
+ docs/evidencias/google-drive/ui-desconectado.png   |  Bin 0 -> 39777 bytes
+ docs/evidencias/google-drive/ui-mobile.png         |  Bin 0 -> 37754 bytes
+ docs/evidencias/google-drive/ui-tablet.png         |  Bin 0 -> 50130 bytes
+ docs/reportes/25-google-drive-diff-stat.txt        |   53 +
+ docs/reportes/25-google-drive-integration.md       |   52 +
+ frontend/src/App.tsx                               |    2 +
+ frontend/src/integrations/GoogleDrivePage.tsx      |   76 +
+ frontend/src/layout/TopBar.tsx                     |    3 +-
+ package-lock.json                                  |  267 +-
+ package.json                                       |    2 +
+ scripts/create-local-admin.ts                      |   20 +
+ scripts/google-drive-browser-qa.mjs                |   62 +
+ scripts/google-drive-local-setup.mjs               |   13 +
+ scripts/google-drive-security-qa.mjs               |   23 +
+ scripts/google-drive-verify-real.ts                |   31 +
+ scripts/google-drive-visual-smoke.ts               |   28 +
+ server/app.ts                                      |    9 +-
+ server/config/env.ts                               |    6 +
+ server/db/migrations/0082_lean_leo.sql             |   41 +
+ server/db/migrations/meta/0082_snapshot.json       | 7275 ++++++++++++++++++++
+ server/db/migrations/meta/_journal.json            |    7 +
+ server/db/schema/index.ts                          |    1 +
+ server/db/schema/integrations.ts                   |   44 +
+ server/helpers/auditLog.ts                         |    3 +-
+ server/helpers/session.ts                          |    2 +-
+ .../modules/integrations/google-drive/adapter.ts   |   41 +
+ .../modules/integrations/google-drive/cleanup.ts   |   13 +
+ server/modules/integrations/google-drive/config.ts |   16 +
+ .../integrations/google-drive/encryption.ts        |   25 +
+ server/modules/integrations/google-drive/errors.ts |   43 +
+ .../modules/integrations/google-drive/logging.ts   |    5 +
+ server/modules/integrations/google-drive/oauth.ts  |   35 +
+ .../modules/integrations/google-drive/provider.ts  |   10 +
+ server/modules/integrations/google-drive/routes.ts |   40 +
+ .../modules/integrations/google-drive/service.ts   |  165 +
+ server/services/googleDrive.service.ts             |   27 -
+ server/services/googleDriveAdapter.ts              |   10 +-
+ tests/googleDrive.adapter.test.ts                  |   40 +
+ tests/googleDrive.routes.test.ts                   |  157 +
+ tests/googleDrive.security.test.ts                 |   64 +
+ tests/helpers/db.ts                                |    2 +
+ 52 files changed, 9055 insertions(+), 57 deletions(-)

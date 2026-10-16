@@ -2,6 +2,8 @@ import { sql } from 'drizzle-orm';
 import { db, pool } from '../../server/db/client.js';
 
 const TABLAS = [
+  'external_integrations',
+  'google_oauth_attempts',
   'sesiones',
   'ficha_calidad_fases',
   'ficha_diseno_propuestas',
