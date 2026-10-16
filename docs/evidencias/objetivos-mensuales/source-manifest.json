@@ -1,0 +1,102 @@
+﻿[
+    {
+        "file":  "frontend/src/especialista/EspecialistaInicioPage.tsx",
+        "sha256":  "F97FDC600B9C2EA78F76CA882FFB0FF14C2143FB9A3F56DC8F263D3F2526D3A6"
+    },
+    {
+        "file":  "frontend/src/HomePage.tsx",
+        "sha256":  "F406DE5D6C274BFD29AE4CECCD06AC50059C976B2E299947D688EA5C6A4AAFD5"
+    },
+    {
+        "file":  "frontend/src/jefatura/JefaturaSidebar.tsx",
+        "sha256":  "99DEEADC98245F700A4ED2B89FE5A947EEC6010D4639A3010A4D1CF5777F4F59"
+    },
+    {
+        "file":  "frontend/src/jefatura/PanelJefaturaPage.tsx",
+        "sha256":  "87D64A78A9E6F87489EA022253CA70D5CCA8A7D23F50E48122FDC198F90D493C"
+    },
+    {
+        "file":  "frontend/src/objetivos/monthlyGoals.css",
+        "sha256":  "BCAAE3E0D7AD24E95E38A3229AAA0BABE34D445A40A7D6504CE49B8544BCD5EE"
+    },
+    {
+        "file":  "frontend/src/objetivos/MonthlyGoalsPage.tsx",
+        "sha256":  "B367716CF3F87E1225D952C91B03D5A648C6251A2B9120F8D874C88054DD9A55"
+    },
+    {
+        "file":  "server/app.ts",
+        "sha256":  "EF376CD7A312F1DF7EC9C5D6DAD2D0025FB55F62FAE216C73B98A806D7642075"
+    },
+    {
+        "file":  "server/db/schema/index.ts",
+        "sha256":  "8A3E0EF58F9A5A3541B4A85F87687666CF3DBF8F0430E797AA3F1F4B1B0EF041"
+    },
+    {
+        "file":  "server/db/schema/monthlyGoals.ts",
+        "sha256":  "FFC12DD06D76DD109AA6887298C061668A618F35DBDE411A3AE41CDB404BBB6A"
+    },
+    {
+        "file":  "server/helpers/assignments.ts",
+        "sha256":  "029F7809955E7A38BA105D508897D961DBB3579539A027D5BBC45A2D871311FF"
+    },
+    {
+        "file":  "server/helpers/auditLog.ts",
+        "sha256":  "7D70D57512454A3F3308E9F321EE5E7B8B4BCDAFF75B1FD2775D53B6EA12737D"
+    },
+    {
+        "file":  "server/helpers/especialistaInicio.ts",
+        "sha256":  "CB7F8E5703440AB02AE83C105BA04EBCFDD35A1C440B8DB7C1893D8DBD2558BA"
+    },
+    {
+        "file":  "server/helpers/fichaViva.ts",
+        "sha256":  "A03E0CCEF5B809AB70D3D8C2E0DDB53ABB60E10D71840F3B7424C9B8BE94D8A6"
+    },
+    {
+        "file":  "server/helpers/monthlyGoalEvaluation.ts",
+        "sha256":  "92DD2C11D07FCD8122FDEE5DA54E499F771CC5A2F3337DA9C97E2D7111DE6CF7"
+    },
+    {
+        "file":  "server/helpers/monthlyGoals.ts",
+        "sha256":  "B45D966CA576DBB9BA06824A7983F50CB5514EECC83CAA024DC7C21535079E48"
+    },
+    {
+        "file":  "server/helpers/proyectos.ts",
+        "sha256":  "B420FFA98F749E04A374DFE65E4682443BD6E69FF0DE1D8F642BBC618866B160"
+    },
+    {
+        "file":  "server/helpers/workItems.ts",
+        "sha256":  "45FF74061612CBE7616E69D3D2B7CC6767C0B9C719A12D14877A9FDA5BFAE24F"
+    },
+    {
+        "file":  "server/routes/monthlyGoals.routes.ts",
+        "sha256":  "E0CCEFED271E9FD32E0677C392A4D4A0B82F091BDE45CCFA4004E8ED08277E3E"
+    },
+    {
+        "file":  "server/routes/proyectos.routes.ts",
+        "sha256":  "FEC75F093B280BC72C312D1254EDAD9B124BA059FE61270EB5B25A24D8F2034C"
+    },
+    {
+        "file":  "shared/especialistaCartera.ts",
+        "sha256":  "DC3F5FF15311DAA629C50A50CA52B1A708371119B696C583FE541A421538456D"
+    },
+    {
+        "file":  "shared/especialistaInicio.ts",
+        "sha256":  "C8558D6284C6F9630F267F65D5CE0FE31509E09F815F5471A35CCC10DAB405F9"
+    },
+    {
+        "file":  "shared/monthlyGoals.ts",
+        "sha256":  "A056779040F375D9EADD169C7097F61C9E5E2F8C9FCE6ABB9C81DFB0EB8B6C91"
+    },
+    {
+        "file":  "tests/especialistaCartera.test.ts",
+        "sha256":  "918D78043180F40C2C4C52E75195598BDEA04E0F18631F0E3585E6713F7A1A16"
+    },
+    {
+        "file":  "tests/especialistaInicio.test.ts",
+        "sha256":  "2013FB5C31FC8876B67151DDE28ACB7C21F602A90C1296C981B34E080FDEEE10"
+    },
+    {
+        "file":  "tests/monthlyGoals.test.ts",
+        "sha256":  "87CE0A083654FB5A944768AE6062EF1FEA7D14F350A236293DDADB43D41AA9AD"
+    }
+]

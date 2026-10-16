@@ -1,0 +1,23 @@
+/** Conteo SQL de solo lectura sobre las fixtures QA aisladas. */
+import 'dotenv/config';
+import { Client } from 'pg';
+import { readFile,writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import assert from 'node:assert/strict';
+const fixture=JSON.parse(await readFile(join(tmpdir(),'panhouse-monthly-goals-qa/private.json'),'utf8'));
+assert.equal(fixture.databaseName,'panhouse_goals_qa_20261016');
+const url=new URL(process.env.DATABASE_URL!);assert.ok(['localhost','127.0.0.1'].includes(url.hostname));url.pathname='/'+fixture.databaseName;process.env.DATABASE_URL=url.toString();
+const {db,pool}=await import('../server/db/client.js'),{users}=await import('../server/db/schema/index.js'),{eq}=await import('drizzle-orm');
+const {listMonthlyGoals,teamMonthlyGoals}=await import('../server/helpers/monthlyGoals.js');
+const [other]=await db.select().from(users).where(eq(users.nombre,'Gabriel Peña'));assert.ok(other);
+const original=Client.prototype.query;let reads=0;
+Client.prototype.query=function(...args:unknown[]){const first=args[0],text=typeof first==='string'?first:(first as {text?:string})?.text ?? '';if(/^\s*select/i.test(text))reads++;return Reflect.apply(original,this,args);} as typeof original;
+const filters={period:fixture.period,page:1,pageSize:50};
+const one=await listMonthlyGoals({id:other.id,rol:'especialista'},filters),oneReads=reads;reads=0;
+const many=await listMonthlyGoals({id:fixture.specialistId,rol:'especialista'},filters),manyReads=reads;reads=0;
+const team=await teamMonthlyGoals({id:fixture.managerId,rol:'jefe_area'},fixture.period),teamReads=reads;
+Client.prototype.query=original;
+assert.equal(oneReads,manyReads);
+await writeFile('docs/evidencias/objetivos-mensuales/query-counts.json',JSON.stringify({oneProject:{goals:one.total,sqlReads:oneReads},multipleProjects:{goals:many.total,sqlReads:manyReads},team:{specialists:team.specialists.length,goals:team.summary.total,sqlReads:teamReads},sameNumberOfReads:true},null,2));
+await pool.end();console.log(JSON.stringify({oneReads,manyReads,teamReads}));

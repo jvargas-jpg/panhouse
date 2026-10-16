@@ -1,6 +1,8 @@
 import { and, eq } from 'drizzle-orm';
 import { workItems } from '../db/schema/index.js';
 import type { Tx } from './tx.js';
+import { evaluateProjectGoals } from './monthlyGoalEvaluation.js';
+import { diaCaracas } from './atencionEspecialista.js';
 
 // Catálogo de tipos de trabajo conocidos — union type en código, NO un
 // pgEnum de base de datos (ver el comentario de `tipo` en
@@ -86,6 +88,7 @@ export async function crearWorkItemSiNoExiste(
     })
     .returning({ id: workItems.id });
   if (!creado) throw new Error('El insert de work_items no devolvió ninguna fila');
+  await evaluateProjectGoals(tx, input.proyectoId);
   return creado.id;
 }
 
@@ -107,11 +110,12 @@ export async function transicionarWorkItem(
     .limit(1);
   if (!fila || fila.estado === input.estado) return;
 
-  const fechaFinReal = input.estado === 'completado' ? new Date().toISOString().slice(0, 10) : undefined;
+  const fechaFinReal = input.estado === 'completado' ? diaCaracas(new Date()) : undefined;
   await tx
     .update(workItems)
     .set({ estado: input.estado, ...(fechaFinReal ? { fechaFinReal } : {}) })
     .where(eq(workItems.id, fila.id));
+  await evaluateProjectGoals(tx, input.proyectoId);
 }
 
 // Misma transición que transicionarWorkItem, pero por id directo — para
@@ -124,12 +128,13 @@ export async function transicionarWorkItemPorId(
   workItemId: string,
   estado: 'en_progreso' | 'bloqueado' | 'completado' | 'cancelado',
 ): Promise<void> {
-  const [fila] = await tx.select({ estado: workItems.estado }).from(workItems).where(eq(workItems.id, workItemId)).limit(1);
+  const [fila] = await tx.select({ estado: workItems.estado, proyectoId: workItems.proyectoId }).from(workItems).where(eq(workItems.id, workItemId)).limit(1);
   if (!fila || fila.estado === estado) return;
 
-  const fechaFinReal = estado === 'completado' ? new Date().toISOString().slice(0, 10) : undefined;
+  const fechaFinReal = estado === 'completado' ? diaCaracas(new Date()) : undefined;
   await tx
     .update(workItems)
     .set({ estado, ...(fechaFinReal ? { fechaFinReal } : {}) })
     .where(eq(workItems.id, workItemId));
+  await evaluateProjectGoals(tx, fila.proyectoId);
 }

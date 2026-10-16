@@ -67,6 +67,12 @@ function areaEvento(action: string) { if (/RRPP|DIAGNOSTICO|REUNION_LANZAMIENTO|
     return 'Comercial'; return 'Proyecto'; }
 export function etiquetaEventoFicha(action: string, details: unknown): string {
     const operacion: Record<string,string> = {
+        OBJETIVO_CREADO: 'Se definió un objetivo mensual para el proyecto',
+        OBJETIVO_AJUSTADO: 'Se ajustó un compromiso mensual del proyecto',
+        OBJETIVO_CUMPLIDO: 'PanHouse verificó un objetivo mensual cumplido',
+        OBJETIVO_NO_CUMPLIDO: 'Terminó el periodo de un objetivo mensual',
+        OBJETIVO_CANCELADO: 'Se canceló un objetivo mensual con motivo',
+        OBJETIVO_CANCELADO_REASIGNACION: 'Se canceló un objetivo mensual por reasignación',
       PREPARACION_INICIAL_ACTUALIZADA: 'El Especialista actualizó la preparación inicial',
       SOLICITUD_AREA_CREADA: 'El Especialista solicitó '+((details as {tipo?:string})?.tipo === 'impresion' ? 'coordinación de Impresión' : 'Lanzamiento y promoción'),
       SOLICITUD_AREA_ACTIVADA: 'RRPP inició '+((details as {tipo?:string})?.tipo === 'impresion' ? 'la coordinación de Impresión' : 'la planificación de Lanzamiento'),
@@ -115,7 +121,7 @@ export async function historialFicha(id: string, cursor?: string, limit = 20): P
         const cambio = r.details as {anterior?:string;nuevo?:string} | null;
         const estados: Record<string,string> = {en_proceso:'En proceso',retrasado:'Retrasado',stand_by:'Stand-by',pausado:'Pausado',culminado:'Culminado',retirado:'Retirado'};
         const macro = r.action === 'PROYECTO_ESTADO_CAMBIADO' && cambio?.anterior && cambio.nuevo && estados[cambio.anterior] && estados[cambio.nuevo] ? `El proyecto cambió: ${estados[cambio.anterior]} → ${estados[cambio.nuevo]}` : undefined;
-        return { id: r.id, date: r.date.toISOString(), label: avance ?? macro ?? decisionLabel ?? assignmentLabel(r) ?? (r.action.startsWith('SOLICITUD_AREA') || r.action.startsWith('PREPARACION_INICIAL') || r.action==='IMPRESION_COORDINACION_ACTUALIZADA' ? etiquetaEventoFicha(r.action,r.details) : undefined) ?? EVENTOS[r.action] ?? EVENTOS_PROYECTO_RRPP[r.action]?.titulo ?? `Se registró un avance de ${areaEvento(r.action).toLowerCase()}`, actor: r.name ?? 'Sistema', area: areaEvento(r.action) };
+        return { id: r.id, date: r.date.toISOString(), label: avance ?? macro ?? decisionLabel ?? assignmentLabel(r) ?? (r.action.startsWith('OBJETIVO_') || r.action.startsWith('SOLICITUD_AREA') || r.action.startsWith('PREPARACION_INICIAL') || r.action==='IMPRESION_COORDINACION_ACTUALIZADA' ? etiquetaEventoFicha(r.action,r.details) : undefined) ?? EVENTOS[r.action] ?? EVENTOS_PROYECTO_RRPP[r.action]?.titulo ?? `Se registró un avance de ${areaEvento(r.action).toLowerCase()}`, actor: r.name ?? 'Sistema', area: areaEvento(r.action) };
     });
     const last = items.at(-1);
     return { items, nextCursor: rows.length > limit && last ? Buffer.from(JSON.stringify({ date: last.date, id: last.id })).toString('base64url') : null };

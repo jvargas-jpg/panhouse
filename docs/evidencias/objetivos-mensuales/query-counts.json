@@ -1,0 +1,16 @@
+{
+  "oneProject": {
+    "goals": 1,
+    "sqlReads": 8
+  },
+  "multipleProjects": {
+    "goals": 14,
+    "sqlReads": 8
+  },
+  "team": {
+    "specialists": 4,
+    "goals": 15,
+    "sqlReads": 8
+  },
+  "sameNumberOfReads": true
+}

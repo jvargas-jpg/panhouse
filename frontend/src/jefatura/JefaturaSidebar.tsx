@@ -1,4 +1,5 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
+import { Fragment } from 'react';
 import { RrppIcon } from '../rrpp/RrppIcons';
 // 'solicitudes' se conserva en el tipo/lista de vistas válidas (un
 // enlace viejo a /?vista=solicitudes sigue funcionando, cae en la MISMA
@@ -40,6 +41,8 @@ export function JefaturaSidebar({
   vista: VistaJefatura;
   mobile?: boolean;
 }) {
+  const location = useLocation();
+  const goals = new URLSearchParams(location.search).get('subvista') === 'objetivos';
   return (
     <nav
       aria-label={
@@ -48,8 +51,7 @@ export function JefaturaSidebar({
       className={mobile ? 'jf-mobile-nav' : 'jf-nav'}
     >
       {items.map((item) => (
-        <Link
-          key={item.id}
+        <Fragment key={item.id}><Link
           to={item.id === 'inicio' ? '/' : `/?vista=${item.id}`}
           aria-current={vista === item.id ? 'page' : undefined}
           className={`${vista === item.id ? 'jf-nav-active' : ''} ${item.id === 'indicadores' ? 'jf-nav-divider' : ''}`}
@@ -59,7 +61,7 @@ export function JefaturaSidebar({
             className="h-[18px] w-[18px] shrink-0"
           />
           {item.nombre}
-        </Link>
+        </Link>{item.id === 'seguimiento' && vista === 'seguimiento' && !mobile && <><Link className="mg-nav-sub" aria-current={!goals ? 'page' : undefined} to="/?vista=seguimiento">Visión general</Link><Link className="mg-nav-sub" aria-current={goals ? 'page' : undefined} to="/?vista=seguimiento&subvista=objetivos">Objetivos del mes</Link></>}</Fragment>
       ))}
     </nav>
   );

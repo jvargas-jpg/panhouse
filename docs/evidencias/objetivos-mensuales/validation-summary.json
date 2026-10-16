@@ -1,0 +1,20 @@
+﻿{
+    "testFiles":  68,
+    "tests":  1312,
+    "passed":  1312,
+    "failed":  0,
+    "pending":  0,
+    "backendTypecheck":  "passed",
+    "frontendTypecheck":  "passed",
+    "backendBuild":  "passed",
+    "frontendBuild":  "passed",
+    "migration":  "applied-local-development-and-test",
+    "browserFunctionalChecks":  37,
+    "browserFinalChecks":  22,
+    "browserJavascriptErrors":  0,
+    "sqlReadsOneProject":  8,
+    "sqlReadsMultipleProjects":  8,
+    "sqlReadsTeam":  8,
+    "sourceFilesFrozen":  25,
+    "sourceFilesChangedDuringFinalRegression":  0
+}

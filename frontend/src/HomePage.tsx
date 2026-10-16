@@ -12,6 +12,7 @@ import { MisDireccionesCreativasPage } from './liderCreativo/MisDireccionesCreat
 import { MisProyectosPage } from './proyectos/MisProyectosPage';
 import { MiTrabajoPage } from './especialista/MiTrabajoPage';
 import { SolicitudesPage } from './especialista/SolicitudesPage';
+import { MonthlyGoalsPage } from './objetivos/MonthlyGoalsPage';
 import { lazy, Suspense } from 'react';
 const EspecialistaInicioPage = lazy(() => import('./especialista/EspecialistaInicioPage').then(m => ({default:m.EspecialistaInicioPage})));
 import { RrppHomePage } from './rrpp/RrppHomePage';
@@ -30,6 +31,7 @@ export function HomePage() {
     if (['mis-proyectos', 'metricas'].includes(vista)) return <MisProyectosPage />;
     if (vista === 'mi-trabajo') return <MiTrabajoPage />;
     if (vista === 'solicitudes') return <SolicitudesPage />;
+    if (vista === 'objetivos') return <MonthlyGoalsPage />;
     return <Suspense fallback={<p role="status">Cargando Inicio…</p>}><EspecialistaInicioPage /></Suspense>;
   }
 

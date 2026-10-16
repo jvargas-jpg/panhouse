@@ -80,7 +80,7 @@ export async function obtenerInicioEspecialista(actorId: string, ahora = new Dat
     solicitudes: [...(bandeja?bandeja.solicitudes.map(r=>({id:r.id,proyectoId:r.proyecto.id,proceso:r.proceso,titulo:r.titulo,destino:r.destino.nombre,estado:r.estado,fecha:r.requestedAt,href:'/?vista=solicitudes&request='+r.id})):requests.map(r => ({id:r.id, proyectoId:r.proyectoId, proceso:r.tipo, titulo:r.tipo === 'soporte_digital' ? 'Activación Amazon' : NOMBRES_PROCESO[r.tipo] ?? 'Intervención editorial', destino:destino[r.tipo]!, estado:r.estado, fecha:r.fecha.toISOString()}))),
       ...cases.map(c => ({id:c.id, proyectoId:c.proyectoId, titulo:c.subject, destino:'Jefatura', estado:c.status, fecha:c.fecha.toISOString(), proceso:'correccion', ...(c.requester === actorId ? {href:'/decisiones/'+c.id+'/responder'} : {})}))].sort((a,b) => b.fecha.localeCompare(a.fecha) || a.id.localeCompare(b.id)),
     errores: [...fallos], carga: calcularCarga(activos.map(p => p.servicio.peso)), horizonteHoras: UMBRAL_PROXIMO_A_VENCER_HORAS,
-    objetivos: { disponible:false, motivo:'La matriz contiene compromisos mensuales, pero todavía no existe un registro de objetivos conectado ni está definido quién los establece. Esta consulta estará disponible cuando se confirme ese modelo.' },
+    objetivos: { disponible:true, motivo:null },
   };
 }
 

@@ -19,7 +19,7 @@ export interface EspecialistaInicio {
   vencimientos: VencimientoEspecialista[]; solicitudes: SolicitudEspecialista[];
   carga: number; horizonteHoras: number;
   errores: ('acciones' | 'vencimientos' | 'solicitudes' | 'cierres')[];
-  objetivos: { disponible: false; motivo: string };
+  objetivos: { disponible: true; motivo: null };
 }
 export interface ActividadInicio {
   id: string; proyectoId: string; titulo: string; texto: string; actor: string; fecha: string;

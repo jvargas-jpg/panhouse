@@ -1,0 +1,154 @@
+{
+  "stage": "inicial",
+  "checks": [
+    {
+      "label": "specialist: desktop sin overflow",
+      "passed": true
+    },
+    {
+      "label": "specialist: seis KPIs reales",
+      "passed": true
+    },
+    {
+      "label": "specialist: ambos orígenes distinguibles",
+      "passed": true
+    },
+    {
+      "label": "specialist: tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "specialist: tablet ningún control sale del ancho",
+      "passed": true
+    },
+    {
+      "label": "specialist: formulario tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "specialist: mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "specialist: mobile ningún control sale del ancho",
+      "passed": true
+    },
+    {
+      "label": "specialist: formulario mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: desktop sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: seis KPIs reales",
+      "passed": true
+    },
+    {
+      "label": "manager: ambos orígenes distinguibles",
+      "passed": true
+    },
+    {
+      "label": "manager: tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: tablet ningún control sale del ancho",
+      "passed": true
+    },
+    {
+      "label": "Jefatura tablet: cards de equipo",
+      "passed": true
+    },
+    {
+      "label": "manager: formulario tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: mobile ningún control sale del ancho",
+      "passed": true
+    },
+    {
+      "label": "Jefatura mobile: cards de equipo",
+      "passed": true
+    },
+    {
+      "label": "Detalle Jefatura móvil ocupa toda la pantalla",
+      "passed": true
+    },
+    {
+      "label": "manager: formulario mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "Crear propio persiste y aparece",
+      "passed": true
+    },
+    {
+      "label": "Jefatura observa el objetivo propio sin edición",
+      "passed": true
+    },
+    {
+      "label": "Especialista recibe asignado y no puede editarlo",
+      "passed": true
+    },
+    {
+      "label": "Edición propia con motivo",
+      "passed": true
+    },
+    {
+      "label": "Cancelación conserva objetivo e historial",
+      "passed": true
+    },
+    {
+      "label": "Tab origen actualiza URL",
+      "passed": true
+    },
+    {
+      "label": "Mes futuro conserva vacío y permite creación",
+      "passed": true
+    },
+    {
+      "label": "Histórico de consulta",
+      "passed": true
+    },
+    {
+      "label": "Fallo de resumen no oculta la lista",
+      "passed": true
+    },
+    {
+      "label": "Reintento contextual recupera resumen",
+      "passed": true
+    },
+    {
+      "label": "Fallo de lista conserva KPIs válidos",
+      "passed": true
+    },
+    {
+      "label": "CTA proyecto conserva retorno",
+      "passed": true
+    },
+    {
+      "label": "CTA abre Command Center real",
+      "passed": true
+    },
+    {
+      "label": "Resultado automático visible con fecha y sin porcentaje",
+      "passed": true
+    },
+    {
+      "label": "Especialista sin objetivos sigue accesible para asignación",
+      "passed": true
+    },
+    {
+      "label": "Sin errores JavaScript",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

@@ -32,6 +32,7 @@ import { AsignacionesCargaPage } from './AsignacionesCargaPage';
 import { ProyectosJefaturaPage } from './ProyectosJefaturaPage';
 import { TopBar } from '../layout/TopBar';
 import type { ProyectoJefatura } from '../../../shared/jefatura';
+import { MonthlyGoalsPage } from '../objetivos/MonthlyGoalsPage';
 
 const IndicadoresPage = lazy(() => import('./IndicadoresPage').then(m => ({ default: m.IndicadoresPage })));
 
@@ -39,6 +40,7 @@ export function PanelJefaturaPage() {
   const { data: user } = useMe();
   const [params, setParams] = useSearchParams();
   const vistaParam = params.get('vista');
+  const monthlyGoalsView = vistaParam === 'seguimiento' && params.get('subvista') === 'objetivos';
   const vista: VistaJefatura = VISTAS_JEFATURA.includes(
     vistaParam as VistaJefatura,
   )
@@ -169,7 +171,7 @@ export function PanelJefaturaPage() {
     >
       <div className={`jefatura ${vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' || vista === 'indicadores' ? 'jp-page' : ''} ${vista === 'seguimiento' ? 'js-page' : ''} ${vista === 'decisiones' ? 'jd-page' : ''} ${vista === 'indicadores' ? 'ji-page' : ''}`}>
         <JefaturaSidebar vista={vista} mobile />
-        {vista !== 'asignaciones' && (
+        {vista !== 'asignaciones' && !monthlyGoalsView && (
           <header className="jf-page-header">
             <div>
               <p className="jf-eyebrow">JEFATURA · OPERACIÓN EDITORIAL</p>
@@ -202,7 +204,7 @@ export function PanelJefaturaPage() {
         ) : vista === 'indicadores' ? (
           <Suspense fallback={<p className="jf-empty" role="status">Cargando indicadores…</p>}><IndicadoresPage /></Suspense>
         ) : vista === 'seguimiento' ? (
-          <SeguimientoPage />
+          monthlyGoalsView ? <MonthlyGoalsPage team/> : <><nav className="mg-subnav mg-overview-nav" aria-label="Vistas de Seguimiento"><Link aria-current="page" to="/?vista=seguimiento">Visión general</Link><Link to="/?vista=seguimiento&subvista=objetivos">Objetivos del mes</Link></nav><SeguimientoPage /></>
         ) : vista === 'decisiones' ? (
           <DecisionesPage />
         ) : (

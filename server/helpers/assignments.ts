@@ -3,6 +3,7 @@ import { db } from '../db/client.js';
 import { projectAssignments } from '../db/schema/index.js';
 import type { TipoAsignacion } from '../db/schema/enums.js';
 import type { Tx } from './tx.js';
+import { cancelReassignedGoals } from './monthlyGoalEvaluation.js';
 
 export interface AsignarConHistorialInput {
   proyectoId: string;
@@ -55,6 +56,10 @@ export async function asignarConHistorial(tx: Tx, input: AsignarConHistorialInpu
   // falso de "reasignación".
   if (activaActual && activaActual.usuarioId === input.usuarioId) {
     return { cambio: false, asignacionId: activaActual.id, anteriorUsuarioId: activaActual.usuarioId };
+  }
+
+  if (input.tipo === 'especialista' && !workItemId) {
+    await cancelReassignedGoals(tx, input.proyectoId, input.usuarioId, input.asignadoPorId);
   }
 
   if (activaActual) {

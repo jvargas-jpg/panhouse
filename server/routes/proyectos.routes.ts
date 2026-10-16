@@ -269,7 +269,7 @@ export async function proyectosRoutes(app: FastifyInstance) {
     const body = parseOrReply(equipoProyectoSchema, request.body, reply);
     if (!body) return;
 
-    const proyecto = await actualizarEquipoProyecto(params.id, body);
+    const proyecto = await actualizarEquipoProyecto(params.id, body, request.user!.id);
     return reply.send({ proyecto });
   });
 

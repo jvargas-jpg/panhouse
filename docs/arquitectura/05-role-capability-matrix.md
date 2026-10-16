@@ -14,6 +14,18 @@ La seguridad en PanHouse Gestor Editorial se basa en dos capas estrictas:
 
 ## 2. Matriz de Capacidades por Rol
 
+### Objetivos mensuales (Documento 24)
+
+| Rol | Crear / editar / cancelar | Solo lectura | Restricciones |
+|---|---|---|---|
+| Especialista | Sus objetivos `source=ESPECIALISTA`, en periodo actual o futuro | Sus objetivos `source=JEFATURA` y todo su histórico | No altera origen, creador, destinatario ni objetivos ajenos. Solo vincula proyectos de su asignación actual. |
+| Jefatura | Objetivos `source=JEFATURA` para Especialistas activos de su ámbito | Objetivos propios de los Especialistas e histórico | No edita/cancela objetivos `source=ESPECIALISTA`. Sin override implícito sobre meses pasados. |
+| Otros roles | Ninguna operación | Sin acceso al módulo en esta versión | Backend aplica RBAC y ownership por ID, listado, catálogo e historial. |
+
+Ajustes y cancelaciones exigen motivo. Periodo y destinatario son inmutables. Cumplimiento verificable deriva de eventos/procesos nativos; no es un checkbox editable. El ámbito actual de Jefatura es global, sin tabla de membresías de equipo.
+
+### Capacidades generales
+
 | Rol del Sistema | Entidades con Acceso de Escritura (Allowed Write) | Entidades de Solo Lectura (Read Only) | Operaciones Prohibidas (Strictly Forbidden) | Vista Principal / Dashboard en UI |
 |---|---|---|---|---|
 | `comercial` | • `autores` (Crear, Editar)<br>• `proyectos` (Crear base, Reasignar datos comerciales, Eliminar)<br>• `fichas_trazabilidad` (Sección Contrato Contractual: capítulos, páginas, condiciones especiales)<br>• `pagos` (Registrar abonos) | • Proyectos activos<br>• Catálogos de servicios, unidades, presupuestos<br>• Ficha de trazabilidad general | • **Definir subtipo Crudo (`ingresoServicioSubtipoCrudo`).**<br>• Asignar especialista, editor o diseñador.<br>• Modificar estados de edición, diseño o calidad.<br>• Acceder a tableros internos de jefatura. | CRM Comercial: Inicio, Directorio de Clientes (Autores), Proyectos Comerciales, Registro de Pagos. |

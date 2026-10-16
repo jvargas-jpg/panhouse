@@ -4,7 +4,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { auditLogs, autores, fichasTrazabilidad, notificaciones, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
+import { auditLogs, autores, fichasTrazabilidad, monthlyGoals, notificaciones, projectAssignments, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
@@ -12,6 +12,7 @@ import { ESTADOS_ACTIVOS, obtenerEspecialistaActual } from './carga.js';
 import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItem } from './workItems.js';
+import { cancelReassignedGoals, evaluateProjectGoals } from './monthlyGoalEvaluation.js';
 
 // Reexportadas desde alertas.ts: comparten el join autor/servicio/riesgo
 // con listarRiesgoProyectosActivos (jefe_area/dirección) en vez de
@@ -439,6 +440,7 @@ export async function actualizarProyecto(proyectoId: string, datos: DatosActuali
       await registrarEvento(tx, { actorId: actor.id, accion: 'PROYECTO_ESTADO_CAMBIADO', entityType: 'proyecto', entityId: proyectoId, proyectoId,
         detalles: { anterior: antes.estado, nuevo: datos.estado, especialistaId: responsable } });
     }
+    if (datos.estado && datos.estado !== antes.estado) await evaluateProjectGoals(tx, proyectoId);
     return fila!;
   });
 }
@@ -520,8 +522,14 @@ export async function reasignarProyecto(proyectoId: string, datos: DatosReasigna
 // vuelta atrás. undefined si el proyecto no existe (la ruta lo traduce
 // a 404).
 export async function eliminarProyecto(proyectoId: string) {
-  const [fila] = await db.delete(proyectos).where(eq(proyectos.id, proyectoId)).returning();
-  return fila;
+  return db.transaction(async tx => {
+    const [p] = await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+    if (!p) return undefined;
+    const [goal] = await tx.select({ id: monthlyGoals.id }).from(monthlyGoals).where(eq(monthlyGoals.projectId, proyectoId)).limit(1);
+    if (goal) throw Object.assign(new Error('El proyecto conserva objetivos mensuales. Retíralo para preservar su historial.'), { statusCode: 409 });
+    const [fila] = await tx.delete(proyectos).where(eq(proyectos.id, proyectoId)).returning();
+    return fila;
+  });
 }
 
 export interface DatosEquipoProyecto {
@@ -546,10 +554,27 @@ export interface DatosEquipoProyecto {
 // negocio (ver el comentario completo en schema/proyectos.ts); jefeAreaId
 // es nuevo — son 2 personas reales las que se reparten los proyectos
 // entrantes.
-export async function actualizarEquipoProyecto(proyectoId: string, datos: DatosEquipoProyecto) {
-  const [fila] = await db.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
-  if (!fila) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
-  return fila;
+export async function actualizarEquipoProyecto(proyectoId: string, datos: DatosEquipoProyecto, actorId: string | null = null) {
+  return db.transaction(async tx => {
+    const [antes] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+    if (!antes) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    if (datos.especialistaId !== undefined) {
+      const actual = await obtenerEspecialistaActual(proyectoId, antes.especialistaId, tx);
+      if (actual !== datos.especialistaId) {
+        if (datos.especialistaId) {
+          const [persona] = await tx.select().from(users).where(eq(users.id, datos.especialistaId));
+          if (!persona?.activo || persona.rol !== 'especialista') throw Object.assign(new Error('Selecciona un Especialista activo'), { statusCode: 409 });
+          await asignarConHistorial(tx, { proyectoId, tipo: 'especialista', usuarioId: datos.especialistaId, asignadoPorId: actorId });
+        } else {
+          await cancelReassignedGoals(tx, proyectoId, null, actorId);
+          await tx.update(projectAssignments).set({ finalizadoEn: new Date(), motivoFin: 'Especialista retirado del equipo' }).where(and(eq(projectAssignments.proyectoId, proyectoId), eq(projectAssignments.tipo, 'especialista'), isNull(projectAssignments.workItemId), isNull(projectAssignments.finalizadoEn)));
+        }
+        await registrarEvento(tx, { actorId, accion: 'ESPECIALISTA_REASIGNADO', entityType: 'proyecto', entityId: proyectoId, proyectoId, detalles: { anterior: actual, nuevo: datos.especialistaId } });
+      }
+    }
+    const [fila] = await tx.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
+    return fila!;
+  });
 }
 
 // Propuesta de portada — dueño especialista o disenador (PATCH

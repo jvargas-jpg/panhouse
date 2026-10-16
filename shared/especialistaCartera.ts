@@ -44,7 +44,7 @@ export interface EspecialistaCartera {
     procesos: { tipo: string; nombre: string }[];
     estados: { valor: string; nombre: string }[];
   };
-  objetivos: { disponible: false; motivo: string };
+  objetivos: { disponible: true; motivo: null };
   proyectos: ProyectoCartera[];
   total: number;
   page: number;

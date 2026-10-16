@@ -1,0 +1,94 @@
+{
+  "stage": "final",
+  "checks": [
+    {
+      "label": "specialist: desktop sin overflow",
+      "passed": true
+    },
+    {
+      "label": "specialist: seis KPIs reales",
+      "passed": true
+    },
+    {
+      "label": "specialist: ambos orígenes distinguibles",
+      "passed": true
+    },
+    {
+      "label": "specialist: tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "specialist: tablet ningún control sale del ancho",
+      "passed": true
+    },
+    {
+      "label": "specialist: formulario tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "specialist: mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "specialist: mobile ningún control sale del ancho",
+      "passed": true
+    },
+    {
+      "label": "specialist: formulario mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: desktop sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: seis KPIs reales",
+      "passed": true
+    },
+    {
+      "label": "manager: ambos orígenes distinguibles",
+      "passed": true
+    },
+    {
+      "label": "manager: tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: tablet ningún control sale del ancho",
+      "passed": true
+    },
+    {
+      "label": "Jefatura tablet: cards de equipo",
+      "passed": true
+    },
+    {
+      "label": "manager: formulario tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "manager: mobile ningún control sale del ancho",
+      "passed": true
+    },
+    {
+      "label": "Jefatura mobile: cards de equipo",
+      "passed": true
+    },
+    {
+      "label": "Detalle Jefatura móvil ocupa toda la pantalla",
+      "passed": true
+    },
+    {
+      "label": "manager: formulario mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "Sin errores JavaScript",
+      "passed": true
+    }
+  ],
+  "errors": []
+}
