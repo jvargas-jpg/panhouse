@@ -8,3 +8,9 @@ export interface DriveStorageProvider {
   getMetadata(id:string):Promise<StorageItem>;
   deleteFileOrFolder(id:string):Promise<void>;
 }
+export interface ProjectDriveStorageProvider extends DriveStorageProvider {
+  allocateFolderIds(count:number):Promise<string[]>;
+  createFolder(input:{name:string;parentFolderId?:string;appProperties?:Record<string,string>;providerFileId?:string}):Promise<StorageItem>;
+  shareFolder(id:string,email:string):Promise<{permissionId:string;email:string;role:string}>;
+  listFolderPermissions(id:string):Promise<{permissionId:string;email:string|null;role:string}[]>;
+}

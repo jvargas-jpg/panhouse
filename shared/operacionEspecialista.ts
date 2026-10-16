@@ -1,4 +1,6 @@
+import type { ProjectWorkspaceSummary } from './projectWorkspace.js';
 export interface PreparacionProyecto {
+  workspace?:ProjectWorkspaceSummary;
   recibidoEn: string | null; expedienteRevisadoEn: string | null; primerContactoEn: string | null;
   primerContactoDueAt: string | null; reunionOperativaFecha: string | null; reunionOperativaRealizada: boolean;
   grabacionUrl: string | null; transcripcionUrl: string | null; minutaUrl: string | null; cronogramaUrl: string | null;

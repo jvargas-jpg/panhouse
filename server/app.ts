@@ -35,6 +35,7 @@ import { operacionEspecialistaRoutes } from './routes/operacionEspecialista.rout
 import { monthlyGoalsRoutes } from './routes/monthlyGoals.routes.js';
 import { googleDriveRoutes } from './modules/integrations/google-drive/routes.js';
 import { safeRequestUrl } from './modules/integrations/google-drive/logging.js';
+import { projectWorkspaceRoutes } from './modules/project-workspaces/routes.js';
 
 export function buildApp() {
   const app = Fastify({
@@ -47,6 +48,7 @@ export function buildApp() {
 
   app.register(cookie);
   app.register(googleDriveRoutes, { prefix: '/api' });
+  app.register(projectWorkspaceRoutes, { prefix: '/api' });
   app.register(monthlyGoalsRoutes, { prefix: '/api/monthly-goals' });
   app.register(operacionEspecialistaRoutes, { prefix: '/api' });
 

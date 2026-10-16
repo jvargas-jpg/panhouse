@@ -2,7 +2,7 @@ import { OAuth2Client, CodeChallengeMethod, type Credentials } from 'google-auth
 import { GoogleDriveAdapter } from './adapter.js';
 import { DRIVE_FILE_SCOPE, googleDriveConfig, type GoogleDriveConfig } from './config.js';
 import { DriveIntegrationError, safeDriveError } from './errors.js';
-import type { DriveStorageProvider } from './provider.js';
+import type { DriveStorageProvider, ProjectDriveStorageProvider } from './provider.js';
 
 export interface DriveOAuthGateway {
   authorization(state:string):Promise<{url:string;verifier:string}>;
@@ -31,5 +31,6 @@ export class GoogleDriveOAuth implements DriveOAuthGateway {
     }catch(e){throw safeDriveError(e);}
   }
   storage(credentials:Credentials):DriveStorageProvider {const client=this.client();client.setCredentials(credentials);return new GoogleDriveAdapter(client);}
+  workspaceStorage(credentials:Credentials):ProjectDriveStorageProvider {const client=this.client();client.setCredentials(credentials);return new GoogleDriveAdapter(client);}
   async revoke(refreshToken:string) {try{await this.client().revokeToken(refreshToken);}catch(e){throw safeDriveError(e);}}
 }

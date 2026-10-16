@@ -13,6 +13,7 @@ import { evaluarPreparacionRrpp } from './preparacionRrpp.js';
 import { obtenerAutoresPorProyectos, type AutorDeProyecto } from './proyectosAutores.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItem } from './workItems.js';
 import { cancelReassignedGoals, evaluateProjectGoals } from './monthlyGoalEvaluation.js';
+import { projectDriveWorkspaces } from '../db/schema/projectDriveWorkspaces.js';
 
 // Reexportadas desde alertas.ts: comparten el join autor/servicio/riesgo
 // con listarRiesgoProyectosActivos (jefe_area/dirección) en vez de
@@ -527,6 +528,8 @@ export async function eliminarProyecto(proyectoId: string) {
     if (!p) return undefined;
     const [goal] = await tx.select({ id: monthlyGoals.id }).from(monthlyGoals).where(eq(monthlyGoals.projectId, proyectoId)).limit(1);
     if (goal) throw Object.assign(new Error('El proyecto conserva objetivos mensuales. Retíralo para preservar su historial.'), { statusCode: 409 });
+    const [workspace] = await tx.select({id:projectDriveWorkspaces.id}).from(projectDriveWorkspaces).where(eq(projectDriveWorkspaces.projectId,proyectoId)).limit(1);
+    if(workspace)throw Object.assign(new Error('El proyecto conserva un espacio documental. Retíralo para preservar los IDs y archivos.'),{statusCode:409});
     const [fila] = await tx.delete(proyectos).where(eq(proyectos.id, proyectoId)).returning();
     return fila;
   });

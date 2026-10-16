@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { users } from './users.js';
 import { sessions } from './sessions.js';
 
@@ -10,6 +10,12 @@ export interface DriveTestResult {
 export const externalIntegrations = pgTable('external_integrations', {
   id: uuid('id').primaryKey().defaultRandom(),
   provider: text('provider').notNull().unique(),
+  storageContextId: uuid('storage_context_id').notNull().defaultRandom(),
+  projectsRootFolderId: text('projects_root_folder_id'),
+  projectsRootFolderUrl: text('projects_root_folder_url'),
+  projectsRootReady: boolean('projects_root_ready').notNull().default(false),
+  workspaceSharingEnabled: boolean('workspace_sharing_enabled').notNull().default(false),
+  workspaceSharingTestedAt: timestamp('workspace_sharing_tested_at', { withTimezone:true }),
   status: text('status').$type<'connected' | 'disconnected' | 'error'>().notNull().default('disconnected'),
   encryptedRefreshToken: text('encrypted_refresh_token'),
   accountEmail: text('account_email'),

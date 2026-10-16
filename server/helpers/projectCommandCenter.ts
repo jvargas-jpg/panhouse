@@ -4,6 +4,7 @@ import { db } from '../db/client.js';
 import { fases, pasos, servicioFases, projectAssignments, users, workItems, pagos, proyectos, decisiones, preparacionesProyecto, fichasTrazabilidad } from '../db/schema/index.js';
 import { PROCESOS_OPERATIVOS } from '../../shared/operacionEspecialista.js';
 import { proyectarPreparacion } from './preparacionInicial.js';
+import { emptyWorkspace,workspaceSummaries } from '../modules/project-workspaces/queries.js';
 import { contextosActivacion } from './solicitudesArea.js';
 import { ErrorFichaViva, resumenFichaViva, verificarAccesoFichaViva } from './fichaViva.js';
 import { NOMBRES_PROCESO, obtenerDashboardJefatura } from './jefatura.js';
@@ -70,9 +71,10 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
     procesos.push({ tipo: tipos[area.id]!, nombre: area.name, estado: area.state, detalle: area.detail, trabajos: [] });
   if (!procesos.some(g => g.tipo === 'direccion_creativa')) procesos.push({ tipo: 'direccion_creativa', nombre: 'Dirección creativa', estado: 'No iniciado', detalle: 'Brief, conceptos y aprobaciones mediante el flujo creativo', trabajos: [] });
   const assigned = assignments.find(a => a.tipo === 'especialista' && !a.workItemId);
-  const preparacion = proyectarPreparacion(preparaciones[0], assigned?.asignadoEn ?? null, actor.rol === 'especialista' && activos.includes(p.estado));
+  const workspaceMap=await workspaceSummaries([id]),workspace=workspaceMap.get(id)??emptyWorkspace();
+  const preparacion = proyectarPreparacion(preparaciones[0], assigned?.asignadoEn ?? null, actor.rol === 'especialista' && activos.includes(p.estado),workspace);
   if (p.especialistaId || assigned) procesos.unshift({ tipo: 'preparacion_inicial', nombre: 'Preparación inicial', estado: preparacion.estado,
-    detalle: [preparacion.primerContactoEn ? 'Primer contacto registrado' : 'Primer contacto pendiente', preparacion.reunionOperativaRealizada ? 'Reunión realizada' : preparacion.reunionOperativaFecha ? 'Reunión programada' : 'Reunión por programar', preparacion.driveCarpetaUrl ? 'Drive configurado' : 'Drive sin configurar'].join(' · '), trabajos: [] });
+    detalle: [preparacion.primerContactoEn ? 'Primer contacto registrado' : 'Primer contacto pendiente', preparacion.reunionOperativaRealizada ? 'Reunión realizada' : preparacion.reunionOperativaFecha ? 'Reunión programada' : 'Reunión por programar', preparacion.driveEstado==='configurado' ? 'Drive configurado' : 'Drive sin configurar'].join(' · '), trabajos: [] });
   for (const proceso of procesos) {
     const owner = PROCESOS_OPERATIVOS[proceso.tipo];
     proceso.nombre = owner?.nombre ?? proceso.nombre;
@@ -112,7 +114,7 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       atencion.length=0;
       const cola=await obtenerColaTrabajoEspecialista(actor.id,{tab:'pendientes',search:'',page:1,pageSize:50},new Date(),id,snapshot,{
         trabajos:rows.map(r=>r.item),datos:[{id:p.id,titulo:p.tituloDefinitivo,subtitulo:p.subtituloDefinitivo,editorId:p.editorId,feedbackTripa:p.fechaFeedbackTripa}],
-        casos:cases,activaciones,preparaciones,asignaciones:assignments.filter(a=>a.tipo==='especialista'),
+        casos:cases,activaciones,preparaciones,asignaciones:assignments.filter(a=>a.tipo==='especialista'),workspaces:workspaceMap,
       });
       atencion.push(...cola.items.map(i=>({id:i.id,titulo:i.accion,detalle:i.detalle,proceso:i.proceso,href:i.href,editarContexto:i.editarContexto})));
     }

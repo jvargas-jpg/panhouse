@@ -5,7 +5,7 @@ import { useMe } from '../auth/useAuth';
 import { apiFetch } from '../lib/api';
 
 interface TestResult {success:boolean;checkedAt:string;cleanedUp:boolean;rootId:string|null;rootName:string|null;childId:string|null;errorCode:string|null;cleanupErrorCode:string|null}
-interface DriveStatus {configured:boolean;connected:boolean;status:string;health:string;accountEmail:string|null;scope:string[];connectedAt:string|null;lastValidatedAt:string|null;lastTestResult:TestResult|null}
+interface DriveStatus {configured:boolean;connected:boolean;status:string;health:string;accountEmail:string|null;scope:string[];connectedAt:string|null;lastValidatedAt:string|null;lastTestResult:TestResult|null;projectsRoot?:{folderId:string|null;url:string|null;ready:boolean}}
 const key = ['integrations','google-drive'];
 const messages:Record<string,string> = {
   INVALID_STATE:'La autorización expiró o ya fue utilizada. Inicia la conexión de nuevo.',
@@ -33,6 +33,7 @@ export function GoogleDrivePage() {
     void client.invalidateQueries({queryKey:key});
   },[search,setSearch,client]);
   const onError = (error:Error)=>setNotice({error:true,text:error.message});
+  const projectsRoot=useMutation({mutationFn:()=>apiFetch('/integrations/google-drive/projects-root',{method:'POST',body:'{}'}),onSuccess:async()=>{setNotice({error:false,text:'Carpeta de proyectos DEV configurada correctamente.'});await refresh();},onError});
   const connect = useMutation({mutationFn:()=>apiFetch<{authorizationUrl:string}>('/integrations/google-drive/connect',{method:'POST',body:'{}'}),
     onSuccess:data=>window.location.assign(data.authorizationUrl),onError});
   const test = useMutation({mutationFn:()=>apiFetch<TestResult>('/integrations/google-drive/test',{method:'POST',body:'{}'}),
@@ -42,7 +43,7 @@ export function GoogleDrivePage() {
     onSuccess:async result=>{setNotice({error:!!result.warningCode,text:result.warningCode?'Conexión eliminada de PanHouse. Google no confirmó la revocación; revoca también el acceso desde tu cuenta de Google.':'Google Drive desconectado correctamente.'});await refresh();},onError});
   if (loadingUser) return <p role="status">Cargando configuración…</p>;
   if (user?.rol!=='direccion') return <div role="alert"><h1 className="text-xl font-semibold">Acceso restringido</h1><p>Esta integración corporativa es administrada por Dirección.</p><Link to="/" className="underline">Volver al inicio</Link></div>;
-  const data = status.data, pending = connect.isPending || test.isPending || disconnect.isPending;
+  const data = status.data, pending = connect.isPending || test.isPending || disconnect.isPending || projectsRoot.isPending;
   const button = 'rounded-md px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50';
   return <section className="space-y-6 pb-10">
     <div><p className="mb-2 text-sm text-tinta/60">Configuración / Integraciones</p><h1 className="text-2xl font-bold text-tinta">Google Drive</h1>
@@ -66,6 +67,12 @@ export function GoogleDrivePage() {
         <button className={`${button} border border-red-200 text-red-700`} disabled={data.status==='disconnected' || data.status==='not_configured' || pending} onClick={()=>{if(window.confirm('¿Desconectar el Google Drive corporativo? PanHouse perderá el acceso. Los archivos de Drive se conservarán.'))disconnect.mutate();}}>Desconectar</button>
       </div>
       <p className="mt-3 text-xs leading-5 text-tinta/60">La prueba crea una carpeta temporal PANHOUSE_API_TEST y una subcarpeta «Prueba API», verifica su listado y metadata, y las elimina al terminar.</p>
+    </div>}
+    {data&&<div className="rounded-xl border border-tinta/10 bg-white p-5 text-sm"><h2 className="font-semibold">Raíz documental de proyectos · DEV</h2>
+      <p className="mt-2 text-tinta/70">PANHOUSE - PROYECTOS EDITORIALES - DEV</p><p className="mt-2">{data.projectsRoot?.ready?'Configurada. Los nuevos espacios se crearán dentro de esta carpeta.':'Pendiente. Dirección debe configurar esta raíz antes de crear espacios de proyectos.'}</p>
+      <div className="mt-4 flex flex-wrap gap-3">{data.projectsRoot?.ready&&data.projectsRoot.url?<a className={`${button} border border-tinta/20`} href={data.projectsRoot.url} target="_blank" rel="noopener noreferrer">Abrir raíz DEV ↗</a>:
+        <button className={`${button} bg-tinta text-white`} disabled={!data.connected||pending} onClick={()=>projectsRoot.mutate()}>{projectsRoot.isPending?'Configurando raíz…':'Configurar raíz DEV'}</button>}</div>
+      <p className="mt-4 text-xs text-tinta/60">Acceso compartido con Especialistas: PENDIENTE_VALIDACION.</p>
     </div>}
     {data?.lastTestResult && <div className="rounded-xl border border-tinta/10 bg-white p-5 text-sm"><h2 className="font-semibold">Última prueba de Drive</h2>
       <p className="mt-2">{date(data.lastTestResult.checkedAt)} · {data.lastTestResult.success?'Correcta':'Fallida'} · {data.lastTestResult.cleanedUp?'Limpieza confirmada':'Limpieza pendiente'}</p>

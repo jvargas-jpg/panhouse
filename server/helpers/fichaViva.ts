@@ -67,6 +67,11 @@ function areaEvento(action: string) { if (/RRPP|DIAGNOSTICO|REUNION_LANZAMIENTO|
     return 'Comercial'; return 'Proyecto'; }
 export function etiquetaEventoFicha(action: string, details: unknown): string {
     const operacion: Record<string,string> = {
+        PROJECT_WORKSPACE_INICIADO:'Se inició la configuración del espacio documental',
+        PROJECT_WORKSPACE_CONFIGURADO:'Se configuró el espacio documental del proyecto',
+        PROJECT_WORKSPACE_REINTENTO_EXITOSO:'Se completó el espacio documental tras reintentar',
+        PROJECT_WORKSPACE_FALLIDO:'No se pudo completar el espacio documental; se conservaron los avances',
+        PROJECT_WORKSPACE_INCONSISTENCIA:'Se detectó una inconsistencia que impide configurar el espacio documental',
         OBJETIVO_CREADO: 'Se definió un objetivo mensual para el proyecto',
         OBJETIVO_AJUSTADO: 'Se ajustó un compromiso mensual del proyecto',
         OBJETIVO_CUMPLIDO: 'PanHouse verificó un objetivo mensual cumplido',
@@ -121,7 +126,7 @@ export async function historialFicha(id: string, cursor?: string, limit = 20): P
         const cambio = r.details as {anterior?:string;nuevo?:string} | null;
         const estados: Record<string,string> = {en_proceso:'En proceso',retrasado:'Retrasado',stand_by:'Stand-by',pausado:'Pausado',culminado:'Culminado',retirado:'Retirado'};
         const macro = r.action === 'PROYECTO_ESTADO_CAMBIADO' && cambio?.anterior && cambio.nuevo && estados[cambio.anterior] && estados[cambio.nuevo] ? `El proyecto cambió: ${estados[cambio.anterior]} → ${estados[cambio.nuevo]}` : undefined;
-        return { id: r.id, date: r.date.toISOString(), label: avance ?? macro ?? decisionLabel ?? assignmentLabel(r) ?? (r.action.startsWith('OBJETIVO_') || r.action.startsWith('SOLICITUD_AREA') || r.action.startsWith('PREPARACION_INICIAL') || r.action==='IMPRESION_COORDINACION_ACTUALIZADA' ? etiquetaEventoFicha(r.action,r.details) : undefined) ?? EVENTOS[r.action] ?? EVENTOS_PROYECTO_RRPP[r.action]?.titulo ?? `Se registró un avance de ${areaEvento(r.action).toLowerCase()}`, actor: r.name ?? 'Sistema', area: areaEvento(r.action) };
+        return { id: r.id, date: r.date.toISOString(), label: avance ?? macro ?? decisionLabel ?? assignmentLabel(r) ?? (r.action.startsWith('PROJECT_WORKSPACE_') || r.action.startsWith('OBJETIVO_') || r.action.startsWith('SOLICITUD_AREA') || r.action.startsWith('PREPARACION_INICIAL') || r.action==='IMPRESION_COORDINACION_ACTUALIZADA' ? etiquetaEventoFicha(r.action,r.details) : undefined) ?? EVENTOS[r.action] ?? EVENTOS_PROYECTO_RRPP[r.action]?.titulo ?? `Se registró un avance de ${areaEvento(r.action).toLowerCase()}`, actor: r.name ?? 'Sistema', area: areaEvento(r.action) };
     });
     const last = items.at(-1);
     return { items, nextCursor: rows.length > limit && last ? Buffer.from(JSON.stringify({ date: last.date, id: last.id })).toString('base64url') : null };

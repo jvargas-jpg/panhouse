@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OAuth2Client } from 'google-auth-library';
-const sdk=vi.hoisted(()=>({files:{create:vi.fn(),list:vi.fn(),get:vi.fn(),delete:vi.fn()},about:{get:vi.fn()}}));
+const sdk=vi.hoisted(()=>({files:{create:vi.fn(),list:vi.fn(),get:vi.fn(),delete:vi.fn(),generateIds:vi.fn()},about:{get:vi.fn()},permissions:{create:vi.fn(),list:vi.fn()}}));
 vi.mock('@googleapis/drive',()=>({drive:vi.fn(()=>sdk)}));
 import { GoogleDriveAdapter, FOLDER_MIME } from '../server/modules/integrations/google-drive/adapter.js';
 
@@ -30,11 +30,30 @@ describe('Google Drive · adapter oficial mockeado',()=>{
   });
   it('metadata y eliminación usan IDs propios; respuesta incompleta no se inventa',async()=>{
     sdk.files.get.mockResolvedValue({data:file});expect((await adapter.getMetadata('unit-file')).name).toBe('Prueba API');
-    sdk.files.delete.mockResolvedValue({});await adapter.deleteFileOrFolder('unit-file');expect(sdk.files.delete).toHaveBeenCalledWith({fileId:'unit-file'});
+    sdk.files.delete.mockResolvedValue({});await adapter.deleteFileOrFolder('unit-file');expect(sdk.files.delete).toHaveBeenCalledWith({fileId:'unit-file',supportsAllDrives:true});
     sdk.files.create.mockResolvedValue({data:{id:'incomplete'}});await expect(adapter.createFolder({name:'x'})).rejects.toMatchObject({code:'INVALID_RESPONSE'});
   });
   it('errores SDK no filtran credenciales',async()=>{
     sdk.files.get.mockRejectedValue({response:{status:401},config:{headers:{authorization:'DO_NOT_LEAK'}}});
     await expect(adapter.getMetadata('unit-file')).rejects.toMatchObject({code:'REAUTH_REQUIRED'});
+  });
+  it('reserva IDs oficiales y los usa al crear carpetas idempotentes',async()=>{
+    sdk.files.generateIds.mockResolvedValue({data:{ids:['reserved-id']}});expect(await adapter.allocateFolderIds(1)).toEqual(['reserved-id']);
+    expect(sdk.files.generateIds).toHaveBeenCalledWith({count:1,space:'drive',type:'files'});
+    sdk.files.create.mockResolvedValue({data:{...file,id:'reserved-id'}});await adapter.createFolder({name:'Prueba API',providerFileId:'reserved-id',parentFolderId:'unit-parent'});
+    expect(sdk.files.create).toHaveBeenCalledWith(expect.objectContaining({requestBody:expect.objectContaining({id:'reserved-id',parents:['unit-parent']}),supportsAllDrives:true}));
+  });
+  it('rechaza reservas vacías, duplicadas e inválidas',async()=>{
+    await expect(adapter.allocateFolderIds(0)).rejects.toBeDefined();sdk.files.generateIds.mockResolvedValue({data:{ids:['one','one']}});
+    await expect(adapter.allocateFolderIds(2)).rejects.toMatchObject({code:'INVALID_RESPONSE'});
+  });
+  it('sharing preparado concede writer sobre un solo ID sin enviar notificación',async()=>{
+    sdk.permissions.create.mockResolvedValue({data:{id:'unit-permission',emailAddress:'fixture@example.test',role:'writer'}});
+    expect(await adapter.shareFolder('unit-root','fixture@example.test')).toEqual({permissionId:'unit-permission',email:'fixture@example.test',role:'writer'});
+    expect(sdk.permissions.create).toHaveBeenCalledWith(expect.objectContaining({fileId:'unit-root',sendNotificationEmail:false,requestBody:{type:'user',role:'writer',emailAddress:'fixture@example.test'}}));
+  });
+  it('consulta permisos mínimos para una validación posterior de sharing',async()=>{
+    sdk.permissions.list.mockResolvedValue({data:{permissions:[{id:'unit-permission',emailAddress:'fixture@example.test',role:'writer'}]}});
+    expect(await adapter.listFolderPermissions('unit-root')).toEqual([{permissionId:'unit-permission',email:'fixture@example.test',role:'writer'}]);
   });
 });

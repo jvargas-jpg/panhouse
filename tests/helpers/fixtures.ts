@@ -16,10 +16,20 @@ import {
 } from '../../server/db/schema/index.js';
 import { hashPassword } from '../../server/helpers/password.js';
 import { preparacionesProyecto } from '../../server/db/schema/index.js';
+import { externalIntegrations,projectDriveWorkspaces,projectDriveFolders } from '../../server/db/schema/index.js';
+import { eq } from 'drizzle-orm';
 // Aísla las pruebas de procesos posteriores de los nuevos pendientes de recepción.
 export async function completarPreparacionDePrueba(proyectoId: string) {
   await db.insert(preparacionesProyecto).values({ proyectoId, recibidoEn:new Date('2026-10-01'),expedienteRevisadoEn:new Date('2026-10-01'),primerContactoEn:new Date('2026-10-01'),reunionOperativaFecha:new Date('2026-10-01'),reunionOperativaRealizada:true,
     driveCarpetaUrl:'https://drive.google.com/drive/folders/fixture',grabacionUrl:'https://example.test/grabacion',transcripcionUrl:'https://example.test/transcripcion',minutaUrl:'https://example.test/minuta',cronogramaUrl:'https://example.test/cronograma' });
+  // Other workflow tests start after preparation; model a persisted READY workspace without Google.
+  await db.insert(externalIntegrations).values({provider:'google_drive'}).onConflictDoNothing();
+  const [integration]=await db.select().from(externalIntegrations).where(eq(externalIntegrations.provider,'google_drive'));
+  const [workspace]=await db.insert(projectDriveWorkspaces).values({projectId:proyectoId,integrationId:integration!.id,storageContextId:integration!.storageContextId,
+    projectsRootFolderId:'fixture-dev-root',rootFolderId:'fixture-'+proyectoId,rootFolderUrl:'https://drive.google.com/drive/folders/fixture-'+proyectoId,
+    templateKey:'fixture',templateVersion:'test',status:'READY',readyAt:new Date('2026-10-01'),
+    plan:[{key:'ROOT',parentKey:null,displayName:'Fixture ya configurada',templatePath:'/'}]}).returning();
+  await db.insert(projectDriveFolders).values({workspaceId:workspace!.id,key:'ROOT',driveFolderId:'fixture-'+proyectoId,displayName:'Fixture ya configurada',templatePath:'/',status:'READY',driveUrl:workspace!.rootFolderUrl});
 }
 
 let contador = 0;

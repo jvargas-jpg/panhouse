@@ -7,6 +7,8 @@ import { registrarEvento } from './auditLog.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItemPorId } from './workItems.js';
 import type { ActorFicha } from './intakeRrpp.js';
 import type { PreparacionProyecto } from '../../shared/operacionEspecialista.js';
+import type { ProjectWorkspaceSummary } from '../../shared/projectWorkspace.js';
+import { emptyWorkspace,workspaceSummaries } from '../modules/project-workspaces/queries.js';
 
 const instante = z.string().datetime({ offset: true }).nullable().optional();
 const link = z.string().url().max(2000).refine(s => /^https:\/\//.test(s), 'Utiliza un enlace HTTPS').nullable().optional();
@@ -14,23 +16,23 @@ export const preparacionInicialSchema = z.object({
   recibidoEn: instante, expedienteRevisadoEn: instante, primerContactoEn: instante,
   reunionOperativaFecha: instante, reunionOperativaRealizada: z.boolean().optional(),
   grabacionUrl: link, transcripcionUrl: link, minutaUrl: link, cronogramaUrl: link,
-  driveCarpetaUrl: link.refine(s => !s || new URL(s).hostname === 'drive.google.com', 'Registra una carpeta real de Google Drive'),
   observaciones: z.string().trim().max(2000).nullable().optional(),
 }).strict().refine(v => Object.keys(v).length > 0, 'Indica un cambio');
 
 // Manual §1.2: 24 horas; no inventa un calendario laboral no documentado.
 export const calcularPrimerContactoDueAt = (asignadoEn: Date | null) => asignadoEn ? new Date(asignadoEn.getTime() + 24 * 3600000).toISOString() : null;
-export function proyectarPreparacion(row: typeof preparacionesProyecto.$inferSelect | undefined, asignadoEn: Date | null, editable: boolean): PreparacionProyecto {
+export function proyectarPreparacion(row: typeof preparacionesProyecto.$inferSelect | undefined, asignadoEn: Date | null, editable: boolean,workspace:ProjectWorkspaceSummary=emptyWorkspace()): PreparacionProyecto {
   const f = row;
-  const completo = !!(f?.recibidoEn && f.expedienteRevisadoEn && f.primerContactoEn && f.reunionOperativaRealizada && f.driveCarpetaUrl && f.minutaUrl && f.cronogramaUrl && f.grabacionUrl && f.transcripcionUrl);
+  const documental=workspace.status==='READY'&&!workspace.contextChanged;
+  const completo = !!(f?.recibidoEn && f.expedienteRevisadoEn && f.primerContactoEn && f.reunionOperativaRealizada && documental && f.minutaUrl && f.cronogramaUrl && f.grabacionUrl && f.transcripcionUrl);
   const iniciado = !!(f?.recibidoEn || f?.expedienteRevisadoEn || f?.primerContactoEn || f?.reunionOperativaFecha || f?.reunionOperativaRealizada || f?.driveCarpetaUrl || f?.minutaUrl || f?.cronogramaUrl || f?.grabacionUrl || f?.transcripcionUrl || f?.observaciones?.trim());
   return {
     recibidoEn: f?.recibidoEn?.toISOString() ?? null, expedienteRevisadoEn: f?.expedienteRevisadoEn?.toISOString() ?? null,
     primerContactoEn: f?.primerContactoEn?.toISOString() ?? null, primerContactoDueAt: calcularPrimerContactoDueAt(asignadoEn),
     reunionOperativaFecha: f?.reunionOperativaFecha?.toISOString() ?? null, reunionOperativaRealizada: f?.reunionOperativaRealizada ?? false,
     grabacionUrl: f?.grabacionUrl ?? null, transcripcionUrl: f?.transcripcionUrl ?? null, minutaUrl: f?.minutaUrl ?? null, cronogramaUrl: f?.cronogramaUrl ?? null,
-    driveCarpetaUrl: f?.driveCarpetaUrl ?? null, driveEstado: f?.driveCarpetaUrl ? 'configurado' : 'no_configurado',
-    observaciones: f?.observaciones ?? null, estado: completo ? 'Completo' : iniciado ? 'En curso' : 'Pendiente', editable,
+    driveCarpetaUrl: documental?workspace.rootFolderUrl:f?.driveCarpetaUrl ?? null, driveEstado: documental?'configurado':workspace.status==='ERROR'||workspace.contextChanged?'error':workspace.status==='PROVISIONING'?'pendiente':'no_configurado',
+    workspace,observaciones: f?.observaciones ?? null, estado: completo ? 'Completo' : iniciado||workspace.id ? 'En curso' : 'Pendiente', editable,
   };
 }
 export async function guardarPreparacionInicial(id: string, input: z.infer<typeof preparacionInicialSchema>, actor: ActorFicha) {
@@ -52,7 +54,8 @@ export async function guardarPreparacionInicial(id: string, input: z.infer<typeo
     const [row] = await tx.insert(preparacionesProyecto).values({ proyectoId: id, ...datos }).onConflictDoUpdate({ target: preparacionesProyecto.proyectoId, set: { ...datos, updatedAt: ahora } }).returning();
     const [a] = await tx.select().from(projectAssignments).where(and(eq(projectAssignments.proyectoId, id), eq(projectAssignments.tipo, 'especialista'), isNull(projectAssignments.workItemId), isNull(projectAssignments.finalizadoEn))).orderBy(desc(projectAssignments.asignadoEn)).limit(1);
     const wi = await crearWorkItemSiNoExiste(tx, { proyectoId: id, tipo: 'preparacion_inicial' });
-    const estado = proyectarPreparacion(row, a?.asignadoEn ?? null, true).estado;
+    const workspace=(await workspaceSummaries([id])).get(id)??emptyWorkspace();
+    const estado = proyectarPreparacion(row, a?.asignadoEn ?? null, true,workspace).estado;
     if(estado==='Pendiente') {
       // Un guardado sin hechos no simula el inicio del trabajo.
       const { workItems } = await import('../db/schema/index.js');

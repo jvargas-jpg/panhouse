@@ -26,3 +26,4 @@ export * from './contratosCorreccion.js';
 export * from './operacionEspecialista.js';
 export * from './monthlyGoals.js';
 export * from './integrations.js';
+export * from './projectDriveWorkspaces.js';

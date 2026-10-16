@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { and, eq, gt, gte, isNull, lt, sql } from 'drizzle-orm';
 import { db } from '../../../db/client.js';
 import { externalIntegrations, googleOAuthAttempts, type DriveTestResult } from '../../../db/schema/index.js';
@@ -37,7 +37,9 @@ export class GoogleDriveService {
     return { provider, configured, connected, status: !configured ? 'not_configured' : row?.status ?? 'disconnected',
       health: !configured ? 'not_configured' : row?.lastErrorCode ?? (connected && row?.lastValidatedAt ? 'healthy' : 'unverified'),
       accountEmail: row?.accountEmail ?? null, scope: row?.scope ?? [], connectedAt: row?.connectedAt ?? null,
-      lastValidatedAt: row?.lastValidatedAt ?? null, lastTestResult: row?.lastTestResult ?? null };
+      lastValidatedAt: row?.lastValidatedAt ?? null, lastTestResult: row?.lastTestResult ?? null,
+      projectsRoot:{folderId:row?.projectsRootFolderId??null,url:row?.projectsRootFolderUrl??null,ready:row?.projectsRootReady??false},
+      workspaceSharingStatus:row?.workspaceSharingEnabled?'enabled':'PENDIENTE_VALIDACION' };
   }
 
   async connect(userId: string, sessionToken: string) {
@@ -79,7 +81,9 @@ export class GoogleDriveService {
       const offlineIdentity = await oauth.storage({ refresh_token:refresh }).validateConnection();
       if (identity.accountId && offlineIdentity.accountId !== identity.accountId) throw new DriveIntegrationError('REFRESH_TOKEN_REQUIRED');
       const now = new Date();
+      const sameStorage = !!identity.accountId && identity.accountId===row.accountId && config.clientId===row.oauthClientId;
       await tx.update(externalIntegrations).set({ status:'connected',encryptedRefreshToken:encryptGoogleSecret(refresh,config.encryptionKey,'refresh-token'),
+        ...(!sameStorage?{storageContextId:randomUUID(),projectsRootFolderId:null,projectsRootFolderUrl:null,projectsRootReady:false,workspaceSharingEnabled:false,workspaceSharingTestedAt:null}:{}),
         accountEmail:identity.accountEmail,accountId:identity.accountId,oauthClientId:config.clientId,scope:[DRIVE_FILE_SCOPE],connectedAt:now,
         connectedByUserId:input.userId,lastValidatedAt:now,lastErrorCode:null,disconnectedAt:null,revision:row.revision+1,updatedAt:now }).where(whereProvider);
       await registrarEvento(tx,{actorId:input.userId,accion:'GOOGLE_DRIVE_CONECTADO',entityType:'external_integration',entityId:row.id,detalles:{scope:DRIVE_FILE_SCOPE}});

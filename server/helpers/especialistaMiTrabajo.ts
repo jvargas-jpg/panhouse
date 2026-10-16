@@ -7,8 +7,11 @@ import { obtenerDashboardJefatura, NOMBRES_PROCESO } from './jefatura.js';
 import { preparacionesProyecto, projectAssignments } from '../db/schema/index.js';
 import { contextosActivacion } from './solicitudesArea.js';
 import { proyectarPreparacion } from './preparacionInicial.js';
+import { emptyWorkspace,workspaceSummaries } from '../modules/project-workspaces/queries.js';
 import type { ContextoActivacion } from '../../shared/operacionEspecialista.js';
+import type { ProjectWorkspaceSummary } from '../../shared/projectWorkspace.js';
 interface ColaPrecargada {
+  workspaces?:Map<string,ProjectWorkspaceSummary>;
   trabajos: typeof workItems.$inferSelect[];
   datos: {id:string;titulo:string|null;subtitulo:string|null;editorId:string|null;feedbackTripa:string|null}[];
   casos: typeof decisiones.$inferSelect[];
@@ -35,10 +38,11 @@ export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiT
     precargada?.casos ?? db.select().from(decisiones).where(and(inArray(decisiones.proyectoId,ids),inArray(decisiones.status,['pendiente','en_revision','informacion_solicitada']))),
     db.select({r:contratosCorreccion,proyectoId:correcciones.proyectoId}).from(contratosCorreccion).innerJoin(correcciones,eq(correcciones.id,contratosCorreccion.correccionId)).where(inArray(correcciones.proyectoId,ids)).orderBy(desc(contratosCorreccion.ronda)),
   ]):[[],[],[],[],[],[],[],[]];
-  const [activaciones,preparaciones,asignaciones]=await Promise.all([
+  const [activaciones,preparaciones,asignaciones,workspaces]=await Promise.all([
     precargada?.activaciones ?? contextosActivacion(ids),
     precargada?.preparaciones ?? (ids.length?db.select().from(preparacionesProyecto).where(inArray(preparacionesProyecto.proyectoId,ids)):[]),
     precargada?.asignaciones ?? (ids.length?db.select().from(projectAssignments).where(and(inArray(projectAssignments.proyectoId,ids),eq(projectAssignments.tipo,'especialista'))):[]),
+    precargada?.workspaces??workspaceSummaries(ids),
   ]);
   const items:ItemTrabajoEspecialista[]=[];
   for(const p of activos) {
@@ -53,12 +57,12 @@ export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiT
       const late=fecha?clasificarVencimiento(fecha,ahora).vencido:false;
       add(key,proceso,late?'Dar seguimiento: '+accion:accion,detalle,{estado:late?'vencida':'esperando',fecha,waitingOn:late?null:destino.nombre,waitingOnType:late?null:destino.tipo,waitingSince:since,ctaLabel:late?'Dar seguimiento':null,...extra});
     }
-    const preparacion=proyectarPreparacion(preparaciones.find(r=>r.proyectoId===p.id),asignaciones.find(a=>a.proyectoId===p.id&&a.finalizadoEn===null&&a.workItemId===null)?.asignadoEn??null,true);
+    const preparacion=proyectarPreparacion(preparaciones.find(r=>r.proyectoId===p.id),asignaciones.find(a=>a.proyectoId===p.id&&a.finalizadoEn===null&&a.workItemId===null)?.asignadoEn??null,true,workspaces.get(p.id)??emptyWorkspace());
     if(!preparacion.primerContactoEn)add('preparacion-contacto','preparacion_inicial','Realizar primer contacto con el autor','Presentarse y coordinar la reunión operativa',{fecha:preparacion.primerContactoDueAt,ctaLabel:'Registrar contacto'});
     if(!preparacion.recibidoEn||!preparacion.expedienteRevisadoEn)add('preparacion-expediente','preparacion_inicial','Revisar el expediente recibido','Registrar recepción y revisión del diagnóstico inicial',{ctaLabel:'Continuar preparación'});
-    if(!preparacion.driveCarpetaUrl)add('preparacion-drive','preparacion_inicial','Registrar carpeta del proyecto en Drive','Registra el espacio documental real; integración automática pendiente',{ctaLabel:'Registrar carpeta'});
+    if(preparacion.driveEstado!=='configurado')add('preparacion-drive','preparacion_inicial','Configurar espacio documental',preparacion.workspace?.status==='ERROR'?'Completar la estructura documental conservando lo ya creado':'Crear las carpetas del proyecto según su servicio',{ctaLabel:preparacion.workspace?.status==='ERROR'?'Reintentar':'Configurar'});
     if(!preparacion.reunionOperativaRealizada)add('preparacion-reunion','preparacion_inicial',preparacion.reunionOperativaFecha?'Registrar reunión operativa':'Programar reunión operativa','Reunión, grabación, transcripción, minuta y cronograma',{fecha:preparacion.reunionOperativaFecha,ctaLabel:'Continuar preparación'});
-    if(preparacion.reunionOperativaRealizada&&preparacion.estado!=='Completo')add('preparacion-documentos','preparacion_inicial','Completar documentos de preparación','Registrar grabación, transcripción, minuta y cronograma',{ctaLabel:'Continuar preparación'});
+    if(preparacion.reunionOperativaRealizada&&(!preparacion.grabacionUrl||!preparacion.transcripcionUrl||!preparacion.minutaUrl||!preparacion.cronogramaUrl))add('preparacion-documentos','preparacion_inicial','Completar documentos de preparación','Registrar grabación, transcripción, minuta y cronograma',{ctaLabel:'Continuar preparación'});
     for(const ctx of activaciones.get(p.id)??[]) {
       if(ctx.solicitud || !ctx.legacy)for(const wi of allWork.filter(w=>w.tipo===ctx.tipo))handled.add(wi.id);
       if(ctx.solicitud?.estado==='requiere_informacion')add('area-responder:'+ctx.solicitud.id,ctx.tipo,'Responder información a RRPP','RRPP necesita información adicional para activar el proceso',{href:'/?vista=solicitudes&request='+ctx.solicitud.id,ctaLabel:'Responder',source:{tipo:'solicitud',id:ctx.solicitud.id,businessKey:ctx.tipo}});

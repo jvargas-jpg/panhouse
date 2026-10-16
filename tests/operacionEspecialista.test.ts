@@ -82,8 +82,9 @@ describe('Operación del Especialista: ownership y handoffs',()=>{
     expect((await call('PATCH',url,{primerContactoEn:new Date().toISOString()},oc)).statusCode).toBe(403);
     expect((await call('PATCH',url,{primerContactoEn:new Date().toISOString()},jc)).statusCode).toBe(403);
     expect((await call('PATCH',url,{primerContactoEn:new Date().toISOString(),driveCarpetaUrl:'https://example.com/folder'})).statusCode).toBe(400);
-    const now=new Date().toISOString();expect((await call('PATCH',url,{recibidoEn:now,expedienteRevisadoEn:now,primerContactoEn:now,reunionOperativaFecha:now,reunionOperativaRealizada:true,driveCarpetaUrl:'https://drive.google.com/drive/folders/real-folder',grabacionUrl:'https://example.com/grabacion',transcripcionUrl:'https://example.com/transcripcion',minutaUrl:'https://example.com/minuta',cronogramaUrl:'https://example.com/cronograma'})).statusCode).toBe(200);
-    const d=await obtenerCommandCenter(p.id,{id:spec,rol:'especialista'});expect(d.preparacion.estado).toBe('Completo');expect(d.preparacion.driveEstado).toBe('configurado');expect((await trabajo(spec)).items.some(i=>i.proceso==='preparacion_inicial')).toBe(false);
+    expect((await call('PATCH',url,{driveCarpetaUrl:'https://drive.google.com/drive/folders/unverified'})).statusCode).toBe(400);
+    const now=new Date().toISOString();expect((await call('PATCH',url,{recibidoEn:now,expedienteRevisadoEn:now,primerContactoEn:now,reunionOperativaFecha:now,reunionOperativaRealizada:true,grabacionUrl:'https://example.com/grabacion',transcripcionUrl:'https://example.com/transcripcion',minutaUrl:'https://example.com/minuta',cronogramaUrl:'https://example.com/cronograma'})).statusCode).toBe(200);
+    const d=await obtenerCommandCenter(p.id,{id:spec,rol:'especialista'});expect(d.preparacion.estado).toBe('En curso');expect(d.preparacion.driveEstado).toBe('no_configurado');expect((await trabajo(spec)).items.some(i=>i.accion==='Configurar espacio documental')).toBe(true);
     expect((await call('PATCH',url,{reunionOperativaFecha:new Date(Date.now()+86400000).toISOString(),reunionOperativaRealizada:true})).statusCode).toBe(400);
   });
   it.each([['EF',null],['CR','Capítulo'],['CR','Tripa'],['SE',null]] as const)('Lanzamiento %s/%s: hito, solicitud explícita y activación RRPP',async(codigo,subtipo)=>{
