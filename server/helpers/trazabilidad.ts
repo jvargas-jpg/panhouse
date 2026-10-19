@@ -581,7 +581,7 @@ export async function actualizarPropuestaDiseno(proyectoId: string, propuestaId:
   const [fila] = await db
     .update(fichaDisenoPropuestas)
     .set(datos)
-    .where(and(eq(fichaDisenoPropuestas.id, propuestaId), eq(fichaDisenoPropuestas.fichaId, ficha.id)))
+    .where(and(eq(fichaDisenoPropuestas.id, propuestaId), eq(fichaDisenoPropuestas.fichaId, ficha.id),isNull(fichaDisenoPropuestas.direccionCreativaId)))
     .returning();
   return fila;
 }
@@ -590,7 +590,7 @@ export async function eliminarPropuestaDiseno(proyectoId: string, propuestaId: s
   const ficha = await obtenerFichaPorProyecto(proyectoId);
   const [fila] = await db
     .delete(fichaDisenoPropuestas)
-    .where(and(eq(fichaDisenoPropuestas.id, propuestaId), eq(fichaDisenoPropuestas.fichaId, ficha.id)))
+    .where(and(eq(fichaDisenoPropuestas.id, propuestaId), eq(fichaDisenoPropuestas.fichaId, ficha.id),isNull(fichaDisenoPropuestas.direccionCreativaId)))
     .returning();
   return fila;
 }

@@ -20,11 +20,15 @@ import {
 } from '../helpers/direccionCreativa.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
+import {CreativeError,getCreativeActivity,getCreativeDashboard,getCreativeWorkDetail} from '../helpers/creativeLeader.js';
+import {deliverCreativeConcepts,reviseCreativeConcept} from '../helpers/creativeLeaderCommands.js';
+import {obtenerEspecialistaActual} from '../helpers/carga.js';
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 const propuestaParamSchema = z.object({ propuestaId: z.string().uuid() });
 
 const asignarSchema = z.object({ liderCreativoId: z.string().uuid() });
+const webUrl=z.string().trim().url().max(2000).refine(v=>{const u=new URL(v);return ['http:','https:'].includes(u.protocol)&&!u.username&&!u.password;},'Utiliza un enlace web.');
 
 const reunionSchema = z.object({
   fecha: z.string().nullable().optional(),
@@ -33,14 +37,15 @@ const reunionSchema = z.object({
 });
 
 const briefSchema = z.object({
-  briefEnlace: z.string().nullable().optional(),
+  briefEnlace: webUrl.nullable().optional(),
   fechaBriefEnviadoEspecialista: z.string().nullable().optional(),
-});
+}).strict();
 
 const briefAutorSchema = z.object({
   fechaBriefEnviadoAutor: z.string().nullable().optional(),
   fechaBriefAprobadoAutor: z.string().nullable().optional(),
-});
+  feedback:z.string().trim().min(1).max(5000).optional(),
+}).strict().refine(v=>!v.feedback||!v.fechaBriefAprobadoAutor,'Registra feedback o aprobación, por separado.');
 
 const conceptoSchema = z.object({
   descripcion: z.string().nullable().optional(),
@@ -56,12 +61,13 @@ const conceptoAutorSchema = z.object({
   fechaEnviadaAutor: z.string().nullable().optional(),
   fechaAprobadaAutor: z.string().nullable().optional(),
   estado: z.string().nullable().optional(),
-});
+  feedback:z.string().trim().min(1).max(5000).optional(),
+}).strict().refine(v=>!v.feedback||!v.fechaAprobadaAutor,'Registra feedback o aprobación, por separado.');
 
 const recursosSchema = z.object({
-  recursoImagenUrl: z.string().nullable().optional(),
-  recursoConceptoPdfUrl: z.string().nullable().optional(),
-});
+  recursoImagenUrl: webUrl.nullable().optional(),
+  recursoConceptoPdfUrl: webUrl.nullable().optional(),
+}).strict();
 
 const cierreSchema = z.object({
   resultadoFinal: z.enum(['aprobado', 'rechazado']),
@@ -77,7 +83,7 @@ async function verificarAccesoAPropuesta(
   usuario: { id: string; rol: string },
 ): Promise<{ ok: true } | { ok: false; status: 403 | 404; error: string }> {
   const [fila] = await db
-    .select({ especialistaId: proyectos.especialistaId })
+    .select({ especialistaId: proyectos.especialistaId,projectId:proyectos.id })
     .from(fichaDisenoPropuestas)
     .innerJoin(direccionesCreativas, eq(fichaDisenoPropuestas.direccionCreativaId, direccionesCreativas.id))
     .innerJoin(proyectos, eq(direccionesCreativas.proyectoId, proyectos.id))
@@ -86,11 +92,31 @@ async function verificarAccesoAPropuesta(
 
   if (!fila) return { ok: false, status: 404, error: 'Concepto de portada no encontrado' };
   if (usuario.rol === 'jefe_area') return { ok: true };
-  if (usuario.rol === 'especialista' && fila.especialistaId === usuario.id) return { ok: true };
+  if (usuario.rol === 'especialista' && await obtenerEspecialistaActual(fila.projectId,fila.especialistaId) === usuario.id) return { ok: true };
   return { ok: false, status: 403, error: 'No autorizado para este concepto de portada' };
 }
 
 export async function direccionCreativaRoutes(app: FastifyInstance) {
+  app.setErrorHandler((error,_req,reply)=>{
+    if(error instanceof CreativeError)return reply.code(error.status).send({error:error.message});
+    if(error instanceof z.ZodError)return reply.code(400).send({error:'Revisa los datos de la entrega creativa.'});
+    const known=error as {statusCode?:number;message?:string};
+    if(known.statusCode&&known.statusCode<500)return reply.code(known.statusCode).send({error:known.message});
+    app.log.error(error);return reply.code(500).send({error:'No se pudo completar la operación creativa.'});
+  });
+  const leader=[requireAuth,requireRole('lider_creativo')];
+  app.get('/inicio',{preHandler:leader},async req=>getCreativeDashboard(req.user!.id,new Date(),z.object({orden:z.enum(['accion','fecha']).optional()}).parse(req.query).orden));
+  app.get('/inicio/actividad',{preHandler:leader},async req=>({items:await getCreativeActivity(req.user!.id)}));
+  app.get('/:id/operacion',{preHandler:leader},async req=>getCreativeWorkDetail(idParamSchema.parse(req.params).id,req.user!.id));
+  const conceptInput=z.object({descripcion:z.string().trim().min(1).max(3000),enlace:webUrl}).strict();
+  app.post('/:id/conceptos/entregar',{preHandler:leader},async req=>{
+    const p=idParamSchema.parse(req.params),b=z.object({conceptos:z.array(conceptInput).min(2).max(3).refine(items=>new Set(items.map(i=>JSON.stringify(i))).size===items.length,'Cada concepto debe ser distinto.')}).strict().parse(req.body);
+    return deliverCreativeConcepts(p.id,b.conceptos,req.user!.id);
+  });
+  app.patch('/:id/conceptos/:conceptId',{preHandler:leader},async req=>{
+    const p=idParamSchema.extend({conceptId:z.string().uuid()}).parse(req.params);
+    return reviseCreativeConcept(p.id,p.conceptId,conceptInput.parse(req.body),req.user!.id);
+  });
   app.addHook('preHandler', async (request, reply) => {
     if (request.method === 'GET') return;
     await requireAuth(request, reply);

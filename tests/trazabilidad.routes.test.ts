@@ -564,7 +564,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite también a líder creativo editar el brief', async () => {
+    it('Líder Creativo entrega el brief por su proceso formal, sin escritura legacy de Diseño', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
@@ -575,7 +575,7 @@ describe('rutas de la ficha de trazabilidad', () => {
         .set('Cookie', cookie)
         .send({ disenoBriefCreativo: 'Portada minimalista' });
 
-      expect(respuesta.status).toBe(200);
+      expect(respuesta.status).toBe(403);
       await app.close();
     });
 
@@ -2107,7 +2107,7 @@ describe('rutas de la ficha de trazabilidad', () => {
     // disenador queda fuera de este .each: a diferencia del resto, desde
     // verificarAccesoAProyecto exige pertenencia (disenadorId), no solo rol.
     it.each(['rrpp', 'comercial', 'lider_creativo', 'soporte_editorial', 'soporte_digital'] as const)(
-      'permite a %s ver la ficha (dueño de alguna sección)',
+      'aplica permisos de lectura a %s: Líder Creativo requiere asignación',
       async (rol) => {
         const app = crearAppDePrueba();
         await app.ready();
@@ -2117,7 +2117,7 @@ describe('rutas de la ficha de trazabilidad', () => {
 
         const respuesta = await request(app.server).get(`/api/fichas-trazabilidad/${proyecto.id}`).set('Cookie', cookie);
 
-        expect(respuesta.status).toBe(200);
+        expect(respuesta.status).toBe(rol==='lider_creativo'?403:200);
 
         await app.close();
       },
@@ -2375,7 +2375,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite también a lider_creativo (mismo dueño de la sección)', async () => {
+    it('Líder Creativo no comparte la bandeja legacy de Diseño', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
@@ -2383,7 +2383,7 @@ describe('rutas de la ficha de trazabilidad', () => {
 
       const respuesta = await request(app.server).get('/api/fichas-trazabilidad/pendientes/diseno').set('Cookie', cookie);
 
-      expect(respuesta.status).toBe(200);
+      expect(respuesta.status).toBe(403);
 
       await app.close();
     });

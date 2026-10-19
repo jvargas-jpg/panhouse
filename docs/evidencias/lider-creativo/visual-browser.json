@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-19T15:40:08.979Z",
+  "viewports": [
+    "1440x900",
+    "768x1024",
+    "375x812"
+  ],
+  "fourKpis": true,
+  "noHorizontalOverflow": true,
+  "waitingExcluded": true,
+  "contextualCta": true,
+  "keyboardFocusAndEscape": true,
+  "localActivityFailure": true,
+  "empty": true,
+  "loading": true,
+  "errors": []
+}

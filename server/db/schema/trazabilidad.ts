@@ -594,6 +594,9 @@ export const fichaDisenoPropuestas = pgTable('ficha_diseno_propuestas', {
   // distinguir "RRPP ya aprobó" de "RRPP todavía no ha visto los
   // conceptos", y el gate quedaba sin poder implementarse de verdad.
   fechaAprobadaRrpp: date('fecha_aprobada_rrpp'),
+  feedbackRrpp: text('feedback_rrpp'),
+  feedbackAutor: text('feedback_autor'),
+  revisedAt: timestamp('revised_at', { withTimezone: true }),
   fechaEnviadaAutor: date('fecha_enviada_autor'),
   fechaAprobadaAutor: date('fecha_aprobada_autor'),
   estado: text('estado'),

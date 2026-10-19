@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, isNull, ne } from 'drizzle-orm';
+import { and, desc, eq, isNotNull, isNull, ne,sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { Rol } from '../db/schema/index.js';
 import {
@@ -18,10 +18,16 @@ import { evaluarGateAprobacionPortadaRrpp, evaluarGateBriefAprobadoParaConceptos
 import { obtenerFichaPorProyecto } from './trazabilidad.js';
 import type { Tx } from './tx.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItemPorId } from './workItems.js';
+import {lockCreativeForLeader} from './creativeLeaderCommands.js';
+import {saveCreativeDelivery} from './creativeDeliveries.js';
+import {CreativeError} from './creativeLeader.js';
+import {obtenerEspecialistaActual} from './carga.js';
 
 async function obtenerDireccionCreativa(tx: Tx, id: string) {
   const [fila] = await tx.select().from(direccionesCreativas).where(eq(direccionesCreativas.id, id)).limit(1);
-  return fila;
+  if(!fila)return;
+  await tx.select({id:proyectos.id}).from(proyectos).where(eq(proyectos.id,fila.proyectoId)).for('update');
+  return (await tx.select().from(direccionesCreativas).where(eq(direccionesCreativas.id,id)))[0];
 }
 
 export type ResultadoAccion = { ok: true } | { ok: false; status: 400 | 403 | 404 | 409; error: string };
@@ -42,7 +48,7 @@ export async function solicitarDireccionCreativa(proyectoId: string, actorId: st
       })
       .from(proyectos)
       .where(eq(proyectos.id, proyectoId))
-      .limit(1);
+      .limit(1).for('update');
     if (!proyecto) return { ok: false, status: 404, error: 'Proyecto no encontrado' };
 
     const [servicio] = await tx.select({ codigo: servicios.codigo }).from(servicios).where(eq(servicios.id, proyecto.servicioId)).limit(1);
@@ -69,7 +75,7 @@ export async function solicitarDireccionCreativa(proyectoId: string, actorId: st
       }
     }
 
-    const workItemId = await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'direccion_creativa', businessKey: 'concepto_portada' });
+    const workItemId = await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'direccion_creativa', businessKey: existente?'concepto_portada:'+existente.id:'concepto_portada' });
     const fechaSolicitud = new Date().toISOString().slice(0, 10);
 
     const [creada] = await tx.insert(direccionesCreativas).values({ proyectoId, workItemId, tipo: 'concepto_portada', fechaSolicitud }).returning({ id: direccionesCreativas.id });
@@ -105,6 +111,14 @@ export async function asignarLiderCreativo(direccionCreativaId: string, liderCre
   return db.transaction(async (tx) => {
     const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
     if (!direccion) return { ok: false, status: 404, error: 'Dirección creativa no encontrada' };
+    const [actor]=await tx.select().from(users).where(eq(users.id,actorId));
+    const [target]=await tx.select().from(users).where(eq(users.id,liderCreativoId));
+    if(!target?.activo||target.rol!=='lider_creativo')return {ok:false,status:400,error:'Selecciona un Líder Creativo activo.'};
+    if(!actor||!['jefe_area','lider_creativo'].includes(actor.rol)||actor.rol==='lider_creativo'&&liderCreativoId!==actorId)return {ok:false,status:403,error:'Asignación no autorizada.'};
+    const currentLeader=await obtenerLiderCreativoActivo(tx,direccion.workItemId);
+    if(actor.rol==='lider_creativo'&&currentLeader&&currentLeader!==actorId)return {ok:false,status:403,error:'Este trabajo pertenece a otro Líder Creativo.'};
+    const [currentWork]=await tx.select().from(workItemsTable).where(eq(workItemsTable.id,direccion.workItemId));
+    if(!currentWork||['completado','cancelado'].includes(currentWork.estado)||direccion.fechaCierre)return {ok:false,status:409,error:'Intervención ya resuelta.'};
 
     // Dependencia 5D/5E: reclamar una revisión de cubierta no permite
     // apropiarse de la revisión de otro líder ni reabrir una ya resuelta.
@@ -125,7 +139,7 @@ export async function asignarLiderCreativo(direccionCreativaId: string, liderCre
       usuarioId: liderCreativoId,
       asignadoPorId: actorId,
     });
-    if (direccion.tipo === 'revision_cubierta' && !asignacion.cambio) return { ok: true };
+    if (!asignacion.cambio) return { ok: true };
 
     await transicionarWorkItemPorId(tx, direccion.workItemId, 'en_progreso');
 
@@ -157,7 +171,7 @@ export interface DatosReunionCreativa {
 
 export async function registrarReunionCreativa(direccionCreativaId: string, datos: DatosReunionCreativa, actorId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
+    const direccion = await lockCreativeForLeader(tx, direccionCreativaId,actorId);
     if (!direccion) throw new Error(`Dirección creativa no encontrada: ${direccionCreativaId}`);
 
     await tx
@@ -190,14 +204,19 @@ export interface DatosBrief {
 // columna en server/db/schema/direccionCreativa.ts).
 export async function registrarBrief(direccionCreativaId: string, datos: DatosBrief, actorId: string): Promise<void> {
   await db.transaction(async (tx) => {
-    const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
+    const direccion = await lockCreativeForLeader(tx, direccionCreativaId,actorId);
     if (!direccion) throw new Error(`Dirección creativa no encontrada: ${direccionCreativaId}`);
+    if(direccion.fechaBriefAprobadoAutor)throw new CreativeError(409,'El brief aprobado por el autor no puede reemplazarse.');
+    if(datos.briefEnlace===direccion.briefEnlace&&datos.fechaBriefEnviadoEspecialista===direccion.fechaBriefEnviadoEspecialista&&!direccion.briefFeedback)return;
+    if(datos.briefEnlace)await saveCreativeDelivery(tx,{projectId:direccion.proyectoId,creativeProcessId:direccion.id,type:'BRIEF',url:datos.briefEnlace,actorId});
 
     await tx
       .update(direccionesCreativas)
       .set({
         briefEnlace: datos.briefEnlace ?? direccion.briefEnlace,
         fechaBriefEnviadoEspecialista: datos.fechaBriefEnviadoEspecialista ?? direccion.fechaBriefEnviadoEspecialista,
+        briefFeedback:null,briefFeedbackAt:null,
+        ...(direccion.briefFeedback?{fechaBriefEnviadoAutor:null,fechaBriefAprobadoAutor:null}:{}),
       })
       .where(eq(direccionesCreativas.id, direccionCreativaId));
 
@@ -210,11 +229,12 @@ export async function registrarBrief(direccionCreativaId: string, datos: DatosBr
     });
 
     const [proyecto] = await tx.select({ especialistaId: proyectos.especialistaId }).from(proyectos).where(eq(proyectos.id, direccion.proyectoId)).limit(1);
-    if (proyecto?.especialistaId) {
+    const specialist=await obtenerEspecialistaActual(direccion.proyectoId,proyecto?.especialistaId??null,tx);
+    if (specialist) {
       await tx.insert(notificaciones).values({
         proyectoId: direccion.proyectoId,
         rolDestino: 'especialista',
-        usuarioDestinoId: proyecto.especialistaId,
+        usuarioDestinoId: specialist,
         mensaje: 'El brief creativo está disponible para enviarlo al autor.',
       });
     }
@@ -224,6 +244,7 @@ export async function registrarBrief(direccionCreativaId: string, datos: DatosBr
 export interface DatosBriefAutor {
   fechaBriefEnviadoAutor?: string | null;
   fechaBriefAprobadoAutor?: string | null;
+  feedback?:string;
 }
 
 // Autor sin Portal todavía (master prompt 5C §13): el Especialista
@@ -232,17 +253,26 @@ export async function registrarBriefAutor(direccionCreativaId: string, datos: Da
   await db.transaction(async (tx) => {
     const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
     if (!direccion) throw new Error(`Dirección creativa no encontrada: ${direccionCreativaId}`);
+    if(direccion.fechaCierre)throw new CreativeError(409,'La intervención está cerrada.');
 
     const yaAprobado = Boolean(direccion.fechaBriefAprobadoAutor);
-    const nuevoAprobado = datos.fechaBriefAprobadoAutor ?? direccion.fechaBriefAprobadoAutor;
+    const nuevoAprobado = datos.feedback?null:datos.fechaBriefAprobadoAutor ?? direccion.fechaBriefAprobadoAutor;
 
     await tx
       .update(direccionesCreativas)
       .set({
         fechaBriefEnviadoAutor: datos.fechaBriefEnviadoAutor ?? direccion.fechaBriefEnviadoAutor,
         fechaBriefAprobadoAutor: nuevoAprobado,
+        ...(datos.feedback?{briefFeedback:datos.feedback,briefFeedbackAt:new Date()}:{}),
+        ...(datos.fechaBriefAprobadoAutor?{briefFeedback:null,briefFeedbackAt:null}:{}),
       })
       .where(eq(direccionesCreativas.id, direccionCreativaId));
+
+    if(datos.feedback){
+      await registrarEvento(tx,{actorId,accion:'BRIEF_FEEDBACK_AUTOR',entityType:'work_item',entityId:direccion.workItemId,proyectoId:direccion.proyectoId,detalles:{feedback:datos.feedback}});
+      const leader=await obtenerLiderCreativoActivo(tx,direccion.workItemId);
+      if(leader)await tx.insert(notificaciones).values({proyectoId:direccion.proyectoId,rolDestino:'lider_creativo',usuarioDestinoId:leader,mensaje:'El autor solicitó ajustes al brief creativo.'});
+    }
 
     if (!yaAprobado && nuevoAprobado) {
       await registrarEvento(tx, {
@@ -287,29 +317,32 @@ export interface DatosConceptoPortada {
 // creando filas sin ese vínculo, sin tocar ese camino).
 export async function agregarConceptoPortada(direccionCreativaId: string, datos: DatosConceptoPortada, actorId: string): Promise<ResultadoAccion & { id?: string }> {
   return db.transaction(async (tx) => {
-    const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
+    const direccion = await lockCreativeForLeader(tx, direccionCreativaId,actorId);
     if (!direccion) return { ok: false, status: 404, error: 'Dirección creativa no encontrada' };
 
     const gate = evaluarGateBriefAprobadoParaConceptos({ fechaBriefAprobadoAutor: direccion.fechaBriefAprobadoAutor });
     if (!gate.desbloqueado) return { ok: false, status: 400, error: gate.motivo ?? 'Gate bloqueado' };
+    const existing=await tx.select().from(fichaDisenoPropuestas).where(eq(fichaDisenoPropuestas.direccionCreativaId,direccionCreativaId));
+    if(existing.length>=3||existing.some(p=>p.fechaAprobadaRrpp||p.estado==='Devuelta por RRPP'||p.feedbackAutor))return {ok:false,status:409,error:'Ya se entregaron los conceptos. Usa el flujo de ajustes.'};
 
     const ficha = await obtenerFichaPorProyecto(direccion.proyectoId);
     const [propuesta] = await tx
       .insert(fichaDisenoPropuestas)
-      .values({ fichaId: ficha.id, direccionCreativaId, descripcion: datos.descripcion, enlace: datos.enlace })
+      .values({ fichaId: ficha.id, direccionCreativaId, descripcion: datos.descripcion, enlace: datos.enlace,estado:existing.length?'Pendiente RRPP':'Borrador' })
       .returning({ id: fichaDisenoPropuestas.id });
     if (!propuesta) throw new Error('El insert de la propuesta no devolvió ninguna fila');
+    if(existing.length)await tx.update(fichaDisenoPropuestas).set({estado:'Pendiente RRPP'}).where(and(eq(fichaDisenoPropuestas.direccionCreativaId,direccionCreativaId),eq(fichaDisenoPropuestas.estado,'Borrador')));
 
     await registrarEvento(tx, {
       actorId,
-      accion: 'CONCEPTOS_ENTREGADOS',
+      accion: existing.length?'CONCEPTOS_ENTREGADOS':'CONCEPTO_GUARDADO',
       entityType: 'work_item',
       entityId: direccion.workItemId,
       proyectoId: direccion.proyectoId,
       detalles: { propuestaId: propuesta.id },
     });
 
-    await tx.insert(notificaciones).values({
+    if(existing.length)await tx.insert(notificaciones).values({
       proyectoId: direccion.proyectoId,
       rolDestino: 'rrpp',
       mensaje: 'Hay un concepto de portada esperando tu aprobación.',
@@ -337,6 +370,8 @@ export async function aprobarConceptoRrpp(propuestaId: string, datos: DatosAprob
 
     const direccion = await obtenerDireccionCreativa(tx, propuesta.direccionCreativaId);
     if (!direccion) return { ok: false, status: 404, error: 'Dirección creativa no encontrada' };
+    if(propuesta.estado==='Borrador')return {ok:false,status:409,error:'El Líder debe entregar al menos dos conceptos antes del checkpoint.'};
+    if(propuesta.fechaAprobadaAutor)return {ok:false,status:409,error:'El concepto ya fue aprobado por el autor.'};
     const [item] = await tx.select({ estado: workItemsTable.estado }).from(workItemsTable).where(eq(workItemsTable.id, direccion.workItemId));
     if (direccion.tipo !== 'concepto_portada' || direccion.fechaCierre || !item || ['completado', 'cancelado'].includes(item.estado)) {
       return { ok: false, status: 409, error: 'Esta intervención no admite aprobación de conceptos por RRPP' };
@@ -347,7 +382,7 @@ export async function aprobarConceptoRrpp(propuestaId: string, datos: DatosAprob
       .set({
         fechaAprobadaRrpp: datos.aprobar ? new Date().toISOString().slice(0, 10) : null,
         estado: datos.aprobar ? 'Aprobada por RRPP' : 'Devuelta por RRPP',
-        descripcion: datos.observaciones ?? propuesta.descripcion,
+        feedbackRrpp:datos.aprobar?null:datos.observaciones??null,
       })
       .where(eq(fichaDisenoPropuestas.id, propuestaId));
 
@@ -357,7 +392,7 @@ export async function aprobarConceptoRrpp(propuestaId: string, datos: DatosAprob
       entityType: 'work_item',
       entityId: direccion.workItemId,
       proyectoId: direccion.proyectoId,
-      detalles: { propuestaId },
+      detalles: { propuestaId,observaciones:datos.observaciones??null },
     });
 
     if (datos.aprobar) {
@@ -390,6 +425,7 @@ export interface DatosConceptoAutor {
   fechaEnviadaAutor?: string | null;
   fechaAprobadaAutor?: string | null;
   estado?: string | null;
+  feedback?:string;
 }
 
 // GATE-05 (reusado, no reimplementado): sin fechaAprobadaRrpp no se
@@ -401,25 +437,33 @@ export async function registrarConceptoAutor(propuestaId: string, datos: DatosCo
     const [propuesta] = await tx.select().from(fichaDisenoPropuestas).where(eq(fichaDisenoPropuestas.id, propuestaId)).limit(1);
     if (!propuesta || !propuesta.direccionCreativaId) return { ok: false, status: 404, error: 'Concepto de portada no encontrado' };
 
-    if (datos.fechaEnviadaAutor && !propuesta.fechaEnviadaAutor) {
+    if (datos.fechaEnviadaAutor || datos.fechaAprobadaAutor || datos.feedback) {
       const gate = evaluarGateAprobacionPortadaRrpp({ fechaAprobadaRrpp: propuesta.fechaAprobadaRrpp });
       if (!gate.desbloqueado) return { ok: false, status: 400, error: gate.motivo ?? 'Gate bloqueado' };
     }
 
     const direccion = await obtenerDireccionCreativa(tx, propuesta.direccionCreativaId);
     if (!direccion) return { ok: false, status: 404, error: 'Dirección creativa no encontrada' };
+    if(direccion.fechaCierre)return {ok:false,status:409,error:'La intervención está cerrada.'};
 
     const yaAprobado = Boolean(propuesta.fechaAprobadaAutor);
-    const nuevoAprobado = datos.fechaAprobadaAutor ?? propuesta.fechaAprobadaAutor;
+    const nuevoAprobado = datos.feedback?null:datos.fechaAprobadaAutor ?? propuesta.fechaAprobadaAutor;
 
     await tx
       .update(fichaDisenoPropuestas)
       .set({
         fechaEnviadaAutor: datos.fechaEnviadaAutor ?? propuesta.fechaEnviadaAutor,
         fechaAprobadaAutor: nuevoAprobado,
-        estado: datos.estado ?? propuesta.estado,
+        estado: datos.feedback?'Feedback del autor':datos.fechaAprobadaAutor?'Aprobada por autor':datos.estado ?? propuesta.estado,
+        ...(datos.feedback?{feedbackAutor:datos.feedback}:{}),
       })
       .where(eq(fichaDisenoPropuestas.id, propuestaId));
+
+    if(datos.feedback){
+      await registrarEvento(tx,{actorId,accion:'CONCEPTO_FEEDBACK_AUTOR',entityType:'work_item',entityId:direccion.workItemId,proyectoId:direccion.proyectoId,detalles:{propuestaId,feedback:datos.feedback}});
+      const leader=await obtenerLiderCreativoActivo(tx,direccion.workItemId);
+      if(leader)await tx.insert(notificaciones).values({proyectoId:direccion.proyectoId,rolDestino:'lider_creativo',usuarioDestinoId:leader,mensaje:'El autor solicitó ajustes a un concepto de portada.'});
+    }
 
     if (!yaAprobado && nuevoAprobado) {
       await registrarEvento(tx, {
@@ -458,8 +502,13 @@ export interface DatosRecursosCreativos {
 // exige al menos una propuesta de esta intervención con fechaAprobadaAutor.
 export async function registrarRecursosCreativos(direccionCreativaId: string, datos: DatosRecursosCreativos, actorId: string): Promise<ResultadoAccion> {
   return db.transaction(async (tx) => {
-    const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
+    const direccion = await lockCreativeForLeader(tx, direccionCreativaId,actorId,true);
     if (!direccion) return { ok: false, status: 404, error: 'Dirección creativa no encontrada' };
+    const image=datos.recursoImagenUrl??direccion.recursoImagenUrl,pdf=datos.recursoConceptoPdfUrl??direccion.recursoConceptoPdfUrl;
+    if(direccion.fechaCierre){
+      if(image===direccion.recursoImagenUrl&&pdf===direccion.recursoConceptoPdfUrl)return {ok:true};
+      return {ok:false,status:409,error:'Los recursos de la intervención cerrada no pueden reemplazarse.'};
+    }
 
     const propuestasAprobadas = await tx
       .select({ id: fichaDisenoPropuestas.id })
@@ -468,6 +517,7 @@ export async function registrarRecursosCreativos(direccionCreativaId: string, da
     if (propuestasAprobadas.length === 0) {
       return { ok: false, status: 400, error: 'Todavía no hay ningún concepto aprobado por el autor' };
     }
+    for(const [type,url] of [['CONCEPT_IMAGE',image],['CONCEPT_PDF',pdf]] as const)if(url)await saveCreativeDelivery(tx,{projectId:direccion.proyectoId,creativeProcessId:direccion.id,conceptId:propuestasAprobadas[0]!.id,type,url,actorId});
 
     await tx
       .update(direccionesCreativas)
@@ -476,6 +526,15 @@ export async function registrarRecursosCreativos(direccionCreativaId: string, da
         recursoConceptoPdfUrl: datos.recursoConceptoPdfUrl ?? direccion.recursoConceptoPdfUrl,
       })
       .where(eq(direccionesCreativas.id, direccionCreativaId));
+
+    if(image&&pdf){
+      await tx.update(direccionesCreativas).set({resultadoFinal:'aprobado',fechaCierre:new Date().toISOString().slice(0,10)}).where(eq(direccionesCreativas.id,direccion.id));
+      await transicionarWorkItemPorId(tx,direccion.workItemId,'completado');
+      await registrarEvento(tx,{actorId,accion:'DIRECCION_CREATIVA_CERRADA',entityType:'work_item',entityId:direccion.workItemId,proyectoId:direccion.proyectoId,detalles:{resultadoFinal:'aprobado',reason:'Recursos completos del concepto aprobado'}});
+      const [p]=await tx.select({especialistaId:proyectos.especialistaId}).from(proyectos).where(eq(proyectos.id,direccion.proyectoId));
+      const specialist=await obtenerEspecialistaActual(direccion.proyectoId,p?.especialistaId??null,tx);
+      if(specialist)await tx.insert(notificaciones).values({proyectoId:direccion.proyectoId,rolDestino:'especialista',usuarioDestinoId:specialist,mensaje:'Los recursos del concepto aprobado están listos para coordinar Diseño.'});
+    }
 
     await registrarEvento(tx, {
       actorId,
@@ -498,6 +557,7 @@ export async function cerrarDireccionCreativa(direccionCreativaId: string, datos
   await db.transaction(async (tx) => {
     const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
     if (!direccion) throw new Error(`Dirección creativa no encontrada: ${direccionCreativaId}`);
+    if(direccion.fechaCierre&&direccion.resultadoFinal===datos.resultadoFinal)return;
 
     const fechaCierre = new Date().toISOString().slice(0, 10);
     await tx
@@ -526,7 +586,7 @@ export type AccesoDireccionCreativa = { ok: true } | { ok: false; status: 404 | 
 // (no "cualquiera con el rol").
 export async function verificarAccesoADireccionCreativa(direccionCreativaId: string, usuario: { id: string; rol: Rol }): Promise<AccesoDireccionCreativa> {
   const [fila] = await db
-    .select({ workItemId: direccionesCreativas.workItemId, especialistaId: proyectos.especialistaId })
+    .select({ workItemId: direccionesCreativas.workItemId, especialistaId: proyectos.especialistaId,projectId:proyectos.id })
     .from(direccionesCreativas)
     .innerJoin(proyectos, eq(direccionesCreativas.proyectoId, proyectos.id))
     .where(eq(direccionesCreativas.id, direccionCreativaId))
@@ -536,7 +596,7 @@ export async function verificarAccesoADireccionCreativa(direccionCreativaId: str
 
   if (usuario.rol === 'jefe_area') return { ok: true };
   if (usuario.rol === 'especialista') {
-    return fila.especialistaId === usuario.id ? { ok: true } : { ok: false, status: 403, error: 'No autorizado para esta dirección creativa' };
+    return await obtenerEspecialistaActual(fila.projectId,fila.especialistaId) === usuario.id ? { ok: true } : { ok: false, status: 403, error: 'No autorizado para esta dirección creativa' };
   }
   if (usuario.rol === 'lider_creativo') {
     const liderActivo = await obtenerLiderCreativoActivo(db, fila.workItemId);
@@ -607,6 +667,8 @@ export interface PropuestaDeDireccionCreativa {
   fechaAprobadaRrpp: string | null;
   fechaEnviadaAutor: string | null;
   fechaAprobadaAutor: string | null;
+  feedbackRrpp:string|null;
+  feedbackAutor:string|null;
   createdAt: Date;
 }
 
@@ -620,6 +682,8 @@ export async function listarPropuestasDeDireccionCreativa(direccionCreativaId: s
       fechaAprobadaRrpp: fichaDisenoPropuestas.fechaAprobadaRrpp,
       fechaEnviadaAutor: fichaDisenoPropuestas.fechaEnviadaAutor,
       fechaAprobadaAutor: fichaDisenoPropuestas.fechaAprobadaAutor,
+      feedbackRrpp:fichaDisenoPropuestas.feedbackRrpp,
+      feedbackAutor:fichaDisenoPropuestas.feedbackAutor,
       createdAt: fichaDisenoPropuestas.createdAt,
     })
     .from(fichaDisenoPropuestas)
@@ -719,6 +783,6 @@ export async function listarPropuestasPendientesRrpp(): Promise<PropuestaPendien
     .innerJoin(workItemsTable, eq(direccionesCreativas.workItemId, workItemsTable.id))
     .innerJoin(proyectos, eq(direccionesCreativas.proyectoId, proyectos.id))
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
-    .where(isNull(fichaDisenoPropuestas.fechaAprobadaRrpp))
+    .where(and(isNull(fichaDisenoPropuestas.fechaAprobadaRrpp),sql`coalesce(${fichaDisenoPropuestas.estado},'') not in ('Borrador','Devuelta por RRPP')`,isNull(direccionesCreativas.fechaCierre),sql`${workItemsTable.estado} not in ('completado','cancelado')`))
     .orderBy(fichaDisenoPropuestas.createdAt);
 }

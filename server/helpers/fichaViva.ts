@@ -42,6 +42,10 @@ export async function verificarAccesoFichaViva(id: string, actor: ActorFicha, cl
     const [p] = await client.select().from(proyectos).where(eq(proyectos.id, id)).limit(1);
     if (!p)
         throw new ErrorFichaViva(404, 'Proyecto no encontrado');
+    if(actor.rol==='lider_creativo'){
+      const {hasCreativeProjectAccess}=await import('./creativeAccess.js');
+      if(!await hasCreativeProjectAccess(id,actor.id,client))throw new ErrorFichaViva(403,'No tienes una intervención creativa asignada en este proyecto.');
+    }
     if (actor.rol === 'especialista') p.especialistaId = await obtenerEspecialistaActual(id, p.especialistaId, client);
     const assigned = actor.rol === 'especialista' ? p.especialistaId : actor.rol === 'editor' ? p.editorId : actor.rol === 'disenador' ? p.disenadorId : undefined;
     if (assigned !== undefined && assigned !== actor.id)

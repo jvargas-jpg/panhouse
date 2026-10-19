@@ -48,6 +48,8 @@ export const direccionesCreativas = pgTable('direcciones_creativas', {
   // especialista registra en su nombre, master prompt 5C §13).
   fechaBriefEnviadoAutor: date('fecha_brief_enviado_autor'),
   fechaBriefAprobadoAutor: date('fecha_brief_aprobado_autor'),
+  briefFeedback: text('brief_feedback'),
+  briefFeedbackAt: timestamp('brief_feedback_at', { withTimezone: true }),
 
   // Entregables del líder creativo tras un concepto aprobado (Manual
   // §4.1.2: "Imagen de freepik. Concepto de portada en PDF.") — para

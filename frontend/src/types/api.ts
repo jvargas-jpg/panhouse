@@ -408,6 +408,8 @@ export interface PropuestaCreativa {
   fechaAprobadaRrpp: string | null;
   fechaEnviadaAutor: string | null;
   fechaAprobadaAutor: string | null;
+  feedbackRrpp?:string|null;
+  feedbackAutor?:string|null;
   createdAt: string;
 }
 

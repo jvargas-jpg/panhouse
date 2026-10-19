@@ -1343,7 +1343,7 @@ describe('rutas de proyectos', () => {
     // está scoped por verificarAccesoAProyecto (mismo criterio que
     // especialista/editor) — ver los tests dedicados más abajo.
     it.each(['rrpp', 'comercial', 'lider_creativo', 'soporte_editorial', 'soporte_digital'] as const)(
-      'permite a %s abrir el detalle del proyecto (necesita editar su sección)',
+      'aplica acceso de %s al detalle: Líder Creativo requiere asignación',
       async (rol) => {
         const app = crearAppDePrueba();
         await app.ready();
@@ -1353,7 +1353,7 @@ describe('rutas de proyectos', () => {
 
         const respuesta = await request(app.server).get(`/api/proyectos/${proyecto.id}/riesgo`).set('Cookie', cookie);
 
-        expect(respuesta.status).toBe(200);
+        expect(respuesta.status).toBe(rol==='lider_creativo'?403:200);
 
         await app.close();
       },

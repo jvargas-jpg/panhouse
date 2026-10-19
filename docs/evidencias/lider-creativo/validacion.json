@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-19T15:54:26.467Z",
+  "fullRegression": {
+    "command": "npm test",
+    "files": 75,
+    "tests": 1422,
+    "passed": 1422,
+    "failed": 0,
+    "exitCode": 0,
+    "durationSeconds": 430.72
+  },
+  "creativeFocused": {
+    "files": 1,
+    "tests": 16,
+    "passed": 16,
+    "failed": 0,
+    "exitCode": 0
+  },
+  "typecheck": {
+    "backend": 0,
+    "frontend": 0
+  },
+  "build": {
+    "backend": 0,
+    "frontend": 0,
+    "frontendBundleSizeWarning": true
+  },
+  "visualEvidence": "visual-browser.json",
+  "functionalEvidence": "workflow-browser.json",
+  "downstreamEvidence": "handoffs-api.json"
+}

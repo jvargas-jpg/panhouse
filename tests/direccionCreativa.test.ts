@@ -278,6 +278,7 @@ describe('Fase 5C — Dirección Creativa', () => {
         .send({ descripcion: 'Concepto 1', enlace: 'https://drive.example/concepto1' });
       expect(conceptoOk.status).toBe(201);
       const propuestaId = conceptoOk.body.id as string;
+      await request(app.server).post(`/api/direccion-creativa/${direccionId}/propuestas`).set('Cookie',cookieLider).send({descripcion:'Concepto 2',enlace:'https://drive.example/concepto2'});
 
       // GATE-05 reusado: sin aprobación RRPP, no se puede marcar enviada al autor.
       const cookieRrpp = await registrarYLoguear(app, 'rrpp');
@@ -357,6 +358,7 @@ describe('Fase 5C — Dirección Creativa', () => {
 
       const concepto = await request(app.server).post(`/api/direccion-creativa/${direccionId}/propuestas`).set('Cookie', cookieLider).send({ descripcion: 'Concepto 1' });
       const propuestaId = concepto.body.id as string;
+      await request(app.server).post(`/api/direccion-creativa/${direccionId}/propuestas`).set('Cookie',cookieLider).send({descripcion:'Concepto 2'});
 
       const cookieRrpp = await registrarYLoguear(app, 'rrpp');
       const devolucion = await request(app.server)
@@ -462,8 +464,11 @@ describe('Fase 5C — Dirección Creativa', () => {
       const cookieRrpp = await registrarYLoguear(app, 'rrpp');
       const respuesta = await request(app.server).get('/api/direccion-creativa/pendientes-rrpp').set('Cookie', cookieRrpp);
       expect(respuesta.status).toBe(200);
-      expect(respuesta.body.propuestas).toHaveLength(1);
-      expect(respuesta.body.propuestas[0].proyectoId).toBe(proyecto.id);
+      expect(respuesta.body.propuestas).toHaveLength(0); // Una propuesta todavía es borrador, no una entrega de 2–3.
+      await request(app.server).post(`/api/direccion-creativa/${direccionId}/propuestas`).set('Cookie',cookieLider).send({descripcion:'Concepto 2'});
+      const delivered=await request(app.server).get('/api/direccion-creativa/pendientes-rrpp').set('Cookie',cookieRrpp);
+      expect(delivered.body.propuestas).toHaveLength(2);
+      expect(delivered.body.propuestas[0].proyectoId).toBe(proyecto.id);
 
       await app.close();
     });

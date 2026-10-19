@@ -1,4 +1,5 @@
 import { dispatchProjectWorkspace } from '../modules/project-workspaces/dispatch.js';
+import {hasCreativeProjectAccess} from './creativeAccess.js';
 import { auditarCambioComercial, camposModificados, type ActorFicha } from './intakeRrpp.js';
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
@@ -324,6 +325,7 @@ export async function verificarAccesoAProyecto(
   if (usuario.rol === 'disenador' && proyecto.disenadorId !== usuario.id) {
     return { ok: false, status: 403, error: 'No autorizado para ver este proyecto' };
   }
+  if(usuario.rol==='lider_creativo'&&!await hasCreativeProjectAccess(proyectoId,usuario.id))return {ok:false,status:403,error:'No tienes una intervención creativa asignada en este proyecto.'};
   return { ok: true };
 }
 

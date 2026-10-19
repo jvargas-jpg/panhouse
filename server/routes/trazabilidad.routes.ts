@@ -483,12 +483,10 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     return reply.send({ proyectos });
   });
 
-  // "Notificación interna" de disenador (también lider_creativo, dueño
-  // de la misma sección, aunque su pantalla propia no se construye
-  // todavía): pantalla de inicio.
+  // Bandeja legacy de Diseño. El Líder usa el proceso creativo formal.
   app.get(
     '/pendientes/diseno',
-    { preHandler: [requireAuth, requireRole('disenador', 'lider_creativo')] },
+    { preHandler: [requireAuth, requireRole('disenador')] },
     async (_request, reply) => {
       const proyectos = await listarProyectosPendientesDiseno();
       return reply.send({ proyectos });
@@ -696,7 +694,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.patch(
     '/:proyectoId/diseno/brief',
-    { preHandler: [requireAuth, requireRole('disenador', 'lider_creativo')] },
+    { preHandler: [requireAuth, requireRole('disenador')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -719,7 +717,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.post(
     '/:proyectoId/diseno/propuestas',
-    { preHandler: [requireAuth, requireRole('disenador', 'lider_creativo')] },
+    { preHandler: [requireAuth, requireRole('disenador')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -742,7 +740,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.patch(
     '/:proyectoId/diseno/propuestas/:propuestaId',
-    { preHandler: [requireAuth, requireRole('disenador', 'lider_creativo')] },
+    { preHandler: [requireAuth, requireRole('disenador')] },
     async (request, reply) => {
       const params = parseOrReply(disenoPropuestaParamsSchema, request.params, reply);
       if (!params) return;
@@ -768,7 +766,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.delete(
     '/:proyectoId/diseno/propuestas/:propuestaId',
-    { preHandler: [requireAuth, requireRole('disenador', 'lider_creativo')] },
+    { preHandler: [requireAuth, requireRole('disenador')] },
     async (request, reply) => {
       const params = parseOrReply(disenoPropuestaParamsSchema, request.params, reply);
       if (!params) return;

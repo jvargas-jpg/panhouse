@@ -28,6 +28,8 @@ function SeccionConceptosEspecialista({ direccion }: { direccion: DireccionCreat
   });
   const queryClient = useQueryClient();
   const [fechasPorPropuesta, setFechasPorPropuesta] = useState<Record<string, string>>({});
+  const [feedback,setFeedback]=useState<Record<string,string>>({});
+  const feedbackMutation=useMutation({mutationFn:(id:string)=>registrarConceptoAutor(id,{feedback:feedback[id]?.trim()}),onSuccess:()=>{void queryClient.invalidateQueries({queryKey:['direccion-creativa',direccion.id,'propuestas']});}});
 
   const mutacionEnvio = useMutation({
     mutationFn: (propuestaId: string) => registrarConceptoAutor(propuestaId, { fechaEnviadaAutor: fechasPorPropuesta[propuestaId] || undefined }),
@@ -58,6 +60,8 @@ function SeccionConceptosEspecialista({ direccion }: { direccion: DireccionCreat
             )}
           </div>
 
+          {propuesta.enlace&&<a href={propuesta.enlace} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-xs text-dorado underline">Consultar concepto de portada ↗</a>}
+          {(propuesta.feedbackAutor||propuesta.feedbackRrpp)&&<p className="mt-2 text-xs text-amber-800">{propuesta.feedbackAutor??propuesta.feedbackRrpp}</p>}
           {propuesta.fechaAprobadaRrpp && !propuesta.fechaAprobadaAutor && (
             <div className="mt-2 flex items-end gap-2">
               <input
@@ -86,6 +90,7 @@ function SeccionConceptosEspecialista({ direccion }: { direccion: DireccionCreat
               )}
             </div>
           )}
+          {propuesta.fechaEnviadaAutor&&!propuesta.fechaAprobadaAutor&&<div className="mt-3 grid gap-2"><label className="text-xs text-tinta/70">Feedback del autor<textarea aria-label="Feedback del autor sobre el concepto" className="mt-1 w-full rounded border p-2" value={feedback[propuesta.id]??''} onChange={e=>setFeedback(v=>({...v,[propuesta.id]:e.target.value}))}/></label><button type="button" className="fv-button" disabled={!feedback[propuesta.id]?.trim()||feedbackMutation.isPending} onClick={()=>feedbackMutation.mutate(propuesta.id)}>Enviar ajustes al Líder Creativo</button>{feedbackMutation.isError&&<p role="alert">{feedbackMutation.error.message}</p>}</div>}
         </div>
       ))}
     </div>
@@ -96,6 +101,8 @@ function TarjetaDireccionCreativa({ proyectoId, direccion }: { proyectoId: strin
   const queryClient = useQueryClient();
   const [fechaBriefEnviado, setFechaBriefEnviado] = useState('');
   const [fechaBriefAprobado, setFechaBriefAprobado] = useState('');
+  const [briefFeedback,setBriefFeedback]=useState('');
+  const feedbackMutation=useMutation({mutationFn:()=>registrarBriefAutor(direccion.id,{feedback:briefFeedback.trim()}),onSuccess:()=>{setBriefFeedback('');void queryClient.invalidateQueries({queryKey:['direcciones-creativas',proyectoId]});}});
 
   const mutacionBriefAutor = useMutation({
     mutationFn: () =>
@@ -178,6 +185,7 @@ function TarjetaDireccionCreativa({ proyectoId, direccion }: { proyectoId: strin
         </div>
       )}
 
+      {direccion.briefEnlace&&direccion.fechaBriefEnviadoAutor&&!direccion.fechaBriefAprobadoAutor&&<div className="my-3 grid gap-2"><label className="text-xs text-tinta/70">Feedback del autor sobre el brief<textarea className="mt-1 w-full rounded border p-2" value={briefFeedback} onChange={e=>setBriefFeedback(e.target.value)}/></label><button type="button" className="fv-button" disabled={!briefFeedback.trim()||feedbackMutation.isPending} onClick={()=>feedbackMutation.mutate()}>Solicitar ajustes al brief</button>{feedbackMutation.isError&&<p role="alert">{feedbackMutation.error.message}</p>}</div>}
       {direccion.fechaBriefAprobadoAutor && <SeccionConceptosEspecialista direccion={direccion} />}
 
       {(direccion.recursoImagenUrl || direccion.recursoConceptoPdfUrl) && (

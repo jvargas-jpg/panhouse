@@ -32,7 +32,7 @@ export function registrarBrief(direccionCreativaId: string, datos: { briefEnlace
 
 export function registrarBriefAutor(
   direccionCreativaId: string,
-  datos: { fechaBriefEnviadoAutor?: string | null; fechaBriefAprobadoAutor?: string | null },
+  datos: { fechaBriefEnviadoAutor?: string | null; fechaBriefAprobadoAutor?: string | null;feedback?:string },
 ) {
   return apiFetch<{ ok: true }>(`/direccion-creativa/${direccionCreativaId}/brief-autor`, {
     method: 'PATCH',
@@ -60,7 +60,7 @@ export function aprobarConceptoRrpp(propuestaId: string, datos: { aprobar: boole
 
 export function registrarConceptoAutor(
   propuestaId: string,
-  datos: { fechaEnviadaAutor?: string | null; fechaAprobadaAutor?: string | null; estado?: string | null },
+  datos: { fechaEnviadaAutor?: string | null; fechaAprobadaAutor?: string | null; estado?: string | null;feedback?:string },
 ) {
   return apiFetch<{ ok: true }>(`/direccion-creativa/propuestas/${propuestaId}/autor`, {
     method: 'PATCH',
