@@ -72,6 +72,8 @@ export function etiquetaEventoFicha(action: string, details: unknown): string {
         PROJECT_WORKSPACE_REINTENTO_EXITOSO:'Se completó el espacio documental tras reintentar',
         PROJECT_WORKSPACE_FALLIDO:'No se pudo completar el espacio documental; se conservaron los avances',
         PROJECT_WORKSPACE_INCONSISTENCIA:'Se detectó una inconsistencia que impide configurar el espacio documental',
+        PROJECT_WORKSPACE_RECUPERACION_SOLICITADA:'Se solicitó recuperar el espacio documental',
+        PROJECT_WORKSPACE_ATENCION_REQUERIDA:'El espacio documental requiere intervención',
         OBJETIVO_CREADO: 'Se definió un objetivo mensual para el proyecto',
         OBJETIVO_AJUSTADO: 'Se ajustó un compromiso mensual del proyecto',
         OBJETIVO_CUMPLIDO: 'PanHouse verificó un objetivo mensual cumplido',

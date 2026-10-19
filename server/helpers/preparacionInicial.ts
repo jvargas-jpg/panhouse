@@ -31,7 +31,7 @@ export function proyectarPreparacion(row: typeof preparacionesProyecto.$inferSel
     primerContactoEn: f?.primerContactoEn?.toISOString() ?? null, primerContactoDueAt: calcularPrimerContactoDueAt(asignadoEn),
     reunionOperativaFecha: f?.reunionOperativaFecha?.toISOString() ?? null, reunionOperativaRealizada: f?.reunionOperativaRealizada ?? false,
     grabacionUrl: f?.grabacionUrl ?? null, transcripcionUrl: f?.transcripcionUrl ?? null, minutaUrl: f?.minutaUrl ?? null, cronogramaUrl: f?.cronogramaUrl ?? null,
-    driveCarpetaUrl: documental?workspace.rootFolderUrl:f?.driveCarpetaUrl ?? null, driveEstado: documental?'configurado':workspace.status==='ERROR'||workspace.contextChanged?'error':workspace.status==='PROVISIONING'?'pendiente':'no_configurado',
+    driveCarpetaUrl: documental?workspace.rootFolderUrl:f?.driveCarpetaUrl ?? null, driveEstado: documental?'configurado':workspace.status==='ERROR'||workspace.contextChanged?'error':['PENDING','PROVISIONING'].includes(workspace.status)?'pendiente':'no_configurado',
     workspace,observaciones: f?.observaciones ?? null, estado: completo ? 'Completo' : iniciado||workspace.id ? 'En curso' : 'Pendiente', editable,
   };
 }

@@ -9,6 +9,8 @@ import { Actividad, Card, dateFicha, Equipo, Estado, FichaSkeleton, IconFicha, R
 import { ExpedienteDocumental, HistorialCompleto } from './ExpedienteDocumental';
 import { useFichaViva } from './useFichaViva';
 import './fichaViva.css';
+import { ProjectWorkspaceCard } from '../ProjectWorkspaceCard';
+import '../commandCenter.css';
 
 function EstadoProyecto({data}:{data:ResumenFichaViva}){
   const summary=data.summary;
@@ -50,6 +52,7 @@ function FichaVivaLegacyPage(){
       <nav className="fv-project-navigation" aria-label="Vistas del proyecto"><Link to={`/proyectos/${id}${origen?'?volver='+encodeURIComponent(origen):''}`}>Resumen del proyecto</Link><span aria-current="page">Ficha de trazabilidad</span></nav>
       <header className="fv-header"><div className="fv-header-main"><span className="fv-eyebrow">Expediente editorial <span>#{query.data.project.code}</span></span><h1>{query.data.project.title}</h1><p className="fv-author">{query.data.authors.map(a=>a.name).join(' · ')||'Sin autor registrado'}</p><div className="fv-project-meta"><span>{query.data.project.service}</span><span>{query.data.project.unit}</span><Estado state={query.data.project.macroState}/></div></div><div className="fv-header-actions"><button className={'fv-button '+(complete?'':'fv-primary')} onClick={()=>setParams(previous=>{const next=new URLSearchParams(previous);if(complete)next.delete('modo');else next.set('modo','completa');return next;})}><IconFicha name={complete?'grid':'document'}/>{complete?'Volver al resumen':'Ver ficha completa'}</button><span>Actualizado {dateFicha(query.data.project.updatedAt)}</span></div></header>
       <EstadoProyecto data={query.data}/>
+      {user&&['rrpp','direccion'].includes(user.rol)&&<ProjectWorkspaceCard id={id} editable={false} compact/>}
       {query.data.secondaryErrors.length>0&&<p className="fv-notice" role="status">Hay consultas pendientes: {query.data.secondaryErrors.join(', ')}. <button onClick={()=>query.refetch()}>Reintentar</button></p>}
       {complete?<ExpedienteDocumental id={id} identity={identity} summary={query.data} selected={selected} onSelect={setSelected}/>:<Operativa data={query.data} onArea={showArea} onHistory={()=>setHistory(true)}/>}
       {history&&<HistorialCompleto id={id} identity={identity} onClose={()=>setHistory(false)}/>}

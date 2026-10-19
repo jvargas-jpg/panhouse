@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-19",
+  "timezone": "America/Caracas",
+  "baseCommit": "2092d3c",
+  "initialWorkingTree": "clean",
+  "regression": {
+    "command": "npm test",
+    "exitCode": 0,
+    "filesPassed": 74,
+    "testsPassed": 1406,
+    "failed": 0,
+    "durationSeconds": 478.00,
+    "database": "isolated test database",
+    "externalProviders": "mocked"
+  },
+  "focusedRegression": {
+    "filesPassed": 4,
+    "testsPassed": 79,
+    "failed": 0,
+    "covers": ["workspace saga", "BullMQ identity and retained jobs", "portfolio query budget", "Command Center query budget"]
+  },
+  "builds": [
+    {"command": "npm run typecheck", "exitCode": 0},
+    {"command": "npm run build", "exitCode": 0},
+    {"command": "npm run build --prefix frontend", "exitCode": 0, "warning": "Vite chunks larger than 500 kB"}
+  ],
+  "visualQA": {
+    "realChecksPassed": 15,
+    "stateChecksPassed": 16,
+    "javascriptErrors": 0,
+    "viewports": ["1440x1000", "768x1024", "375x812"],
+    "mobileOverflow": false,
+    "pollingStopsAtReady": true,
+    "roles": ["especialista", "jefe_area"]
+  },
+  "realAssignment": {
+    "source": "Jefatura UI",
+    "httpStatus": 200,
+    "responseMs": 120,
+    "manualWorkspaceCreatedFirst": false,
+    "jobState": "completed",
+    "payloadKeys": ["projectId"],
+    "expectedFolders": 30,
+    "actualFolders": 30,
+    "missing": 0,
+    "unexpected": 0,
+    "retainedForHumanReview": true
+  },
+  "sharing": "PENDING_VALIDATION",
+  "scopesChanged": false,
+  "individualSpecialistOAuth": false,
+  "credentialsCommitted": false
+}

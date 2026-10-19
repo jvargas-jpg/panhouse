@@ -15,6 +15,8 @@ import { useActividadFicha } from './fichaViva/useFichaViva';
 import { CommandCenterProceso } from './CommandCenterProceso';
 import { CommandCenterContexto } from './CommandCenterContexto';
 import { invalidarOperacion } from './operacionQueries';
+import { ProjectWorkspaceCard } from './ProjectWorkspaceCard';
+import { useProjectWorkspace } from './useProjectWorkspace';
 import './fichaViva/fichaViva.css';
 import './commandCenter.css';
 
@@ -52,6 +54,7 @@ export function ProyectoCommandCenterPage() {
   const identity = user ? user.id+':'+user.rol : undefined;
   const allowed = user && ['especialista', 'jefe_area', 'rrpp'].includes(user.rol);
   const query = useQuery({ queryKey: ['proyecto', id, 'command-center', identity], queryFn: () => apiFetch<ProjectCommandCenter>('/proyectos/'+id+'/command-center'), enabled: !!allowed, staleTime: 15000 });
+  useProjectWorkspace(id,query.data?.preparacion.workspace,!!allowed);
   const tab = location.pathname.split('/')[3] ?? '';
   const origen = retornoProyecto(params.get('volver')), jefe = user?.rol === 'jefe_area';
   const back = origen ?? destinoProyectos(user?.rol), selected = params.get('proceso');
@@ -88,6 +91,7 @@ export function ProyectoCommandCenterPage() {
       <nav className="cc-tabs" aria-label="Vistas del proyecto">{tabs.map(t => <Link key={t.id} to={to(t.id)} aria-current={tab === t.id ? 'page' : undefined}>{t.label}</Link>)}</nav>
       {ficha.secondaryErrors.length > 0 && <p role="status" className="fv-notice">Consultas pendientes: {ficha.secondaryErrors.join(', ')}. <button onClick={() => query.refetch()}>Reintentar</button></p>}
       {tab === '' && <>
+        <ProjectWorkspaceCard id={id} editable={data.preparacion.editable} initial={data.preparacion.workspace} compact/>
         <div className="cc-kpis" aria-label="Trabajo registrado">{[['En curso', ficha.summary.active], ['Pendientes', ficha.summary.pending], ['Bloqueadas', ficha.summary.blocked], ['Cerradas', ficha.summary.completed]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value ?? '—'}</strong><small>intervenciones</small></div>)}</div>
         <div className="cc-summary-grid"><Card title="Requiere atención" icon="clock" className="cc-attention">{data.salud?.riesgo.causas.map(c => <p className="cc-risk" key={c}>{c}</p>)}{data.atencion.length ? data.atencion.map(a => a.href ? <Link className="cc-attention-item" to={a.href} key={a.id}><strong>{a.titulo}</strong><span>{a.detalle} →</span></Link> : <button key={a.id} className="cc-attention-item" onClick={() => { if(a.editarContexto)setEditarContexto(true);else if(a.proceso)open(a.proceso); }}><strong>{a.titulo}</strong><span>{a.detalle} →</span></button>) : <p className="cc-empty-attention">Sin acciones pendientes registradas.</p>}</Card>
         <Card title="Contexto editorial" icon="book"><ReadFields fields={[
@@ -101,7 +105,7 @@ export function ProyectoCommandCenterPage() {
       </>}
       {tab === 'operacion' && <section className="cc-section"><div className="cc-section-head"><div><h2>Procesos del proyecto</h2><p>Intervenciones y entregas independientes, con sus responsables y condiciones.</p></div></div><div className="cc-process-grid">{data.procesos.map(p => <ProcesoCard key={p.tipo} proceso={p} onOpen={() => open(p.tipo)}/>)}</div></section>}
       {tab === 'equipo' && <Card title="Equipo del proyecto" icon="people"><p className="cc-caption">Asignaciones vigentes y responsables de cada intervención.</p><Equipo items={ficha.team}/><div className="cc-team-actions">{jefe ? <Link className="fv-button" to={'/?vista=asignaciones&proyecto='+id}>Gestionar Especialista</Link> : <Link className="fv-button" to={to('operacion', { proceso: 'edicion' })}>Consultar asignación de Edición</Link>}<p>Edición asigna al Editor; Corrección y Diseño mantienen sus propios flujos de asignación.</p></div></Card>}
-      {tab === 'ficha' && fichaEnShell && <ExpedienteDocumental id={id} identity={identity} summary={fichaEnShell} selected={areaSeleccionada} onSelect={value => { setArea(value); setParams(prev => { const p = new URLSearchParams(prev); p.set('area', value); return p; }); }}/>}
+      {tab === 'ficha' && fichaEnShell && <><ProjectWorkspaceCard id={id} editable={false} initial={data.preparacion.workspace} compact/><ExpedienteDocumental id={id} identity={identity} summary={fichaEnShell} selected={areaSeleccionada} onSelect={value => { setArea(value); setParams(prev => { const p = new URLSearchParams(prev); p.set('area', value); return p; }); }}/></>}
       {tab === 'actividad' && identity && <ActividadProyecto id={id} identity={identity} canWrite={data.capabilities.registrarAvance}/>}
       {selected && process && <DialogProceso title={process.nombre} onClose={close}>
         {!['lanzamiento','impresion'].includes(process.tipo)&&<p className="cc-caption">{process.detalle}</p>}<div className="cc-work-history">{(!['lanzamiento','impresion'].includes(process.tipo)?process.trabajos:[]).map(t => <div key={t.id}><Estado state={t.estado}/><strong>{t.responsable ?? 'Sin asignación individual'}</strong><span>{t.instancia === 'default' ? 'Intervención inicial' : t.instancia}</span><small>Entrega: {dateFicha(t.vence)} · Cierre: {dateFicha(t.cierre)}</small>{t.decisionId && <Link to={jefe ? '/?vista=decisiones&decision='+t.decisionId : '/decisiones/'+t.decisionId+'/responder'}>Consultar decisión</Link>}</div>)}</div>

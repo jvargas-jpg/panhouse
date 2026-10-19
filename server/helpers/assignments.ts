@@ -4,6 +4,7 @@ import { projectAssignments } from '../db/schema/index.js';
 import type { TipoAsignacion } from '../db/schema/enums.js';
 import type { Tx } from './tx.js';
 import { cancelReassignedGoals } from './monthlyGoalEvaluation.js';
+import { projectWorkspaceRequests } from '../db/schema/projectDriveWorkspaces.js';
 
 export interface AsignarConHistorialInput {
   proyectoId: string;
@@ -81,6 +82,11 @@ export async function asignarConHistorial(tx: Tx, input: AsignarConHistorialInpu
     .returning({ id: projectAssignments.id });
 
   if (!nueva) throw new Error('El insert de project_assignments no devolvió ninguna fila');
+
+  if (input.tipo === 'especialista' && !workItemId) {
+    await tx.insert(projectWorkspaceRequests).values({projectId:input.proyectoId,
+      requestedByUserId:input.asignadoPorId,source:'ASSIGNMENT'}).onConflictDoNothing();
+  }
 
   return { cambio: true, asignacionId: nueva.id, anteriorUsuarioId: activaActual?.usuarioId ?? null };
 }

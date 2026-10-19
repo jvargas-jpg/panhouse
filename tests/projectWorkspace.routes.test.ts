@@ -15,7 +15,12 @@ import { limpiarBaseDeDatos } from './helpers/db.js';
 import { crearProyectoDePrueba } from './helpers/fixtures.js';
 import { obtenerColaTrabajoEspecialista } from '../server/helpers/especialistaMiTrabajo.js';
 import { historialFicha } from '../server/helpers/fichaViva.js';
-import { eliminarProyecto } from '../server/helpers/proyectos.js';
+import { eliminarProyecto,asignarEspecialista,actualizarEquipoProyecto } from '../server/helpers/proyectos.js';
+import { projectWorkspaceService } from '../server/modules/project-workspaces/service.js';
+import { provisionProjectWorkspace } from '../server/modules/project-workspaces/provision.js';
+import { dispatchPendingWorkspaces } from '../server/modules/project-workspaces/dispatch.js';
+import { enqueueProjectWorkspace } from '../server/queue/projectWorkspaces.queue.js';
+import { projectWorkspaceRequests,notificaciones } from '../server/db/schema/index.js';
 
 describe('Project workspaces · Fastify/DB reales y Google mockeado',()=>{
   const app=buildApp(),original={...env};let specialist:string,other:string,admin:string,manager:string,cookie:string,otherCookie:string,adminCookie:string,managerCookie:string;
@@ -42,7 +47,15 @@ describe('Project workspaces · Fastify/DB reales y Google mockeado',()=>{
     await db.update(proyectos).set({servicioId:serviceId,notificadoJefatura:true}).where(eq(proyectos.id,p.id));
     await db.insert(fichasTrazabilidad).values({proyectoId:p.id,ingresoServicioSubtipoCrudo:subtype});return p;
   };
-  const create=(id:string,auth=cookie)=>api('POST','/proyectos/'+id+'/workspace',auth);
+  // Saga/provider regression tests exercise the processor's domain service directly.
+  // HTTP commands are asynchronous and covered below independently.
+  const create=async(id:string,auth=cookie)=>{
+    if(!auth)return api('POST','/proyectos/'+id+'/workspace',auth);
+    const actor={id:auth===adminCookie?admin:auth===managerCookie?manager:auth===otherCookie?other:specialist,
+      rol:auth===adminCookie?'direccion' as const:auth===managerCookie?'jefe_area' as const:'especialista' as const};
+    try{const result=await projectWorkspaceService.create(id,actor);return {statusCode:200,json:()=>result as any};}
+    catch(error){const e=error as {statusCode?:number;status?:number;code?:string;message:string};return {statusCode:e.statusCode??e.status??500,json:()=>({code:e.code,error:e.message}) as any};}
+  };
   const workspace=async(id:string)=>(await db.select().from(projectDriveWorkspaces).where(eq(projectDriveWorkspaces.projectId,id)))[0]!;
   const queue=()=>obtenerColaTrabajoEspecialista(specialist,{tab:'pendientes',search:'',page:1,pageSize:50});
   beforeAll(()=>app.ready());afterAll(()=>app.close());afterEach(()=>{vi.restoreAllMocks();Object.assign(env,original);});
@@ -95,7 +108,7 @@ describe('Project workspaces · Fastify/DB reales y Google mockeado',()=>{
   it('fallo parcial queda ERROR; retry reutiliza IDs y completa solo faltantes',async()=>{
     const p=await make();failKey='DESIGN';expect((await create(p.id)).statusCode).toBe(503);const partial=await workspace(p.id);expect(partial.status).toBe('ERROR');
     const before=[...items.keys()];expect(before.length).toBeGreaterThan(1);
-    const r=await api('POST','/proyectos/'+p.id+'/workspace/retry');expect(r.json().status).toBe('READY');expect((await workspace(p.id)).rootFolderId).toBe(partial.rootFolderId);expect(items.size).toBe(29);
+    const r=await create(p.id);expect(r.json().status).toBe('READY');expect((await workspace(p.id)).rootFolderId).toBe(partial.rootFolderId);expect(items.size).toBe(29);
     for(const id of before.filter(id=>id!=='unit-dev-root'))expect(vi.mocked(storage.createFolder).mock.calls.filter(([input])=>input.providerFileId===id)).toHaveLength(1);
     expect((await db.select().from(auditLogs)).filter(e=>e.accion==='PROJECT_WORKSPACE_REINTENTO_EXITOSO')).toHaveLength(1);
   });
@@ -141,5 +154,86 @@ describe('Project workspaces · Fastify/DB reales y Google mockeado',()=>{
     expect((await api('POST','/integrations/google-drive/projects-root')).statusCode).toBe(403);
     const first=await api('POST','/integrations/google-drive/projects-root',adminCookie),second=await api('POST','/integrations/google-drive/projects-root',adminCookie);
     expect(first.json().folderId).toBe(second.json().folderId);expect(first.json().name).toBe('PANHOUSE - PROYECTOS EDITORIALES - DEV');expect(storage.createFolder).toHaveBeenCalledTimes(1);
+  });
+  const request=async(id:string)=>(await db.select().from(projectWorkspaceRequests).where(eq(projectWorkspaceRequests.projectId,id)))[0]!;
+  const assign=async(id:string,to=specialist)=>asignarEspecialista(id,to,manager,{exigirHandoff:true});
+  it('asignación formal persiste intent, historial, audit y preparación sin esperar Google ni Redis',async()=>{
+    const p=await make();
+    vi.mocked(enqueueProjectWorkspace).mockImplementationOnce(()=>new Promise(()=>{}));
+    await assign(p.id);
+    expect((await request(p.id)).status).toBe('PENDING');
+    expect(await db.select().from(projectAssignments)).toHaveLength(1);
+    expect((await db.select().from(workItems)).some(w=>w.tipo==='preparacion_inicial')).toBe(true);
+    expect((await db.select().from(auditLogs)).some(a=>a.accion==='ESPECIALISTA_ASIGNADO')).toBe(true);
+    expect(storage.getMetadata).not.toHaveBeenCalled();expect(storage.createFolder).not.toHaveBeenCalled();
+    expect((await api('GET','/proyectos/'+p.id+'/workspace')).json()).toMatchObject({status:'PENDING',legacy:false,canRetry:false});
+    expect((await queue()).items.some(i=>i.actionType==='preparacion-drive')).toBe(false);
+  });
+  it('BullMQ processor completa nueva asignación; segunda entrega y reasignación conservan IDs',async()=>{
+    const p=await make();await assign(p.id);await provisionProjectWorkspace(p.id);const first=await workspace(p.id);
+    expect(first.status).toBe('READY');expect((await request(p.id)).status).toBe('READY');
+    await provisionProjectWorkspace(p.id);await assign(p.id,other);await provisionProjectWorkspace(p.id);
+    expect((await workspace(p.id)).id).toBe(first.id);expect((await workspace(p.id)).rootFolderId).toBe(first.rootFolderId);
+    expect(storage.createFolder).toHaveBeenCalledTimes(28);
+    expect((await api('GET','/proyectos/'+p.id+'/workspace',otherCookie)).json().rootFolderUrl).toBe(first.rootFolderUrl);
+    expect((await api('GET','/proyectos/'+p.id+'/workspace')).statusCode).toBe(403);
+  });
+  it('double assignment concurrente deja una sola solicitud y solo una raíz',async()=>{
+    const p=await make();await Promise.all([assign(p.id),assign(p.id)]);
+    expect(await db.select().from(projectWorkspaceRequests)).toHaveLength(1);expect(await db.select().from(projectAssignments)).toHaveLength(1);
+    await Promise.allSettled([provisionProjectWorkspace(p.id),provisionProjectWorkspace(p.id)]);
+    await provisionProjectWorkspace(p.id);expect(storage.createFolder).toHaveBeenCalledTimes(28);
+  });
+  it('fallo Drive nunca revierte asignación; retry HTTP encola y recupera la raíz parcial',async()=>{
+    const p=await make();await assign(p.id);failKey='DESIGN';
+    await expect(provisionProjectWorkspace(p.id)).rejects.toMatchObject({code:'GOOGLE_UNAVAILABLE'});
+    const first=await workspace(p.id);expect(first.status).toBe('ERROR');
+    expect((await db.select().from(proyectos).where(eq(proyectos.id,p.id)))[0]!.especialistaId).toBe(specialist);
+    expect((await request(p.id)).status).toBe('ERROR');
+    expect((await api('GET','/proyectos/'+p.id+'/workspace')).json()).toMatchObject({status:'ERROR',canRetry:true});
+    const calls=vi.mocked(storage.createFolder).mock.calls.length;
+    expect((await api('POST','/proyectos/'+p.id+'/workspace/retry')).statusCode).toBe(202);
+    expect(storage.createFolder).toHaveBeenCalledTimes(calls);await provisionProjectWorkspace(p.id);
+    expect((await workspace(p.id)).rootFolderId).toBe(first.rootFolderId);expect(items.size).toBe(29);
+  });
+  it('integración caída y Crudo indefinido quedan ERROR visible y responsabilidad administrativa',async()=>{
+    const p=await make('CR');await assign(p.id);
+    await expect(provisionProjectWorkspace(p.id)).rejects.toMatchObject({code:'CRUDO_SUBTYPE_REQUIRED'});
+    expect((await api('GET','/proyectos/'+p.id+'/workspace')).json()).toMatchObject({status:'ERROR',canRetry:false,lastErrorCode:'CRUDO_SUBTYPE_REQUIRED'});
+    expect((await api('POST','/proyectos/'+p.id+'/workspace/retry')).statusCode).toBe(403);
+    expect((await db.select().from(notificaciones)).some(n=>n.rolDestino==='jefe_area'&&n.mensaje.includes('subtipo'))).toBe(true);
+    expect(storage.createFolder).not.toHaveBeenCalled();
+    await db.update(externalIntegrations).set({status:'disconnected'});
+    expect((await api('POST','/proyectos/'+p.id+'/workspace/retry',adminCookie)).statusCode).toBe(202);
+    await expect(provisionProjectWorkspace(p.id)).rejects.toMatchObject({code:'NOT_CONNECTED'});
+    expect((await api('GET','/proyectos/'+p.id+'/workspace')).json()).toMatchObject({status:'ERROR',canRetry:false});
+    expect((await db.select().from(notificaciones)).some(n=>n.rolDestino==='direccion')).toBe(true);
+  });
+  it('legacy se configura explícitamente; dispatcher nunca barre asignaciones antiguas',async()=>{
+    const p=await make();expect((await api('GET','/proyectos/'+p.id+'/workspace')).json().legacy).toBe(true);
+    await dispatchPendingWorkspaces();await provisionProjectWorkspace(p.id);expect(storage.createFolder).not.toHaveBeenCalled();
+    expect((await api('POST','/proyectos/'+p.id+'/workspace')).json()).toMatchObject({status:'PENDING',legacy:false});
+    await provisionProjectWorkspace(p.id);expect((await workspace(p.id)).status).toBe('READY');
+  });
+  it('rollback no deja job intent; dispatcher recupera intent confirmado; equipo también usa el flujo',async()=>{
+    const p=await make();await db.update(proyectos).set({notificadoJefatura:false}).where(eq(proyectos.id,p.id));
+    await expect(assign(p.id)).rejects.toMatchObject({statusCode:409});expect(await db.select().from(projectWorkspaceRequests)).toHaveLength(0);
+    await actualizarEquipoProyecto(p.id,{especialistaId:other},manager);
+    expect((await request(p.id)).source).toBe('ASSIGNMENT');
+    await dispatchPendingWorkspaces();expect(enqueueProjectWorkspace).toHaveBeenCalledWith(p.id);
+  });
+  it('retry automático mantiene polling PENDING y termina en READY sin intervención',async()=>{
+    const p=await make();await assign(p.id);failKey='DESIGN';
+    await expect(provisionProjectWorkspace(p.id,{retryTransient:true})).rejects.toMatchObject({code:'GOOGLE_UNAVAILABLE'});
+    expect((await api('GET','/proyectos/'+p.id+'/workspace')).json()).toMatchObject({status:'PENDING',canRetry:false});
+    expect((await db.select().from(notificaciones)).filter(n=>n.mensaje.includes('estructura documental'))).toHaveLength(0);
+    await provisionProjectWorkspace(p.id);expect((await request(p.id)).status).toBe('READY');
+  });
+  it('endpoint de Jefatura confirma asignación y publica solo después del commit',async()=>{
+    const p=await make();
+    const r=await app.inject({method:'PATCH',url:'/api/jefatura/proyectos/'+p.id+'/especialista',headers:{cookie:managerCookie},payload:{especialistaId:specialist}});
+    expect(r.statusCode).toBe(200);expect(r.json()).toEqual({ok:true});
+    expect((await request(p.id)).source).toBe('ASSIGNMENT');expect(storage.createFolder).not.toHaveBeenCalled();
+    await dispatchPendingWorkspaces(p.id);expect(enqueueProjectWorkspace).toHaveBeenCalledWith(p.id);
   });
 });

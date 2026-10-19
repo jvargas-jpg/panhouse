@@ -1,0 +1,57 @@
+﻿ docs/arquitectura/26-project-drive-workspaces.md   |   22 +-
+ .../assignment-response.json                       |    6 +
+ .../project-workspace-assignment/browser-real.json |   89 +
+ .../browser-states.json                            |   73 +
+ .../project-workspace-assignment/drive-abierto.png |  Bin 0 -> 20930 bytes
+ .../especialista-error-mobile.png                  |  Bin 0 -> 37614 bytes
+ .../especialista-estructura-desktop.png            |  Bin 0 -> 125382 bytes
+ .../especialista-estructura-mobile.png             |  Bin 0 -> 25513 bytes
+ .../especialista-ficha-desktop.png                 |  Bin 0 -> 72531 bytes
+ .../especialista-legacy-mobile.png                 |  Bin 0 -> 38073 bytes
+ .../especialista-operacion-mobile.png              |  Bin 0 -> 58315 bytes
+ .../especialista-preparando.png                    |  Bin 0 -> 89055 bytes
+ .../especialista-provisioning.png                  |  Bin 0 -> 89030 bytes
+ .../especialista-resumen-desktop.png               |  Bin 0 -> 90295 bytes
+ .../especialista-resumen-mobile.png                |  Bin 0 -> 37651 bytes
+ .../especialista-resumen-tablet.png                |  Bin 0 -> 71281 bytes
+ .../project-workspace-assignment/git-diff-stat.txt |   54 +
+ .../git-status-before.txt                          |   54 +
+ .../jefatura-antes-asignacion.png                  |  Bin 0 -> 158555 bytes
+ .../jefatura-ready-desktop.png                     |  Bin 0 -> 88352 bytes
+ .../jefe_area-provisioning.png                     |  Bin 0 -> 83891 bytes
+ .../real-drive-verification.json                   |  293 +
+ .../project-workspace-assignment/reporte.md        |   58 +
+ .../project-workspace-assignment/validation.json   |   53 +
+ .../src/proyectos/CommandCenterPreparacion.tsx     |    2 +-
+ frontend/src/proyectos/ProjectWorkspaceCard.tsx    |   49 +-
+ .../src/proyectos/ProyectoCommandCenterPage.tsx    |    6 +-
+ frontend/src/proyectos/commandCenter.css           |    1 +
+ frontend/src/proyectos/fichaViva/FichaVivaPage.tsx |    3 +
+ frontend/src/proyectos/useProjectWorkspace.ts      |   24 +
+ .../project-workspace-assignment-browser-qa.mjs    |   89 +
+ scripts/project-workspace-assignment-qa.ts         |   39 +
+ scripts/project-workspace-assignment-verify.ts     |   36 +
+ scripts/project-workspace-states-browser-qa.mjs    |   53 +
+ server/db/migrations/0084_aberrant_zarda.sql       |   14 +
+ server/db/migrations/meta/0084_snapshot.json       | 7779 ++++++++++++++++++++
+ server/db/migrations/meta/_journal.json            |    7 +
+ server/db/schema/projectDriveWorkspaces.ts         |   11 +
+ server/helpers/assignments.ts                      |    6 +
+ server/helpers/auditLog.ts                         |    1 +
+ server/helpers/especialistaMiTrabajo.ts            |    4 +-
+ server/helpers/fichaViva.ts                        |    2 +
+ server/helpers/preparacionInicial.ts               |    2 +-
+ server/helpers/proyectos.ts                        |    6 +-
+ server/modules/project-workspaces/dispatch.ts      |   18 +
+ server/modules/project-workspaces/provision.ts     |   72 +
+ server/modules/project-workspaces/queries.ts       |   43 +-
+ server/modules/project-workspaces/routes.ts        |    5 +-
+ server/modules/project-workspaces/service.ts       |   17 +-
+ server/queue/projectWorkspaces.queue.ts            |   18 +
+ server/queue/projectWorkspaces.worker.ts           |   23 +
+ server/worker.ts                                   |    3 +-
+ shared/projectWorkspace.ts                         |    3 +-
+ tests/projectWorkspace.queue.test.ts               |   22 +
+ tests/projectWorkspace.routes.test.ts              |  100 +-
+ tests/setup.ts                                     |    5 +-
+ 56 files changed, 9108 insertions(+), 57 deletions(-)

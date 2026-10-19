@@ -1,0 +1,73 @@
+{
+  "checks": [
+    {
+      "label": "especialista: provisioning sin botón manual",
+      "passed": true
+    },
+    {
+      "label": "especialista: Command Center sigue disponible",
+      "passed": true
+    },
+    {
+      "label": "especialista: READY sin recargar",
+      "passed": true
+    },
+    {
+      "label": "especialista: polling detenido en READY",
+      "passed": true
+    },
+    {
+      "label": "especialista: retry según rol",
+      "passed": true
+    },
+    {
+      "label": "Retry hace command POST",
+      "passed": true
+    },
+    {
+      "label": "Error de negocio sin retry del Especialista",
+      "passed": true
+    },
+    {
+      "label": "Error mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "Legacy única excepción manual",
+      "passed": true
+    },
+    {
+      "label": "Legacy encola command",
+      "passed": true
+    },
+    {
+      "label": "jefe_area: provisioning sin botón manual",
+      "passed": true
+    },
+    {
+      "label": "jefe_area: Command Center sigue disponible",
+      "passed": true
+    },
+    {
+      "label": "jefe_area: READY sin recargar",
+      "passed": true
+    },
+    {
+      "label": "jefe_area: polling detenido en READY",
+      "passed": true
+    },
+    {
+      "label": "jefe_area: retry según rol",
+      "passed": true
+    },
+    {
+      "label": "Sin errores JS",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "gets": 23,
+  "posts": 2,
+  "googleCalls": 0,
+  "databaseWrites": 0
+}

@@ -5,6 +5,17 @@ import { users } from './users.js';
 import { externalIntegrations } from './integrations.js';
 
 export interface WorkspaceFolderPlan {key:string;parentKey:string|null;displayName:string;templatePath:string}
+// Transactional outbox: absence means legacy, never a date-based heuristic.
+export const projectWorkspaceRequests = pgTable('project_workspace_requests', {
+  projectId:uuid('project_id').primaryKey().references(()=>proyectos.id,{onDelete:'cascade'}),
+  requestedByUserId:uuid('requested_by_user_id').references(()=>users.id,{onDelete:'set null'}),
+  source:text('source').$type<'ASSIGNMENT'|'RECOVERY'>().notNull(),
+  status:text('status').$type<'PENDING'|'PROVISIONING'|'READY'|'ERROR'>().notNull().default('PENDING'),
+  lastErrorCode:text('last_error_code'),
+  createdAt:timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),
+  updatedAt:timestamp('updated_at',{withTimezone:true}).notNull().defaultNow(),
+},t=>({statusValid:check('project_workspace_request_status_valid',sql`${t.status} in ('PENDING','PROVISIONING','READY','ERROR')`),
+  pending:index('project_workspace_request_status_idx').on(t.status)}));
 export const projectDriveWorkspaces = pgTable('project_drive_workspaces',{
   id:uuid('id').primaryKey().defaultRandom(),
   projectId:uuid('project_id').notNull().unique().references(()=>proyectos.id,{onDelete:'restrict'}),

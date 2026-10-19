@@ -14,8 +14,9 @@ import { resolveWorkspaceTemplate } from './templates.js';
 import { emptyWorkspace,workspaceSummaries } from './queries.js';
 import { WorkspaceError } from './errors.js';
 import { ensureReservedFolder } from './folders.js';
+import type { Tx } from '../../helpers/tx.js';
 
-export async function workspaceAccess(projectId:string,actor:ActorFicha,write=false,client:typeof db= db){
+export async function workspaceAccess(projectId:string,actor:ActorFicha,write=false,client:typeof db|Tx= db){
   if(!['especialista','jefe_area','rrpp','direccion'].includes(actor.rol)||write&&!['especialista','direccion'].includes(actor.rol))throw new WorkspaceError('FORBIDDEN',403,'No autorizado para esta operación documental.');
   const project=await verificarAccesoFichaViva(projectId,actor,client);
   if(write&&['culminado','retirado'].includes(project.estado))throw new WorkspaceError('PROJECT_CLOSED');
@@ -32,7 +33,7 @@ export async function getProjectWorkspaceFolders(projectId:string,actor:ActorFic
 
 export class ProjectWorkspaceService {
   constructor(private operate:CorporateDriveOperation=withCorporateDrive){}
-  async create(projectId:string,actor:ActorFicha){
+  async create(projectId:string,actor:ActorFicha,automatic=false){
     await workspaceAccess(projectId,actor,true);
     const current=await getProjectWorkspace(projectId,actor);
     if(current.contextChanged)throw new WorkspaceError('CONTEXT_CHANGED');
@@ -56,13 +57,13 @@ export class ProjectWorkspaceService {
         const template=resolveWorkspaceTemplate({serviceCode:service?.codigo??'',crudoSubtype:ficha?.ingresoServicioSubtipoCrudo??null,
           authorName:authors.map(a=>a.artistic?.trim()||a.name).join(' y '),projectCode:project.codigo,conditions:ficha?.condicionesEspeciales??[]});
         [workspace]=await db.insert(projectDriveWorkspaces).values({projectId,integrationId:integration.id,storageContextId:integration.storageContextId,
-          projectsRootFolderId:integration.projectsRootFolderId,templateKey:template.key,templateVersion:template.version,plan:template.plan,status:'PROVISIONING',createdByUserId:actor.id}).returning();
+          projectsRootFolderId:integration.projectsRootFolderId,templateKey:template.key,templateVersion:template.version,plan:template.plan,status:'PROVISIONING',createdByUserId:automatic?null:actor.id}).returning();
       }
       if(!workspace)throw new WorkspaceError('INVALID_RESPONSE',502);
       const w=workspace,retry=w.attempts>0;
       await db.transaction(async tx=>{
         await tx.update(projectDriveWorkspaces).set({status:'PROVISIONING',attempts:w.attempts+1,lastErrorCode:null,updatedAt:new Date()}).where(eq(projectDriveWorkspaces.id,w.id));
-        await registrarEvento(tx,{actorId:actor.id,accion:'PROJECT_WORKSPACE_INICIADO',entityType:'proyecto',entityId:projectId,proyectoId:projectId,detalles:{workspaceId:w.id,retry}});
+        await registrarEvento(tx,{actorId:automatic?null:actor.id,accion:'PROJECT_WORKSPACE_INICIADO',entityType:'proyecto',entityId:projectId,proyectoId:projectId,detalles:{workspaceId:w.id,retry}});
       });
       try {
         let folders=await db.select().from(projectDriveFolders).where(eq(projectDriveFolders.workspaceId,w.id));
@@ -86,6 +87,8 @@ export class ProjectWorkspaceService {
             if(node.key==='ROOT')await tx.update(projectDriveWorkspaces).set({rootFolderId:folder.driveFolderId,rootFolderUrl:url,updatedAt:new Date()}).where(eq(projectDriveWorkspaces.id,w.id));
           });
         }
+        const actualFolders=await db.select().from(projectDriveFolders).where(eq(projectDriveFolders.workspaceId,w.id));
+        if(w.plan.some(node=>!actualFolders.some(f=>f.key===node.key&&f.status==='READY'&&f.verifiedAt&&f.driveUrl)))throw new WorkspaceError('INCOMPLETE_STRUCTURE');
         await db.transaction(async tx=>{
           const now=new Date();
           await tx.update(projectDriveWorkspaces).set({status:'READY',readyAt:now,lastVerifiedAt:now,lastErrorCode:null,sharingStatus:'PENDING_VALIDATION',updatedAt:now}).where(eq(projectDriveWorkspaces.id,w.id));
@@ -93,21 +96,21 @@ export class ProjectWorkspaceService {
           const completed=proyectarPreparacion(preparation,null,true,{...emptyWorkspace(),status:'READY'}).estado==='Completo';
           const wi=await crearWorkItemSiNoExiste(tx,{proyectoId:projectId,tipo:'preparacion_inicial'});
           await transicionarWorkItemPorId(tx,wi,completed?'completado':'en_progreso');
-          await registrarEvento(tx,{actorId:actor.id,accion:retry?'PROJECT_WORKSPACE_REINTENTO_EXITOSO':'PROJECT_WORKSPACE_CONFIGURADO',entityType:'proyecto',entityId:projectId,proyectoId:projectId,
+          await registrarEvento(tx,{actorId:automatic?null:actor.id,accion:retry?'PROJECT_WORKSPACE_REINTENTO_EXITOSO':'PROJECT_WORKSPACE_CONFIGURADO',entityType:'proyecto',entityId:projectId,proyectoId:projectId,
             detalles:{workspaceId:w.id,templateKey:w.templateKey,templateVersion:w.templateVersion,folderCount:w.plan.length}});
         });
       }catch(error){
         const code=error instanceof WorkspaceError?error.code:safeDriveError(error).code;
         await db.transaction(async tx=>{
           await tx.update(projectDriveWorkspaces).set({status:'ERROR',lastErrorCode:code,updatedAt:new Date()}).where(eq(projectDriveWorkspaces.id,w.id));
-          await registrarEvento(tx,{actorId:actor.id,accion:'PROJECT_WORKSPACE_FALLIDO',entityType:'proyecto',entityId:projectId,proyectoId:projectId,detalles:{workspaceId:w.id,code}});
+          await registrarEvento(tx,{actorId:automatic?null:actor.id,accion:'PROJECT_WORKSPACE_FALLIDO',entityType:'proyecto',entityId:projectId,proyectoId:projectId,detalles:{workspaceId:w.id,code}});
         });
         throw new WorkspaceError(code,503);
       }
       return (await workspaceSummaries([projectId])).get(projectId)!;
     });}catch(error){
       if(error instanceof WorkspaceError){
-        if(error.code==='CRUDO_SUBTYPE_REQUIRED')await db.transaction(tx=>registrarEvento(tx,{actorId:actor.id,accion:'PROJECT_WORKSPACE_INCONSISTENCIA',entityType:'proyecto',entityId:projectId,proyectoId:projectId,detalles:{code:error.code}}));
+        if(error.code==='CRUDO_SUBTYPE_REQUIRED')await db.transaction(tx=>registrarEvento(tx,{actorId:automatic?null:actor.id,accion:'PROJECT_WORKSPACE_INCONSISTENCIA',entityType:'proyecto',entityId:projectId,proyectoId:projectId,detalles:{code:error.code}}));
         throw error;
       }
       const safe=safeDriveError(error);throw new WorkspaceError(safe.code,safe.statusCode);

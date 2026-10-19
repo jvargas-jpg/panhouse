@@ -1,3 +1,4 @@
+import { dispatchProjectWorkspace } from '../modules/project-workspaces/dispatch.js';
 import { auditarCambioComercial, camposModificados, type ActorFicha } from './intakeRrpp.js';
 import { randomUUID } from 'node:crypto';
 import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
@@ -558,7 +559,7 @@ export interface DatosEquipoProyecto {
 // es nuevo — son 2 personas reales las que se reparten los proyectos
 // entrantes.
 export async function actualizarEquipoProyecto(proyectoId: string, datos: DatosEquipoProyecto, actorId: string | null = null) {
-  return db.transaction(async tx => {
+  const result = await db.transaction(async tx => {
     const [antes] = await tx.select().from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     if (!antes) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
     if (datos.especialistaId !== undefined) {
@@ -578,6 +579,8 @@ export async function actualizarEquipoProyecto(proyectoId: string, datos: DatosE
     const [fila] = await tx.update(proyectos).set(datos).where(eq(proyectos.id, proyectoId)).returning();
     return fila!;
   });
+  if (datos.especialistaId) dispatchProjectWorkspace(proyectoId);
+  return result;
 }
 
 // Propuesta de portada — dueño especialista o disenador (PATCH
@@ -719,6 +722,7 @@ export async function asignarEspecialista(
     });
     await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'preparacion_inicial' });
   });
+  dispatchProjectWorkspace(proyectoId);
 }
 
 // Mismo patrón que asignarEspecialista, pero lo decide jefe_edicion:

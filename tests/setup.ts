@@ -1,4 +1,4 @@
-import { afterAll } from 'vitest';
+import { afterAll,vi } from 'vitest';
 import { cerrarConexionDb } from './helpers/db.js';
 
 // A diferencia de globalSetup.ts (que corre una sola vez, en un
@@ -13,3 +13,6 @@ import { cerrarConexionDb } from './helpers/db.js';
 afterAll(async () => {
   await cerrarConexionDb();
 });
+
+// Tests never talk to Redis/Google; processors are exercised explicitly.
+vi.mock('../server/queue/projectWorkspaces.queue.js',()=>({enqueueProjectWorkspace:vi.fn(async()=>{})}));

@@ -6,7 +6,8 @@ import { ErrorFichaViva } from '../../helpers/fichaViva.js';
 import { safeDriveError } from '../integrations/google-drive/errors.js';
 import { workspaceErrorMessage } from './queries.js';
 import { WorkspaceError } from './errors.js';
-import { getProjectWorkspace,getProjectWorkspaceFolders,projectWorkspaceService } from './service.js';
+import { getProjectWorkspace,getProjectWorkspaceFolders } from './service.js';
+import { retryProjectWorkspace } from './provision.js';
 import { configureDevProjectsRoot } from './root.js';
 const params=z.object({projectId:z.string().uuid()});
 export const projectWorkspaceRoutes:FastifyPluginAsync=async app=>{
@@ -25,6 +26,6 @@ export const projectWorkspaceRoutes:FastifyPluginAsync=async app=>{
   });
   app.get('/proyectos/:projectId/workspace',async req=>getProjectWorkspace(params.parse(req.params).projectId,req.user!));
   app.get('/proyectos/:projectId/workspace/folders',async req=>({folders:await getProjectWorkspaceFolders(params.parse(req.params).projectId,req.user!)}));
-  for(const suffix of ['','/retry'])app.post('/proyectos/:projectId/workspace'+suffix,async req=>projectWorkspaceService.create(params.parse(req.params).projectId,req.user!));
+  for(const suffix of ['','/retry'])app.post('/proyectos/:projectId/workspace'+suffix,async(req,reply)=>reply.code(202).send(await retryProjectWorkspace(params.parse(req.params).projectId,req.user!)));
   app.post('/integrations/google-drive/projects-root',{preHandler:requireRole('direccion')},async req=>configureDevProjectsRoot(req.user!));
 };

@@ -1,0 +1,89 @@
+{
+  "projectId": "7b63bafa-2361-4294-b59b-33e2a46e2430",
+  "checks": [
+    {
+      "label": "READY real",
+      "passed": true
+    },
+    {
+      "label": "Expected vs persisted: missing=0",
+      "passed": true
+    },
+    {
+      "label": "Resumen usa URL persistida",
+      "passed": true
+    },
+    {
+      "label": "No creación manual normal",
+      "passed": true
+    },
+    {
+      "label": "Ficha misma URL",
+      "passed": true
+    },
+    {
+      "label": "Árbol real incluye ramas condicionales",
+      "passed": true
+    },
+    {
+      "label": "tablet sin overflow",
+      "passed": true
+    },
+    {
+      "label": "tablet acceso Drive visible",
+      "passed": true
+    },
+    {
+      "label": "mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "mobile acceso Drive visible",
+      "passed": true
+    },
+    {
+      "label": "Drive abre pestaña aislada",
+      "passed": true
+    },
+    {
+      "label": "Operación mobile acciones apiladas",
+      "passed": true
+    },
+    {
+      "label": "Árbol mobile sin overflow",
+      "passed": true
+    },
+    {
+      "label": "Jefatura READY real misma carpeta",
+      "passed": true
+    },
+    {
+      "label": "Jefatura solo consulta",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "observed": [
+    "READY"
+  ],
+  "workspace": {
+    "id": "f33e5965-4169-4e92-9728-0ac543b3407a",
+    "status": "READY",
+    "rootName": "QA AUTO DRIVE · Autor ficticio – EF – #FC13FD",
+    "rootFolderUrl": "https://drive.google.com/drive/folders/1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+    "templateKey": "EF",
+    "templateVersion": "specialist-manual-2026-v1",
+    "createdAt": "2026-10-19T12:45:21.957Z",
+    "readyAt": "2026-10-19T12:45:57.276Z",
+    "lastVerifiedAt": "2026-10-19T12:45:57.276Z",
+    "folderCount": 30,
+    "expectedFolderCount": 30,
+    "contextChanged": false,
+    "sharingStatus": "PENDING_VALIDATION",
+    "legacy": false,
+    "canRetry": false,
+    "lastErrorCode": null,
+    "message": null
+  },
+  "retained": true
+}

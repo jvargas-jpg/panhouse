@@ -24,7 +24,7 @@ export function CommandCenterPreparacion({ id, data }: { id: string; data: Prepa
   return <div className="cc-preparation">
     <p className="cc-caption">Recepción, primer contacto y organización del proyecto desde su asignación.</p>
     <p className="cc-deadline">Primer contacto · {data.primerContactoEn ? 'Registrado '+fechaSolicitud(data.primerContactoEn, true) : data.primerContactoDueAt ? 'Plazo '+fechaSolicitud(data.primerContactoDueAt, true) : 'Asignación anterior sin fecha auditada; plazo no calculable'}</p>
-    <ProjectWorkspaceCard id={id} editable={data.editable} initial={data.workspace}/>
+    <ProjectWorkspaceCard id={id} editable={data.editable} initial={data.workspace} structure={data.editable}/>
     {data.driveCarpetaUrl&&data.driveEstado!=='configurado'&&<p className="cc-caption">Enlace anterior, sin workspace registrado: <a href={data.driveCarpetaUrl} target="_blank" rel="noopener noreferrer">Consultar carpeta histórica ↗</a></p>}
     <form onSubmit={e => { e.preventDefault(); mutation.mutate(); }}>
       <fieldset disabled={!data.editable || mutation.isPending}><legend>Recepción y contacto</legend>

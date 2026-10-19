@@ -1,0 +1,293 @@
+{
+  "verifiedAt": "2026-10-19T12:51:11.460Z",
+  "projectId": "7b63bafa-2361-4294-b59b-33e2a46e2430",
+  "projectCode": "FC13FD",
+  "workspaceId": "f33e5965-4169-4e92-9728-0ac543b3407a",
+  "rootFolderId": "1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+  "webViewLink": "https://drive.google.com/drive/folders/1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+  "projectsRoot": "PANHOUSE - PROYECTOS EDITORIALES - DEV",
+  "template": "EF",
+  "templateVersion": "specialist-manual-2026-v1",
+  "expected": 30,
+  "persisted": 30,
+  "actualVerified": 30,
+  "missing": 0,
+  "actualFolderCount": 30,
+  "unexpectedFolderIds": [],
+  "queue": "project-drive-workspaces",
+  "job": "provision-project-drive-workspace",
+  "jobId": "project-drive-workspace-7b63bafa-2361-4294-b59b-33e2a46e2430",
+  "jobState": "completed",
+  "payloadKeys": [
+    "projectId"
+  ],
+  "queuedAt": 1792413919459,
+  "processedAt": 1792413919471,
+  "finishedAt": 1792413957308,
+  "events": [
+    {
+      "action": "RRPP_NOTIFICADO",
+      "at": "2026-10-19T12:44:31.130Z"
+    },
+    {
+      "action": "JEFATURA_NOTIFICADA",
+      "at": "2026-10-19T12:44:31.171Z"
+    },
+    {
+      "action": "ESPECIALISTA_ASIGNADO",
+      "at": "2026-10-19T12:45:18.773Z"
+    },
+    {
+      "action": "PROJECT_WORKSPACE_INICIADO",
+      "at": "2026-10-19T12:45:21.967Z"
+    },
+    {
+      "action": "PROJECT_WORKSPACE_CONFIGURADO",
+      "at": "2026-10-19T12:45:57.277Z"
+    }
+  ],
+  "folders": [
+    {
+      "key": "ROOT",
+      "id": "1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+      "name": "QA AUTO DRIVE · Autor ficticio – EF – #FC13FD",
+      "parentId": "1YMOAHoKAWDSUG6veZdZxYsLunW6JeLcU",
+      "url": "https://drive.google.com/drive/folders/1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+      "valid": true
+    },
+    {
+      "key": "EDITING",
+      "id": "11o1l7fpU1k9nrkTvU2bRq8jGaj7R9ZnJ",
+      "name": "Edición – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+      "url": "https://drive.google.com/drive/folders/11o1l7fpU1k9nrkTvU2bRq8jGaj7R9ZnJ",
+      "valid": true
+    },
+    {
+      "key": "EDITING_FEEDBACK",
+      "id": "1AXnYzhKGB4OFHhXhinPrKxyNr6a_B8O4",
+      "name": "Con feedback – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1w_zMu9O_gU6CBLopDsG0lwPAjee_OFn8",
+      "url": "https://drive.google.com/drive/folders/1AXnYzhKGB4OFHhXhinPrKxyNr6a_B8O4",
+      "valid": true
+    },
+    {
+      "key": "EDITING_FEEDBACK_APPLIED",
+      "id": "1zNmglCWHKO3GAAc_BuS4yhwG9ooq_0Ph",
+      "name": "Con feedback aplicado – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1w_zMu9O_gU6CBLopDsG0lwPAjee_OFn8",
+      "url": "https://drive.google.com/drive/folders/1zNmglCWHKO3GAAc_BuS4yhwG9ooq_0Ph",
+      "valid": true
+    },
+    {
+      "key": "FULL_MANUSCRIPT",
+      "id": "1BmRINm4gIlQGdAE6lG68RCokYwzk5k00",
+      "name": "Tripa completa – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "11o1l7fpU1k9nrkTvU2bRq8jGaj7R9ZnJ",
+      "url": "https://drive.google.com/drive/folders/1BmRINm4gIlQGdAE6lG68RCokYwzk5k00",
+      "valid": true
+    },
+    {
+      "key": "FULL_MANUSCRIPT_FEEDBACK",
+      "id": "1j3FezJsIVVqC6AQiahre7iQn1qhKYnMu",
+      "name": "Con feedback – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1BmRINm4gIlQGdAE6lG68RCokYwzk5k00",
+      "url": "https://drive.google.com/drive/folders/1j3FezJsIVVqC6AQiahre7iQn1qhKYnMu",
+      "valid": true
+    },
+    {
+      "key": "FULL_MANUSCRIPT_FEEDBACK_APPLIED",
+      "id": "1wJ9_mo2fcs0GbnFq-PvmT8Om_PlAsiVl",
+      "name": "Con feedback aplicado – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1BmRINm4gIlQGdAE6lG68RCokYwzk5k00",
+      "url": "https://drive.google.com/drive/folders/1wJ9_mo2fcs0GbnFq-PvmT8Om_PlAsiVl",
+      "valid": true
+    },
+    {
+      "key": "EDITORIAL_KIT",
+      "id": "1491VTtHapoBYDeuquvpRPNNB0MlrZXra",
+      "name": "Kit editorial – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "11o1l7fpU1k9nrkTvU2bRq8jGaj7R9ZnJ",
+      "url": "https://drive.google.com/drive/folders/1491VTtHapoBYDeuquvpRPNNB0MlrZXra",
+      "valid": true
+    },
+    {
+      "key": "EDITORIAL_KIT_FEEDBACK_APPLIED",
+      "id": "1MWKGpL95aRnTXblZiNuA634jAC38T3Tm",
+      "name": "Con feedback aplicado – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1491VTtHapoBYDeuquvpRPNNB0MlrZXra",
+      "url": "https://drive.google.com/drive/folders/1MWKGpL95aRnTXblZiNuA634jAC38T3Tm",
+      "valid": true
+    },
+    {
+      "key": "CORRECTION",
+      "id": "1GZLCA2QRURMO5YshQX9MnPjwjP24gJ0B",
+      "name": "Corrección – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+      "url": "https://drive.google.com/drive/folders/1GZLCA2QRURMO5YshQX9MnPjwjP24gJ0B",
+      "valid": true
+    },
+    {
+      "key": "CORRECTION_INPUT",
+      "id": "11IbqbtgQpq-N2Sd5im_VnjhElIlbdieW",
+      "name": "Para corregir – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1GZLCA2QRURMO5YshQX9MnPjwjP24gJ0B",
+      "url": "https://drive.google.com/drive/folders/11IbqbtgQpq-N2Sd5im_VnjhElIlbdieW",
+      "valid": true
+    },
+    {
+      "key": "DESIGN",
+      "id": "19ZebnR8bmc3_r6K--zU3dl3wSsSHeVav",
+      "name": "Diseño – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+      "url": "https://drive.google.com/drive/folders/19ZebnR8bmc3_r6K--zU3dl3wSsSHeVav",
+      "valid": true
+    },
+    {
+      "key": "DESIGN_LAYOUT_INPUT",
+      "id": "1TLcVi9nEXiFA-v3BocB6MuNVH8RWSEMy",
+      "name": "Tripa para diagramar – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "19ZebnR8bmc3_r6K--zU3dl3wSsSHeVav",
+      "url": "https://drive.google.com/drive/folders/1TLcVi9nEXiFA-v3BocB6MuNVH8RWSEMy",
+      "valid": true
+    },
+    {
+      "key": "DESIGN_SAMPLE",
+      "id": "1f8De2F6LROcA9dZE5eOdK-V4eWxhqL_-",
+      "name": "Tripa para muestra – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "19ZebnR8bmc3_r6K--zU3dl3wSsSHeVav",
+      "url": "https://drive.google.com/drive/folders/1f8De2F6LROcA9dZE5eOdK-V4eWxhqL_-",
+      "valid": true
+    },
+    {
+      "key": "ISBN",
+      "id": "14ekZ1uix2XEdLHKfmkwcO4wbfGf0EI-V",
+      "name": "ISBN – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "19ZebnR8bmc3_r6K--zU3dl3wSsSHeVav",
+      "url": "https://drive.google.com/drive/folders/14ekZ1uix2XEdLHKfmkwcO4wbfGf0EI-V",
+      "valid": true
+    },
+    {
+      "key": "QUALITY_COMMENTS",
+      "id": "12dAa1MiYqpqgdAUh4T3XXbxIupkMum-I",
+      "name": "Tripa con comentarios – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "19ZebnR8bmc3_r6K--zU3dl3wSsSHeVav",
+      "url": "https://drive.google.com/drive/folders/12dAa1MiYqpqgdAUh4T3XXbxIupkMum-I",
+      "valid": true
+    },
+    {
+      "key": "FINAL_PACKAGE",
+      "id": "1b97ezYUXt7DqOza86qRgtw0e7GgIpeFR",
+      "name": "Paquete final – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "19ZebnR8bmc3_r6K--zU3dl3wSsSHeVav",
+      "url": "https://drive.google.com/drive/folders/1b97ezYUXt7DqOza86qRgtw0e7GgIpeFR",
+      "valid": true
+    },
+    {
+      "key": "FINAL_PACKAGE_ARTS",
+      "id": "1sk-tra70BsBw6Z8-TeqvpWE388VPV8-Y",
+      "name": "Artes finales – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1b97ezYUXt7DqOza86qRgtw0e7GgIpeFR",
+      "url": "https://drive.google.com/drive/folders/1sk-tra70BsBw6Z8-TeqvpWE388VPV8-Y",
+      "valid": true
+    },
+    {
+      "key": "FINAL_PRINT_MANUSCRIPT",
+      "id": "1vYXDVwv68FEvdEdErfnSZT2cH8cZ-u9p",
+      "name": "Tripa – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1sk-tra70BsBw6Z8-TeqvpWE388VPV8-Y",
+      "url": "https://drive.google.com/drive/folders/1vYXDVwv68FEvdEdErfnSZT2cH8cZ-u9p",
+      "valid": true
+    },
+    {
+      "key": "FINAL_PRINT_COVER",
+      "id": "14M2UqWINB4XTn23wua_EFpeTmqA303Gh",
+      "name": "Cubierta – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1sk-tra70BsBw6Z8-TeqvpWE388VPV8-Y",
+      "url": "https://drive.google.com/drive/folders/14M2UqWINB4XTn23wua_EFpeTmqA303Gh",
+      "valid": true
+    },
+    {
+      "key": "FINAL_MANUSCRIPT_EDITABLES",
+      "id": "1tVZVy--GCDRVgFshBtRKX8_Rcaef5tHz",
+      "name": "Editables tripa – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1b97ezYUXt7DqOza86qRgtw0e7GgIpeFR",
+      "url": "https://drive.google.com/drive/folders/1tVZVy--GCDRVgFshBtRKX8_Rcaef5tHz",
+      "valid": true
+    },
+    {
+      "key": "ILLUSTRATIONS",
+      "id": "1puwmJ9_17pAbsSRz0uWJuIPyYvvsOYrf",
+      "name": "Ilustraciones – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+      "url": "https://drive.google.com/drive/folders/1puwmJ9_17pAbsSRz0uWJuIPyYvvsOYrf",
+      "valid": true
+    },
+    {
+      "key": "GRAPHICS",
+      "id": "1Y_105otZIlJAeIHQdbvqmIJRR-mtm2IV",
+      "name": "Gráficos – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1YDK6tKTDgSpFcAWuQNq2mfRA9rx9i5rl",
+      "url": "https://drive.google.com/drive/folders/1Y_105otZIlJAeIHQdbvqmIJRR-mtm2IV",
+      "valid": true
+    },
+    {
+      "key": "EDITING_OUTPUT",
+      "id": "1w_zMu9O_gU6CBLopDsG0lwPAjee_OFn8",
+      "name": "Editado – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "11o1l7fpU1k9nrkTvU2bRq8jGaj7R9ZnJ",
+      "url": "https://drive.google.com/drive/folders/1w_zMu9O_gU6CBLopDsG0lwPAjee_OFn8",
+      "valid": true
+    },
+    {
+      "key": "CONTENT_EXTRACTIONS",
+      "id": "1d5P28eXeB7TmtKd0G7ppyCdnoCVEcVnE",
+      "name": "Extracciones de contenido – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "11o1l7fpU1k9nrkTvU2bRq8jGaj7R9ZnJ",
+      "url": "https://drive.google.com/drive/folders/1d5P28eXeB7TmtKd0G7ppyCdnoCVEcVnE",
+      "valid": true
+    },
+    {
+      "key": "EDITORIAL_KIT_FEEDBACK",
+      "id": "1PljjF8_ogfqZuQNRJm_a14d_57wOyVAP",
+      "name": "Con feedback – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1491VTtHapoBYDeuquvpRPNNB0MlrZXra",
+      "url": "https://drive.google.com/drive/folders/1PljjF8_ogfqZuQNRJm_a14d_57wOyVAP",
+      "valid": true
+    },
+    {
+      "key": "CORRECTION_OUTPUT",
+      "id": "1SqVqEzIiGzy2xrxEDXhpW4NPIuh0kl3u",
+      "name": "Corregido – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1GZLCA2QRURMO5YshQX9MnPjwjP24gJ0B",
+      "url": "https://drive.google.com/drive/folders/1SqVqEzIiGzy2xrxEDXhpW4NPIuh0kl3u",
+      "valid": true
+    },
+    {
+      "key": "DESIGN_REVIEW_VERSIONS",
+      "id": "1BOhn_RPQLac_Opqn52HQ7ztnRYQDq2Z7",
+      "name": "Versiones_para_corregir – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "19ZebnR8bmc3_r6K--zU3dl3wSsSHeVav",
+      "url": "https://drive.google.com/drive/folders/1BOhn_RPQLac_Opqn52HQ7ztnRYQDq2Z7",
+      "valid": true
+    },
+    {
+      "key": "FINAL_PACKAGE_KDP",
+      "id": "1hmraOdHnZjMQyzoAZBo-zpuL1MSIYdfY",
+      "name": "KDP – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "1b97ezYUXt7DqOza86qRgtw0e7GgIpeFR",
+      "url": "https://drive.google.com/drive/folders/1hmraOdHnZjMQyzoAZBo-zpuL1MSIYdfY",
+      "valid": true
+    },
+    {
+      "key": "FINAL_COVER_EDITABLES",
+      "id": "18h4pnmi2GBT2wJViFaewh0ryU4k0OzYt",
+      "name": "Editables cubierta – QA AUTO DRIVE · Autor ficticio",
+      "parentId": "14M2UqWINB4XTn23wua_EFpeTmqA303Gh",
+      "url": "https://drive.google.com/drive/folders/18h4pnmi2GBT2wJViFaewh0ryU4k0OzYt",
+      "valid": true
+    }
+  ],
+  "sharing": "PENDING_VALIDATION",
+  "retained": true
+}
