@@ -184,3 +184,34 @@ Las CTAs se construyen localmente desde IDs/tipo y abren el mismo `CreativeWorkD
 ### Validación
 
 Ver [reporte A–AX](../evidencias/lider-creativo/proyectos-creativos/reporte.md), capturas 1440×900 / 768×1024 / 375×812, metadata de conceptos y ciclo real de cubierta. Diez proyectos nuevos QA usan identidades/catálogos existentes y enlaces sintéticos `example.test`; no modifican proyectos previos ni llaman Google. El ciclo real V1 → ajustes de Diseño → V2 → aprobación conserva la misma fila y raíz creativa, con el libro editorial aún activo. Los scripts QA solo admiten desarrollo local `/panhouse`; sesiones/identidades operativas privadas permanecen en `secrets/`.
+
+## Indicadores
+
+`GET /api/direccion-creativa/indicadores` y `GET /api/direccion-creativa/indicadores/export.csv` (`requireRole('lider_creativo')`). Analítica de **tu participación actual**, no workflow: responde "qué está pasando en volumen, tiempos y estados", no "qué necesita mi atención hoy" (eso es Inicio/Mi trabajo/Solicitudes). Catálogo de indicadores, fórmulas y población: ver [docs/arquitectura/09-metrics-map.md §7](./09-metrics-map.md). Implementación: `server/helpers/creativeIndicadores.ts`, reutilizando `ventanaRrpp`/`hoyLanzamientoRrpp` (huso America/Caracas, igual semántica de período que RRPP) y `creativeSourceSql` (mismo clasificador de fase que Mi trabajo/Proyectos creativos) como fuente de verdad única.
+
+**Alcance:** intervenciones (`direcciones_creativas`) donde el Líder autenticado es el asignado **vigente** de `lider_creativo` en el work item, vía `project_assignments`. Si una intervención se reasigna, su histórico se mueve al nuevo responsable — no es un registro de "quién hizo cada acción" sino de "qué proyectos están bajo tu responsabilidad hoy", consistente con el resto del área. Única excepción: `cubiertasVerificadas` cuenta un evento de auditoría (`CUBIERTA_REVISION_CREATIVA`), pero igualmente anclado a la intervención `revision_cubierta` bajo tu asignación vigente, no al actor histórico.
+
+**Los 4 KPI superiores** son operativos, no un catálogo de negocio: `DIRECCIÓN CREATIVA.xlsx` (19 hojas, auditado en la Fase 5C original, ver arriba) define hitos y fórmulas de días entre hitos, pero no define pesos, SLA de producción ni una prioridad formal de indicadores — por eso estos 4 KPI se derivan directamente del workflow modelado (Brief/Conceptos/Recursos/Cubierta), sin inventar ponderación ni "score creativo". Ver `docs/arquitectura/10-known-business-gaps.md` GAP-02, que permanece `PENDIENTE_VALIDACION_MATRIZ_DIRECCION_CREATIVA` para cualquier KPI oficial de rendimiento más allá de estos conteos operativos.
+
+**Comparación vs. período anterior:** igual regla que RRPP — N días inmediatamente anteriores al rango elegido; si el período anterior es 0, la comparación es `null` ("Sin base de comparación"), nunca `+∞%`. Los deltas de volumen (briefs/conceptos/recursos/cubiertas) se muestran con color **neutro**: más actividad no implica "mejor" ni "peor", solo más carga o más producción.
+
+**Estado actual de proyectos creativos** (donut): un proyecto cuenta una sola vez (si tiene más de una intervención viva, se toma la no completada más reciente; si todas están cerradas, la más reciente). Buckets: Brief / reunión (incluye reunión aún no registrada — el clasificador de fase no distingue "reunión pendiente" de "brief en preparación" como estados separados, y esta pantalla no inventa esa distinción), Conceptos, Recursos, Cubierta, Completado, Bloqueada. No representa porcentaje de avance; "Completado" es el estado creativo, no el cierre editorial del libro.
+
+**Tiempo promedio por fase:** excluye explícitamente espera de terceros (RRPP, autor, Diseño) cuando el dato lo permite determinar — cada fase mide el intervalo entre el evento que habilita el trabajo del Líder y el evento que lo cierra, nunca `completado_en − creado_en` ingenuo:
+
+- Brief: `fecha_brief_enviado_especialista − creación del work item`.
+- Conceptos: `creación del último concepto registrado − aprobación del brief por el autor` (excluye la espera de esa aprobación).
+- Recursos: `cierre de la intervención (recursos completos) − aprobación del concepto por el autor` (excluye la espera de RRPP y autor sobre el concepto).
+- Cubierta: `verificación creativa (CUBIERTA_REVISION_CREATIVA) − primera entrega de Diseño de esa revisión` (excluye el tiempo de producción interna de Diseño antes de esa entrega).
+
+Sin muestras en el período, se reporta `null`/"Datos insuficientes", nunca `0 días`. No hay SLA ni umbral oficial: no se etiqueta ningún resultado como "mejor"/"peor".
+
+**Carga de trabajo actual:** no está acotada al período — es el estado de hoy (`actionable` del mismo clasificador que Mi trabajo, espera de terceros por fase `WAIT_*`, completadas dentro del rango seleccionado).
+
+**Hitos recientes:** máximo 5, solo 4 eventos de auditoría con significado unívoco (`BRIEF_CREATIVO_GENERADO`, `CONCEPTO_APROBADO_AUTOR`, el cierre automático de recursos completos —identificado por su `detalles.reason`, no cualquier cierre manual—, `CUBIERTA_REVISION_CREATIVA`), nunca "proyectos destacados" subjetivos.
+
+**Actividad reciente:** reutiliza `getCreativeActivity` (el mismo feed de Inicio), sin período propio — evita reconstruir el mapeo evento→entidad de Diseño/cubierta por segunda vez.
+
+**Exportación:** CSV (`csvIndicadoresCreativos`, mismo patrón sin dependencias que `server/helpers/indicadoresJefatura.ts`: BOM, CRLF, celdas con prefijo de fórmula neutralizado). No hay infraestructura XLSX/PDF en el proyecto; se deja como extensión futura si se necesita. Respeta período y filtro de servicio activos.
+
+**Filtros:** período (preset o rango personalizado, máximo 732 días) y servicio (catálogo real, sin desglosar Crudo por subtipo — se agrupa por servicio padre). La lista de servicios disponibles en el filtro proviene del alcance **sin filtrar**, para que nunca se reduzca a una sola opción tras elegirla.

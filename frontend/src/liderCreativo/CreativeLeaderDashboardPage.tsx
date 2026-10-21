@@ -1,3 +1,4 @@
+import {CreativeIndicadoresPage} from './CreativeIndicadoresPage';
 import {CreativeRequestsPage} from './CreativeRequestsPage';
 import {creativeRequestFilters} from './creativeRequestRoutes';
 import {CreativePortfolioPage} from './CreativePortfolioPage';
@@ -20,7 +21,7 @@ import './creativeLeader.css';
 function DashboardSkeleton(){return <div className="cl-loading" role="status" aria-label="Cargando trabajo creativo"><div className="cl-kpis">{[1,2,3,4].map(i=><div key={i}/>)}</div><div className="cl-loading-panels"><div/><div/></div></div>;}
 export function CreativeLeaderDashboardPage(){
   const {data:user}=useMe(),[params,setParams]=useSearchParams(),navigate=useNavigate();
-  const vista=['mi-trabajo','proyectos-creativos','solicitudes'].includes(params.get('vista')??'')?params.get('vista')!:'inicio';
+  const vista=['mi-trabajo','proyectos-creativos','solicitudes','indicadores'].includes(params.get('vista')??'')?params.get('vista')!:'inicio';
   const query=useCreativeDashboard(params.get('orden')==='fecha'?'fecha':'accion',vista==='inicio'),activity=useCreativeActivity(vista==='inicio');
   const work=useCreativeWork(creativeWorkFilters(params),vista==='mi-trabajo');
   const portfolio=useCreativePortfolio(creativePortfolioFilters(params),vista==='proyectos-creativos');
@@ -33,8 +34,8 @@ export function CreativeLeaderDashboardPage(){
     contentMaxWidth="max-w-[1700px]" contentClassName="cl-shell" footer={<div className="cl-sidebar-footer"><span>{user?.nombre}</span><strong>Líder Creativo</strong><small>Dirección Creativa</small><p>Historias que conectan</p></div>}>
     <div className="cl-account-bar"><span>Dirección Creativa</span><TopBar compacto/></div>
     <CreativeSidebarNav active={vista} actions={actions} requests={requests} mobile/>
-    <div className="cl-body">{!['proyectos-creativos','solicitudes'].includes(vista)&&<header className="cl-header"><div><span className="cl-eyebrow">DIRECCIÓN CREATIVA</span><h1>{names[vista]}</h1><p>{subtitles[vista]}</p></div>{vista!=='mi-trabajo'&&<time dateTime={new Date().toISOString()}>{creativeDate(new Date().toISOString(),{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</time>}</header>}
-      {vista==='solicitudes'?<CreativeRequestsPage/>:vista==='proyectos-creativos'?<CreativePortfolioPage/>:vista==='mi-trabajo'?<CreativeWorkInbox/>:query.isPending?<DashboardSkeleton/>:query.isError?<Card title="No se pudo consultar tu trabajo creativo"><CreativeEmpty><p role="alert">{query.error.message}</p><button className="fv-button" onClick={()=>query.refetch()}>Reintentar</button></CreativeEmpty></Card>:data&&<>
+    <div className="cl-body">{!['proyectos-creativos','solicitudes','indicadores'].includes(vista)&&<header className="cl-header"><div><span className="cl-eyebrow">DIRECCIÓN CREATIVA</span><h1>{names[vista]}</h1><p>{subtitles[vista]}</p></div>{vista!=='mi-trabajo'&&<time dateTime={new Date().toISOString()}>{creativeDate(new Date().toISOString(),{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</time>}</header>}
+      {vista==='indicadores'?<CreativeIndicadoresPage/>:vista==='solicitudes'?<CreativeRequestsPage/>:vista==='proyectos-creativos'?<CreativePortfolioPage/>:vista==='mi-trabajo'?<CreativeWorkInbox/>:query.isPending?<DashboardSkeleton/>:query.isError?<Card title="No se pudo consultar tu trabajo creativo"><CreativeEmpty><p role="alert">{query.error.message}</p><button className="fv-button" onClick={()=>query.refetch()}>Reintentar</button></CreativeEmpty></Card>:data&&<>
         {vista==='inicio'&&<><CreativeKpis data={data}/><div className="cl-dashboard-grid">
           <Card title="Requieren tu atención" icon="grid" className="cl-attention" action={<Link to="/?vista=mi-trabajo">Ver todas las tareas →</Link>}><p className="cl-panel-caption">Tareas creativas asignadas y pendientes.</p><CreativeAttentionList tasks={data.attention}/></Card>
           <aside className="cl-right-rail"><Card title="Próximos vencimientos" icon="clock" action={<Link to="/?vista=mi-trabajo&orden=fecha">Ver todos →</Link>}><CreativeDeadlines tasks={data.deadlines}/></Card>

@@ -24,6 +24,7 @@ import {
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import {CreativeError,getCreativeActivity,getCreativeDashboard,getCreativeWorkDetail} from '../helpers/creativeLeader.js';
+import {csvIndicadoresCreativos,obtenerIndicadoresCreativos,periodoCreativoSchema} from '../helpers/creativeIndicadores.js';
 import {deliverCreativeConcepts,reviseCreativeConcept} from '../helpers/creativeLeaderCommands.js';
 import {obtenerEspecialistaActual} from '../helpers/carga.js';
 
@@ -139,6 +140,13 @@ export async function direccionCreativaRoutes(app: FastifyInstance) {
     return getCreativeProjectConcept(params.projectId,params.conceptId,req.user!.id,portfolioContext.parse(req.query).process);
   });
   app.get('/inicio/actividad',{preHandler:leader},async req=>({items:await getCreativeActivity(req.user!.id)}));
+  for(const exportar of [false,true])app.get(exportar?'/indicadores/export.csv':'/indicadores',{preHandler:leader},async(req,reply)=>{
+    const f=parseOrReply(periodoCreativoSchema,req.query,reply);if(!f)return;
+    const data=await obtenerIndicadoresCreativos(req.user!.id,f);
+    reply.header('Cache-Control','private, no-store');
+    if(!exportar)return data;
+    return reply.type('text/csv; charset=utf-8').header('Content-Disposition',`attachment; filename="indicadores-direccion-creativa-${data.periodo.from}-${data.periodo.to}.csv"`).send(csvIndicadoresCreativos(data));
+  });
   app.get('/:id/operacion',{preHandler:leader},async req=>getCreativeWorkDetail(idParamSchema.parse(req.params).id,req.user!.id));
   const conceptInput=z.object({descripcion:z.string().trim().min(1).max(3000),enlace:webUrl}).strict();
   app.post('/:id/conceptos/entregar',{preHandler:leader},async req=>{

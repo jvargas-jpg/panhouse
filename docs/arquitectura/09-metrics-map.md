@@ -163,3 +163,36 @@ RRPP se cargan de forma diferida y comparten Recharts con Comercial.
 QA visual en navegador a 1440×900 y 375×812: siete pestañas, rango vacío y cambio
 real de período, teclado y tablas; documento móvil de 375 px sin overflow global.
 No se modificaron los datos de desarrollo para esta implementación.
+
+## 7. Indicadores de Dirección Creativa — Líder Creativo
+
+Implementación: `GET /api/direccion-creativa/indicadores?from=YYYY-MM-DD&to=YYYY-MM-DD&servicio=<uuid>`,
+export `GET /api/direccion-creativa/indicadores/export.csv`.
+Owner: **Líder Creativo** (`lider_creativo`), sobre su propio alcance de participación actual.
+Documentación completa (alcance, exclusión de espera de terceros, hitos, actividad):
+[docs/arquitectura/27-lider-creativo.md § Indicadores](./27-lider-creativo.md).
+Mismo motor de período/comparación que RRPP (`ventanaRrpp`, `America/Caracas`, N días
+anteriores, `null` sin base de comparación — nunca `+∞%`), reutilizado directamente
+desde `server/helpers/rrppIndicadores.ts`. Estos son **métricas operativas**
+derivadas del workflow real (ver documento 10, GAP-02), no un catálogo de KPIs
+oficiales ponderados por la empresa.
+
+### Catálogo: NAME / SOURCE / DEFINITION / FORMULA / POPULATION / PERIOD / OWNER
+
+| NAME | SOURCE | DEFINITION / FORMULA | POPULATION | PERIOD | OWNER |
+| --- | --- | --- | --- | --- | --- |
+| Briefs elaborados | direcciones_creativas.fecha_brief_enviado_especialista | COUNT de briefs finalizados y enviados al Especialista; no cuenta briefs abiertos ni solicitudes recibidas | Intervenciones `concepto_portada` bajo la asignación vigente del Líder | Fecha de envío del brief, inclusiva | Líder Creativo |
+| Conceptos creados | ficha_diseno_propuestas.created_at (con `direccion_creativa_id` real, no legacy) | COUNT de propuestas de concepto de portada registradas; un proyecto puede aportar 2–3, no se cuenta por proyecto | Propuestas de intervenciones bajo la asignación vigente del Líder | created_at en huso Caracas | Líder Creativo |
+| Recursos entregados | creative_deliveries (CONCEPT_IMAGE + CONCEPT_PDF) vía direcciones_creativas.fecha_cierre | COUNT de entregas formales **completas** (imagen Freepik + PDF del concepto aprobado); 1 entrega formal = 1, no se cuenta archivo por archivo | Intervenciones `concepto_portada` cerradas con `resultado_final='aprobado'` | fecha_cierre | Líder Creativo |
+| Cubiertas verificadas | audit_logs.accion='CUBIERTA_REVISION_CREATIVA' | COUNT de verificaciones creativas de cubierta extendida registradas por el Líder (aprobadas o con ajustes); no cuenta la entrega de Diseño ni revisión interna | Intervenciones `revision_cubierta` bajo la asignación vigente del Líder | created_at del evento | Líder Creativo |
+| Estado actual de proyectos creativos | creativeSourceSql (fase canónica, igual que Mi trabajo) | COUNT por proyecto, una fila por proyecto incluso con histórico de varias intervenciones; buckets Brief/reunión, Conceptos, Recursos, Cubierta, Completado, Bloqueada | Proyectos con intervención bajo la asignación vigente del Líder | Estado actual, no snapshot del período | Líder Creativo |
+| Proyectos por servicio | servicios.nombre vía proyecto | COUNT por proyecto (una vez), agrupado por servicio padre; Crudo no se desglosa por subtipo aquí | Igual que estado actual | Estado actual | Líder Creativo |
+| Tiempo promedio por fase | ver fórmulas por fase en 27-lider-creativo.md | Promedio en días, excluyendo espera de terceros cuando el dato lo permite determinar; `null` si no hay muestras en el período | Brief/Conceptos/Recursos/Cubierta con ambos extremos del intervalo resueltos | Por fecha del extremo final de cada intervalo | Líder Creativo |
+| Carga de trabajo actual | creativeSourceSql.actionable / phase WAIT_* / fecha_cierre | Intervenciones accionables ahora, en espera de terceros ahora, completadas dentro del rango elegido | Igual que estado actual (activas/espera); completadas sí usa el período | Activas/espera: ahora. Completadas: período | Líder Creativo |
+| Hitos recientes | audit_logs (4 eventos con significado unívoco) | Brief finalizado, Concepto aprobado por el autor, Recursos entregados (cierre automático por recursos completos), Cubierta verificada; máximo 5, nunca "destacados" subjetivos | Igual que los KPI correspondientes | created_at del evento, dentro del rango | Líder Creativo |
+| Actividad reciente | getCreativeActivity (mismo feed de Inicio) | Catálogo creativo completo de audit_logs con resolución de entidad existente; máximo 6 | Igual que Inicio del Líder | Más reciente, sin filtro de período propio | Líder Creativo |
+
+Comparación vs. período anterior solo para los 4 KPI superiores (`cambio()`
+null-seguro, igual fórmula que RRPP). No se compara estado actual, carga de
+trabajo, hitos ni actividad: son observaciones del momento, no series.
+Deltas de volumen con color neutro — más actividad no es "mejor" ni "peor".
