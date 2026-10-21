@@ -1,0 +1,34 @@
+Estado antes del commit final. El estado posterior se verifica con git status --short.
+
+M  docs/arquitectura/27-lider-creativo.md
+A  docs/evidencias/lider-creativo/mi-trabajo/checks.json
+A  docs/evidencias/lider-creativo/mi-trabajo/empty-filter.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/final-1440.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/inicial-1440.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/mobile-375.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/mobile-filters.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/post-workflow-qa.json
+A  docs/evidencias/lider-creativo/mi-trabajo/qa-fixtures.json
+A  docs/evidencias/lider-creativo/mi-trabajo/regression-summary.txt
+A  docs/evidencias/lider-creativo/mi-trabajo/reporte.md
+A  docs/evidencias/lider-creativo/mi-trabajo/tablet-768.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/visual-functional-qa.json
+A  docs/evidencias/lider-creativo/mi-trabajo/workflow-author-feedback.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/workflow-brief.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/workflow-concepts.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/workflow-cover-adjustments.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/workflow-resources.jpg
+A  docs/evidencias/lider-creativo/mi-trabajo/workflow-rrpp-feedback.jpg
+M  frontend/src/liderCreativo/CreativeLeaderDashboardPage.tsx
+A  frontend/src/liderCreativo/CreativeWorkInbox.tsx
+M  frontend/src/liderCreativo/creativeApi.ts
+A  frontend/src/liderCreativo/creativeWork.css
+A  frontend/src/liderCreativo/creativeWork.test.tsx
+A  frontend/src/liderCreativo/creativeWorkRoutes.ts
+A  scripts/creative-inbox-fixture-qa.ts
+A  scripts/creative-inbox-verify-qa.ts
+A  server/helpers/creativeInbox.ts
+M  server/helpers/creativeLeader.ts
+M  server/routes/direccionCreativa.routes.ts
+M  shared/creativeLeader.ts
+M  tests/creativeLeader.test.ts

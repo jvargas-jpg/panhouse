@@ -107,7 +107,7 @@ describe('Líder Creativo · Inicio y scope canónico',()=>{
   });
   it('lectura en lotes: misma cantidad de SQL con 1 o 16 trabajos; Inicio limita atención a seis',async()=>{
     await fixture();let count=0;const first=vi.spyOn(pool,'query');try{await getCreativeDashboard(leader,now);count=first.mock.calls.length;}finally{first.mockRestore();}
-    for(let i=0;i<15;i++)await fixture();const second=vi.spyOn(pool,'query');try{const d=await getCreativeDashboard(leader,now);expect(second.mock.calls.length).toBe(count);expect(count).toBe(3);expect(d.totalActions).toBe(16);expect(d.attention).toHaveLength(6);}finally{second.mockRestore();}
+    for(let i=0;i<15;i++)await fixture();const second=vi.spyOn(pool,'query');try{const d=await getCreativeDashboard(leader,now);expect(second.mock.calls.length).toBe(count);expect(count).toBe(1);expect(d.totalActions).toBe(16);expect(d.attention).toHaveLength(6);}finally{second.mockRestore();}
   });
   it('empty real devuelve ceros, sin fechas ni datos demostrativos',async()=>{
     const d=await getCreativeDashboard(leader,now);expect(d.kpis).toEqual({briefs:0,concepts:0,covers:0,nextDueAt:null});expect(d.attention).toEqual([]);expect(d.deadlines).toEqual([]);expect(await getCreativeActivity(leader)).toEqual([]);
@@ -188,4 +188,105 @@ describe('Cubierta extendida · verificación creativa separada',()=>{
     expect((await getCreativeDashboard(leader)).totalActions).toBe(0);expect((await db.select().from(workItems).where(eq(workItems.id,f.d.workItemId)))[0]?.estado).toBe('en_progreso');
     expect((await db.select().from(workItems).where(eq(workItems.id,f.internal.id)))[0]?.estado).toBe('cancelado');
   });
+});
+
+describe('Mi trabajo · consulta SQL, facetas e historial',()=>{
+ const list=(query='',user=leader)=>api('GET','/direccion-creativa/mi-trabajo'+query,user);
+ it('exige sesión y rol, rechaza filtros inválidos e identidad enviada por cliente',async()=>{
+  expect((await list('','absent')).statusCode).toBe(401);
+  for(const user of [specialist,rrpp,manager,designer])expect((await list('',user)).statusCode).toBe(403);
+  for(const query of ['?tipo=diseno','?estado=inventado','?pagina=0','?pageSize=10000','?servicio=ajeno','?userId='+other])expect((await list(query)).statusCode).toBe(400);
+ });
+ it('lista solo asignación vigente, separa Solicitudes y retira acceso tras reasignar',async()=>{
+  const own=await fixture(),foreign=await fixture({},other);await fixture({},null);
+  let data=(await list()).json();expect(data.items.map((i:any)=>i.workItemId)).toEqual([own.wi.id]);expect(data.counts.requests).toBe(1);
+  expect(data.items.some((i:any)=>i.creativeProcessId===foreign.dc.id)).toBe(false);
+  await api('PATCH','/direccion-creativa/'+own.dc.id+'/asignar',manager,{liderCreativoId:other});
+  expect((await list()).json().total).toBe(0);expect((await api('GET','/direccion-creativa/'+own.dc.id+'/operacion')).statusCode).toBe(403);
+ });
+ it('distingue los seis tipos existentes y no genera URL ni prioridad ficticia',async()=>{
+  await fixture();await fixture({briefFeedback:'Revisar el enfoque'});await fixture(approvedBrief);
+  const changed=await fixture(approvedBrief);await concepts(changed,{estado:'Devuelta por RRPP',feedbackRrpp:'Revisar contraste'});
+  const resource=await fixture(approvedBrief);await concepts(resource,{fechaAprobadaAutor:'2026-10-19',fechaAprobadaRrpp:'2026-10-18'});
+  const data=(await list()).json();expect(data.items).toHaveLength(5);
+  expect(data.counts.types).toEqual({BRIEF:2,CONCEPT:2,RESOURCES:1,COVER_REVIEW:0});
+  expect(data.items.every((i:any)=>!('href' in i)&&!('priority' in i))).toBe(true);
+  expect(new Set(data.items.map((i:any)=>i.workItemId)).size).toBe(5); // two returned concepts are one work item
+ });
+ it('waiting RRPP/autor/Especialista no tienen acción ni vencimiento imputado al Líder',async()=>{
+  const waitingRrpp=await fixture(approvedBrief),waitingAuthor=await fixture({...approvedBrief,fechaBriefAprobadoAutor:null,fechaBriefEnviadoAutor:'2026-10-19'}),waitingSpecialist=await fixture({...approvedBrief,fechaBriefAprobadoAutor:null});
+  await concepts(waitingRrpp);
+  for(const f of [waitingRrpp,waitingAuthor,waitingSpecialist])await db.update(workItems).set({fechaFinPautada:'2020-01-01'}).where(eq(workItems.id,f.wi.id));
+  const data=(await list()).json();expect(data.total).toBe(3);expect(data.counts.overdue).toBe(0);expect(data.counts.actionable).toBe(0);
+  expect(data.items.every((i:any)=>!i.actionable&&!i.overdue&&i.cta==='Ver proceso')).toBe(true);
+  expect(data.items.map((i:any)=>i.waitingOn).sort()).toEqual(['AUTHOR','RRPP','SPECIALIST']);
+  expect((await list('?estado=En%20curso')).json().total).toBe(0);
+  expect((await list('?estado=Esperando%20RRPP')).json().items[0].creativeProcessId).toBe(waitingRrpp.dc.id);
+  expect((await list('?fecha=vencidos')).json().total).toBe(0);
+ });
+ it('filtros combinados de tipo, estado y servicio operan en servidor y cuentan por faceta',async()=>{
+  const brief=await fixture(),concept=await fixture(approvedBrief);await fixture({briefFeedback:'Feedback autor'});
+  const [service]=await db.insert(servicios).values({codigo:'QA-'+randomUUID().slice(0,6),nombre:'Servicio QA de catálogo',pesoComplejidad:1,plazoDias:30}).returning();
+  await db.update(proyectos).set({servicioId:service!.id}).where(eq(proyectos.id,concept.p.id));
+  const data=(await list('?tipo=CONCEPT&estado=En%20curso&servicio='+service!.id)).json();expect(data.total).toBe(1);expect(data.items[0].workItemId).toBe(concept.wi.id);
+  expect((await list('?tipo=BRIEF&estado=Requiere%20ajustes')).json().total).toBe(1);
+  expect((await list('?servicio='+service!.id+'&tipo=BRIEF')).json().total).toBe(0);
+  expect((await list('?tipo=BRIEF')).json().counts.types.CONCEPT).toBe(1);
+  expect((await list('?tipo=BRIEF')).json().items.some((i:any)=>i.workItemId===brief.wi.id)).toBe(true);
+ });
+ it('busca por título, autor y tarea; porcentajes y SQL se tratan como texto',async()=>{
+  const f=await fixture();
+  for(const search of [f.p.codigo,'Elaborar brief'])expect((await list('?search='+encodeURIComponent(search))).json().total).toBe(1);
+  const item=(await list()).json().items[0];expect((await list('?search='+encodeURIComponent(item.project.authors))).json().total).toBe(1);
+  for(const search of ['%','_',"' OR 1=1 --"])expect((await list('?search='+encodeURIComponent(search))).json().total).toBe(0);
+ });
+ it('fecha y orden usan Caracas, no penalizan espera y conservan desempate estable',async()=>{
+  const late=await fixture(),today=await fixture(),later=await fixture(),noDate=await fixture(),adjust=await fixture({briefFeedback:'Requiere ajuste'});
+  for(const [f,date] of [[late,'2026-10-18'],[today,'2026-10-19'],[later,'2026-10-21'],[adjust,'2026-10-22']] as const)await db.update(workItems).set({fechaFinPautada:date}).where(eq(workItems.id,f.wi.id));
+  const {listCreativeWork}=await import('../server/helpers/creativeInbox.js');
+  expect((await listCreativeWork(leader,{},now)).items.map(i=>i.workItemId)).toEqual([late.wi.id,today.wi.id,adjust.wi.id,later.wi.id,noDate.wi.id]);
+  for(const [fecha,total] of [['hoy',1],['semana',3],['proximos',2],['vencidos',1],['sin-fecha',1]] as const)expect((await listCreativeWork(leader,{fecha},now)).total).toBe(total);
+  expect((await listCreativeWork(leader,{orden:'fecha'},now)).items.map(i=>i.workItemId)).toEqual([late.wi.id,today.wi.id,later.wi.id,adjust.wi.id,noDate.wi.id]);
+  expect((await listCreativeWork(leader,{fecha:'hoy'},new Date('2026-10-20T02:00:00Z'))).items[0]?.workItemId).toBe(today.wi.id);
+ });
+ it('completadas solo con filtro explícito y permite consultar su contexto al culminar proyecto',async()=>{
+  const complete=await fixture({fechaCierre:'2026-10-19',...approvedBrief,recursoImagenUrl:'https://example.test/image',recursoConceptoPdfUrl:'https://example.test/pdf'});
+  await concepts(complete,{fechaAprobadaAutor:'2026-10-19'});await db.update(workItems).set({estado:'completado'}).where(eq(workItems.id,complete.wi.id));
+  await db.update(proyectos).set({estado:'culminado'}).where(eq(proyectos.id,complete.p.id));await fixture();
+  expect((await list()).json().total).toBe(1);const done=(await list('?estado=Completada')).json();expect(done.total).toBe(1);expect(done.items[0]).toMatchObject({state:'Completada',actionable:false,overdue:false});
+  expect((await list('?alcance=todas')).json().total).toBe(2);
+  expect((await api('GET','/direccion-creativa/'+complete.dc.id+'/operacion')).statusCode).toBe(200);
+ });
+ it('paginación SQL devuelve solo la página, counts completos y ajusta páginas fuera de rango',async()=>{
+  for(let i=0;i<13;i++)await fixture();
+  const first=(await list()).json(),second=(await list('?pagina=2')).json();expect(first.total).toBe(13);expect(first.items).toHaveLength(10);expect(second.items).toHaveLength(3);
+  expect(first.counts.all).toBe(13);expect(first.counts.types.BRIEF).toBe(13);expect(first.items.some((i:any)=>second.items.some((j:any)=>j.id===i.id))).toBe(false);
+  expect((await list('?pagina=9999')).json().page).toBe(2);expect((await list('?pageSize=25')).json().items).toHaveLength(13);
+ });
+ it('no hace N+1: una sentencia SQL para filas, total y facetas con 1 o 16 trabajos',async()=>{
+  const {listCreativeWork}=await import('../server/helpers/creativeInbox.js');await fixture();
+  for(const total of [1,16]){if(total===16)for(let i=0;i<15;i++)await fixture();const spy=vi.spyOn(pool,'query');try{const data=await listCreativeWork(leader,{},now);expect(spy).toHaveBeenCalledTimes(1);expect(data.total).toBe(total);}finally{spy.mockRestore();}}
+ });
+ it('empty real conserva facetas y no expone solicitudes como tareas',async()=>{
+  await fixture({},null);const data=(await list()).json();expect(data.items).toEqual([]);expect(data.total).toBe(0);expect(data.counts.all).toBe(0);expect(data.counts.requests).toBe(1);
+ });
+});
+
+describe('Mi trabajo · identidad de intervención',()=>{
+ it('mantiene dos filas del mismo proyecto y protege otro work item del mismo proyecto',async()=>{
+  const own=await fixture();
+  const [secondWork]=await db.insert(workItems).values({proyectoId:own.p.id,tipo:'direccion_creativa',businessKey:'concepto_portada:ronda-2',estado:'pendiente'}).returning();
+  const [second]=await db.insert(direccionesCreativas).values({proyectoId:own.p.id,workItemId:secondWork!.id}).returning();
+  await db.insert(projectAssignments).values({proyectoId:own.p.id,workItemId:secondWork!.id,tipo:'lider_creativo',usuarioId:leader});
+  let data=(await api('GET','/direccion-creativa/mi-trabajo')).json();expect(data.total).toBe(2);expect(new Set(data.items.map((i:any)=>i.projectId)).size).toBe(1);expect(new Set(data.items.map((i:any)=>i.workItemId)).size).toBe(2);
+  await api('PATCH','/direccion-creativa/'+second!.id+'/asignar',manager,{liderCreativoId:other});
+  data=(await api('GET','/direccion-creativa/mi-trabajo')).json();expect(data.total).toBe(1);expect(data.items[0].creativeProcessId).toBe(own.dc.id);
+  expect((await api('GET','/direccion-creativa/'+second!.id+'/operacion')).statusCode).toBe(403);
+  expect((await api('PATCH','/direccion-creativa/'+second!.id+'/brief',leader,{briefEnlace:'https://example.test/idor',fechaBriefEnviadoEspecialista:'2026-10-21'})).statusCode).toBe(403);
+ });
+ it('proyecto retirado con intervención no completada no devuelve un detalle operativo inválido',async()=>{
+  const f=await fixture();await db.update(proyectos).set({estado:'retirado'}).where(eq(proyectos.id,f.p.id));
+  expect((await api('GET','/direccion-creativa/mi-trabajo')).json().total).toBe(0);
+  expect((await api('GET','/direccion-creativa/'+f.dc.id+'/operacion')).statusCode).toBe(404);
+ });
 });

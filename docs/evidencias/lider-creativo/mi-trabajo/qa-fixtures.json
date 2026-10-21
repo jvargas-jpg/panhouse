@@ -1,0 +1,105 @@
+{
+  "createdAt": "2026-10-21T12:45:53.545Z",
+  "fictitious": true,
+  "existingUsersOnly": true,
+  "existingProjectsModified": false,
+  "googleCalled": false,
+  "cases": [
+    {
+      "kind": "brief",
+      "projectId": "6ffc4937-494d-4123-9cf2-17d34165077d",
+      "projectCode": "QAC-B217FD",
+      "processId": "9bb8e2c9-4946-4a37-b7f0-d62277ff29d8",
+      "workItemId": "daab4180-3839-40e2-967b-6a1eadb6ca79",
+      "conceptIds": []
+    },
+    {
+      "kind": "concepts",
+      "projectId": "b3346d73-b54c-4e75-98de-c23b2c2afc13",
+      "projectCode": "QAC-5EF439",
+      "processId": "01c8a1f7-f010-40db-8742-ec2e6e1c76b9",
+      "workItemId": "62082789-afea-42d6-b930-69a0ffa2704b",
+      "conceptIds": []
+    },
+    {
+      "kind": "rrpp_feedback",
+      "projectId": "2b3d37cc-58cd-4de4-af85-da8de682c186",
+      "projectCode": "QAC-22ABD5",
+      "processId": "6255ca0c-8483-4dcd-9cd5-2b27e3877742",
+      "workItemId": "2c20e25e-874e-45ba-b4b9-83a044e9dcf0",
+      "conceptIds": [
+        "681986f4-dc34-4156-a71d-51150fd0e401",
+        "415c8e0c-afac-4c44-a327-3466ce5156f8"
+      ]
+    },
+    {
+      "kind": "author_feedback",
+      "projectId": "5ac035ec-8974-4cd1-977f-aa74e049bf53",
+      "projectCode": "QAC-28651C",
+      "processId": "71059e3e-767f-447b-b15f-df197c7da1de",
+      "workItemId": "67cbb085-8197-4f0d-9782-b12287ad3d40",
+      "conceptIds": [
+        "ddc20a6c-4658-4a9a-bbdc-b277031a4376",
+        "0bdeb412-4cfc-40a7-8753-a2f4c2672513"
+      ]
+    },
+    {
+      "kind": "resources",
+      "projectId": "f92d74c0-1e06-43ff-a0fe-9aca578bfc94",
+      "projectCode": "QAC-C65D71",
+      "processId": "7b8316b8-e9c6-4ee4-83b5-77884c981380",
+      "workItemId": "b66bb1f3-401c-4ea1-966b-1f10d5523299",
+      "conceptIds": [
+        "99206656-c759-4ff9-aaed-295fb75ecbe3",
+        "6757bee4-7aed-48df-859a-2642fe7c6057"
+      ]
+    },
+    {
+      "kind": "cover",
+      "projectId": "984d0423-ddd9-4a16-9712-b7d23448131a",
+      "projectCode": "QAC-EE0148",
+      "processId": "fa7b8b66-3088-4ff6-9247-9c7f2efa0539",
+      "workItemId": "4753107a-83d2-4b59-b0c5-5a17cadce4dd",
+      "conceptIds": [
+        "16aee49e-ce8e-40a3-8b1b-efee90fccbee",
+        "cfb4e001-3e0b-440c-a28c-8fc16c0c39b6"
+      ],
+      "reviewId": "89eb0e7b-fccb-46d2-b8a1-808b66f53439",
+      "designId": "cf3be0ef-df90-41ab-8513-abdff98f6152",
+      "versionId": "93fa531e-b121-4a3f-a406-12b2b4648037"
+    },
+    {
+      "kind": "completed",
+      "projectId": "f77542d1-4ffb-47e5-8203-9b8509d23d4c",
+      "projectCode": "QAC-3FF960",
+      "processId": "8ee5e776-d755-4807-a88e-8325ae73a023",
+      "workItemId": "ab26fdaa-0ddf-4af1-91d0-82208ae082bb",
+      "conceptIds": [
+        "de863253-7fef-432b-bbbf-6347067b9b83",
+        "d4b2d772-4e9f-45c8-b2c1-9e56511c4ffe"
+      ]
+    },
+    {
+      "kind": "waiting_rrpp",
+      "projectId": "621779d4-46fa-4572-a2d0-2679e0a060d1",
+      "projectCode": "QAC-302EEF",
+      "processId": "3cba2087-6ba9-41ce-bf6e-0e5fe9f81d2d",
+      "workItemId": "92eeba7a-8c35-4f85-8b24-887d6bb085a0",
+      "conceptIds": [
+        "6b421a51-b142-45dc-80f8-3c7ed2db815f",
+        "676478ae-cb37-49b4-9c33-d90eb41639a1"
+      ]
+    },
+    {
+      "kind": "waiting_author",
+      "projectId": "34f721ca-519a-4012-ae52-ef2934f44535",
+      "projectCode": "QAC-576D92",
+      "processId": "2b62916a-ab37-477f-8897-0d0a6f3f6ef8",
+      "workItemId": "2a3cf9cf-0791-4865-890f-d6f1986ae438",
+      "conceptIds": [
+        "e0abc04a-d8f7-490c-a1c3-d8e07d4808b2",
+        "d201e4c6-d4a7-4f21-9f9f-3c8afb946654"
+      ]
+    }
+  ]
+}

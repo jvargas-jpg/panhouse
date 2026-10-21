@@ -1,0 +1,36 @@
+﻿ docs/arquitectura/27-lider-creativo.md             |  36 +++++-
+ .../lider-creativo/mi-trabajo/checks.json          |  22 ++++
+ .../lider-creativo/mi-trabajo/empty-filter.jpg     | Bin 0 -> 64752 bytes
+ .../lider-creativo/mi-trabajo/final-1440.jpg       | Bin 0 -> 123627 bytes
+ .../lider-creativo/mi-trabajo/git-diff-stat.txt    |  36 ++++++
+ .../lider-creativo/mi-trabajo/git-status.txt       |  34 ++++++
+ .../lider-creativo/mi-trabajo/inicial-1440.jpg     | Bin 0 -> 119490 bytes
+ .../lider-creativo/mi-trabajo/mobile-375.jpg       | Bin 0 -> 33523 bytes
+ .../lider-creativo/mi-trabajo/mobile-filters.jpg   | Bin 0 -> 22800 bytes
+ .../lider-creativo/mi-trabajo/mobile-final-375.jpg | Bin 0 -> 34017 bytes
+ .../mi-trabajo/post-workflow-qa.json               |  65 +++++++++++
+ .../lider-creativo/mi-trabajo/qa-fixtures.json     | 105 ++++++++++++++++++
+ .../mi-trabajo/regression-summary.txt              |   6 +
+ .../lider-creativo/mi-trabajo/reporte.md           |  81 ++++++++++++++
+ .../lider-creativo/mi-trabajo/tablet-768.jpg       | Bin 0 -> 85226 bytes
+ .../mi-trabajo/visual-functional-qa.json           |   7 ++
+ .../mi-trabajo/workflow-author-feedback.jpg        | Bin 0 -> 47335 bytes
+ .../lider-creativo/mi-trabajo/workflow-brief.jpg   | Bin 0 -> 47535 bytes
+ .../mi-trabajo/workflow-concepts.jpg               | Bin 0 -> 47025 bytes
+ .../mi-trabajo/workflow-cover-adjustments.jpg      | Bin 0 -> 41980 bytes
+ .../mi-trabajo/workflow-resources.jpg              | Bin 0 -> 45743 bytes
+ .../mi-trabajo/workflow-rrpp-feedback.jpg          | Bin 0 -> 47421 bytes
+ .../liderCreativo/CreativeLeaderDashboardPage.tsx  |  21 ++--
+ frontend/src/liderCreativo/CreativeWorkInbox.tsx   |  56 ++++++++++
+ frontend/src/liderCreativo/creativeApi.ts          |  11 +-
+ frontend/src/liderCreativo/creativeWork.css        |   7 ++
+ frontend/src/liderCreativo/creativeWork.test.tsx   |  29 +++++
+ frontend/src/liderCreativo/creativeWorkRoutes.ts   |  12 ++
+ scripts/creative-inbox-fixture-qa.ts               |  72 ++++++++++++
+ scripts/creative-inbox-verify-qa.ts                |  26 +++++
+ server/helpers/creativeInbox.ts                    | 123 +++++++++++++++++++++
+ server/helpers/creativeLeader.ts                   |  58 ++--------
+ server/routes/direccionCreativa.routes.ts          |   9 ++
+ shared/creativeLeader.ts                           |  15 +++
+ tests/creativeLeader.test.ts                       | 103 ++++++++++++++++-
+ 35 files changed, 873 insertions(+), 61 deletions(-)

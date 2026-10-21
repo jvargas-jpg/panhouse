@@ -26,3 +26,18 @@ export interface CreativeWorkDetail {
   workspace:{rootUrl:string|null;designUrl:string|null};
   cover:{designId:string;versionId:string;number:number;url:string;briefUrl:string|null;imageUrl:string|null;conceptPdfUrl:string|null}|null;
 }
+export type CreativeWorkStatus = 'Pendiente'|'En curso'|'Requiere ajustes'|'Esperando RRPP'|'Esperando autor'|'Esperando Diseño'|'Esperando Especialista'|'Completada'|'Bloqueada';
+export type CreativeWorkGroup = 'BRIEF'|'CONCEPT'|'RESOURCES'|'COVER_REVIEW';
+export interface CreativeWorkItem extends Omit<CreativeTask,'state'|'href'> {
+  feedbackSource?:'RRPP'|'AUTHOR'; feedback?:string; state:CreativeWorkStatus; group:CreativeWorkGroup; waitingOn:'RRPP'|'AUTHOR'|'DESIGN'|'SPECIALIST'|null;
+  actionable:boolean; projectId:string; serviceId:string; createdAt:string; updatedAt:string;
+}
+export interface CreativeWorkFilters {
+  tipo?:CreativeWorkGroup; estado?:CreativeWorkStatus; servicio?:string;
+  fecha?:'hoy'|'semana'|'proximos'|'vencidos'|'sin-fecha'; search?:string;
+  alcance?:'activas'|'todas'|'completadas'; orden?:'accion'|'fecha'; pagina?:number; pageSize?:number;
+}
+export interface CreativeWorkPage {
+  items:CreativeWorkItem[]; total:number; page:number; pageSize:number; updatedAt:string;
+  counts:{all:number; types:Record<CreativeWorkGroup,number>; states:Partial<Record<CreativeWorkStatus,number>>; services:{id:string;label:string;count:number}[]; overdue:number; actionable:number; requests:number};
+}

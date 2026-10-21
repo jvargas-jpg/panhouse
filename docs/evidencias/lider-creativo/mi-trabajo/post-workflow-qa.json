@@ -1,0 +1,65 @@
+{
+  "at": "2026-10-21T13:01:33.139Z",
+  "readOnly": true,
+  "cases": [
+    {
+      "kind": "brief",
+      "state": "Esperando Especialista",
+      "actionable": false,
+      "overdue": false
+    },
+    {
+      "kind": "concepts",
+      "state": "Esperando RRPP",
+      "actionable": false,
+      "overdue": false
+    },
+    {
+      "kind": "rrpp_feedback",
+      "state": "Esperando RRPP",
+      "actionable": false,
+      "overdue": false
+    },
+    {
+      "kind": "author_feedback",
+      "state": "Esperando autor",
+      "actionable": false,
+      "overdue": false
+    },
+    {
+      "kind": "resources",
+      "state": "Completada",
+      "actionable": false,
+      "overdue": false
+    },
+    {
+      "kind": "cover",
+      "state": "Completada",
+      "actionable": false,
+      "overdue": false
+    },
+    {
+      "kind": "waiting_rrpp",
+      "state": "Esperando RRPP",
+      "actionable": false,
+      "overdue": false
+    },
+    {
+      "kind": "waiting_author",
+      "state": "Esperando autor",
+      "actionable": false,
+      "overdue": false
+    },
+    {
+      "kind": "completed",
+      "state": "Completada",
+      "actionable": false,
+      "overdue": false
+    }
+  ],
+  "designerState": "en_progreso",
+  "previousInternalReview": "cancelado",
+  "activeScopeTotal": 6,
+  "fullHistoryTotal": 10,
+  "googleCalled": false
+}

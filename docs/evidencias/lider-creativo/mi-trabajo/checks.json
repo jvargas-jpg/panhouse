@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-21",
+  "regression": {
+    "command": "npm test",
+    "files": 76,
+    "tests": 1440,
+    "passed": 1440,
+    "failed": 0,
+    "exitCode": 0,
+    "durationSeconds": 467.44
+  },
+  "backend": {
+    "typecheck": 0,
+    "build": 0
+  },
+  "frontend": {
+    "typecheck": 0,
+    "build": 0
+  },
+  "warning": "Vite: chunks larger than 500 kB, non-blocking",
+  "gitDiffCheck": 0
+}

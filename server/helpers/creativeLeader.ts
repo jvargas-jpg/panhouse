@@ -4,8 +4,7 @@ import {db} from '../db/client.js';
 import {auditLogs,autores,direccionesCreativas,disenos,disenoVersiones,fichaDisenoPropuestas,fichasTrazabilidad,projectAssignments,projectDriveFolders,proyectos,servicios,users,workItems} from '../db/schema/index.js';
 import type {CreativeActivity,CreativeDashboard,CreativeProject,CreativeTask,CreativeWorkDetail} from '../../shared/creativeLeader.js';
 import {nombreServicioProyecto} from '../../shared/planificacion.js';
-import {clasificarVencimiento} from './tiempoEspecialista.js';
-import {diaCaracas} from './atencionEspecialista.js';
+import {creativeOverview} from './creativeInbox.js';
 import {workspaceSummaries} from '../modules/project-workspaces/queries.js';
 import {especialistaActualSql} from './carga.js';
 
@@ -28,7 +27,7 @@ async function readCreativeWork(userId:string,processId?:string){
     .where(and(processId?eq(direccionesCreativas.id,processId):undefined,
       processId?eq(projectAssignments.usuarioId,userId):or(eq(projectAssignments.usuarioId,userId),isNull(projectAssignments.id)),
       inArray(direccionesCreativas.tipo,['concepto_portada','revision_cubierta']),
-      sql`${proyectos.estado} not in ('culminado','retirado')`,sql`${workItems.estado}<>'cancelado'`))
+      sql`${workItems.estado}<>'cancelado'`))
     .orderBy(desc(direccionesCreativas.createdAt));
   if(!rows.length)return {rows,concepts:[],versions:[]};
   const ids=rows.map(r=>r.dc.id),projects=[...new Set(rows.map(r=>r.project.id))];
@@ -47,55 +46,22 @@ function projectFor(row:WorkData['rows'][number]):CreativeProject{
     authors:row.authors,service:nombreServicioProyecto(row.serviceCode,row.serviceName,row.subtype),specialist:row.specialist,
     coverUrl:row.project.cover&&/^https:\/\/[^\s]+\.(png|jpe?g|webp)(\?.*)?$/i.test(row.project.cover)?row.project.cover:null};
 }
-function projectWork(data:WorkData,now:Date,order='accion'):CreativeDashboard{
+function projectWork(rows:Awaited<ReturnType<typeof creativeOverview>>,now:Date):CreativeDashboard{
   const tasks:CreativeTask[]=[],processes:CreativeDashboard['processes']=[],requests:CreativeDashboard['requests']=[];
-  for(const row of data.rows){
-    const {dc,wi}=row,project=projectFor(row),concepts=data.concepts.filter(c=>c.direccionCreativaId===dc.id);
-    const version=data.versions.find(v=>v.v.revisionCreativaId===dc.id);
-    if(!row.assignedTo){
-      if(!dc.fechaCierre&&!['completado','cancelado'].includes(wi.estado))requests.push({id:dc.id,workItemId:wi.id,project,label:dc.tipo==='revision_cubierta'?'Verificación de cubierta':'Solicitud de reunión creativa',requestedAt:dc.fechaSolicitud});
-      continue;
-    }
-    const href=creativeHref(dc.id,project.id,wi.id),before=tasks.length;
-    let state='Completado';
-    const add=(type:CreativeTask['type'],label:string,cta:string,context:string,conceptId?:string)=>{
-      const dueAt=wi.fechaFinPautada,overdue=!!dueAt&&clasificarVencimiento(dueAt,now).vencido,dueToday=dueAt===diaCaracas(now);
-      tasks.push({id:wi.id+':'+type+(conceptId?':'+conceptId:''),creativeProcessId:dc.id,workItemId:wi.id,project,type,label,cta,context,conceptId,
-        state:type.endsWith('ADJUSTMENT')?'Requiere ajustes':wi.estado==='en_progreso'?'En curso':'Pendiente',dueAt,overdue,dueToday,
-        href:creativeHref(dc.id,project.id,wi.id,type)+(conceptId?'&concepto='+conceptId:'')});state='En curso';
-    };
-    if(dc.fechaCierre||['completado','cancelado'].includes(wi.estado))state='Completado';
-    else if(wi.gateBloqueante)state='Bloqueado';
-    else if(dc.tipo==='revision_cubierta'){
-      if(version&&!version.v.feedbackEn&&!version.design.cerradoEn&&!dc.resultadoFinal)add('COVER_REVIEW','Verificar cubierta extendida','Verificar cubierta',`Diseño entregó la versión ${version.v.numero}. Verifica el concepto aprobado y los requerimientos.`);
-      else state='Esperando Diseño';
-    }else if(dc.briefFeedback&&!dc.fechaBriefAprobadoAutor)add('BRIEF_ADJUSTMENT','Ajustar brief creativo','Revisar feedback',dc.briefFeedback);
-    else if(!dc.briefEnlace||!dc.fechaBriefEnviadoEspecialista)add('BRIEF','Elaborar brief creativo',dc.briefEnlace?'Continuar brief':'Preparar brief',dc.reunionRealizada?'Contexto de la reunión disponible para elaborar el brief.':'Revisa el contexto y registra la reunión creativa.');
-    else if(!dc.fechaBriefAprobadoAutor)state=dc.fechaBriefEnviadoAutor?'Esperando autor':'Esperando Especialista';
-    else{
-      const approved=concepts.find(c=>c.fechaAprobadaAutor);
-      if(approved){
-        if(!dc.recursoImagenUrl||!dc.recursoConceptoPdfUrl)add('RESOURCES','Entregar recursos del concepto aprobado','Entregar recursos','El autor aprobó el concepto. Entrega la imagen y el concepto en PDF.',approved.id);
-        else state='Completado';
-      }else{
-        const adjustments=concepts.filter(c=>c.estado==='Devuelta por RRPP'||c.estado==='Feedback del autor'||!!c.feedbackAutor);
-        if(adjustments.length)for(const c of adjustments)add('CONCEPT_ADJUSTMENT','Ajustar concepto de portada',c.estado==='Devuelta por RRPP'?'Revisar feedback':'Ajustar concepto',c.feedbackAutor??c.feedbackRrpp??c.descripcion??'Revisa los ajustes solicitados.',c.id);
-        else if(!concepts.length||concepts.some(c=>c.estado==='Borrador')||concepts.length<2&&!concepts.some(c=>c.fechaAprobadaRrpp||c.fechaEnviadaAutor))add('CONCEPTS','Preparar conceptos de portada','Preparar conceptos','Brief aprobado. Entrega de 2 a 3 propuestas para el checkpoint de RRPP.');
-        else state=concepts.some(c=>!c.fechaAprobadaRrpp)?'Esperando RRPP':concepts.some(c=>c.fechaEnviadaAutor)?'Esperando autor':'Esperando Especialista';
-      }
-    }
-    processes.push({id:dc.id,workItemId:wi.id,project,state,actionCount:tasks.length-before,href});
+  for(const {item,assigned,requestedAt} of rows){
+    if(!assigned){if(item.state!=='Completada')requests.push({id:item.creativeProcessId,workItemId:item.workItemId,project:item.project,label:item.type==='COVER_REVIEW'?'Verificación de cubierta':'Solicitud de reunión creativa',requestedAt});continue;}
+    const href=creativeHref(item.creativeProcessId,item.project.id,item.workItemId);
+    processes.push({id:item.creativeProcessId,workItemId:item.workItemId,project:item.project,state:item.state==='Completada'?'Completado':item.state,actionCount:item.actionable?1:0,href});
+    if(item.actionable)tasks.push({...item,id:item.workItemId+':'+item.type+(item.conceptId?':'+item.conceptId:''),context:item.feedback??item.context,state:item.state as CreativeTask['state'],href:creativeHref(item.creativeProcessId,item.project.id,item.workItemId,item.type)+(item.conceptId?'&concepto='+item.conceptId:'')});
   }
-  tasks.sort((a,b)=>Number(b.overdue)-Number(a.overdue)||Number(b.dueToday)-Number(a.dueToday)||Number(b.state==='Requiere ajustes')-Number(a.state==='Requiere ajustes')||(a.dueAt??'9999').localeCompare(b.dueAt??'9999')||a.id.localeCompare(b.id));
-  if(order==='fecha')tasks.sort((a,b)=>(a.dueAt??'9999').localeCompare(b.dueAt??'9999')||a.id.localeCompare(b.id));
   const deadlines=tasks.filter(t=>t.dueAt&&!t.overdue).sort((a,b)=>a.dueAt!.localeCompare(b.dueAt!)||a.id.localeCompare(b.id)).slice(0,6);
-  return {updatedAt:now.toISOString(),kpis:{briefs:tasks.filter(t=>t.type.startsWith('BRIEF')).length,concepts:tasks.filter(t=>t.type.startsWith('CONCEPT')).length,covers:tasks.filter(t=>t.type==='COVER_REVIEW').length,nextDueAt:deadlines[0]?.dueAt??null},
-    tasks,attention:tasks.slice(0,6),totalActions:tasks.length,deadlines,processes,requests};
+  return {updatedAt:now.toISOString(),kpis:{briefs:tasks.filter(t=>t.type.startsWith('BRIEF')).length,concepts:tasks.filter(t=>t.type.startsWith('CONCEPT')).length,covers:tasks.filter(t=>t.type==='COVER_REVIEW').length,nextDueAt:deadlines[0]?.dueAt??null},tasks,attention:tasks.slice(0,6),totalActions:tasks.length,deadlines,processes,requests};
 }
-export async function getCreativeDashboard(userId:string,now=new Date(),order='accion'):Promise<CreativeDashboard>{return projectWork(await readCreativeWork(userId),now,order);}
+export async function getCreativeDashboard(userId:string,now=new Date(),order='accion'):Promise<CreativeDashboard>{return projectWork(await creativeOverview(userId,now,order),now);}
 export async function getCreativeWorkDetail(id:string,userId:string):Promise<CreativeWorkDetail>{
   const data=await readCreativeWork(userId,id),row=data.rows[0];if(!row)throw new CreativeError(403,'Este trabajo no está asignado a tu usuario.');
-  const view=projectWork(data,new Date()),dc=row.dc,version=data.versions.find(v=>v.v.revisionCreativaId===id);
+  const view=projectWork(await creativeOverview(userId,new Date(),'accion',id),new Date()),dc=row.dc,version=data.versions.find(v=>v.v.revisionCreativaId===id);
+  if(!view.processes.length)throw new CreativeError(404,'Esta intervención ya no está disponible.');
   const workspace=(await workspaceSummaries([row.project.id])).get(row.project.id);
   const [designFolder]=workspace?.id?await db.select({url:projectDriveFolders.driveUrl}).from(projectDriveFolders)
     .where(and(eq(projectDriveFolders.workspaceId,workspace.id),eq(projectDriveFolders.key,'DESIGN'),eq(projectDriveFolders.status,'READY'))):[];

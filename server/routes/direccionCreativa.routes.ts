@@ -1,3 +1,4 @@
+import {listCreativeWork} from '../helpers/creativeInbox.js';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -106,6 +107,14 @@ export async function direccionCreativaRoutes(app: FastifyInstance) {
   });
   const leader=[requireAuth,requireRole('lider_creativo')];
   app.get('/inicio',{preHandler:leader},async req=>getCreativeDashboard(req.user!.id,new Date(),z.object({orden:z.enum(['accion','fecha']).optional()}).parse(req.query).orden));
+  app.get('/mi-trabajo',{preHandler:leader},async req=>{
+    const filters=z.object({tipo:z.enum(['BRIEF','CONCEPT','RESOURCES','COVER_REVIEW']).optional(),
+      estado:z.enum(['Pendiente','En curso','Requiere ajustes','Esperando RRPP','Esperando autor','Esperando Diseño','Esperando Especialista','Completada','Bloqueada']).optional(),
+      servicio:z.string().uuid().optional(),fecha:z.enum(['hoy','semana','proximos','vencidos','sin-fecha']).optional(),search:z.string().trim().max(200).optional(),
+      alcance:z.enum(['activas','todas','completadas']).optional(),orden:z.enum(['accion','fecha']).optional(),
+      pagina:z.coerce.number().int().min(1).max(100000).optional(),pageSize:z.coerce.number().refine(n=>[10,25,50].includes(n)).optional()}).strict().parse(req.query);
+    return listCreativeWork(req.user!.id,filters);
+  });
   app.get('/inicio/actividad',{preHandler:leader},async req=>({items:await getCreativeActivity(req.user!.id)}));
   app.get('/:id/operacion',{preHandler:leader},async req=>getCreativeWorkDetail(idParamSchema.parse(req.params).id,req.user!.id));
   const conceptInput=z.object({descripcion:z.string().trim().min(1).max(3000),enlace:webUrl}).strict();
