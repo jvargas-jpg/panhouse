@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-21",
+  "baseCommit": "fee98ae",
+  "focused": { "filesPassed": 2, "testsPassed": 56, "exitCode": 0 },
+  "regression": { "command": "npm test", "filesPassed": 77, "testsPassed": 1467, "durationSeconds": 449.34, "exitCode": 0, "concurrentVitestRuns": false },
+  "backendTypecheck": { "command": "npm run typecheck", "exitCode": 0 },
+  "backendBuild": { "command": "npm run build", "exitCode": 0 },
+  "frontendTypecheck": { "cwd": "frontend", "command": "npm run typecheck", "exitCode": 0 },
+  "frontendBuild": { "cwd": "frontend", "command": "npm run build", "exitCode": 0, "durationSeconds": 8.30, "warning": "Vite chunk larger than 500 kB" },
+  "newTests": { "backend": 18, "frontend": 9 },
+  "schemaMigrations": 0
+}

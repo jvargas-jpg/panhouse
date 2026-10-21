@@ -1,0 +1,92 @@
+{
+  "at": "2026-10-21T13:56:14.322Z",
+  "readOnly": true,
+  "phase": "initial",
+  "projects": 10,
+  "activeProjects": 9,
+  "uniqueRows": true,
+  "editorialProjectsRemainActive": true,
+  "results": [
+    {
+      "kind": "brief",
+      "stage": "BRIEF",
+      "waitingOn": null,
+      "action": "BRIEF",
+      "stableRoot": true,
+      "resourceCount": 0
+    },
+    {
+      "kind": "concepts",
+      "stage": "CONCEPTS",
+      "waitingOn": null,
+      "action": "CONCEPTS",
+      "stableRoot": true,
+      "resourceCount": 0
+    },
+    {
+      "kind": "rrpp_feedback",
+      "stage": "CONCEPTS",
+      "waitingOn": null,
+      "action": "CONCEPT_ADJUSTMENT",
+      "stableRoot": true,
+      "resourceCount": 0
+    },
+    {
+      "kind": "author_feedback",
+      "stage": "CONCEPTS",
+      "waitingOn": null,
+      "action": "CONCEPT_ADJUSTMENT",
+      "stableRoot": true,
+      "resourceCount": 0
+    },
+    {
+      "kind": "resources",
+      "stage": "RESOURCES",
+      "waitingOn": null,
+      "action": "RESOURCES",
+      "stableRoot": true,
+      "resourceCount": 0
+    },
+    {
+      "kind": "design_work",
+      "stage": "COVER",
+      "waitingOn": "DESIGN",
+      "action": null,
+      "stableRoot": true,
+      "resourceCount": 2
+    },
+    {
+      "kind": "cover",
+      "stage": "COVER",
+      "waitingOn": null,
+      "action": "COVER_REVIEW",
+      "stableRoot": true,
+      "resourceCount": 2
+    },
+    {
+      "kind": "completed",
+      "stage": "COMPLETED",
+      "waitingOn": null,
+      "action": null,
+      "stableRoot": true,
+      "resourceCount": 2
+    },
+    {
+      "kind": "waiting_rrpp",
+      "stage": "CONCEPTS",
+      "waitingOn": "RRPP",
+      "action": null,
+      "stableRoot": true,
+      "resourceCount": 0
+    },
+    {
+      "kind": "waiting_author",
+      "stage": "CONCEPTS",
+      "waitingOn": "AUTHOR",
+      "action": null,
+      "stableRoot": true,
+      "resourceCount": 0
+    }
+  ],
+  "googleCalled": false
+}

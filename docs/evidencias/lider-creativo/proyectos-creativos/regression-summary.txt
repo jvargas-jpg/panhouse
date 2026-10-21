@@ -1,0 +1,6 @@
+﻿✓ tests/performance.test.ts (3 tests) 3ms
+
+ Test Files  77 passed (77)
+      Tests  1467 passed (1467)
+   Start at  09:56:44
+   Duration  449.34s (transform 2.33s, setup 35.06s, collect 30.77s, tests 366.48s, environment 13ms, prepare 5.11s)

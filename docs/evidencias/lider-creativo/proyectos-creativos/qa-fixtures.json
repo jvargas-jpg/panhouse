@@ -1,0 +1,110 @@
+{
+  "at": "2026-10-21T13:41:10.837Z",
+  "synthetic": true,
+  "existingIdentities": true,
+  "priorProjectsModified": false,
+  "googleCalled": false,
+  "cases": [
+    {
+      "kind": "brief",
+      "projectId": "fde3406a-c169-4842-b9f5-663aa354344f",
+      "processId": "9ec868a1-dbf7-4f44-af21-936570d43811",
+      "workItemId": "be12869a-6616-4cf6-8042-0f624999cbf2",
+      "conceptIds": []
+    },
+    {
+      "kind": "concepts",
+      "projectId": "41d0e107-16d4-4903-9045-2943b44e6827",
+      "processId": "dc87c36d-bd8d-4708-aed1-9400935235ef",
+      "workItemId": "358e8e4a-986c-414e-9705-f1137aa29925",
+      "conceptIds": []
+    },
+    {
+      "kind": "rrpp_feedback",
+      "projectId": "3fd74a43-d0e2-40f6-82f6-bddbf564eae4",
+      "processId": "080bdcb9-17d2-4d62-a87f-b5b8afd5a493",
+      "workItemId": "b5eaddf2-0af3-4b0f-b91a-03706fde0754",
+      "conceptIds": [
+        "09b05168-f823-44b5-82b0-f0e9ec0aca91",
+        "d2d2667c-de25-49ce-862d-b0f1dd6e2e31"
+      ]
+    },
+    {
+      "kind": "author_feedback",
+      "projectId": "560eb600-6851-4957-be28-3751f2c7e229",
+      "processId": "313e2d1b-e046-41d0-9644-d375753b3b4b",
+      "workItemId": "f3047541-6d18-444e-9e58-925d95098aaf",
+      "conceptIds": [
+        "3a254289-7633-41b9-ba35-c35436be2e7f",
+        "82180983-34e1-40fa-aac6-1e253ca58408"
+      ]
+    },
+    {
+      "kind": "resources",
+      "projectId": "6baa6491-d6a8-401c-b9c4-48b92d5556f9",
+      "processId": "abf47272-abf7-49bb-91ad-38cbb8c4fdc4",
+      "workItemId": "f0f7beeb-f32d-4cf9-a996-9a035cad0f6f",
+      "conceptIds": [
+        "53d281f5-ab19-47fc-ae73-f22f89cff571",
+        "4fdf5396-cf17-4963-9d1b-12d12904c780"
+      ]
+    },
+    {
+      "kind": "design_work",
+      "projectId": "5b3f5700-6ce7-48c1-bfd9-7a7fc7de7190",
+      "processId": "e8942322-e5e1-4d83-8849-fb1d0a3b295d",
+      "workItemId": "008f4862-0c06-4226-b03f-5942288b7694",
+      "conceptIds": [
+        "e765dbb4-134b-4ae7-8371-2b240304d0f2",
+        "a3bc5a1a-f3a8-4704-a6c6-1d43c617c744"
+      ],
+      "designId": "d0948ae3-6083-477c-8f7f-f937cfd4152f"
+    },
+    {
+      "kind": "cover",
+      "projectId": "8fc3225a-8181-4846-86dd-3a37de8ed862",
+      "processId": "dab2a613-3e3f-4488-8710-5ec966422205",
+      "workItemId": "50996af3-2c38-4d6a-aa31-535494e6246a",
+      "conceptIds": [
+        "c398e71f-947e-419d-9e26-f8348cee0e53",
+        "6dc9e12d-4071-442f-9e43-fce106d66e89"
+      ],
+      "designId": "00a3a83c-f8d8-4fae-9755-79fdb7929f7d",
+      "reviewId": "664465cd-59e3-4a9c-85c1-7c0be98524a0",
+      "versionId": "f9a82f31-9d1d-47f1-b9a5-174a73ffde77"
+    },
+    {
+      "kind": "completed",
+      "projectId": "3e19a36e-e8ee-4f4f-acb4-8db96e2dc3bb",
+      "processId": "40f81455-3da2-435a-a814-b7b143d37718",
+      "workItemId": "72656334-1b3b-498f-b00b-d478f2552070",
+      "conceptIds": [
+        "582bbb95-a772-4ea4-aa4c-e5ee4d996b57",
+        "1e6c5c71-200d-46e7-be14-c1436d1a5d78"
+      ],
+      "designId": "c5076cec-e2c7-4d0e-a455-c81486f4f8fc",
+      "reviewId": "210ba0be-1786-4142-853a-2babe5609dda",
+      "versionId": "51f16d47-514c-4b81-b9d0-17c09015b91e"
+    },
+    {
+      "kind": "waiting_rrpp",
+      "projectId": "75554d72-c9d7-4ba5-8576-6128d8a083d2",
+      "processId": "89153562-26a0-4183-89f1-fda81479fdbe",
+      "workItemId": "e107c933-df97-43e6-8645-d3a48e79a965",
+      "conceptIds": [
+        "c4a39b6e-b610-482e-bd32-cd53fcb51455",
+        "546173bf-f979-4cd3-971f-d8a60940974b"
+      ]
+    },
+    {
+      "kind": "waiting_author",
+      "projectId": "7cbae09c-7b12-4379-9617-524f8e192096",
+      "processId": "9a5f6044-d2cf-41ee-a6d5-bfdd930040ed",
+      "workItemId": "a9fda982-98a2-4e5f-9f47-adeeebe8bd94",
+      "conceptIds": [
+        "6eca09cd-f7d1-4f38-89ca-63e6038850e0",
+        "eae9cba3-17b2-438e-a3af-b8362cec5235"
+      ]
+    }
+  ]
+}

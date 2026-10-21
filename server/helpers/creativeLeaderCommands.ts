@@ -4,7 +4,7 @@ import {direccionesCreativas,fichaDisenoPropuestas,fichasTrazabilidad,notificaci
 import type {Tx} from './tx.js';
 import {CreativeError} from './creativeLeader.js';
 import {registrarEvento} from './auditLog.js';
-import {evaluarGateBriefAprobadoParaConceptos} from './gates.js';
+import {evaluarGateBriefAprobadoParaConceptos,evaluarGateTituloAprobado} from './gates.js';
 import {obtenerEspecialistaActual} from './carga.js';
 
 export async function lockCreativeForLeader(tx:Tx,id:string,userId:string,allowCompleted=false){
@@ -16,6 +16,7 @@ export async function lockCreativeForLeader(tx:Tx,id:string,userId:string,allowC
   if(assignment?.usuarioId!==userId)throw new CreativeError(403,'Este trabajo pertenece a otro Líder Creativo.');
   const [wi]=await tx.select().from(workItems).where(eq(workItems.id,initial.workItemId));
   if(!dc||!p||['culminado','retirado'].includes(p.estado)||dc.tipo!=='concepto_portada'||!wi||wi.estado==='cancelado'||!allowCompleted&&(!!dc.fechaCierre||wi.estado==='completado'))throw new CreativeError(409,'Esta intervención ya no admite entregas creativas.');
+  if(!dc.fechaCierre){const gate=evaluarGateTituloAprobado(p);if(!gate.desbloqueado)throw new CreativeError(409,gate.motivo??'Falta confirmar el título definitivo.');}
   return dc;
 }
 export async function deliverCreativeConcepts(id:string,concepts:{descripcion:string;enlace:string}[],userId:string){

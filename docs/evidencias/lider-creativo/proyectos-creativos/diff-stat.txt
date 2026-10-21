@@ -1,0 +1,48 @@
+﻿Prepared content inventory; excludes this file and git-status-before-commit.txt.
+
+ docs/arquitectura/27-lider-creativo.md             |  54 ++++++-
+ .../proyectos-creativos/catalogue-filters.jpg      | Bin 0 -> 71774 bytes
+ .../lider-creativo/proyectos-creativos/checks.json |  12 ++
+ .../proyectos-creativos/concept-metadata.jpg       | Bin 0 -> 84999 bytes
+ .../cover-returned-to-design.jpg                   | Bin 0 -> 135700 bytes
+ .../proyectos-creativos/cover-v2-ready.jpg         | Bin 0 -> 104161 bytes
+ .../proyectos-creativos/cover-v2-transition.json   |  18 +++
+ .../proyectos-creativos/creative-completed.jpg     | Bin 0 -> 103165 bytes
+ .../proyectos-creativos/detail-local-error.jpg     | Bin 0 -> 64189 bytes
+ .../proyectos-creativos/empty-filter.jpg           | Bin 0 -> 49984 bytes
+ .../proyectos-creativos/final-1440.jpg             | Bin 0 -> 130916 bytes
+ .../proyectos-creativos/final-after-cover-1440.jpg | Bin 0 -> 104516 bytes
+ .../proyectos-creativos/inicial-1440.jpg           | Bin 0 -> 104985 bytes
+ .../proyectos-creativos/initial-domain-qa.json     |  92 +++++++++++
+ .../proyectos-creativos/mobile-detail-375.jpg      | Bin 0 -> 27737 bytes
+ .../proyectos-creativos/mobile-final-375.jpg       | Bin 0 -> 33737 bytes
+ .../proyectos-creativos/mobile-inicial-375.jpg     | Bin 0 -> 33370 bytes
+ .../proyectos-creativos/pagination-page2.jpg       | Bin 0 -> 95583 bytes
+ .../proyectos-creativos/post-cover-qa.json         |  92 +++++++++++
+ .../proyectos-creativos/qa-fixtures.json           | 110 +++++++++++++
+ .../proyectos-creativos/regression-summary.txt     |   6 +
+ .../lider-creativo/proyectos-creativos/reporte.md  |  60 ++++++++
+ .../proyectos-creativos/tablet-768.jpg             | Bin 0 -> 96719 bytes
+ .../proyectos-creativos/tablet-detail-768.jpg      | Bin 0 -> 73106 bytes
+ .../proyectos-creativos/visual-functional-qa.json  |  22 +++
+ .../proyectos-creativos/waiting-design.jpg         | Bin 0 -> 114148 bytes
+ .../workspace-author-feedback.jpg                  | Bin 0 -> 59464 bytes
+ .../proyectos-creativos/workspace-brief.jpg        | Bin 0 -> 141631 bytes
+ .../proyectos-creativos/workspace-resources.jpg    | Bin 0 -> 55350 bytes
+ .../liderCreativo/CreativeLeaderDashboardPage.tsx  |  16 +-
+ .../src/liderCreativo/CreativePortfolioPage.tsx    |  74 +++++++++
+ frontend/src/liderCreativo/creativeApi.ts          |  12 ++
+ frontend/src/liderCreativo/creativePortfolio.css   |   7 +
+ .../src/liderCreativo/creativePortfolio.test.tsx   |  44 ++++++
+ .../src/liderCreativo/creativePortfolioRoutes.ts   |  10 ++
+ scripts/creative-portfolio-advance-qa.ts           |  25 +++
+ scripts/creative-portfolio-fixture-qa.ts           |  58 +++++++
+ scripts/creative-portfolio-verify-qa.ts            |  29 ++++
+ server/helpers/creativeInbox.ts                    |  25 +--
+ server/helpers/creativeLeader.ts                   |   2 +-
+ server/helpers/creativeLeaderCommands.ts           |   3 +-
+ server/helpers/creativePortfolio.ts                | 171 +++++++++++++++++++++
+ server/routes/direccionCreativa.routes.ts          |  15 ++
+ shared/creativePortfolio.ts                        |  23 +++
+ tests/creativeLeader.test.ts                       | 127 +++++++++++++++
+ 45 files changed, 1085 insertions(+), 22 deletions(-)

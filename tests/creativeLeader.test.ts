@@ -290,3 +290,130 @@ describe('Mi trabajo · identidad de intervención',()=>{
   expect((await api('GET','/direccion-creativa/'+f.dc.id+'/operacion')).statusCode).toBe(404);
  });
 });
+
+describe('Proyectos creativos · portafolio por proyecto',()=>{
+ const list=(query='',user=leader)=>api('GET','/direccion-creativa/proyectos'+query,user);
+ const detail=(id:string,user=leader,query='')=>api('GET','/direccion-creativa/proyectos/'+id+query,user);
+ async function coverProject(deliver=false){
+  const f=await fixture({...approvedBrief,reunionRealizada:true,recursoImagenUrl:'https://example.test/image',recursoConceptoPdfUrl:'https://example.test/concept.pdf',resultadoFinal:'aprobado',fechaCierre:'2026-10-19'});
+  const [approved]=await concepts(f,{fechaAprobadaRrpp:'2026-10-18'});await db.update(fichaDisenoPropuestas).set({fechaAprobadaAutor:'2026-10-19'}).where(eq(fichaDisenoPropuestas.id,approved!.id));await db.update(workItems).set({estado:'completado'}).where(eq(workItems.id,f.wi.id));
+  await db.update(proyectos).set({disenadorId:designer}).where(eq(proyectos.id,f.p.id));
+  const {solicitarDiseno,entregarDiseno}=await import('../server/helpers/diseno.js');
+  const design=await solicitarDiseno(f.p.id,{tipo:'cubierta_extendida',solicitudKey:randomUUID(),fuenteUrl:'https://example.test/sources',preparacionConfirmada:true},{id:specialist,rol:'especialista'});
+  const version=deliver?await entregarDiseno(design.id,{enlace:'https://example.test/cover.pdf',entregaKey:randomUUID()},{id:designer,rol:'disenador'}):null;
+  return {...f,design,version};
+ }
+ it('sesión/rol en lista, detalle y conceptos; valida query y no acepta userId del cliente',async()=>{
+  const f=await fixture({reunionRealizada:true});
+  for(const path of ['/direccion-creativa/proyectos','/direccion-creativa/proyectos/'+f.p.id,'/direccion-creativa/proyectos/'+f.p.id+'/conceptos/'+randomUUID()]){
+   expect((await api('GET',path,'absent')).statusCode).toBe(401);for(const u of [specialist,rrpp,manager,designer])expect((await api('GET',path,u)).statusCode).toBe(403);
+  }
+  for(const q of ['?creativeState=50percent','?service=bad','?specialist=bad','?page=0','?pageSize=5000','?userId='+other])expect((await list(q)).statusCode).toBe(400);
+ });
+ it('un proyecto con tres work items históricos aparece una vez, Mi trabajo conserva sus intervenciones',async()=>{
+  const f=await fixture({reunionRealizada:true});
+  for(let i=0;i<2;i++){const [w]=await db.insert(workItems).values({proyectoId:f.p.id,tipo:'direccion_creativa',businessKey:'historical-'+i,estado:'completado'}).returning();await db.insert(direccionesCreativas).values({proyectoId:f.p.id,workItemId:w!.id,fechaCierre:'2026-10-18'});await db.insert(projectAssignments).values({proyectoId:f.p.id,workItemId:w!.id,tipo:'lider_creativo',usuarioId:leader});}
+  const data=(await list('?scope=all')).json();expect(data.total).toBe(1);expect(data.items[0]).toMatchObject({projectId:f.p.id,creativeState:'BRIEF'});expect(data.counts.all).toBe(1);
+  expect((await api('GET','/direccion-creativa/mi-trabajo?alcance=todas')).json().total).toBe(3);
+ });
+ it('reunión real previa y gate de título; no incorpora proyectos arbitrarios ni solicitudes sin recibir',async()=>{
+  await fixture({},null);await fixture({},other);const meeting=await fixture();
+  const invalid=await fixture();await db.update(proyectos).set({tituloDefinitivo:null,subtituloDefinitivo:null}).where(eq(proyectos.id,invalid.p.id));
+  const data=(await list()).json();expect(data.total).toBe(1);expect(data.items[0]).toMatchObject({projectId:meeting.p.id,creativeState:'MEETING'});
+  await db.update(direccionesCreativas).set({fechaSolicitud:'2026-10-19'}).where(eq(direccionesCreativas.id,invalid.dc.id));
+  const gated=(await list()).json().items.find((i:any)=>i.projectId===invalid.p.id);expect(gated).toMatchObject({creativeState:'BLOCKED',waitingOn:'SPECIALIST',currentWorkItem:null});
+  expect((await getCreativeDashboard(leader)).tasks.some(t=>t.creativeProcessId===invalid.dc.id)).toBe(false);
+  expect((await api('PATCH','/direccion-creativa/'+invalid.dc.id+'/brief',leader,{briefEnlace:'https://example.test/gate',fechaBriefEnviadoEspecialista:'2026-10-19'})).statusCode).toBe(409);
+ });
+ it('Brief activo utiliza el mismo work item y estado canónico de Mi trabajo',async()=>{
+  const f=await fixture({reunionRealizada:true});const row=(await list()).json().items[0];expect(row).toMatchObject({creativeState:'BRIEF',waitingOn:null,currentWorkItem:{workItemId:f.wi.id,type:'BRIEF'}});expect(row.nextStep).toContain('Finalizar');expect(JSON.stringify(row)).not.toMatch(/progressPercent|percentage|\d de 5/);
+ });
+ it('conceptos esperan RRPP/autor sin CTA y el feedback vuelve a acción del Líder',async()=>{
+  const rr=await fixture(approvedBrief),author=await fixture(approvedBrief),feedback=await fixture(approvedBrief);await concepts(rr);await concepts(author,{fechaAprobadaRrpp:'2026-10-18',fechaEnviadaAutor:'2026-10-19'});await concepts(feedback,{estado:'Feedback del autor',feedbackAutor:'Revisar imagen',fechaAprobadaRrpp:'2026-10-18'});
+  const rows=(await list()).json().items;expect(rows.find((i:any)=>i.projectId===rr.p.id)).toMatchObject({creativeState:'CONCEPTS',waitingOn:'RRPP',currentWorkItem:null});expect(rows.find((i:any)=>i.projectId===author.p.id)).toMatchObject({creativeState:'CONCEPTS',waitingOn:'AUTHOR',currentWorkItem:null});expect(rows.find((i:any)=>i.projectId===feedback.p.id)).toMatchObject({creativeState:'CONCEPTS',waitingOn:null,currentWorkItem:{type:'CONCEPT_ADJUSTMENT'}});
+ });
+ it('recursos solo del concepto aprobado, preview sin descargas de PDF y empty no es error',async()=>{
+  const f=await fixture(approvedBrief),[c]=await concepts(f,{fechaAprobadaRrpp:'2026-10-18'});await db.update(fichaDisenoPropuestas).set({fechaAprobadaAutor:'2026-10-19'}).where(eq(fichaDisenoPropuestas.id,c!.id));
+  let data=(await detail(f.p.id)).json();expect(data.summary).toMatchObject({creativeState:'RESOURCES',currentWorkItem:{type:'RESOURCES',conceptId:c!.id}});expect(data.resources).toEqual([]);expect(data.concepts.find((concept:any)=>concept.id===c!.id)).toMatchObject({thumbnailUrl:null,statusLabel:'Aprobado por autor'});expect(data.workspace).toEqual({rootUrl:null,designUrl:null});
+  await api('PATCH','/direccion-creativa/'+f.dc.id+'/recursos',leader,{recursoImagenUrl:'https://example.test/real.png',recursoConceptoPdfUrl:'https://example.test/real.pdf'});
+  data=(await detail(f.p.id)).json();expect(data.resources).toHaveLength(2);expect(data.resources.every((r:any)=>r.conceptId===c!.id)).toBe(true);expect(data.summary.creativeState).toBe('COMPLETED');
+  expect((await db.select().from(proyectos).where(eq(proyectos.id,f.p.id)))[0]?.estado).toBe('en_proceso');
+ });
+ it('Diseño trabajando y cubierta devuelta continúan en Cubierta, sin acción del Líder',async()=>{
+  const f=await coverProject();let data=(await detail(f.p.id)).json();expect(data.summary).toMatchObject({creativeState:'COVER',waitingOn:'DESIGN',currentWorkItem:null,creativeProcessId:f.dc.id});expect(data.summary.nextStep).toContain('Diseño');
+  const {entregarDiseno,revisarCubierta}=await import('../server/helpers/diseno.js');const version=await entregarDiseno(f.design.id,{enlace:'https://example.test/cover-v1.pdf',entregaKey:randomUUID()},{id:designer,rol:'disenador'});
+  data=(await detail(f.p.id)).json();expect(data.summary).toMatchObject({creativeState:'COVER',waitingOn:null,currentWorkItem:{type:'COVER_REVIEW'}});const root=data.summary.creativeProcessId;
+  await revisarCubierta(f.design.id,version.id,{aprobar:false,feedback:'Revisar lomo'},{id:leader,rol:'lider_creativo'});
+  data=(await detail(f.p.id)).json();expect(data.summary).toMatchObject({creativeState:'COVER',waitingOn:'DESIGN',currentWorkItem:null,creativeProcessId:root});expect(data.summary.nextStep).toContain('aplicar');expect((await list()).json().total).toBe(1);
+ });
+ it('cubierta V2 vuelve al mismo proyecto, aprobación cierra creativo sin cerrar editorial ni Calidad',async()=>{
+  const f=await coverProject(true),{revisarCubierta,entregarDiseno}=await import('../server/helpers/diseno.js');await revisarCubierta(f.design.id,f.version!.id,{aprobar:false,feedback:'Alinear lomo'},{id:leader,rol:'lider_creativo'});
+  const next=await entregarDiseno(f.design.id,{enlace:'https://example.test/cover-v2.pdf',entregaKey:randomUUID()},{id:designer,rol:'disenador'});let data=(await detail(f.p.id)).json();expect(data.cover.version).toBe(2);expect(data.summary.currentWorkItem.type).toBe('COVER_REVIEW');
+  await revisarCubierta(f.design.id,next.id,{aprobar:true},{id:leader,rol:'lider_creativo'});data=(await detail(f.p.id)).json();expect(data.summary).toMatchObject({creativeState:'COMPLETED',currentWorkItem:null,creativeProcessId:f.dc.id});expect((await list()).json().total).toBe(0);expect((await list('?creativeState=COMPLETED')).json().total).toBe(1);
+  expect((await db.select().from(proyectos).where(eq(proyectos.id,f.p.id)))[0]?.estado).toBe('en_proceso');const [version]=await db.select().from(disenoVersiones).where(eq(disenoVersiones.id,next.id));expect((await db.select().from(workItems).where(eq(workItems.id,version!.revisionInternaWorkItemId!)))[0]?.estado).toBe('pendiente');
+ });
+ it('revisión propia permite contexto del concepto aprobado, sin exponer propuestas de un proceso asignado a otro Líder',async()=>{
+  const f=await coverProject(true);await db.update(projectAssignments).set({usuarioId:other}).where(eq(projectAssignments.workItemId,f.wi.id));
+  const data=(await detail(f.p.id)).json();expect(data.summary.currentWorkItem.type).toBe('COVER_REVIEW');expect(data.concepts).toHaveLength(1);expect(data.concepts[0].approved).toBe(true);
+  const all=await db.select().from(fichaDisenoPropuestas).where(eq(fichaDisenoPropuestas.direccionCreativaId,f.dc.id)),unapproved=all.find(c=>!c.fechaAprobadaAutor)!;
+  expect((await api('GET','/direccion-creativa/proyectos/'+f.p.id+'/conceptos/'+unapproved.id)).statusCode).toBe(404);
+  expect((await api('GET','/direccion-creativa/'+f.dc.id+'/operacion')).statusCode).toBe(403);
+ });
+ it('especialista viene de historial vigente y no restaura un FK obsoleto al finalizar asignación',async()=>{
+  const f=await fixture({reunionRealizada:true}),current=await person('especialista');await db.insert(projectAssignments).values({proyectoId:f.p.id,tipo:'especialista',usuarioId:current});
+  expect((await list('?specialist='+current)).json().items[0].specialist.id).toBe(current);
+  await db.update(projectAssignments).set({finalizadoEn:new Date()}).where(eq(projectAssignments.usuarioId,current));expect((await detail(f.p.id)).json().summary.specialist).toBeNull();
+ });
+ it('search título/autor/Especialista y filtros de catálogo y etapa, con counts reales',async()=>{
+  const f=await fixture({reunionRealizada:true}),otherProject=await fixture(approvedBrief);await concepts(otherProject);
+  const [service]=await db.insert(servicios).values({codigo:'QAP',nombre:'Catálogo creativo QA',pesoComplejidad:1,plazoDias:90}).returning();await db.update(proyectos).set({servicioId:service!.id}).where(eq(proyectos.id,otherProject.p.id));
+  expect((await list('?creativeState=CONCEPTS&service='+service!.id+'&specialist='+specialist)).json().total).toBe(1);
+  expect((await list('?creativeState=BRIEF')).json().counts.stages.CONCEPTS).toBe(1);
+  for(const text of [f.p.codigo,'especialista QA'])expect((await list('?search='+encodeURIComponent(text))).json().total).toBeGreaterThan(0);
+  const row=(await list('?search='+f.p.codigo)).json().items[0];expect((await list('?search='+encodeURIComponent(row.project.authors))).json().total).toBeGreaterThan(0);
+  for(const text of ['%','_',"' OR 1=1 --"])expect((await list('?search='+encodeURIComponent(text))).json().total).toBe(0);
+ });
+ it('última actividad y timeline salen de audit creativo; excluyen pagos y procesos ajenos del mismo proyecto',async()=>{
+  const f=await fixture({reunionRealizada:true});await db.insert(auditLogs).values([{accion:'BRIEF_CREATIVO_GENERADO',entityType:'work_item',entityId:f.wi.id,proyectoId:f.p.id,actorId:leader},{accion:'SEGUIMIENTO_PAGO_REGISTRADO',entityType:'proyecto',entityId:f.p.id,proyectoId:f.p.id,actorId:manager}]);
+  const [foreignWi]=await db.insert(workItems).values({proyectoId:f.p.id,tipo:'direccion_creativa',businessKey:'foreign-process'}).returning();await db.insert(direccionesCreativas).values({proyectoId:f.p.id,workItemId:foreignWi!.id});await db.insert(projectAssignments).values({proyectoId:f.p.id,workItemId:foreignWi!.id,tipo:'lider_creativo',usuarioId:other});await db.insert(auditLogs).values({accion:'CONCEPTO_DEVUELTO_RRPP',entityType:'work_item',entityId:foreignWi!.id,proyectoId:f.p.id,actorId:rrpp});
+  const data=(await detail(f.p.id)).json();expect(data.activity).toHaveLength(1);expect(data.activity[0].label).toContain('brief');expect(data.summary.lastActivity.id).toBe(data.activity[0].id);expect((await list()).json().items[0].lastActivity.id).toBe(data.activity[0].id);
+ });
+ it('IDOR proyecto/proceso/concepto, incluyendo proceso ajeno dentro de proyecto propio',async()=>{
+  const own=await fixture(approvedBrief),foreign=await fixture(approvedBrief,other),[c]=await concepts(foreign);await concepts(own);
+  expect((await detail(foreign.p.id)).statusCode).toBe(404);expect((await detail(own.p.id,leader,'?process='+foreign.dc.id)).statusCode).toBe(403);
+  expect((await api('GET','/direccion-creativa/proyectos/'+own.p.id+'/conceptos/'+c!.id)).statusCode).toBe(404);
+  await api('PATCH','/direccion-creativa/'+own.dc.id+'/asignar',manager,{liderCreativoId:other});expect((await detail(own.p.id)).statusCode).toBe(404);expect((await list()).json().total).toBe(0);
+ });
+ it('paginación SQL de proyectos, orden estable y empty real',async()=>{
+  expect((await list()).json()).toMatchObject({items:[],total:0});for(let i=0;i<12;i++)await fixture({reunionRealizada:true});
+  const first=(await list('?sort=title')).json(),next=(await list('?sort=title&page=2')).json();expect(first.items).toHaveLength(10);expect(next.items).toHaveLength(2);expect(first.total).toBe(12);expect(first.counts.all).toBe(12);expect(first.items.some((i:any)=>next.items.some((j:any)=>i.projectId===j.projectId))).toBe(false);expect((await list('?page=999')).json().page).toBe(2);expect((await list('?pageSize=25')).json().items).toHaveLength(12);
+ });
+ it('una sentencia para lista/counts con 1 o 16 proyectos; detalle carga únicamente el seleccionado',async()=>{
+  const {listCreativeProjects,getCreativeProjectDetail}=await import('../server/helpers/creativePortfolio.js');const f=await fixture({reunionRealizada:true});
+  for(const total of [1,16]){if(total===16)for(let i=0;i<15;i++)await fixture({reunionRealizada:true});const spy=vi.spyOn(pool,'query');try{expect((await listCreativeProjects(leader)).total).toBe(total);expect(spy).toHaveBeenCalledTimes(1);}finally{spy.mockRestore();}}
+  const spy=vi.spyOn(pool,'query');try{const data=await getCreativeProjectDetail(f.p.id,leader);expect(data.summary.projectId).toBe(f.p.id);expect(spy).toHaveBeenCalledTimes(2);expect(data.concepts).toEqual([]);}finally{spy.mockRestore();}
+ });
+});
+
+describe('Proyectos creativos · documentación, actividad y orden',()=>{
+ it('Drive lee root y DESIGN persistidos y oculta una conexión de contexto anterior',async()=>{
+  const {externalIntegrations,projectDriveWorkspaces,projectDriveFolders}=await import('../server/db/schema/index.js');const f=await fixture({reunionRealizada:true}),context=randomUUID();
+  const [integration]=await db.insert(externalIntegrations).values({provider:'google_drive',storageContextId:context,status:'disconnected'}).returning();
+  const [workspace]=await db.insert(projectDriveWorkspaces).values({projectId:f.p.id,integrationId:integration!.id,storageContextId:context,projectsRootFolderId:'persisted-parent',rootFolderId:'persisted-root',rootFolderUrl:'https://drive.google.com/drive/folders/persisted-root',templateKey:'SE',templateVersion:'1',plan:[],status:'READY',readyAt:new Date()}).returning();
+  await db.insert(projectDriveFolders).values({workspaceId:workspace!.id,key:'DESIGN',driveFolderId:'persisted-design',driveUrl:'https://drive.google.com/drive/folders/persisted-design',displayName:'Nombre de carpeta real',templatePath:'DESIGN',status:'READY'});
+  let data=(await api('GET','/direccion-creativa/proyectos/'+f.p.id)).json();expect(data.workspace).toEqual({rootUrl:'https://drive.google.com/drive/folders/persisted-root',designUrl:'https://drive.google.com/drive/folders/persisted-design'});
+  await db.update(externalIntegrations).set({storageContextId:randomUUID()}).where(eq(externalIntegrations.id,integration!.id));data=(await api('GET','/direccion-creativa/proyectos/'+f.p.id)).json();expect(data.workspace).toEqual({rootUrl:null,designUrl:null});
+ });
+ it('timeline limita seis eventos reales y ordenar por actividad respeta sus fechas',async()=>{
+  const older=await fixture({reunionRealizada:true}),recent=await fixture({reunionRealizada:true});
+  await db.insert(auditLogs).values(Array.from({length:8},(_,i)=>({accion:'BRIEF_CREATIVO_GENERADO',entityType:'work_item',entityId:older.wi.id,proyectoId:older.p.id,actorId:leader,createdAt:new Date(`2026-10-${String(i+1).padStart(2,'0')}T12:00:00Z`)})));
+  await db.insert(auditLogs).values({accion:'REUNION_CREATIVA_REGISTRADA',entityType:'work_item',entityId:recent.wi.id,proyectoId:recent.p.id,actorId:leader,createdAt:new Date('2026-10-19T12:00:00Z')});
+  const detail=(await api('GET','/direccion-creativa/proyectos/'+older.p.id)).json();expect(detail.activity).toHaveLength(6);expect(detail.activity[0].at).toContain('2026-10-08');expect(detail.activity.at(-1).at).toContain('2026-10-03');
+  const list=(await api('GET','/direccion-creativa/proyectos?sort=activity')).json();expect(list.items.map((i:any)=>i.projectId)).toEqual([recent.p.id,older.p.id]);
+ });
+ it('orden prioriza acción del Líder, espera con plazo próximo y luego actividad; espera antigua no es deuda del Líder',async()=>{
+  const action=await fixture({reunionRealizada:true}),past=await fixture({...approvedBrief,fechaBriefAprobadoAutor:null,fechaBriefEnviadoAutor:'2026-10-19'}),future=await fixture({...approvedBrief,fechaBriefAprobadoAutor:null,fechaBriefEnviadoAutor:'2026-10-19'});
+  await db.update(workItems).set({fechaFinPautada:'2026-10-18'}).where(eq(workItems.id,past.wi.id));await db.update(workItems).set({fechaFinPautada:'2026-10-20'}).where(eq(workItems.id,future.wi.id));
+  const {listCreativeProjects}=await import('../server/helpers/creativePortfolio.js');const rows=(await listCreativeProjects(leader,{},now)).items;expect(rows.map(i=>i.projectId)).toEqual([action.p.id,future.p.id,past.p.id]);expect(rows[1]?.currentWorkItem).toBeNull();expect(rows[2]?.currentWorkItem).toBeNull();
+ });
+});

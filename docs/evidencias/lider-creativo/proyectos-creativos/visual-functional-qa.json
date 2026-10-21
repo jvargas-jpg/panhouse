@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-21",
+  "surface": "Authenticated local Chrome, existing lider_creativo account",
+  "desktop": { "width": 1440, "height": 900, "documentScrollWidth": 1440, "detailWidth": 308, "columns": 6, "uniqueQaActiveRowsAfterCover": 8 },
+  "tablet": { "width": 768, "height": 1024, "documentScrollWidth": 768, "detail": "modal drawer" },
+  "mobile": { "width": 375, "height": 812, "documentScrollWidth": 375, "list": "cards", "detail": "full-screen modal" },
+  "visualCorrections": ["Increased desktop text readability", "Shortened mobile state selector label", "Expanded drawer close hit area to 40 px"],
+  "keyboard": "Enter selected Brief row and updated Quick View",
+  "workspacesOpenedWithoutMutation": ["Brief", "Author concept feedback", "Approved concept resources"],
+  "waitingWithoutLeaderPrimaryAction": ["RRPP", "Author", "Design"],
+  "conceptClick": "Metadata modal before secondary external file link",
+  "coverLoop": ["Chrome requested changes on V1", "Project stayed COVER / DESIGN without leader action", "Existing Design helper delivered V2", "Chrome opened V2 and approved creative verification", "Project became COMPLETED while editorial state stayed en_proceso"],
+  "coverIdentity": "Same project, source creative process and Design, one row, two versions",
+  "detailError": "Deliberate out-of-scope UUID returned contextual retry while two completed table rows stayed usable",
+  "emptyFilter": "No results message, clear filters restored active list",
+  "pagination": "1-10 of 27 then 11-20 of 27, page=2 in URL",
+  "catalogueFilters": "Crudo service: 2 projects; with Especialista Demo: 1 project; page reset to 1",
+  "urlState": "Search, category, page and selected project preserved through workspace return",
+  "finalState": "Portfolio open with valid selection; temporary viewport reset",
+  "googleCalls": false,
+  "remoteFileAccessVerified": false
+}

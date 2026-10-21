@@ -1,3 +1,4 @@
+import type {CreativePortfolioFilters,CreativePortfolioPage,CreativeProjectDetail,CreativePortfolioConcept,CreativeProjectSummary} from '../../../shared/creativePortfolio';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import type {CreativeActivity,CreativeDashboard,CreativeWorkDetail,CreativeWorkFilters,CreativeWorkPage} from '../../../shared/creativeLeader';
 import {apiFetch} from '../lib/api';
@@ -22,4 +23,15 @@ export function useCreativeCommand(){
 export function useCreativeWork(filters:CreativeWorkFilters,enabled=true){
  const {data:user}=useMe(),params=new URLSearchParams(Object.entries(filters).map(([k,v])=>[k,String(v)]));
  return useQuery({queryKey:['creative-leader',user?.id,'work',filters],queryFn:()=>apiFetch<CreativeWorkPage>('/direccion-creativa/mi-trabajo?'+params),enabled:enabled&&user?.rol==='lider_creativo',staleTime:15000});
+}
+
+export function useCreativePortfolio(filters:CreativePortfolioFilters,enabled=true){
+ const {data:user}=useMe(),params=new URLSearchParams(Object.entries(filters).map(([k,v])=>[k,String(v)]));
+ return useQuery({queryKey:['creative-leader',user?.id,'portfolio',filters],queryFn:()=>apiFetch<CreativePortfolioPage>('/direccion-creativa/proyectos?'+params),enabled:enabled&&user?.rol==='lider_creativo',staleTime:15000});
+}
+export function useCreativeProjectDetail(projectId:string|null){
+ const {data:user}=useMe();return useQuery({queryKey:['creative-leader',user?.id,'project-detail',projectId],queryFn:()=>apiFetch<CreativeProjectDetail>('/direccion-creativa/proyectos/'+projectId),enabled:!!projectId&&user?.rol==='lider_creativo',staleTime:15000});
+}
+export function useCreativePortfolioConcept(projectId:string,conceptId:string){
+ const {data:user}=useMe();return useQuery({queryKey:['creative-leader',user?.id,'project-concept',projectId,conceptId],queryFn:()=>apiFetch<{concept:CreativePortfolioConcept;currentWorkItem:CreativeProjectSummary['currentWorkItem']}>('/direccion-creativa/proyectos/'+projectId+'/conceptos/'+conceptId),enabled:!!projectId&&!!conceptId&&user?.rol==='lider_creativo',staleTime:15000});
 }

@@ -1,3 +1,4 @@
+import {listCreativeProjects,getCreativeProjectDetail,getCreativeProjectConcept} from '../helpers/creativePortfolio.js';
 import {listCreativeWork} from '../helpers/creativeInbox.js';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -114,6 +115,20 @@ export async function direccionCreativaRoutes(app: FastifyInstance) {
       alcance:z.enum(['activas','todas','completadas']).optional(),orden:z.enum(['accion','fecha']).optional(),
       pagina:z.coerce.number().int().min(1).max(100000).optional(),pageSize:z.coerce.number().refine(n=>[10,25,50].includes(n)).optional()}).strict().parse(req.query);
     return listCreativeWork(req.user!.id,filters);
+  });
+  const portfolioProject=z.object({projectId:z.string().uuid()});
+  const portfolioContext=z.object({process:z.string().uuid().optional()}).strict();
+  app.get('/proyectos',{preHandler:leader},async req=>{
+    const filters=z.object({search:z.string().trim().max(200).optional(),service:z.string().uuid().optional(),
+      creativeState:z.enum(['MEETING','BRIEF','CONCEPTS','RESOURCES','COVER','COMPLETED','BLOCKED']).optional(),specialist:z.string().uuid().optional(),
+      scope:z.enum(['active','all','completed']).optional(),sort:z.enum(['attention','activity','title']).optional(),
+      page:z.coerce.number().int().min(1).max(100000).optional(),pageSize:z.coerce.number().refine(n=>[10,25,50].includes(n)).optional()}).strict().parse(req.query);
+    return listCreativeProjects(req.user!.id,filters);
+  });
+  app.get('/proyectos/:projectId',{preHandler:leader},async req=>getCreativeProjectDetail(portfolioProject.parse(req.params).projectId,req.user!.id,portfolioContext.parse(req.query).process));
+  app.get('/proyectos/:projectId/conceptos/:conceptId',{preHandler:leader},async req=>{
+    const params=portfolioProject.extend({conceptId:z.string().uuid()}).parse(req.params);
+    return getCreativeProjectConcept(params.projectId,params.conceptId,req.user!.id,portfolioContext.parse(req.query).process);
   });
   app.get('/inicio/actividad',{preHandler:leader},async req=>({items:await getCreativeActivity(req.user!.id)}));
   app.get('/:id/operacion',{preHandler:leader},async req=>getCreativeWorkDetail(idParamSchema.parse(req.params).id,req.user!.id));
