@@ -1,0 +1,85 @@
+{
+  "at": "2026-10-21T14:47:17.247Z",
+  "synthetic": true,
+  "previousUsersChanged": false,
+  "previousProjectsChanged": false,
+  "newQaRoles": [
+    "especialista",
+    "lider_creativo"
+  ],
+  "googleCalls": false,
+  "cases": [
+    {
+      "kind": "accept_browser",
+      "projectId": "1e4a5d4a-3c29-4f0a-881d-0b8c877b28da",
+      "requestId": null,
+      "title": "QA · Solicitudes · Activación desde Especialista"
+    },
+    {
+      "kind": "reject_browser",
+      "projectId": "4c463d77-e983-4562-90e9-74991a45b6bd",
+      "requestId": "9001d6cc-1359-429c-bb0c-2f948cb96ce7",
+      "title": "QA · Solicitudes · Referencias por completar"
+    },
+    {
+      "kind": "meeting_1",
+      "projectId": "113761d3-e71c-4805-a6ed-8769fadb935d",
+      "requestId": "574ba499-68c5-468d-bade-72173001b240",
+      "title": "QA · Solicitudes · Reunión creativa 1"
+    },
+    {
+      "kind": "meeting_2",
+      "projectId": "c871b2f2-a5ec-4d36-a902-301318d3b68a",
+      "requestId": "f3cce9f5-bfec-4bb3-9a2b-e77d7d2e9e6a",
+      "title": "QA · Solicitudes · Reunión creativa 2"
+    },
+    {
+      "kind": "meeting_3",
+      "projectId": "d8dede64-8869-4f94-a0c3-8847ce7b2548",
+      "requestId": "e14cf6fd-2ccd-4c7d-b5db-59b3e9e791f2",
+      "title": "QA · Solicitudes · Reunión creativa 3"
+    },
+    {
+      "kind": "meeting_4",
+      "projectId": "0e2e67db-6001-4008-a8ad-7344d95c828e",
+      "requestId": "1fa9d0dd-9c67-45c7-8096-3205c3d5c2cb",
+      "title": "QA · Solicitudes · Reunión creativa 4"
+    },
+    {
+      "kind": "meeting_5",
+      "projectId": "37661242-f32f-4f7e-a226-78e95932abdd",
+      "requestId": "ae6f238b-93e7-424a-966c-e6570577eafe",
+      "title": "QA · Solicitudes · Reunión creativa 5"
+    },
+    {
+      "kind": "meeting_6",
+      "projectId": "f36be531-274f-4b44-a418-7b634e680efa",
+      "requestId": "a81b76ba-d48d-4459-8eec-3a4d5fc0df32",
+      "title": "QA · Solicitudes · Reunión creativa 6"
+    },
+    {
+      "kind": "meeting_7",
+      "projectId": "a10f4020-4a4f-4f92-8442-403e9d3dff45",
+      "requestId": "fd273989-c916-4b2b-a8cb-7e0d0e393c72",
+      "title": "QA · Solicitudes · Reunión creativa 7"
+    },
+    {
+      "kind": "accepted_history",
+      "projectId": "07735122-1a83-410c-8652-506b45815ca1",
+      "requestId": "583eaa01-7e09-4380-8078-95b9f53cbdaf",
+      "title": "QA · Solicitudes · Intervención ya aceptada"
+    },
+    {
+      "kind": "rejected_history",
+      "projectId": "4c8e34ba-a22d-4dc7-9f0f-e1684fc91121",
+      "requestId": "233c72f3-ec07-4bae-a99f-82f3d4152fe6",
+      "title": "QA · Solicitudes · Entrada rechazada con motivo"
+    },
+    {
+      "kind": "missing_title",
+      "projectId": "910d8d6f-f1cb-44e2-9b4e-9e88560246ae",
+      "requestId": "797e69a1-14e7-4d59-a559-63ce148e3700",
+      "title": "QA · Solicitudes · Título pendiente de confirmar"
+    }
+  ]
+}

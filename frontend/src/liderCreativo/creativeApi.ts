@@ -1,4 +1,5 @@
 import type {CreativePortfolioFilters,CreativePortfolioPage,CreativeProjectDetail,CreativePortfolioConcept,CreativeProjectSummary} from '../../../shared/creativePortfolio';
+import type {CreativeRequestFilters,CreativeRequestPage,CreativeRequestDetail} from '../../../shared/creativeRequests';
 import {useMutation,useQuery,useQueryClient} from '@tanstack/react-query';
 import type {CreativeActivity,CreativeDashboard,CreativeWorkDetail,CreativeWorkFilters,CreativeWorkPage} from '../../../shared/creativeLeader';
 import {apiFetch} from '../lib/api';
@@ -17,7 +18,19 @@ export function useCreativeDetail(id:string){
 }
 export function useCreativeCommand(){
   const cache=useQueryClient();return useMutation({mutationFn:({path,body,method='PATCH'}:{path:string;body:unknown;method?:'PATCH'|'POST'})=>apiFetch(path,{method,body:JSON.stringify(body)}),
-    onSuccess:()=>{for(const key of [['creative-leader'],['direcciones-creativas'],['direccion-creativa'],['diseno'],['proyecto'],['ficha-viva'],['mi-trabajo'],['notificaciones']])void cache.invalidateQueries({queryKey:key});}});
+    onSuccess:()=>{for(const key of [['creative-leader'],['direcciones-creativas'],['direccion-creativa'],['diseno'],['proyecto'],['ficha-viva'],['mi-trabajo'],['notificaciones'],['solicitudes'],['solicitud'],['especialista-inicio']])void cache.invalidateQueries({queryKey:key});}});
+}
+
+export function useCreativeRequests(filters:CreativeRequestFilters,enabled=true){
+ const {data:user}=useMe(),params=new URLSearchParams(Object.entries(filters).map(([k,v])=>[k,String(v)]));
+ return useQuery({queryKey:['creative-leader',user?.id,'requests',filters],queryFn:()=>apiFetch<CreativeRequestPage>('/direccion-creativa/solicitudes?'+params),enabled:enabled&&user?.rol==='lider_creativo',staleTime:15000});
+}
+export function useCreativeRequestDetail(id:string){
+ const {data:user}=useMe();return useQuery({queryKey:['creative-leader',user?.id,'request-detail',id],queryFn:()=>apiFetch<CreativeRequestDetail>('/direccion-creativa/solicitudes/'+id),enabled:!!id&&user?.rol==='lider_creativo',staleTime:15000});
+}
+export function useCreativeRequestDecision(){
+ const cache=useQueryClient();return useMutation({mutationFn:({id,decision,reason}:{id:string;decision:'accept'|'reject';reason?:string})=>apiFetch('/direccion-creativa/solicitudes/'+id+'/'+(decision==='accept'?'aceptar':'rechazar'),{method:'POST',body:JSON.stringify(decision==='accept'?{}:{reason})}),
+ onSettled:async()=>{await Promise.all([['creative-leader'],['direcciones-creativas'],['mi-trabajo'],['solicitudes'],['solicitud'],['especialista-inicio'],['especialista-inicio-actividad'],['proyecto'],['ficha-viva'],['notificaciones']].map(queryKey=>cache.invalidateQueries({queryKey})));}});
 }
 
 export function useCreativeWork(filters:CreativeWorkFilters,enabled=true){

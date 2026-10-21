@@ -110,7 +110,7 @@ function TarjetaDireccionCreativa({ proyectoId, direccion }: { proyectoId: strin
         fechaBriefEnviadoAutor: fechaBriefEnviado || undefined,
         fechaBriefAprobadoAutor: fechaBriefAprobado || undefined,
       }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['direcciones-creativas', proyectoId] }),
+    onSuccess: () => {for(const key of [['direcciones-creativas',proyectoId],['solicitudes'],['solicitud'],['mi-trabajo'],['especialista-inicio'],['creative-leader'],['proyecto']])void queryClient.invalidateQueries({queryKey:key});},
   });
 
   const mutacionCierre = useMutation({
@@ -240,7 +240,7 @@ export function SeccionDireccionCreativaOperativa({ proyectoId, puedeOperar }: {
         <h3 className="flex items-center gap-2 text-base font-bold text-gray-900">
           <span className="h-2 w-2 rounded-full bg-dorado" /> Dirección Creativa — Pipeline Operativo
         </h3>
-        {puedeOperar && direcciones.length === 0 && (
+        {puedeOperar && direcciones.length === 0 && !query.data?.solicitud && (
           <button
             type="button"
             onClick={() => mutacionSolicitar.mutate()}
@@ -265,10 +265,11 @@ export function SeccionDireccionCreativaOperativa({ proyectoId, puedeOperar }: {
           </p>
         )}
 
-        {query.data && direcciones.length === 0 && (
+        {query.data && direcciones.length === 0 && !query.data.solicitud && (
           <p className="text-sm text-gray-500">Todavía no se solicitó Dirección Creativa para este proyecto.</p>
         )}
 
+        {query.data?.solicitud&&direcciones.length===0&&<div className="rounded-lg bg-amber-50 p-4 text-sm"><strong>{query.data.solicitud.estado==='rechazada'?'Solicitud creativa rechazada':'Solicitud creativa pendiente de aceptación'}</strong><p>{query.data.solicitud.motivo??'El Líder Creativo revisará la entrada antes de iniciar el trabajo.'}</p></div>}
         {direcciones.map((direccion) => (
           <TarjetaDireccionCreativa key={direccion.id} proyectoId={proyectoId} direccion={direccion} />
         ))}

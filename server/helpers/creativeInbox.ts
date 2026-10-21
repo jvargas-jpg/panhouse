@@ -1,3 +1,4 @@
+import {creativePendingCountSql} from './creativeRequests.js';
 ﻿import {sql,type SQL} from 'drizzle-orm';
 import {db} from '../db/client.js';
 import type {CreativeActionType,CreativeWorkFilters,CreativeWorkItem,CreativeWorkPage} from '../../shared/creativeLeader.js';
@@ -119,7 +120,7 @@ export async function listCreativeWork(userId:string,f:CreativeWorkFilters={},no
  'services',coalesce((select json_agg(a) from (select service_id as id,service_name as label,count(*) as count from classified where ${scoped} ${type} ${state} group by service_id,service_name order by service_name) a),'[]'::json),
  'overdue',(select count(*) from classified where ${scoped} ${type} ${state} ${service} and actionable and deadline<${today}),
  'actionable',(select count(*) from classified where assigned_to=${userId} and actionable),
- 'requests',(select count(*) from classified where assigned_to is null and status<>'Completada' and project_state not in ('culminado','retirado'))
+ 'requests',${creativePendingCountSql(userId)}
  )) as payload`);
  const data=result.rows[0]!.payload;
  return {items:data.rows.map(r=>mapCreativeWorkRow(r,now)),total:data.total,page:Math.min(page,Math.max(1,Math.ceil(data.total/pageSize))),pageSize,counts:{...data.counts,types:Object.assign({BRIEF:0,CONCEPT:0,RESOURCES:0,COVER_REVIEW:0},data.counts.types)},updatedAt:now.toISOString()};

@@ -6,11 +6,11 @@ export interface CreativeTask {
   state:'Pendiente'|'En curso'|'Requiere ajustes';dueAt:string|null;overdue:boolean;dueToday:boolean;href:string;
 }
 export interface CreativeProcess {id:string;workItemId:string;project:CreativeProject;state:string;actionCount:number;href:string}
-export interface CreativeRequest {id:string;workItemId:string;project:CreativeProject;label:string;requestedAt:string|null}
+export interface CreativeRequest {id:string;workItemId:string|null;project:CreativeProject;label:string;requestedAt:string|null}
 export interface CreativeDashboard {
   updatedAt:string;kpis:{briefs:number;concepts:number;covers:number;nextDueAt:string|null};
   attention:CreativeTask[];totalActions:number;tasks:CreativeTask[];deadlines:CreativeTask[];
-  processes:CreativeProcess[];requests:CreativeRequest[];
+  processes:CreativeProcess[];requests:CreativeRequest[];pendingRequests:number;
 }
 export interface CreativeActivity {id:string;at:string;label:string;actor:string;projectTitle:string;creativeProcessId:string;href:string}
 export interface CreativeConcept {

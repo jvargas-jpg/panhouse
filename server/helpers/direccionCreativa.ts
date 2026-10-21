@@ -1,3 +1,4 @@
+import {createCreativeMeetingRequest,decideCreativeRequest} from './creativeRequests.js';
 import { and, desc, eq, isNotNull, isNull, ne,sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { Rol } from '../db/schema/index.js';
@@ -9,6 +10,7 @@ import {
   projectAssignments,
   proyectos,
   servicios,
+  solicitudesArea,
   users,
   workItems as workItemsTable,
 } from '../db/schema/index.js';
@@ -37,66 +39,8 @@ export type ResultadoAccion = { ok: true } | { ok: false; status: 400 | 403 | 40
 // abierta (work_item no completado/cancelado) para este proyecto no se
 // duplica — mismo criterio que solicitarCorreccion.
 export async function solicitarDireccionCreativa(proyectoId: string, actorId: string): Promise<ResultadoAccion & { id?: string }> {
-  return db.transaction(async (tx) => {
-    const [proyecto] = await tx
-      .select({
-        id: proyectos.id,
-        tituloDefinitivo: proyectos.tituloDefinitivo,
-        subtituloDefinitivo: proyectos.subtituloDefinitivo,
-        fechaFeedbackTripa: proyectos.fechaFeedbackTripa,
-        servicioId: proyectos.servicioId,
-      })
-      .from(proyectos)
-      .where(eq(proyectos.id, proyectoId))
-      .limit(1).for('update');
-    if (!proyecto) return { ok: false, status: 404, error: 'Proyecto no encontrado' };
-
-    const [servicio] = await tx.select({ codigo: servicios.codigo }).from(servicios).where(eq(servicios.id, proyecto.servicioId)).limit(1);
-
-    const gate = evaluarGateMomentoReunionCreativa({
-      tituloDefinitivo: proyecto.tituloDefinitivo,
-      subtituloDefinitivo: proyecto.subtituloDefinitivo,
-      servicioCodigo: servicio?.codigo ?? null,
-      fechaFeedbackTripa: proyecto.fechaFeedbackTripa,
-    });
-    if (!gate.desbloqueado) return { ok: false, status: 400, error: gate.motivo ?? 'Gate bloqueado' };
-
-    const [existente] = await tx
-      .select({ id: direccionesCreativas.id, workItemId: direccionesCreativas.workItemId })
-      .from(direccionesCreativas)
-      .where(and(eq(direccionesCreativas.proyectoId, proyectoId), eq(direccionesCreativas.tipo, 'concepto_portada')))
-      .orderBy(desc(direccionesCreativas.createdAt))
-      .limit(1);
-
-    if (existente) {
-      const [wi] = await tx.select({ estado: workItemsTable.estado }).from(workItemsTable).where(eq(workItemsTable.id, existente.workItemId)).limit(1);
-      if (wi && wi.estado !== 'completado' && wi.estado !== 'cancelado') {
-        return { ok: true, id: existente.id };
-      }
-    }
-
-    const workItemId = await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'direccion_creativa', businessKey: existente?'concepto_portada:'+existente.id:'concepto_portada' });
-    const fechaSolicitud = new Date().toISOString().slice(0, 10);
-
-    const [creada] = await tx.insert(direccionesCreativas).values({ proyectoId, workItemId, tipo: 'concepto_portada', fechaSolicitud }).returning({ id: direccionesCreativas.id });
-    if (!creada) throw new Error('El insert de direcciones_creativas no devolvió ninguna fila');
-
-    await registrarEvento(tx, {
-      actorId,
-      accion: 'DIRECCION_CREATIVA_SOLICITADA',
-      entityType: 'work_item',
-      entityId: workItemId,
-      proyectoId,
-    });
-
-    await tx.insert(notificaciones).values({
-      proyectoId,
-      rolDestino: 'lider_creativo',
-      mensaje: 'Nueva solicitud de Dirección Creativa.',
-    });
-
-    return { ok: true, id: creada.id };
-  });
+  try{return {ok:true,id:await createCreativeMeetingRequest(proyectoId,actorId)};}
+  catch(error){const e=error as {statusCode?:400|403|404|409;message:string};if(e.statusCode)return {ok:false,status:e.statusCode,error:e.message};throw error;}
 }
 
 // Asignación (master prompt 5C §6): la Matriz no muestra una columna
@@ -108,6 +52,13 @@ export async function solicitarDireccionCreativa(proyectoId: string, actorId: st
 // lider_creativo se auto-asigne (reclame la solicitud) — nunca que
 // asigne a OTRO lider_creativo, ver el chequeo en la ruta.
 export async function asignarLiderCreativo(direccionCreativaId: string, liderCreativoId: string, actorId: string): Promise<ResultadoAccion> {
+  const [request]=await db.select().from(solicitudesArea).where(and(eq(solicitudesArea.id,direccionCreativaId),eq(solicitudesArea.tipo,'creativa')));
+  const [source]=await db.select().from(direccionesCreativas).where(eq(direccionesCreativas.id,direccionCreativaId));
+  const active=source?await obtenerLiderCreativoActivo(db,source.workItemId):null;
+  if(request&&request.estado!=='resuelta'||!request&&source?.tipo==='concepto_portada'&&!active||request&&!source){
+    try{await decideCreativeRequest(direccionCreativaId,actorId,'accept',undefined,liderCreativoId);return {ok:true};}
+    catch(error){const e=error as {statusCode?:400|403|404|409;message:string};if(e.statusCode)return {ok:false,status:e.statusCode,error:e.message};throw error;}
+  }
   return db.transaction(async (tx) => {
     const direccion = await obtenerDireccionCreativa(tx, direccionCreativaId);
     if (!direccion) return { ok: false, status: 404, error: 'Dirección creativa no encontrada' };

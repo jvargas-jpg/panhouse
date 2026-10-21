@@ -25,7 +25,7 @@ export async function verificarOperacionImpresion(tx: Tx, id: string, actor: Act
   if (r?.estado !== 'resuelta' && !(!r && (f?.impresionFechaInicio || f?.impresionEstatus))) throw new ErrorFichaViva(409, 'Acepta la solicitud de Impresión antes de operar');
 }
 export const resumenSolicitudArea = (r: typeof solicitudesArea.$inferSelect): SolicitudAreaResumen => ({
-  id: r.id, tipo: r.tipo, estado: r.estado, requestedAt: r.requestedAt.toISOString(), resolvedAt: r.resolvedAt?.toISOString() ?? null, outcome: r.outcome,
+  id: r.id, tipo: r.tipo as TipoSolicitudArea, estado: r.estado, requestedAt: r.requestedAt.toISOString(), resolvedAt: r.resolvedAt?.toISOString() ?? null, outcome: r.outcome,
 });
 
 // Consultas en lote: constante respecto de proyectos/intervenciones.
@@ -78,7 +78,8 @@ export async function solicitarProcesoArea(id: string, tipo: TipoSolicitudArea, 
 }
 export async function activarSolicitudAreaEnTransaccion(tx: Tx, proyectoId: string, tipo: TipoSolicitudArea, actorId: string) {
   const [r] = await tx.select().from(solicitudesArea).where(and(eq(solicitudesArea.proyectoId, proyectoId), eq(solicitudesArea.tipo, tipo))).for('update');
-  if (!r || r.estado === 'resuelta') return; // Proceso legacy conservado; no se fabrica solicitante ni fecha.
+  if (!r || r.estado === 'resuelta') return;
+  if(!r.workItemId)throw new ErrorFichaViva(409,'Falta el trabajo de la solicitud de área.'); // Proceso legacy conservado; no se fabrica solicitante ni fecha.
   if (['requiere_informacion', 'rechazada', 'cancelada'].includes(r.estado)) throw new ErrorFichaViva(409, 'Resuelve la solicitud antes de operar el proceso');
   const now = new Date();
   await tx.update(solicitudesArea).set({ estado: 'resuelta', resolvedAt: now, resolvedById: actorId,
@@ -95,13 +96,13 @@ export async function actuarSolicitudArea(id: string, accion: 'revisar' | 'infor
   if (!(actor.rol === 'rrpp' || actor.rol === 'especialista' && accion === 'responder')) throw new ErrorFichaViva(403, 'Acción no autorizada');
   return db.transaction(async tx => {
     const [origin] = await tx.select().from(solicitudesArea).where(eq(solicitudesArea.id, id));
-    if (!origin) throw new ErrorFichaViva(404, 'Solicitud no encontrada');
+    if (!origin || !['lanzamiento','impresion'].includes(origin.tipo)) throw new ErrorFichaViva(404, 'Solicitud de área no encontrada');
     const p = await proyectoBloqueado(origin.proyectoId, actor, tx, actor.rol === 'especialista');
     const [r] = await tx.select().from(solicitudesArea).where(eq(solicitudesArea.id, id)).for('update');
     if (accion === 'aceptar' && r!.estado === 'resuelta') return r;
     if (datos.expectedVersion !== undefined && r!.version !== datos.expectedVersion) throw new ErrorFichaViva(409, 'La solicitud cambió; actualiza el detalle');
     if (['resuelta', 'rechazada', 'cancelada'].includes(r!.estado)) throw new ErrorFichaViva(409, 'La solicitud está cerrada');
-    if (accion === 'aceptar') { await activarSolicitudAreaEnTransaccion(tx, p.id, r!.tipo, actor.id); return r; }
+    if (accion === 'aceptar') { await activarSolicitudAreaEnTransaccion(tx, p.id, r!.tipo as TipoSolicitudArea, actor.id); return r; }
     if (accion === 'revisar') {
       if (r!.estado !== 'pendiente') throw new ErrorFichaViva(409, 'La solicitud ya está en revisión');
     } else if (!datos.texto?.trim() || datos.texto.trim().length < 10) throw new ErrorFichaViva(400, 'Escribe al menos 10 caracteres');

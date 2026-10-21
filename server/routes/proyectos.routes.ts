@@ -1,3 +1,6 @@
+import {and,desc,eq} from 'drizzle-orm';
+import {db} from '../db/client.js';
+import {solicitudesArea as creativeAreaRequests} from '../db/schema/index.js';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { CATEGORIAS_STAND_BY, ESTADOS_PROYECTO } from '../db/schema/index.js';
@@ -527,7 +530,8 @@ export async function proyectosRoutes(app: FastifyInstance) {
       }
 
       const direcciones = await listarDireccionesCreativasDeProyecto(params.id);
-      return reply.send({ direcciones });
+      const [solicitud]=await db.select({id:creativeAreaRequests.id,estado:creativeAreaRequests.estado,motivo:creativeAreaRequests.motivo}).from(creativeAreaRequests).where(and(eq(creativeAreaRequests.proyectoId,params.id),eq(creativeAreaRequests.tipo,'creativa'))).orderBy(desc(creativeAreaRequests.requestedAt)).limit(1);
+      return reply.send({ direcciones,solicitud:solicitud??null });
     },
   );
 

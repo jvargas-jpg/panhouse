@@ -2,7 +2,7 @@ export interface ProyectoTrabajo { id:string;codigo:string;titulo:string;autores
 export type TipoSolicitud = 'editor' | 'creativa' | 'contrato' | 'calidad' | 'digital' | 'lanzamiento' | 'impresion';
 export type EstadoSolicitud = 'pendiente' | 'en_revision' | 'requiere_informacion' | 'resuelta' | 'rechazada' | 'cancelada';
 export interface SolicitudOperativa {
-  id: string; tipo: TipoSolicitud; titulo: string; proyecto: ProyectoTrabajo; proceso: string; workItemId: string; businessKey: string;
+  id: string; tipo: TipoSolicitud; titulo: string; proyecto: ProyectoTrabajo; proceso: string; workItemId: string | null; businessKey: string;
   destino: { rol: string; nombre: string }; estado: EstadoSolicitud; requestedAt: string;
   resolvedAt: string | null; outcome: string | null; requiresUserAction: boolean;
 }

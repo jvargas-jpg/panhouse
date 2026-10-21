@@ -33,9 +33,9 @@ const FUENTES = `WITH scope AS MATERIALIZED (
  LEFT JOIN LATERAL (SELECT x.id,x.asignado_en,u.nombre FROM project_assignments x JOIN usuarios u ON u.id=x.usuario_id WHERE x.proyecto_id=p.id AND x.tipo='editor' AND x.work_item_id IS NULL AND x.asignado_en>=pedido.created_at ORDER BY x.asignado_en,x.id LIMIT 1) ae ON true
  UNION ALL
  SELECT c.work_item_id,p.id,c.work_item_id,wi.business_key,'creativa','direccion_creativa',
- CASE WHEN wi.estado='cancelado' THEN 'cancelada' WHEN c.reunion_realizada THEN 'resuelta' WHEN wi.estado='en_progreso' THEN 'en_revision' ELSE 'pendiente' END,
- c.created_at,CASE WHEN c.reunion_realizada THEN c.fecha_reunion::text END,CASE WHEN c.reunion_realizada THEN 'Reunión creativa realizada' END
- FROM scope p JOIN direcciones_creativas c ON c.proyecto_id=p.id AND c.tipo='concepto_portada' JOIN work_items wi ON wi.id=c.work_item_id
+ CASE WHEN wi.estado='cancelado' THEN 'cancelada' WHEN c.reunion_realizada OR wi.estado IN ('en_progreso','completado') THEN 'resuelta' ELSE 'pendiente' END,
+ c.created_at,(SELECT min(asignado_en)::text FROM project_assignments a WHERE a.work_item_id=wi.id AND a.tipo='lider_creativo'),CASE WHEN wi.estado IN ('en_progreso','completado') THEN 'Intervención creativa asignada (histórico)' WHEN c.reunion_realizada THEN 'Reunión creativa realizada' END
+ FROM scope p JOIN direcciones_creativas c ON c.proyecto_id=p.id AND c.tipo='concepto_portada' JOIN work_items wi ON wi.id=c.work_item_id WHERE NOT EXISTS(SELECT 1 FROM solicitudes_area r WHERE r.tipo='creativa' AND (r.id=c.id OR r.work_item_id=c.work_item_id))
  UNION ALL
  SELECT r.id,p.id,c.work_item_id,'contrato:'||c.id::text||':'||r.ronda::text,'contrato','correccion',r.estado,r.requested_at,r.resolved_at::text,
  CASE WHEN r.estado='resuelta' THEN 'Contrato confirmado para '||r.corrector_nombre WHEN r.estado='rechazada' THEN r.motivo END
@@ -51,13 +51,13 @@ const FUENTES = `WITH scope AS MATERIALIZED (
  wi.created_at,f.soporte_digital_fecha_activacion::text,CASE WHEN f.soporte_digital_fecha_activacion IS NOT NULL THEN 'Activación Amazon registrada' END
  FROM scope p JOIN work_items wi ON wi.proyecto_id=p.id AND wi.tipo='soporte_digital' AND wi.business_key='activacion_amazon' LEFT JOIN fichas_trazabilidad f ON f.proyecto_id=p.id
  UNION ALL
- SELECT r.id,p.id,r.work_item_id,r.business_key,r.tipo,r.tipo,r.estado,r.requested_at,r.resolved_at::text,coalesce(r.outcome,r.motivo)
+ SELECT r.id,p.id,r.work_item_id,r.business_key,r.tipo,CASE WHEN r.tipo='creativa' THEN 'direccion_creativa' ELSE r.tipo END,r.estado,r.requested_at,r.resolved_at::text,CASE WHEN r.tipo='creativa' AND r.estado='resuelta' THEN 'Solicitud aceptada · trabajo creativo iniciado' WHEN r.tipo='creativa' AND r.estado='rechazada' THEN r.motivo ELSE coalesce(r.outcome,r.motivo) END
  FROM scope p JOIN solicitudes_area r ON r.proyecto_id=p.id
 ), requests AS (
  SELECT n.*,p.codigo,p.titulo_actual,p.autores,p.servicio_nombre,p.fecha_fin_proyectada,p.subtitulo_definitivo FROM native n JOIN scope p ON p.id=n.proyecto_id
  WHERE ($2::text<>'talento_humano' OR n.tipo='contrato') AND ($2::text<>'rrpp' OR n.tipo IN ('lanzamiento','impresion'))
 )`;
-interface Fila { id:string; proyecto_id:string; work_item_id:string; business_key:string; tipo:TipoSolicitud; proceso:string; estado:SolicitudOperativa['estado']; requested_at:Date; resolved_at:string|null; outcome:string|null; codigo:string; titulo_actual:string; autores:string; servicio_nombre:string; fecha_fin_proyectada:string|null; subtitulo_definitivo:string|null }
+interface Fila { id:string; proyecto_id:string; work_item_id:string|null; business_key:string; tipo:TipoSolicitud; proceso:string; estado:SolicitudOperativa['estado']; requested_at:Date; resolved_at:string|null; outcome:string|null; codigo:string; titulo_actual:string; autores:string; servicio_nombre:string; fecha_fin_proyectada:string|null; subtitulo_definitivo:string|null }
 function dto(r: Fila): SolicitudOperativa {
   const tipo = TIPOS_SOLICITUD.find(t=>t.tipo===r.tipo)!;
   return {id:r.id,tipo:r.tipo,titulo:tipo.nombre,proyecto:{id:r.proyecto_id,codigo:r.codigo,titulo:r.titulo_actual,autores:r.autores,servicio:r.servicio_nombre,portadaUrl:null,fechaObjetivo:r.fecha_fin_proyectada},proceso:r.proceso,workItemId:r.work_item_id,businessKey:r.business_key,destino:{rol:tipo.rol,nombre:tipo.destino},estado:r.estado,requestedAt:r.requested_at.toISOString(),resolvedAt:r.resolved_at ? (/^\d{4}-\d{2}-\d{2}$/.test(r.resolved_at)?r.resolved_at:new Date(r.resolved_at).toISOString()) : null,outcome:r.outcome==='LANZAMIENTO_ACTIVADO'?'RRPP inició la planificación':r.outcome==='IMPRESION_ACTIVADA'?'RRPP inició la coordinación de Impresión':r.outcome,requiresUserAction:r.estado==='requiere_informacion'};
@@ -103,11 +103,12 @@ export async function detalleSolicitud(id:string,actor:Actor):Promise<DetalleSol
     const [q]=await db.select({q:informacionContrato,actor:users.nombre}).from(informacionContrato).leftJoin(users,eq(users.id,informacionContrato.askedById)).where(eq(informacionContrato.contratoId,id)).orderBy(desc(informacionContrato.askedAt),desc(informacionContrato.id)).limit(1);
     if(q)pregunta={id:q.q.id,texto:q.q.pregunta,actor:q.actor ?? 'Talento Humano',fecha:q.q.askedAt.toISOString(),respuesta:q.q.respuesta,respondidaEn:q.q.answeredAt?.toISOString() ?? null};
   } else if(r.tipo==='creativa') {
-    const [c]=await db.select().from(direccionesCreativas).where(eq(direccionesCreativas.workItemId,r.work_item_id));
+    const [c]=r.work_item_id?await db.select().from(direccionesCreativas).where(eq(direccionesCreativas.workItemId,r.work_item_id)):[];
+    if(r.work_item_id)relatedIds.push(r.work_item_id);
     contexto.push({label:'Título definitivo',value:r.titulo_actual},{label:'Subtítulo definitivo',value:r.subtitulo_definitivo ?? 'Sin registro'},{label:'Reunión',value:c?.fechaReunion ?? 'Sin fecha registrada'});
     if(c?.enlaceGrabacion)enlaces.push({label:'Grabación de reunión',url:c.enlaceGrabacion});
     if(c?.briefEnlace)enlaces.push({label:'Brief creativo',url:c.briefEnlace});
-    eventTypes=['DIRECCION_CREATIVA_SOLICITADA','LIDER_CREATIVO_ASIGNADO','REUNION_CREATIVA_REGISTRADA'];
+    eventTypes=['DIRECCION_CREATIVA_SOLICITADA','LIDER_CREATIVO_ASIGNADO','REUNION_CREATIVA_REGISTRADA','SOLICITUD_CREATIVA_ACEPTADA','SOLICITUD_CREATIVA_CONVERTIDA','SOLICITUD_CREATIVA_RECHAZADA'];
   } else if(r.tipo==='calidad') {
     const [q]=await db.select().from(fichaCalidadFases).where(eq(fichaCalidadFases.workItemId,id));
     contexto.push({label:'Fase / ronda',value:`F${q?.numeroFase} · ronda ${q?.ronda}`},{label:'Versión',value:q?.pdfVersion ?? 'Sin etiqueta'},{label:'Comentarios',value:q?.cantidadComentarios?.toString() ?? 'Sin revisión registrada'});

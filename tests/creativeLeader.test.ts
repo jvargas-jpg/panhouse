@@ -107,7 +107,7 @@ describe('Líder Creativo · Inicio y scope canónico',()=>{
   });
   it('lectura en lotes: misma cantidad de SQL con 1 o 16 trabajos; Inicio limita atención a seis',async()=>{
     await fixture();let count=0;const first=vi.spyOn(pool,'query');try{await getCreativeDashboard(leader,now);count=first.mock.calls.length;}finally{first.mockRestore();}
-    for(let i=0;i<15;i++)await fixture();const second=vi.spyOn(pool,'query');try{const d=await getCreativeDashboard(leader,now);expect(second.mock.calls.length).toBe(count);expect(count).toBe(1);expect(d.totalActions).toBe(16);expect(d.attention).toHaveLength(6);}finally{second.mockRestore();}
+    for(let i=0;i<15;i++)await fixture();const second=vi.spyOn(pool,'query');try{const d=await getCreativeDashboard(leader,now);expect(second.mock.calls.length).toBe(count);expect(count).toBe(2);expect(d.totalActions).toBe(16);expect(d.attention).toHaveLength(6);}finally{second.mockRestore();}
   });
   it('empty real devuelve ceros, sin fechas ni datos demostrativos',async()=>{
     const d=await getCreativeDashboard(leader,now);expect(d.kpis).toEqual({briefs:0,concepts:0,covers:0,nextDueAt:null});expect(d.attention).toEqual([]);expect(d.deadlines).toEqual([]);expect(await getCreativeActivity(leader)).toEqual([]);

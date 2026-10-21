@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { capitulos, contratosCorreccion, correcciones, decisiones, direccionesCreativas, disenoVersiones, disenos, fichaCalidadFases, proyectos, workItems } from '../db/schema/index.js';
+import { capitulos, contratosCorreccion, correcciones, decisiones, direccionesCreativas, disenoVersiones, disenos, fichaCalidadFases, proyectos, workItems, solicitudesArea } from '../db/schema/index.js';
 import { diaCaracas } from './atencionEspecialista.js';
 import { clasificarVencimiento } from './tiempoEspecialista.js';
 import { obtenerDashboardJefatura, NOMBRES_PROCESO } from './jefatura.js';
@@ -28,7 +28,7 @@ const dia=(s:string)=>s.length===10?s:diaCaracas(new Date(s));
 export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiTrabajo,ahora=new Date(),proyectoScope?:string,snapshotProporcionado?:Awaited<ReturnType<typeof obtenerDashboardJefatura>>,precargada?:ColaPrecargada):Promise<MiTrabajo> {
   const snapshot=snapshotProporcionado ?? await obtenerDashboardJefatura(ahora,{especialistaId:actorId,...(proyectoScope?{proyectoId:proyectoScope}:{})});
   const activos=snapshot.proyectos.filter(p=>p.especialista?.id===actorId&&['en_proceso','retrasado','pausado','stand_by'].includes(p.estado)),ids=activos.map(p=>p.id),hoy=diaCaracas(ahora);
-  const [datos,chapters,corrections,creatives,versions,works,cases,contracts]=ids.length?await Promise.all([
+  const [datos,chapters,corrections,creatives,versions,works,cases,contracts,creativeRequests]=ids.length?await Promise.all([
     precargada?.datos ?? db.select({id:proyectos.id,titulo:proyectos.tituloDefinitivo,subtitulo:proyectos.subtituloDefinitivo,editorId:proyectos.editorId,feedbackTripa:proyectos.fechaFeedbackTripa}).from(proyectos).where(inArray(proyectos.id,ids)),
     db.select().from(capitulos).where(inArray(capitulos.proyectoId,ids)),
     db.select().from(correcciones).where(inArray(correcciones.proyectoId,ids)),
@@ -37,7 +37,8 @@ export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiT
     precargada?.trabajos ?? db.select().from(workItems).where(inArray(workItems.proyectoId,ids)),
     precargada?.casos ?? db.select().from(decisiones).where(and(inArray(decisiones.proyectoId,ids),inArray(decisiones.status,['pendiente','en_revision','informacion_solicitada']))),
     db.select({r:contratosCorreccion,proyectoId:correcciones.proyectoId}).from(contratosCorreccion).innerJoin(correcciones,eq(correcciones.id,contratosCorreccion.correccionId)).where(inArray(correcciones.proyectoId,ids)).orderBy(desc(contratosCorreccion.ronda)),
-  ]):[[],[],[],[],[],[],[],[]];
+    db.select().from(solicitudesArea).where(and(inArray(solicitudesArea.proyectoId,ids),eq(solicitudesArea.tipo,'creativa'))).orderBy(desc(solicitudesArea.requestedAt)),
+  ]):[[],[],[],[],[],[],[],[],[]];
   const [activaciones,preparaciones,asignaciones,workspaces]=await Promise.all([
     precargada?.activaciones ?? contextosActivacion(ids),
     precargada?.preparaciones ?? (ids.length?db.select().from(preparacionesProyecto).where(inArray(preparacionesProyecto.proyectoId,ids)):[]),
@@ -78,7 +79,12 @@ export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiT
       else if(c.fechaEnvioAutor&&!c.fechaRespuestaReal)wait('cap-feedback:'+c.id,'edicion','Feedback del autor · capítulo '+c.numero,'Registrar respuesta recibida desde Edición',{tipo:'autor',nombre:'Autor'},c.fechaPautadaFeedback,c.fechaEnvioAutor,{source,context});
     }
     const concepto=creatives.filter(c=>c.proyectoId===p.id&&c.tipo==='concepto_portada');
-    if(!concepto.length) {
+    const creativeRequest=creativeRequests.find(r=>r.proyectoId===p.id);
+    if(!concepto.length&&creativeRequest){
+      if(creativeRequest.estado==='pendiente')wait('creativa-solicitada','direccion_creativa','Solicitud creativa pendiente','El Líder debe revisar y aceptar la entrada.',DESTINOS.direccion_creativa!,null,creativeRequest.requestedAt.toISOString(),{source:{tipo:'solicitud',id:creativeRequest.id,businessKey:creativeRequest.businessKey}});
+      else if(creativeRequest.estado==='rechazada')add('creativa-rechazada','direccion_creativa','Solicitud creativa rechazada',creativeRequest.motivo??'Consultar el motivo en Solicitudes.',{estado:'bloqueada',blockedBy:creativeRequest.motivo,ctaLabel:null});
+    }
+    if(!concepto.length&&!creativeRequest) {
       const gate=evaluarGateMomentoReunionCreativa({tituloDefinitivo:meta.titulo,subtituloDefinitivo:meta.subtitulo,servicioCodigo:p.servicio.codigo,fechaFeedbackTripa:meta.feedbackTripa});
       add('creativa-solicitar','direccion_creativa','Solicitar reunión creativa',gate.desbloqueado?'Títulos y momento del servicio habilitados':gate.motivo!,{estado:gate.desbloqueado?'pendiente':'bloqueada',blockedBy:gate.desbloqueado?null:gate.motivo!,ctaLabel:gate.desbloqueado?'Solicitar':null});
     }

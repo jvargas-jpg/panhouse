@@ -603,6 +603,13 @@
       "when": 1792422530583,
       "tag": "0085_fuzzy_inhumans",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1792592752212,
+      "tag": "0086_cute_shaman",
+      "breakpoints": true
     }
   ]
 }

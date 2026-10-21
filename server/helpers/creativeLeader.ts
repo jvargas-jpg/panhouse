@@ -1,3 +1,4 @@
+import {listCreativeRequests} from './creativeRequests.js';
 import {and,desc,eq,inArray,isNull,or,sql} from 'drizzle-orm';
 import {alias} from 'drizzle-orm/pg-core';
 import {db} from '../db/client.js';
@@ -55,9 +56,9 @@ function projectWork(rows:Awaited<ReturnType<typeof creativeOverview>>,now:Date)
     if(item.actionable)tasks.push({...item,id:item.workItemId+':'+item.type+(item.conceptId?':'+item.conceptId:''),context:item.feedback??item.context,state:item.state as CreativeTask['state'],href:creativeHref(item.creativeProcessId,item.project.id,item.workItemId,item.type)+(item.conceptId?'&concepto='+item.conceptId:'')});
   }
   const deadlines=tasks.filter(t=>t.dueAt&&!t.overdue).sort((a,b)=>a.dueAt!.localeCompare(b.dueAt!)||a.id.localeCompare(b.id)).slice(0,6);
-  return {updatedAt:now.toISOString(),kpis:{briefs:tasks.filter(t=>t.type.startsWith('BRIEF')).length,concepts:tasks.filter(t=>t.type.startsWith('CONCEPT')).length,covers:tasks.filter(t=>t.type==='COVER_REVIEW').length,nextDueAt:deadlines[0]?.dueAt??null},tasks,attention:tasks.slice(0,6),totalActions:tasks.length,deadlines,processes,requests};
+  return {updatedAt:now.toISOString(),kpis:{briefs:tasks.filter(t=>t.type.startsWith('BRIEF')).length,concepts:tasks.filter(t=>t.type.startsWith('CONCEPT')).length,covers:tasks.filter(t=>t.type==='COVER_REVIEW').length,nextDueAt:deadlines[0]?.dueAt??null},tasks,attention:tasks.slice(0,6),totalActions:tasks.length,deadlines,processes,requests,pendingRequests:requests.length};
 }
-export async function getCreativeDashboard(userId:string,now=new Date(),order='accion'):Promise<CreativeDashboard>{return projectWork(await creativeOverview(userId,now,order),now);}
+export async function getCreativeDashboard(userId:string,now=new Date(),order='accion'):Promise<CreativeDashboard>{const [overview,requests]=await Promise.all([creativeOverview(userId,now,order),listCreativeRequests(userId,{pageSize:10},now)]);const result=projectWork(overview,now);result.requests=requests.items.map(r=>({id:r.id,workItemId:r.generatedWorkItemId,project:r.project,label:r.typeLabel,requestedAt:r.requestedAt}));result.pendingRequests=requests.counts.pending;return result;}
 export async function getCreativeWorkDetail(id:string,userId:string):Promise<CreativeWorkDetail>{
   const data=await readCreativeWork(userId,id),row=data.rows[0];if(!row)throw new CreativeError(403,'Este trabajo no está asignado a tu usuario.');
   const view=projectWork(await creativeOverview(userId,new Date(),'accion',id),new Date()),dc=row.dc,version=data.versions.find(v=>v.v.revisionCreativaId===id);

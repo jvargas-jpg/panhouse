@@ -96,7 +96,7 @@ describe('Operación del Especialista: ownership y handoffs',()=>{
     expect((await trabajo(spec)).items.some(i=>i.accion==='Solicitar activación de Lanzamiento')).toBe(false);
     expect((await accion(a.json().id,'aceptar',{},sc)).statusCode).toBe(403);expect((await accion(a.json().id,'aceptar',{},jc)).statusCode).toBe(403);
     const results=await Promise.all([accion(a.json().id,'aceptar'),accion(a.json().id,'aceptar')]);expect(results.every(r=>r.statusCode===200)).toBe(true);
-    const [r]=await db.select().from(solicitudesArea);expect(r?.estado).toBe('resuelta');expect(r?.outcome).toBe('LANZAMIENTO_ACTIVADO');expect((await db.select().from(workItems).where(eq(workItems.id,r!.workItemId)))[0]?.estado).toBe('en_progreso');
+    const [r]=await db.select().from(solicitudesArea);expect(r?.estado).toBe('resuelta');expect(r?.outcome).toBe('LANZAMIENTO_ACTIVADO');expect((await db.select().from(workItems).where(eq(workItems.id,r!.workItemId!)))[0]?.estado).toBe('en_progreso');
     const after=await obtenerCommandCenter(p.id,{id:spec,rol:'especialista'});expect(after.procesos.find(p=>p.tipo==='lanzamiento')?.estado).toBe('En planificación');expect(after.procesos.find(p=>p.tipo==='lanzamiento')?.ownerRole).toBe('rrpp');
     expect((await db.select().from(auditLogs).where(eq(auditLogs.accion,'SOLICITUD_AREA_ACTIVADA')))).toHaveLength(1);
   });

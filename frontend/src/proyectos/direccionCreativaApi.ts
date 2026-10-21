@@ -2,7 +2,7 @@ import { apiFetch } from '../lib/api';
 import type { DireccionCreativa, PropuestaCreativa, PropuestaPendienteRrpp, TrabajoLiderCreativo } from '../types/api';
 
 export function fetchDireccionesCreativasDeProyecto(proyectoId: string) {
-  return apiFetch<{ direcciones: DireccionCreativa[] }>(`/proyectos/${proyectoId}/direccion-creativa`);
+  return apiFetch<{ direcciones: DireccionCreativa[];solicitud?:{id:string;estado:string;motivo:string|null}|null }>(`/proyectos/${proyectoId}/direccion-creativa`);
 }
 
 export function solicitarDireccionCreativa(proyectoId: string) {

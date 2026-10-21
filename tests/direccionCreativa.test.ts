@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { db } from '../server/db/client.js';
-import { auditLogs, direccionesCreativas, fichaDisenoPropuestas, notificaciones, proyectos, workItems } from '../server/db/schema/index.js';
+import { auditLogs, direccionesCreativas, fichaDisenoPropuestas, notificaciones, proyectos, solicitudesArea, workItems } from '../server/db/schema/index.js';
 import { crearFichaTrazabilidad } from '../server/helpers/trazabilidad.js';
 import { registrarYLoguear } from './helpers/auth.js';
 import { limpiarBaseDeDatos } from './helpers/db.js';
@@ -96,7 +96,7 @@ describe('Fase 5C — Dirección Creativa', () => {
   });
 
   describe('POST /api/proyectos/:id/direccion-creativa', () => {
-    it('crea work item pendiente y notifica a lider_creativo', async () => {
+    it('crea solicitud pendiente sin trabajo y notifica a lider_creativo', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const cookie = await registrarYLoguear(app, 'especialista');
@@ -106,12 +106,9 @@ describe('Fase 5C — Dirección Creativa', () => {
 
       await request(app.server).post(`/api/proyectos/${proyecto.id}/direccion-creativa`).set('Cookie', cookie);
 
-      const [direccion] = await db.select().from(direccionesCreativas).where(eq(direccionesCreativas.proyectoId, proyecto.id));
-      expect(direccion?.tipo).toBe('concepto_portada');
-
-      const [wi] = await db.select().from(workItems).where(eq(workItems.id, direccion!.workItemId));
-      expect(wi?.estado).toBe('pendiente');
-
+      const [solicitud] = await db.select().from(solicitudesArea).where(eq(solicitudesArea.proyectoId,proyecto.id));
+      expect(solicitud?.estado).toBe('pendiente');expect(solicitud?.workItemId).toBeNull();
+      expect(await db.select().from(direccionesCreativas).where(eq(direccionesCreativas.proyectoId,proyecto.id))).toHaveLength(0);
       const notifs = await db.select().from(notificaciones).where(eq(notificaciones.rolDestino, 'lider_creativo'));
       expect(notifs).toHaveLength(1);
 
@@ -130,7 +127,7 @@ describe('Fase 5C — Dirección Creativa', () => {
       const r2 = await request(app.server).post(`/api/proyectos/${proyecto.id}/direccion-creativa`).set('Cookie', cookie);
       expect(r1.body.id).toBe(r2.body.id);
 
-      const filas = await db.select().from(direccionesCreativas).where(eq(direccionesCreativas.proyectoId, proyecto.id));
+      const filas = await db.select().from(solicitudesArea).where(eq(solicitudesArea.proyectoId, proyecto.id));
       expect(filas).toHaveLength(1);
       await app.close();
     });
@@ -386,9 +383,10 @@ describe('Fase 5C — Dirección Creativa', () => {
       const direccionId = await solicitarDireccionCreativaDePrueba(app, cookieEspecialista, proyecto.id);
 
       const liderAsignado = await crearUsuario('lider_creativo');
+      const cookieJefatura=await registrarYLoguear(app,'jefe_area');
       await request(app.server)
         .patch(`/api/direccion-creativa/${direccionId}/asignar`)
-        .set('Cookie', cookieEspecialista)
+        .set('Cookie', cookieJefatura)
         .send({ liderCreativoId: liderAsignado.id });
 
       const cookieOtroLider = await registrarYLoguear(app, 'lider_creativo');
@@ -409,6 +407,8 @@ describe('Fase 5C — Dirección Creativa', () => {
       await fijarTitulo(proyecto.id);
       const direccionId = await solicitarDireccionCreativaDePrueba(app, cookieEspecialista, proyecto.id);
 
+      const assigned=await crearUsuario('lider_creativo'),managerCookie=await registrarYLoguear(app,'jefe_area');
+      await request(app.server).patch(`/api/direccion-creativa/${direccionId}/asignar`).set('Cookie',managerCookie).send({liderCreativoId:assigned.id}).expect(200);
       const cookieOtroEspecialista = await registrarYLoguear(app, 'especialista');
       const respuesta = await request(app.server)
         .patch(`/api/direccion-creativa/${direccionId}/cerrar`)

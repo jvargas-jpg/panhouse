@@ -168,7 +168,10 @@ export function evaluarGateMomentoReunionCreativa(datos: DatosGateMomentoReunion
   const gateTitulo = evaluarGateTituloAprobado(datos);
   if (!gateTitulo.desbloqueado) return gateTitulo;
 
-  if (CODIGOS_SERVICIO_CON_FEEDBACK_TRIPA_REQUERIDO.includes(datos.servicioCodigo ?? '') && !datos.fechaFeedbackTripa) {
+  return evaluarMomentoServicioCreativo(datos.servicioCodigo,datos.fechaFeedbackTripa);
+}
+export function evaluarMomentoServicioCreativo(servicioCodigo:string|null|undefined,fechaFeedbackTripa:string|null|undefined):ResultadoGate {
+  if (CODIGOS_SERVICIO_CON_FEEDBACK_TRIPA_REQUERIDO.includes(servicioCodigo ?? '') && !fechaFeedbackTripa) {
     return { desbloqueado: false, motivo: 'En Crudo/Ghost, la reunión creativa se solicita junto con el feedback de tripa completa, que todavía no se registró' };
   }
 

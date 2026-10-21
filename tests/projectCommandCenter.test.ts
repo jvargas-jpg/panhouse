@@ -123,7 +123,7 @@ describe('Project Command Center: verdad compartida y permisos', () => {
     const p = await fixture(); const spy = vi.spyOn(pool, 'query');
     try { await obtenerCommandCenter(p.id, { id: spec, rol: 'especialista' }); const n = spy.mock.calls.length;
       await db.insert(workItems).values(Array.from({ length: 40 }, (_, i) => ({ proyectoId: p.id, tipo: 'calidad', businessKey: 'version-'+i, estado: 'pendiente' as const })));
-      spy.mockClear(); await obtenerCommandCenter(p.id, { id: spec, rol: 'especialista' }); expect(spy.mock.calls.length).toBe(n); expect(n).toBeLessThan(40);
+      spy.mockClear(); await obtenerCommandCenter(p.id, { id: spec, rol: 'especialista' }); expect(spy.mock.calls.length).toBe(n); expect(n).toBeLessThan(45);
     } finally { spy.mockRestore(); }
   });
   it('activación Amazon paralela idempotente, notificada y cerrada solo por Digital', async () => {

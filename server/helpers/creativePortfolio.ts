@@ -1,3 +1,4 @@
+import {creativePendingCountSql} from './creativeRequests.js';
 import {diaCaracas} from './atencionEspecialista.js';
 ﻿import {and,eq,sql,type SQL} from 'drizzle-orm';
 import {db} from '../db/client.js';
@@ -140,7 +141,7 @@ export async function listCreativeProjects(userId:string,filters:CreativePortfol
  'services',coalesce((select json_agg(x) from (select service_id as id,service_name as label,count(*) as count from summaries where true ${general} ${scopeSql} ${stage} ${specialist} group by service_id,service_name order by service_name) x),'[]'::json),
  'specialists',coalesce((select json_agg(x) from (select specialist_id as id,specialist as label,count(*) as count from summaries where specialist_id is not null ${general} ${scopeSql} ${stage} ${service} group by specialist_id,specialist order by specialist) x),'[]'::json),
  'actionable',(select count(*) from classified where assigned_to=${userId} and actionable),
- 'requests',(select count(*) from classified where assigned_to is null and phase<>'COMPLETED')
+ 'requests',${creativePendingCountSql(userId)}
  )) as payload`);
  const data=result.rows[0]!.payload;
  return {items:data.rows.map(r=>mapProject(r,now)),total:data.total,page:Math.min(page,Math.max(1,Math.ceil(data.total/pageSize))),pageSize,counts:data.counts,updatedAt:now.toISOString()};

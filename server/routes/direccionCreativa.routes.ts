@@ -1,4 +1,5 @@
 import {listCreativeProjects,getCreativeProjectDetail,getCreativeProjectConcept} from '../helpers/creativePortfolio.js';
+import {listCreativeRequests,getCreativeRequestDetail,decideCreativeRequest} from '../helpers/creativeRequests.js';
 import {listCreativeWork} from '../helpers/creativeInbox.js';
 import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
@@ -107,6 +108,13 @@ export async function direccionCreativaRoutes(app: FastifyInstance) {
     app.log.error(error);return reply.code(500).send({error:'No se pudo completar la operación creativa.'});
   });
   const leader=[requireAuth,requireRole('lider_creativo')];
+  const requestQuery=z.object({status:z.enum(['PENDING','ACCEPTED','REJECTED','CANCELLED','ALL']).optional(),service:z.string().uuid().optional(),specialist:z.string().uuid().optional(),
+    search:z.string().trim().max(200).optional(),date:z.enum(['today','week','range']).optional(),from:z.string().date().optional(),to:z.string().date().optional(),
+    page:z.coerce.number().int().min(1).max(100000).optional(),pageSize:z.coerce.number().refine(n=>[10,25,50].includes(n)).optional()}).strict().refine(v=>!v.from||!v.to||v.from<=v.to,'Rango de fechas inválido.');
+  app.get('/solicitudes',{preHandler:leader},async req=>listCreativeRequests(req.user!.id,requestQuery.parse(req.query)));
+  app.get('/solicitudes/:id',{preHandler:leader},async req=>getCreativeRequestDetail(idParamSchema.parse(req.params).id,req.user!.id));
+  app.post('/solicitudes/:id/aceptar',{preHandler:leader},async req=>{z.object({}).strict().parse(req.body??{});return decideCreativeRequest(idParamSchema.parse(req.params).id,req.user!.id,'accept');});
+  app.post('/solicitudes/:id/rechazar',{preHandler:leader},async req=>{const data=z.object({reason:z.string().trim().min(10).max(3000)}).strict().parse(req.body);return decideCreativeRequest(idParamSchema.parse(req.params).id,req.user!.id,'reject',data.reason);});
   app.get('/inicio',{preHandler:leader},async req=>getCreativeDashboard(req.user!.id,new Date(),z.object({orden:z.enum(['accion','fecha']).optional()}).parse(req.query).orden));
   app.get('/mi-trabajo',{preHandler:leader},async req=>{
     const filters=z.object({tipo:z.enum(['BRIEF','CONCEPT','RESOURCES','COVER_REVIEW']).optional(),
