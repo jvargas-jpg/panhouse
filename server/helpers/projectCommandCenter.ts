@@ -1,4 +1,5 @@
 import { obtenerColaTrabajoEspecialista } from './especialistaMiTrabajo.js';
+import { editorialInterventions } from './editorialChief.js';
 import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { fases, pasos, servicioFases, projectAssignments, users, workItems, pagos, proyectos, decisiones, preparacionesProyecto, fichasTrazabilidad } from '../db/schema/index.js';
@@ -30,7 +31,7 @@ export function agruparProcesos(trabajos: TrabajoProyecto[]): ProcesoProyecto[] 
 
 export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promise<ProjectCommandCenter> {
   const p = await accesoCommandCenter(id, actor);
-  const [ficha, snapshot, rows, assignments, configuracion, paymentStates, cases, preparaciones, activaciones, control] = await Promise.all([
+  const [ficha, snapshot, rows, assignments, configuracion, paymentStates, cases, preparaciones, activaciones, control, editorial] = await Promise.all([
     resumenFichaViva(id, actor),
     obtenerDashboardJefatura(new Date(), { historico: true, incluirRetirados: true, proyectoId: id }),
     db.select({ item: workItems, paso: pasos.nombre, fase: fases.nombre }).from(workItems)
@@ -48,17 +49,26 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
     db.select().from(preparacionesProyecto).where(eq(preparacionesProyecto.proyectoId, id)),
     contextosActivacion([id]),
     db.select().from(fichasTrazabilidad).where(eq(fichasTrazabilidad.proyectoId, id)),
+    editorialInterventions(undefined,id),
   ]);
   const salud = snapshot.proyectos[0] ?? null;
-  const procesos = agruparProcesos(rows.filter(({item}) => !['intake_rrpp', 'asignacion_especialista', 'preparacion_inicial'].includes(item.tipo)).map(({ item, paso, fase }) => {
+  const editorialById=new Map(editorial.map(i=>[i.workItemId,i]));
+  const procesos = agruparProcesos(rows.filter(({item}) => !['intake_rrpp', 'asignacion_especialista', 'preparacion_inicial'].includes(item.tipo) && !(item.tipo==='edicion'&&item.businessKey==='default'&&editorial.length&&!editorialById.has(item.id))).map(({ item, paso, fase }) => {
     const central = salud?.procesos.find(t => t.id === item.id);
+    const edition=editorialById.get(item.id);
     return { id: item.id, tipo: item.tipo, nombre: NOMBRES_PROCESO[item.tipo] ?? fase ?? paso ?? 'Proceso registrado',
       instancia: paso ?? (item.businessKey.startsWith('diseno-version:') ? 'Versión diagramada' : item.businessKey === 'activacion_amazon' ? 'Activación de cuenta Amazon' : item.businessKey === 'default' ? 'Intervención inicial' : item.businessKey === 'planificacion' ? 'Planificación de lanzamiento' : item.businessKey === 'revision-adicional-demo' ? 'Revisión adicional' : item.businessKey.startsWith('tripa_completa') ? 'Tripa completa' : item.businessKey.startsWith('preliminares') ? 'Preliminares' : item.businessKey.startsWith('cubierta') ? 'Cubierta' : 'Intervención editorial'), estado: central?.estado ?? item.estado,
       responsable: central?.responsable ?? (assignments.filter(a => a.workItemId === item.id).map(a => a.nombre).join(', ') || null),
       vence: central?.vence ?? item.fechaFinPautada, vencido: central?.vencido ?? false,
       gate: item.gateBloqueante, decisionId: central?.decisionId ?? null,
-      inicio: item.fechaInicioReal, cierre: item.fechaFinReal };
+      inicio: item.fechaInicioReal, cierre: item.fechaFinReal,
+      ...(edition?{instancia:edition.label,responsable:edition.editor,vence:edition.dueDate,vencido:edition.overdue,stateLabel:edition.state}:{}), };
   }));
+  const editionProcess=procesos.find(process=>process.tipo==='edicion');
+  if(editionProcess&&editorial.length&&editorial.every(i=>!i.actionable&&!i.needsAssignment)){
+    const waiting=[...new Set(editorial.filter(i=>i.state.startsWith('Esperando')).map(i=>i.state))];
+    if(waiting.length)editionProcess.estado=waiting.length===1?waiting[0]!:'En coordinación';
+  }
   const editoriales = procesos.flatMap(p => p.trabajos).filter(t => !['intake_rrpp', 'asignacion_especialista'].includes(t.tipo));
   for (const [key, estado] of [['active', 'en_progreso'], ['pending', 'pendiente'], ['blocked', 'bloqueado'], ['completed', 'completado']] as const)
     ficha.summary[key] = editoriales.filter(t => t.estado === estado).length;

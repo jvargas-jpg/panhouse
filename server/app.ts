@@ -17,6 +17,7 @@ import { indicadoresJefaturaRoutes } from './routes/indicadoresJefatura.routes.j
 import { direccionCreativaRoutes } from './routes/direccionCreativa.routes.js';
 import { disenadoresRoutes } from './routes/disenadores.routes.js';
 import { editoresRoutes } from './routes/editores.routes.js';
+import { editorialChiefRoutes } from './routes/editorialChief.routes.js';
 import { especialistasRoutes } from './routes/especialistas.routes.js';
 import { metricasRoutes } from './routes/metricas.routes.js';
 import { notificacionesRoutes } from './routes/notificaciones.routes.js';
@@ -63,6 +64,7 @@ export function buildApp() {
   app.register(especialistaSolicitudesRoutes, { prefix: '/api/especialistas' });
   app.register(especialistaMiTrabajoRoutes, { prefix: '/api/especialistas' });
   app.register(editoresRoutes, { prefix: '/api/editores' });
+  app.register(editorialChiefRoutes, { prefix: '/api/editores' });
   app.register(disenoRoutes, { prefix: '/api/diseno' });
   app.register(calidadRoutes, { prefix: '/api/calidad' });
   app.register(disenadoresRoutes, { prefix: '/api/disenadores' });

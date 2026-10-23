@@ -735,16 +735,26 @@ export async function asignarEspecialista(
 // que el especialista pasara por /solicitar-editor primero, caso
 // legítimo hoy), lo crea directo en progreso: nunca deja un work item
 // fantasma en 'pendiente' después de que ya hay editor trabajando.
-export async function asignarEditor(proyectoId: string, editorId: string, asignadoPorId: string): Promise<void> {
+export async function asignarEditor(proyectoId: string, editorId: string, asignadoPorId: string, motivo?:string, expectedEditorId?:string|null): Promise<void> {
   await db.transaction(async (tx) => {
-    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo,especialistaId:proyectos.especialistaId }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
-    if (!proyecto) throw new Error(`Proyecto no encontrado: ${proyectoId}`);
+    const [editor]=await tx.select({id:users.id}).from(users).where(and(eq(users.id,editorId),eq(users.rol,'editor'),eq(users.activo,true)));
+    if(!editor)throw Object.assign(new Error('Selecciona un Editor activo'),{statusCode:400});
+    const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo,especialistaId:proyectos.especialistaId,estado:proyectos.estado,editorId:proyectos.editorId,servicioId:proyectos.servicioId }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+    if (!proyecto) throw Object.assign(new Error('Proyecto no encontrado'),{statusCode:404});
+    if(!ESTADOS_ACTIVOS.includes(proyecto.estado))throw Object.assign(new Error('Proyecto cerrado'),{statusCode:409});
+    if(expectedEditorId!==undefined&&proyecto.editorId!==expectedEditorId&&proyecto.editorId!==editorId)throw Object.assign(new Error('La asignación cambió. Actualiza el contexto antes de decidir.'),{statusCode:409});
+    const [service]=await tx.select({codigo:servicios.codigo}).from(servicios).where(eq(servicios.id,proyecto.servicioId));
+    if(service?.codigo==='SE'){
+      const [registered]=await tx.select({id:workItems.id}).from(workItems).where(and(eq(workItems.proyectoId,proyectoId),eq(workItems.tipo,'edicion'))).limit(1);
+      if(!registered)throw Object.assign(new Error('Sello editorial requiere una intervención de Edición registrada'),{statusCode:400});
+    }
 
     const { cambio, asignacionId, anteriorUsuarioId } = await asignarConHistorial(tx, {
       proyectoId,
       tipo: 'editor',
       usuarioId: editorId,
       asignadoPorId,
+      motivoFin:motivo,
     });
 
     await tx.update(proyectos).set({ editorId }).where(eq(proyectos.id, proyectoId));
@@ -757,11 +767,12 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
       entityType: 'project_assignment',
       entityId: asignacionId,
       proyectoId,
-      detalles: { anterior: anteriorUsuarioId, nuevo: editorId },
+      detalles: { anterior: anteriorUsuarioId, nuevo: editorId, motivo:motivo??null },
     });
 
-    await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
-    await transicionarWorkItem(tx, { proyectoId, tipo: 'edicion', estado: 'en_progreso' });
+    const workId=await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
+    const [work]=await tx.select({estado:workItems.estado}).from(workItems).where(eq(workItems.id,workId));
+    if(work?.estado==='pendiente')await transicionarWorkItem(tx, { proyectoId, tipo: 'edicion', estado: 'en_progreso' });
     const [pedido]=await tx.select({id:auditLogs.id}).from(auditLogs).where(and(eq(auditLogs.proyectoId,proyectoId),eq(auditLogs.accion,'EDITOR_SOLICITADO'))).limit(1);
     const owner=pedido?await obtenerEspecialistaActual(proyectoId,proyecto.especialistaId,tx):null;
     if(owner)await tx.insert(notificaciones).values({proyectoId,rolDestino:'especialista',usuarioDestinoId:owner,mensaje:'Jefatura de Edición asignó Editor a tu solicitud.'});

@@ -1,0 +1,63 @@
+{
+  "verifiedAt": "2026-10-23T13:21:25.840Z",
+  "database": "panhouse_edicion_preview",
+  "browserWorkflow": "Solicitud → Asignación → Editor recibe trabajo → Entrega → Especialista envía al autor → Feedback → Editor aplica feedback",
+  "summary": {
+    "unassigned": 0,
+    "overdue": 1,
+    "atRisk": 0,
+    "pendingRequests": 0
+  },
+  "delivery": {
+    "state": "Completadas",
+    "actionable": false,
+    "events": [
+      "EDITOR_SOLICITADO",
+      "EDITOR_ASIGNADO",
+      "CAPITULO_EDITOR_ENTREGADO",
+      "CAPITULO_ENVIADO_AUTOR",
+      "CAPITULO_FEEDBACK_REGISTRADO",
+      "CAPITULO_FEEDBACK_APLICADO"
+    ]
+  },
+  "waiting": {
+    "state": "Esperando autor",
+    "overdue": false,
+    "atRisk": false,
+    "editor": "Editor de prueba A"
+  },
+  "assignmentHistory": [
+    {
+      "editor": "Editor de prueba B",
+      "active": false,
+      "reason": "Verificación QA de redistribución con historial preservado."
+    },
+    {
+      "editor": "Editor de prueba A",
+      "active": true,
+      "reason": null
+    }
+  ],
+  "distribution": [
+    {
+      "state": "Bloqueadas",
+      "count": 1
+    },
+    {
+      "state": "Esperando autor",
+      "count": 1
+    },
+    {
+      "state": "Requiere ajustes",
+      "count": 1
+    },
+    {
+      "state": "En edición",
+      "count": 2
+    },
+    {
+      "state": "Completadas",
+      "count": 1
+    }
+  ]
+}

@@ -42,6 +42,7 @@ export type AccionAuditoria =
   | 'INFORMACION_COMERCIAL_ACTUALIZADA'
   | 'INTAKE_RRPP_INICIADO' | 'DIAGNOSTICO_ACTUALIZADO' | 'DIAGNOSTICO_COMPLETADO'
   | 'EDITOR_SOLICITADO'
+  | 'CAPITULO_EDITOR_ENTREGADO' | 'CAPITULO_ENVIADO_AUTOR' | 'CAPITULO_FEEDBACK_REGISTRADO' | 'CAPITULO_FEEDBACK_APLICADO'
   | 'FEEDBACK_TRIPA_REGISTRADO'
   | 'CORRECCION_SOLICITADA'
   | 'CORRECTOR_ASIGNADO'
@@ -74,7 +75,7 @@ export type AccionAuditoria =
 export interface RegistrarEventoInput {
   actorId: string | null;
   accion: AccionAuditoria;
-  entityType: 'external_integration' | 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision' | 'solicitud' | 'monthly_goal';
+  entityType: 'external_integration' | 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision' | 'solicitud' | 'monthly_goal' | 'capitulo';
   entityId: string;
   proyectoId?: string | null;
   detalles?: Record<string, unknown>;

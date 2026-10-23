@@ -1,0 +1,20 @@
+[
+  {
+    "height": 900,
+    "kpis": 4,
+    "scrollWidth": 1440,
+    "width": 1440
+  },
+  {
+    "height": 1024,
+    "kpis": 4,
+    "scrollWidth": 768,
+    "width": 768
+  },
+  {
+    "height": 812,
+    "kpis": 4,
+    "scrollWidth": 375,
+    "width": 375
+  }
+]

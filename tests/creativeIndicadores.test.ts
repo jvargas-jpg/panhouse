@@ -11,8 +11,9 @@ import {deliverCreativeConcepts} from '../server/helpers/creativeLeaderCommands.
 import {obtenerIndicadoresCreativos,csvIndicadoresCreativos} from '../server/helpers/creativeIndicadores.js';
 import {crearProyectoDePrueba} from './helpers/fixtures.js';
 import {limpiarBaseDeDatos} from './helpers/db.js';
+import {diaCaracas} from '../server/helpers/atencionEspecialista.js';
 
-const app=buildApp(),cookies=new Map<string,string>(),hoy='2026-10-21';
+const app=buildApp(),cookies=new Map<string,string>(),hoy=diaCaracas(new Date());
 let leader:string,other:string,specialist:string;
 async function person(rol:typeof users.$inferInsert.rol){const [u]=await db.insert(users).values({nombre:'QA '+rol,email:randomUUID()+'@test.local',rol,passwordHash:'session-only'}).returning();cookies.set(u!.id,'panhouse_sid='+await createSession(u!.id));return u!.id;}
 const api=(path:string,user=leader)=>app.inject({method:'GET',url:'/api'+path,headers:{cookie:cookies.get(user)??''}});

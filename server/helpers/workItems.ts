@@ -86,9 +86,11 @@ export async function crearWorkItemSiNoExiste(
       pasoId: input.pasoId ?? null,
       observaciones: input.observaciones,
     })
-    .returning({ id: workItems.id });
+    .returning({ id: workItems.id, createdAt: workItems.createdAt });
   if (!creado) throw new Error('El insert de work_items no devolvió ninguna fila');
-  await evaluateProjectGoals(tx, input.proyectoId);
+  // Evaluate no earlier than the event persisted by PostgreSQL. A small
+  // clock offset must not leave an already reached process uncredited.
+  await evaluateProjectGoals(tx, input.proyectoId, new Date(Math.max(Date.now(),creado.createdAt.getTime())));
   return creado.id;
 }
 

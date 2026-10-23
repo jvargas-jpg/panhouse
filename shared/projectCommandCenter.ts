@@ -7,6 +7,7 @@ export interface TrabajoProyecto {
   instancia: string; responsable: string | null; vence: string | null;
   vencido: boolean; gate: string | null; decisionId: string | null;
   inicio: string | null; cierre: string | null;
+  stateLabel?: string;
 }
 export interface ProcesoProyecto {
   tipo: string; nombre: string; estado: string; detalle: string;

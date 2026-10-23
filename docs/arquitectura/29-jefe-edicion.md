@@ -1,0 +1,94 @@
+# Jefe de Edición · Inicio operativo
+
+Fecha: 23 de octubre de 2026. Rol existente: `jefe_edicion`; área: Edición.
+
+## Auditoría previa
+
+El árbol estaba limpio. Se revisaron `git status`, `git diff --stat`, `git diff` y los últimos quince commits antes de modificar código. El rol ya existía en el enum PostgreSQL, las sesiones, Home y los guards. En desarrollo se encontró **Jefe Edición Demo**, `jefeedicion.demo@panhouse.test`, activo; también **Editor Demo**, rol `editor`, activo. No se creó otro rol ni se cambiaron cuentas o credenciales de desarrollo.
+
+El Inicio anterior consultaba `/proyectos/sin-editor` y `/editores/carga`: mezclaba proyectos sin solicitud con trabajo solicitado; la carga legacy ponderaba proyectos por servicio. Esta ponderación sigue disponible para consumidores anteriores, pero no representa capacidad ni se usa en el nuevo Inicio.
+
+Fuentes leídas, sin importar sus cifras o identidades al producto:
+
+- `fuentes-negocio/Editores Matriz Proyectos - Panhouse (1).xlsx`: hojas **EBDD - IA**, **Pausados**, **Instructivo EBDD - IA**, **INDICADORES**; se inspeccionaron encabezados, instrucciones de llenado y muestras de fases.
+- `fuentes-negocio/Proceso de adiestramiento - Especialista editorial (3).docx`: estructura, extracción, capítulos/partes, tres días hábiles, feedback, tripa, kit y entregas mediante enlaces.
+- Extracción local de **INDICADORES AGOSTO 2026.pptx**, SHA-256 `4ed6de57e2b578fd1b9af449dcfee39fb6afa2f9f0965c1835b63692f4a020be`; láminas 19–26: Editores Innovación, reporte mensual, estatus general y récord por Editor. La extracción y su procedencia coinciden con `docs/auditoria/indicadores-fuente-2026-08.json`. El PPTX original no está en `fuentes-negocio`; se auditó su texto extraído disponible localmente.
+- Arquitectura, matriz de capacidades, auditoría de usuarios, asignaciones, solicitudes nativas, capítulos, work items, helpers SLA, Editor y Command Center.
+
+## Mapeo de la matriz
+
+| Campos auditados | Fuente canónica | Destino |
+| --- | --- | --- |
+| Autor, ficha, colección, servicio | Proyectos, autores, catálogo y ficha | Proyectos de edición |
+| Jefe, Editor, coordinador, fecha de asignación | Usuarios y `project_assignments` | Asignaciones y equipo del proyecto |
+| Inicio, fase C1–C6/Parte/Tripa, páginas, entrega | `capitulos` y `work_items` repetibles | Mi trabajo del Editor y Seguimiento |
+| Inicio/aplicación/entrega de feedback | Fechas del capítulo, intervención y auditoría | Cola del Editor y coordinación del Especialista |
+| Estatus, descripción, causa de retraso | Estado de intervención, gate, auditoría y espera del autor | Seguimiento; atención sólo si hay decisión |
+| GAP, fin de edición, días y total real de ejecución | Plazos y hechos canónicos; no fórmulas copiadas | Indicadores históricos futuros |
+
+La matriz es una vista operativa. No se creó una tabla espejo, ni se importaron sus filas o nombres. EF y Crudo se leen del catálogo y subtipo de ficha. Sello no recibe Editor automáticamente: el comando exige una intervención de Edición previamente registrada.
+
+## Ownership y transacciones
+
+1. El Especialista asignado solicita Editor por el comando existente `solicitarEditor`.
+2. La solicitud nativa es el `work_item` de Edición más su evento `EDITOR_SOLICITADO`. Se conserva la proyección de solicitudes ya utilizada por el Especialista; no hay un segundo lifecycle de requests.
+3. Jefe de Edición decide mediante un único drawer compartido por Inicio, Asignaciones y Solicitudes.
+4. `asignarEditor` bloquea el proyecto, valida Editor real/activo, usa `asignarConHistorial`, mantiene el puntero, registra auditoría y notificaciones en la misma transacción.
+5. El historial de asignación posterior al pedido resuelve la solicitud nativa. No queda una request pendiente junto al trabajo asignado.
+6. Un retry con el mismo Editor no duplica historial ni avisos. La unicity por scope y el bloqueo del proyecto evitan dos asignaciones activas. El nuevo comando detecta contexto obsoleto cuando dos decisiones distintas compiten.
+7. Reasignar conserva responsable anterior, inicio, fin y motivo; mueve la responsabilidad del proyecto y sus intervenciones, conforme al modelo vigente de Editor por proyecto. No se inventó asignación independiente por capítulo.
+
+El Editor ejecuta. Jefe no tiene endpoints para registrar entregas, feedback de autor, Calidad, RRPP, Comercial ni asignación de Especialistas. Los guards se ejecutan en servidor; los UUID de otros dominios no resuelven como intervenciones de Edición. La propiedad se revalida bajo bloqueo al crear o entregar capítulos.
+
+## Intervenciones, SLA y espera
+
+`capitulo:<id>` identifica una instancia repetible de `work_items`. Crear/iniciar/entregar un capítulo y registrar feedback sincronizan esa instancia transaccionalmente. El contenedor `default` conserva la solicitud inicial y no se suma además de sus capítulos u otras intervenciones específicas. Capítulos legacy se proyectan desde la fuente original y materializan su work item al siguiente cambio normal; no se ejecuta una importación masiva.
+
+El SLA normal de capítulo conserva la regla central existente: **tres días hábiles desde inicio registrado**, lunes a viernes, sin calendario de feriados inventado. No se asigna una fecha ficticia a un capítulo que aún no tiene inicio. `evaluarPlazoEdicion` es la regla común de vencimiento y riesgo; React sólo presenta el resultado.
+
+- Entrega del Editor sin envío: **Esperando Especialista**, fuera de SLA activo del Editor.
+- Enviado al autor sin respuesta: **Esperando autor**, aunque la fecha de feedback haya vencido. Esa demora requiere coordinación del Especialista, no una sanción al Editor.
+- Feedback nuevo: reabre la misma intervención, preserva los eventos de entrega y vuelve a la cola con **Requiere ajustes**. No conserva el deadline de la edición anterior.
+- El manual no fija un plazo independiente para aplicar feedback: se muestra sin fecha exigible hasta que exista una regla formal; no se inventan otros tres días.
+- Entrega del feedback aplicado: completa la intervención y deja auditoría y aviso al Especialista. Entregas y feedback del mismo día también se auditan; repetir el mismo guardado no duplica el evento.
+
+La proyección del Command Center reutiliza estas etiquetas, responsable, instancia y vencimiento, sin cambiar el estado macro del proyecto. El modelo de pausas generales del proyecto y sus métricas efectivas permanece en sus helpers anteriores; esta fase no introduce un calendario nuevo de reprogramación de SLA por pausas parciales.
+
+## DTO, queries y métricas
+
+Contrato compartido: `shared/editorialChief.ts`. Fuente: PostgreSQL. `GET /api/editores/inicio` hace **dos consultas**, independientemente de cuántos Editores existan: una proyección por lotes de intervenciones y una lectura del equipo activo. La actividad se consulta aparte para permitir error/reintento local. No hay query ni HTTP por Editor o fila, ni lectura Drive al renderizar.
+
+Los joins y agrupaciones de autores, pedidos, solicitudes resueltas e historial vigente se realizan en CTE PostgreSQL. La agrupación descriptiva final y las reglas centrales de SLA se ejecutan en servidor; el navegador recibe resúmenes y listas acotadas, nunca toda la matriz para calcular los KPI. La lista de Seguimiento se filtra y pagina en servidor; sus agregaciones finales usan la misma proyección. Para volúmenes mayores conviene llevar también la paginación y distribución final a SQL, conservando las reglas centrales.
+
+| Campo | Definición |
+| --- | --- |
+| Por asignar | Pedido explícito de Editor, no cancelado/completado, no resuelto por historial y sin Editor vigente; no todos los proyectos sin Editor |
+| Entregas vencidas | Fecha exigible anterior al día Caracas e intervención accionable bajo responsabilidad de Edición |
+| En riesgo | Fecha exigible igual a hoy, todavía accionable; señal objetiva documentada, sin umbral inventado de tres días |
+| Solicitudes pendientes | Solicitudes nativas de Editor sin resolución; el único tipo de solicitud a Jefe soportado actualmente |
+| Carga | Intervenciones accionables, entregas restantes hasta domingo, vencidas y esperas por Editor; sin ranking, porcentajes o capacidad inventada |
+| Distribución | Cada intervención actual se cuenta una vez en su estado; no es progreso ni estado corporativo del proyecto |
+| Atención | Por asignar, bloqueada, vencida, riesgo de hoy o feedback accionable; máximo seis en Inicio |
+| Próximas entregas | Accionables, con fecha, no vencidas; máximo seis en orden ascendente |
+| Solicitudes recientes | Pendientes dirigidas a Jefe, ordenadas por antigüedad, máximo cuatro |
+| Actividad | Lista permitida de eventos de Edición desde `audit_logs`, seis registros; omite pagos, RRPP y Comercial |
+
+`GET /intervenciones`, `/intervenciones/:id`, `/actividad`, `PATCH /asignaciones/:id` son exclusivos de `jefe_edicion`. `/mi-trabajo` y `/mi-trabajo/:id/entrega` son de Editor y filtran por la sesión. UUID ajeno, rol incorrecto, Editor inactivo/no Editor, proyecto cerrado y decisión obsoleta se rechazan.
+
+## UX y navegación
+
+Se reutilizan shell, marca, iconos, cuenta, campana y TanStack Query. Inicio presenta cuatro KPI, carga descriptiva, donut contextual, atención dominante, entregas, requests y actividad. No hay selector de mes, buscador global falso ni cubiertas inventadas. Los libros sin una portada renderizable usan un placeholder editorial.
+
+Sidebar: Inicio, Asignaciones y carga, Proyectos de edición, Seguimiento, Solicitudes, Indicadores. Todos tienen destinos funcionales diferenciados: decisión y equipo, contexto agrupado de proyectos, supervisión filtrada, solicitudes y corte de distribución. Las exploraciones son el soporte mínimo de Inicio; no se presenta una digitalización completa de la matriz en seis pantallas.
+
+**Historias que conectan.** es sólo pie institucional, sin enlace, icono, estado activo ni ruta. El drawer conserva foco, Escape y recuperación de errores. Asignar invalida Inicio, equipo, listas, detalle y las queries operativas relacionadas; no usa `location.reload`.
+
+375 × 812: KPI 2 × 2 y filas convertidas en tarjetas, en el orden Atención → Próximas entregas → Carga → Solicitudes → Estado → Actividad. 768 × 1024: KPI 2 × 2 y paneles bajo el contenido principal. 1440 × 900: composición editorial con sidebar navy, acento gold y rail derecho.
+
+## Cobertura y siguientes fases
+
+No hay capacidad máxima formal, calendario de feriados ni SLA específico de aplicación de feedback. Tampoco existen requests nativas independientes de reasignación/apoyo de Edición: se reutiliza la reasignación con motivo y no se inventan tipos de solicitud. Tripa, kit, estructura y extracción conservan el modelo/configuración vigente; esta fase no crea tareas automáticas ni divide contenido sin registro real.
+
+Indicadores completos —producción por Editor, completadas por período y récord general— quedan para su fase histórica. La pantalla Indicadores enlazada informa el corte operativo disponible sin simular esos históricos. No se agregaron dependencias ni un motor de workflow nuevo.
+
+Validación y evidencia: `docs/auditoria/29-jefe-edicion-validacion.md` y `docs/evidencias/jefe-edicion/`.

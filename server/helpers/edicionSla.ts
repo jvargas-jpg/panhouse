@@ -12,6 +12,14 @@ export const DIAS_HABILES_EDICION_CAPITULO = 3;
 export const DIAS_HABILES_FEEDBACK_AUTOR_CAPITULO = 3;
 export const DIAS_HABILES_FEEDBACK_AUTOR_TRIPA = 5;
 
+// Riesgo objetivo: entrega exigible hoy, todavía bajo responsabilidad de
+// Edición. No se deduce del plazo macro del proyecto ni de un umbral en React.
+export function evaluarPlazoEdicion(fecha: string | null, accionable: boolean, hoy: string) {
+  return { overdue: !!(accionable && fecha && fecha < hoy), atRisk: !!(accionable && fecha === hoy) };
+}
+
+export const plazoCapituloEditor = (inicio: string) => sumarDiasHabiles(inicio, DIAS_HABILES_EDICION_CAPITULO);
+
 function esFinDeSemana(fecha: Date): boolean {
   const dia = fecha.getUTCDay();
   return dia === 0 || dia === 6;

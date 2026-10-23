@@ -1,10 +1,8 @@
-import { MisTrabajosEdicionPage } from './MisTrabajosEdicionPage';
+import { EditorialWorkQueue } from './EditorialWorkQueue';
 
-// Fase 5 (5A Edición): antes reutilizaba MisProyectosPage tal cual
-// (el Kanban por PROYECTO del especialista) — no reflejaba lo que el
-// editor realmente necesita saber ("qué capítulo debo trabajar ahora").
-// GET /capitulos/mios (ver MisTrabajosEdicionPage.tsx) resuelve eso a
-// nivel de capítulo, priorizado por el backend.
+// La misma proyección de intervenciones que consume Jefe de Edición,
+// acotada en servidor al Editor de la sesión; incluye la asignación
+// inicial antes del primer capítulo y el feedback que vuelve a trabajo.
 export function EditorHomePage() {
-  return <MisTrabajosEdicionPage />;
+  return <EditorialWorkQueue />;
 }

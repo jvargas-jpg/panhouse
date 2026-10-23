@@ -1,0 +1,20 @@
+import {useQuery} from '@tanstack/react-query';
+import {useSearchParams} from 'react-router-dom';
+import type {EditorialDashboard} from '../../../shared/editorialChief';
+import {editorialKey,fetchEditorialList} from './jefeEdicionApi';
+import {EditorialPanel,EditorialTeam,EditorialRows,EditorialEmpty,EditorialDistribution,editorialDate} from './EditorialParts';
+export function EditorialModule({active,dashboard,onOpen,onLoad}:{active:string;dashboard:EditorialDashboard;onOpen:(id:string)=>void;onLoad:(id:string)=>void}){
+ const [params,setParams]=useSearchParams();
+ const filter=['asignaciones','solicitudes-edicion'].includes(active)?'unassigned':params.get('filter')??'all';
+ const search=params.get('search')??'',page=params.get('page')??'1';const queryParams=new URLSearchParams({filter,search,page});
+ const q=useQuery({queryKey:[...editorialKey,'list',active,queryParams.toString()],queryFn:()=>fetchEditorialList(queryParams),enabled:active!=='indicadores-edicion'});const rows=q.data?.items??[];
+ if(active==='indicadores-edicion')return <EditorialPanel title="Distribución operativa de Edición"><EditorialDistribution data={dashboard.interventionDistribution}/><p className="ec-empty">Corte actual. Las entregas históricas, producción por Editor y récord general corresponden a la siguiente fase de Indicadores.</p></EditorialPanel>;
+ return <div className="ec-module">
+  {active==='asignaciones'&&<EditorialPanel title="Carga del equipo de edición"><EditorialTeam data={dashboard} onLoad={onLoad} all/></EditorialPanel>}
+  <div className="ec-filters"><label>Buscar proyecto o autor<input type="search" value={search} onChange={e=>setParams(p=>{p.set('search',e.target.value);p.delete('page');return p;})}/></label>{active==='seguimiento-edicion'&&<label>Mostrar<select value={filter} onChange={e=>setParams(p=>{p.set('filter',e.target.value);p.delete('page');return p;})}>{[['all','Todas las intervenciones'],['overdue','Vencidas'],['risk','En riesgo'],['upcoming','Próximas entregas'],['waiting','Esperas'],['unassigned','Por asignar']].map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label>}</div>
+  <EditorialPanel title={active==='asignaciones'?'Intervenciones listas para asignar':active==='solicitudes-edicion'?'Solicitudes pendientes':active==='proyectos-edicion'?'Proyectos con trabajo de Edición':'Intervenciones de Edición'}>
+  {q.isPending?<p className="ec-empty" role="status">Cargando…</p>:q.isError?<p className="ec-empty" role="alert">{q.error.message} <button onClick={()=>q.refetch()}>Reintentar</button></p>:!rows.length?<EditorialEmpty>{active==='asignaciones'?'No hay intervenciones pendientes de asignación.':active==='solicitudes-edicion'?'No tienes solicitudes pendientes.':'No hay intervenciones con estos filtros.'}</EditorialEmpty>:active==='proyectos-edicion'?<div className="ec-project-grid">{[...new Set(rows.map(i=>i.projectId))].map(id=>{const list=rows.filter(i=>i.projectId===id),first=list[0];return <article key={id}><h3>{first.title}</h3><p>{first.authors}</p><small>{first.service}</small><p>Editor: {first.editor??'Por asignar'}</p><ul>{list.map(i=><li key={i.id}><button onClick={()=>onOpen(i.id)}>{i.label} <span>{i.state}</span></button></li>)}</ul></article>;})}</div>:active==='solicitudes-edicion'?<div className="ec-inbox">{rows.map(i=><article key={i.id}><div><h3>Asignación de Editor</h3><strong>{i.title}</strong><p>{i.authors} · {i.service}</p><small>Solicitada {editorialDate(i.requestedAt)}</small></div><button className="ec-primary" onClick={()=>onOpen(i.id)}>Revisar solicitud</button></article>)}</div>:<EditorialRows items={rows} onOpen={onOpen}/>}
+  {q.data&&q.data.pages>1&&<div className="ec-pagination"><button disabled={q.data.page===1} onClick={()=>setParams(p=>{p.set('page',String(q.data!.page-1));return p;})}>Anterior</button><span>{q.data.page} / {q.data.pages} · {q.data.total} intervenciones</span><button disabled={q.data.page>=q.data.pages} onClick={()=>setParams(p=>{p.set('page',String(q.data!.page+1));return p;})}>Siguiente</button></div>}
+  </EditorialPanel>
+ </div>;
+}

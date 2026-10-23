@@ -85,7 +85,7 @@ export async function capitulosRoutes(app: FastifyInstance) {
       return reply.code(acceso.status).send({ error: acceso.error });
     }
 
-    const capitulo = await crearCapitulo(body.proyectoId, body.numero);
+    const capitulo = await crearCapitulo(body.proyectoId, body.numero, request.user.id);
     return reply.code(201).send({ capitulo });
   });
 
@@ -137,7 +137,7 @@ export async function capitulosRoutes(app: FastifyInstance) {
         return reply.code(acceso.status).send({ error: acceso.error });
       }
 
-      const capitulo = await actualizarCapituloEditor(params.proyectoId, params.numero, body);
+      const capitulo = await actualizarCapituloEditor(params.proyectoId, params.numero, body, request.user.id);
       return reply.send({ capitulo });
     },
   );

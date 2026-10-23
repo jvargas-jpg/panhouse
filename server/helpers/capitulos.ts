@@ -1,17 +1,24 @@
 import { and, count, eq, inArray, isNotNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { autores, capitulos, proyectos, servicios } from '../db/schema/index.js';
+import { autores, capitulos, proyectos, servicios, notificaciones } from '../db/schema/index.js';
+import { sincronizarCapituloEditorial } from './editorialInterventions.js';
+import { registrarEvento } from './auditLog.js';
 import { calcularFechaPautadaFeedbackCapitulo } from './edicionSla.js';
-import { ESTADOS_ACTIVOS } from './carga.js';
+import { ESTADOS_ACTIVOS, obtenerEspecialistaActual } from './carga.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 
 // El capítulo nace cuando alguien lo crea por primera vez (típicamente
 // el editor, al arrancar su parte), con los campos de contenido
 // vacíos. Se va completando después con actualizarCapituloAutor.
-export async function crearCapitulo(proyectoId: string, numero: number) {
-  const [fila] = await db.insert(capitulos).values({ proyectoId, numero }).returning();
-  if (!fila) throw new Error('El insert del capítulo no devolvió ninguna fila');
-  return fila;
+export async function crearCapitulo(proyectoId: string, numero: number, actorId?:string) {
+  return db.transaction(async tx => {
+    const [project]=await tx.select({id:proyectos.id,editorId:proyectos.editorId}).from(proyectos).where(eq(proyectos.id,proyectoId)).for('update');
+    if(actorId&&project?.editorId!==actorId)throw Object.assign(new Error('El proyecto ya no está asignado a este Editor'),{statusCode:403});
+    const [fila] = await tx.insert(capitulos).values({ proyectoId, numero }).returning();
+    if (!fila) throw new Error('El insert del capítulo no devolvió ninguna fila');
+    await sincronizarCapituloEditorial(tx,fila.id,'crear');
+    return fila;
+  });
 }
 
 export interface DatosCapituloAutor {
@@ -39,6 +46,7 @@ export async function actualizarCapituloAutor(proyectoId: string, numero: number
 
   return db.transaction(async tx => {
     await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
+    const [anterior] = await tx.select().from(capitulos).where(and(eq(capitulos.proyectoId,proyectoId),eq(capitulos.numero,numero)));
     const [fila] = await tx
       .update(capitulos)
       .set(datosConPlazo)
@@ -46,6 +54,15 @@ export async function actualizarCapituloAutor(proyectoId: string, numero: number
       .returning();
 
     if (!fila) throw new Error(`Capítulo no encontrado: proyecto ${proyectoId}, número ${numero}`);
+    const feedback=!!datos.fechaRespuestaReal && datos.fechaRespuestaReal!==anterior?.fechaRespuestaReal;
+    await sincronizarCapituloEditorial(tx,fila.id,'autor',false,feedback);
+    for (const [cambia,accion] of [[feedback,'CAPITULO_FEEDBACK_REGISTRADO'],[!!datos.fechaEnvioAutor && datos.fechaEnvioAutor!==anterior?.fechaEnvioAutor,'CAPITULO_ENVIADO_AUTOR']] as const) {
+      if(cambia)await registrarEvento(tx,{actorId,accion,entityType:'capitulo',entityId:fila.id,proyectoId,detalles:{numero}});
+    }
+    if(feedback){
+      const [p]=await tx.select({editorId:proyectos.editorId}).from(proyectos).where(eq(proyectos.id,proyectoId));
+      if(p?.editorId)await tx.insert(notificaciones).values({proyectoId,rolDestino:'editor',usuarioDestinoId:p.editorId,mensaje:`Feedback del autor disponible para el capítulo ${numero}.`});
+    }
     if (numero === 4 && fila.fechaEnvioAutor) await habilitarPlanificacionRrpp(tx, proyectoId, actorId);
     return fila;
   });
@@ -60,15 +77,26 @@ export interface DatosCapituloEditor {
 // Lado editor del capítulo (flujo operativo, fuera de la ficha de
 // trazabilidad): nunca toca las columnas "cara al autor" — mismo
 // principio de aislamiento que actualizarCapituloAutor, en reversa.
-export async function actualizarCapituloEditor(proyectoId: string, numero: number, datos: DatosCapituloEditor) {
-  const [fila] = await db
+export async function actualizarCapituloEditor(proyectoId: string, numero: number, datos: DatosCapituloEditor, actorId:string|null=null) {
+  return db.transaction(async tx=>{
+  const [project]=await tx.select({id:proyectos.id,editorId:proyectos.editorId,especialistaId:proyectos.especialistaId}).from(proyectos).where(eq(proyectos.id,proyectoId)).for('update');
+  if(actorId&&project?.editorId!==actorId)throw Object.assign(new Error('El proyecto ya no está asignado a este Editor'),{statusCode:403});
+  const [anterior]=await tx.select().from(capitulos).where(and(eq(capitulos.proyectoId,proyectoId),eq(capitulos.numero,numero)));
+  const [fila] = await tx
     .update(capitulos)
     .set(datos)
     .where(and(eq(capitulos.proyectoId, proyectoId), eq(capitulos.numero, numero)))
     .returning();
 
   if (!fila) throw new Error(`Capítulo no encontrado: proyecto ${proyectoId}, número ${numero}`);
+  const sync=await sincronizarCapituloEditorial(tx,fila.id,'editor',!!datos.fechaEntregaEditor);
+  if(datos.fechaEntregaEditor && (datos.fechaEntregaEditor!==anterior?.fechaEntregaEditor||sync?.stateChanged)){
+    await registrarEvento(tx,{actorId,accion:anterior?.fechaRespuestaReal?'CAPITULO_FEEDBACK_APLICADO':'CAPITULO_EDITOR_ENTREGADO',entityType:'capitulo',entityId:fila.id,proyectoId,detalles:{numero,fecha:datos.fechaEntregaEditor}});
+    const owner=await obtenerEspecialistaActual(proyectoId,project?.especialistaId??null,tx);
+    if(owner)await tx.insert(notificaciones).values({proyectoId,rolDestino:'especialista',usuarioDestinoId:owner,mensaje:`Editor entregó el capítulo ${numero}.`});
+  }
   return fila;
+  });
 }
 
 export async function obtenerCapitulosProyecto(proyectoId: string) {
