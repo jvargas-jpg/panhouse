@@ -1,6 +1,6 @@
 import { apiFetch } from '../lib/api';
 import type { CargaEditor, ProyectoPendienteSeccion1 } from '../types/api';
-import type { EditorialActivity, EditorialDashboard, EditorialIntervention, EditorialAssignmentList, EditorialLoadSummary, EditorialRecommendation, EditorialProjectList, EditorialProjectDetail, EditorialTrackingList, EditorialTrackingDetail } from '../../../shared/editorialChief';
+import type { EditorialActivity, EditorialDashboard, EditorialIntervention, EditorialAssignmentList, EditorialLoadSummary, EditorialRecommendation, EditorialProjectList, EditorialProjectDetail, EditorialTrackingList, EditorialTrackingDetail, EditorialRequestList, EditorialRequestDetail } from '../../../shared/editorialChief';
 export const editorialKey = ['editorial-chief'];
 export const fetchEditorialDashboard = () => apiFetch<EditorialDashboard>('/editores/inicio');
 export const fetchEditorialActivity = () => apiFetch<{items:EditorialActivity[]}>('/editores/actividad');
@@ -32,6 +32,9 @@ export async function exportarSeguimientoEdicion(params: URLSearchParams) {
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+export const fetchEditorialRequests = (params: URLSearchParams) => apiFetch<EditorialRequestList>('/editores/solicitudes?'+params);
+export const fetchEditorialRequestDetail = (id: string) => apiFetch<EditorialRequestDetail>('/editores/solicitudes/'+id);
 
 // Punto de partida del flujo de jefe_edicion: mismo patrón que
 // "Autores sin proyecto" de jefe_area (server/helpers/proyectos.ts:listarProyectosSinEditor).

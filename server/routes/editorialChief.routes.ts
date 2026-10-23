@@ -8,6 +8,7 @@ import { actualizarCapituloEditor } from '../helpers/capitulos.js';
 import { getEditorLoadSummary, listarAsignacionesEdicion, recommendEditorsForIntervention } from '../helpers/editorialAssignments.js';
 import { csvProyectosEdicion, listarProyectosEdicion, obtenerProyectoEdicionDetalle } from '../helpers/editorialProjects.js';
 import { csvSeguimientoEdicion, listarSeguimientoEdicion, obtenerSeguimientoDetalle } from '../helpers/editorialTracking.js';
+import { listarSolicitudesEdicion, obtenerSolicitudEdicionDetalle } from '../helpers/editorialRequests.js';
 const idSchema=z.object({id:z.string().uuid()});
 const filters=z.object({editor:z.string().uuid().optional(),project:z.string().uuid().optional(),filter:z.enum(['all','unassigned','overdue','risk','upcoming','waiting']).default('all'),search:z.string().max(150).default(''),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().min(1).max(50).default(20)});
 export async function editorialChiefRoutes(app:FastifyInstance){
@@ -37,6 +38,13 @@ export async function editorialChiefRoutes(app:FastifyInstance){
   app.get('/seguimiento/:id',chief,async(req,reply)=>{
     const p=parseOrReply(idSchema,req.params,reply);if(!p)return;
     const detail=await obtenerSeguimientoDetalle(p.id);if(!detail)return reply.code(404).send({error:'Intervención de Edición no encontrada'});
+    return detail;
+  });
+  const requestFilters=z.object({tab:z.enum(['pending','resolved','all']).default('pending'),search:z.string().max(150).default(''),service:z.string().uuid().optional(),requester:z.string().uuid().optional(),from:z.string().date().optional(),to:z.string().date().optional(),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10),sort:z.enum(['oldest','newest','project']).default('oldest')});
+  app.get('/solicitudes',chief,async(req,reply)=>{const f=parseOrReply(requestFilters,req.query,reply);if(!f)return;return listarSolicitudesEdicion({...f,search:f.search??'',page:f.page??1,pageSize:f.pageSize??10,sort:f.sort??'oldest',tab:f.tab??'pending'});});
+  app.get('/solicitudes/:id',chief,async(req,reply)=>{
+    const p=parseOrReply(idSchema,req.params,reply);if(!p)return;
+    const detail=await obtenerSolicitudEdicionDetalle(p.id);if(!detail)return reply.code(404).send({error:'Solicitud no encontrada'});
     return detail;
   });
   app.get('/intervenciones/:id/candidatos',chief,async(req,reply)=>{

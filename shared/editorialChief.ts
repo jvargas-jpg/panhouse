@@ -110,3 +110,32 @@ export interface EditorialTrackingDetail {
   siblings: EditorialTrackingSibling[]; siblingsTotal: number;
   drive: EditorialTrackingDrive; history: EditorialProjectHistory[];
 }
+
+// Solicitudes: bandeja de decisiones, no de notificaciones. Hoy el único tipo real respaldado por el
+// dominio es asignación de Editor (EDITOR_SOLICITADO) — reasignación-como-solicitud, apoyo por carga y
+// escalación se auditaron y no tienen infraestructura propia; no se inventan (ver docs/arquitectura/29-jefe-edicion.md).
+export type EditorialRequestStatus = 'pendiente' | 'resuelta';
+export interface EditorialRequestSummary {
+  id: string; projectId: string; code: string; title: string; authors: string; coverUrl: string | null;
+  service: string; serviceId: string;
+  requester: string | null; requesterId: string | null; requesterRole: string | null;
+  status: EditorialRequestStatus; requestedAt: string;
+  resolvedAt: string | null; resolvedBy: string | null;
+  resultEditorId: string | null; resultEditor: string | null; resultWorkItemId: string | null;
+}
+export interface EditorialRequestFilters {
+  tab: 'pending' | 'resolved' | 'all'; search: string; service?: string; requester?: string;
+  from?: string; to?: string; page: number; pageSize: number; sort: 'oldest' | 'newest' | 'project';
+}
+export interface EditorialRequestList {
+  items: EditorialRequestSummary[]; total: number; page: number; pages: number;
+  counts: { pending: number; resolved: number; all: number };
+  options: { services: { id: string; name: string }[]; requesters: { id: string; name: string }[] };
+}
+export interface EditorialRequestContext {
+  editorialState: EditorialState; currentEditor: string | null; specialist: string | null;
+  deadline: string | null; waitingOn: string | null; blocker: string | null;
+}
+export interface EditorialRequestDetail {
+  summary: EditorialRequestSummary; context: EditorialRequestContext | null; history: EditorialProjectHistory[];
+}

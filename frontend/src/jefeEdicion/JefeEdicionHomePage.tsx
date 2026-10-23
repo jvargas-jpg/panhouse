@@ -13,6 +13,7 @@ import { EditorialModule } from './EditorialModule';
 import {EditorialAssignments} from './EditorialAssignments';
 import {EditorialProjects} from './EditorialProjects';
 import {EditorialTracking} from './EditorialTracking';
+import {EditorialRequests} from './EditorialRequests';
 import { EDITORIAL_NAV, EditorialNav, EditorialPanel, EditorialEmpty, EditorialCover, EditorialRows, EditorialDistribution, EditorialKpis, EditorialTeam, editorialDate } from './EditorialParts';
 export function JefeEdicionHomePage(){
   const {data:user}=useMe(),[params,setParams]=useSearchParams();
@@ -30,7 +31,7 @@ export function JefeEdicionHomePage(){
     <EditorialNav active={active} pending={d?.summary.pendingRequests} mobile/>
     <div className="ec-body"><header className="ec-page-header"><div><span>ÁREA DE EDICIÓN</span><h1>{EDITORIAL_NAV.find(n=>n[0]===active)![1]}</h1><p>{descriptions[active]}</p></div>{!['asignaciones','proyectos-edicion'].includes(active)&&<time><RrppIcon nombre="calendario"/>{editorialDate(d?.today??new Date().toISOString(),true)}</time>}</header>
     {notice&&<p className="ea-success" role="status">{notice}<button aria-label="Cerrar aviso" onClick={()=>setNotice('')}>×</button></p>}
-    {active==='asignaciones'?<EditorialAssignments onOpen={open} onLoad={load}/>:active==='proyectos-edicion'?<EditorialProjects/>:active==='seguimiento-edicion'?<EditorialTracking/>:query.isPending?<div className="ec-skeleton" role="status" aria-label="Cargando centro de Edición"><div/><div/><div/><div/><section/><section/></div>:query.isError?<EditorialPanel title="No se pudo cargar Edición"><p role="alert" className="ec-empty">{query.error.message}</p><button className="ec-retry" onClick={()=>query.refetch()}>Reintentar</button></EditorialPanel>:d&&(active!=='inicio'?<EditorialModule active={active} dashboard={d} onOpen={open} onLoad={load}/>:<>
+    {active==='asignaciones'?<EditorialAssignments onOpen={open} onLoad={load}/>:active==='proyectos-edicion'?<EditorialProjects/>:active==='seguimiento-edicion'?<EditorialTracking/>:active==='solicitudes-edicion'?<EditorialRequests onOpen={open}/>:query.isPending?<div className="ec-skeleton" role="status" aria-label="Cargando centro de Edición"><div/><div/><div/><div/><section/><section/></div>:query.isError?<EditorialPanel title="No se pudo cargar Edición"><p role="alert" className="ec-empty">{query.error.message}</p><button className="ec-retry" onClick={()=>query.refetch()}>Reintentar</button></EditorialPanel>:d&&(active!=='inicio'?<EditorialModule active={active} dashboard={d} onOpen={open} onLoad={load}/>:<>
     <EditorialKpis data={d}/><div className="ec-dashboard">
       <EditorialPanel title="Carga del equipo de edición" icon="equipo" className="ec-load-panel" action={<Link to="/?vista=asignaciones">Ver detalle →</Link>}><EditorialTeam data={d} onLoad={load}/></EditorialPanel>
       <EditorialPanel title="Estado de edición" icon="capas" className="ec-state-panel"><p className="ec-caption">Distribución de intervenciones</p><EditorialDistribution data={d.interventionDistribution}/></EditorialPanel>

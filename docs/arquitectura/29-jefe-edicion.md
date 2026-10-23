@@ -179,6 +179,26 @@ Pantalla de **supervisión operativa**, no de decisión ni de explicación agreg
 
 **RBAC/IDOR:** las tres rutas exigen `jefe_edicion`; un `id` sin intervención operativa real (o `needsAssignment`) responde 404.
 
+## Solicitudes
+
+Pantalla de **bandeja de decisiones, no de notificaciones**: "¿qué decisiones de Editor esperan por mí?". Implementación: `server/helpers/editorialRequests.ts` (`listarSolicitudesEdicion`, `obtenerSolicitudEdicionDetalle`), rutas `GET /editores/solicitudes`, `GET /editores/solicitudes/:id`. Reutiliza `editorialInterventions()` para las pendientes y una consulta nueva de correlación de auditoría para las resueltas — cero sistema de solicitudes nuevo, cero tabla nueva.
+
+**Único tipo real hoy: Asignación de Editor.** Se auditó el dominio antes de construir esta pantalla, no se asumió la referencia visual (que mostraba Reasignación, Apoyo por carga y Escalación además de Asignación): `solicitarEditor()` (`server/helpers/proyectos.ts`) no tiene parámetro de nota ni de fecha requerida, y solo emite `EDITOR_SOLICITADO`; no existe un evento `EDITOR_SOPORTE_SOLICITADO` ni equivalente; `decisiones` (`server/db/schema/decisiones.ts`) tiene un CHECK que limita su `tipo` a `revision_previa_correccion`/`coleccion_inconsistente` con `targetRole` de Jefatura de Calidad — no es infraestructura de Edición y extenderla sin un requisito real violaría la regla de no inventar tipos. Por eso esta pantalla no tiene columna de "Tipo" variable (siempre "Asignación de Editor"), ni Prioridad, ni "notas del solicitante", ni "fecha requerida": ninguno de esos campos existe en el dominio.
+
+**Ciclo de vida: solo `pendiente` → `resuelta`.** No hay "en revisión", "rechazada" ni "cancelada" — abrir el detalle es lectura, no una transición de estado (verificado: `obtenerSolicitudEdicionDetalle` no escribe nada). Una solicitud nace de un evento `EDITOR_SOLICITADO` (uno por work item contenedor, nunca más — `solicitarEditor` es idempotente: pedir dos veces no duplica la solicitud ni el evento) y se resuelve con el primer `EDITOR_ASIGNADO` posterior sobre ese proyecto. Una reasignación posterior (Editor A → B) es **otra decisión**, registrada en Asignaciones y Seguimiento con su propio motivo — no reabre ni reescribe la solicitud original; el resultado mostrado en Solicitudes sigue siendo el de la asignación que la resolvió.
+
+**Pendientes = exactamente las mismas filas que "Por asignar" en Asignaciones y carga** (`needsAssignment` de `editorialInterventions()`), sin campos ni orden propios inventados — es la misma necesidad de decisión vista desde una bandeja en vez de desde la carga del equipo. **Resueltas** es una vista nueva: correlaciona `EDITOR_SOLICITADO` con el `EDITOR_ASIGNADO` más próximo del mismo proyecto (`DISTINCT ON` sobre el work item, ordenado por fecha de resolución) y se limita a proyectos en estado activo (`ESTADOS_ACTIVOS`, `server/helpers/carga.ts` — mismo criterio de "proyecto activo" que usa el resto del dominio, no uno nuevo); una solicitud de un proyecto ya cerrado no se muestra como "pendiente de limpieza" en el historial.
+
+**Sin selector de Editor propio:** el CTA "Revisar asignación →" de una fila pendiente llama al mismo `onOpen`/`open(id)` que usa Asignaciones y carga, lo que abre el `EditorialDecisionDrawer` global ya existente — nunca se construyó un segundo flujo de asignación. Una fila resuelta es de solo lectura ("Ver detalle →"): muestra Editor asignado, quién resolvió y cuándo, con un enlace a Proyectos de edición.
+
+**Contexto operativo puede ser `null` para una solicitud resuelta — documentado, no un bug:** si el proyecto ya avanzó a capítulos reales después de ser resuelta, la intervención contenedora (`business_key='default'`) sale del alcance de `editorialInterventions()` (misma regla de alcance que usan Asignaciones/Proyectos/Seguimiento), así que no hay "estado de edición actual" que mostrar para esa intervención puntual — el panel lo explica ("Sin contexto operativo disponible") en vez de simular un dato que ya no aplica.
+
+**KPI (2, del conjunto completo filtrado):** Pendientes, Resueltas — no hay un tercer o cuarto KPI fabricado solo para llenar la fila; con un único tipo de solicitud, "resueltas por tipo" o "tiempo promedio de resolución" no están respaldados por ningún requisito real y no se construyeron.
+
+**Filtros y orden:** búsqueda server-side con debounce 300 ms (proyecto, autor, solicitante), servicio, solicitado por, rango de fechas; orden por fecha de solicitud (más antigua primero por defecto en Pendientes, más reciente primero en Resueltas) o proyecto. Tabs Pendientes (default) / Resueltas / Todas, sin tabs por tipo — hoy habría una sola.
+
+**RBAC/IDOR:** ambas rutas exigen `jefe_edicion`; un `id` sin solicitud real responde 404.
+
 ## Cobertura y siguientes fases
 
 No hay capacidad máxima formal, calendario de feriados ni SLA específico de aplicación de feedback. Tampoco existen requests nativas independientes de reasignación/apoyo de Edición: se reutiliza la reasignación con motivo y no se inventan tipos de solicitud. Tripa, kit, estructura y extracción conservan el modelo/configuración vigente; esta fase no crea tareas automáticas ni divide contenido sin registro real.
