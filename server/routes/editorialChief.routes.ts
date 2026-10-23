@@ -6,6 +6,7 @@ import { parseOrReply } from '../helpers/validate.js';
 import { asignarEditor } from '../helpers/proyectos.js';
 import { actualizarCapituloEditor } from '../helpers/capitulos.js';
 import { getEditorLoadSummary, listarAsignacionesEdicion, recommendEditorsForIntervention } from '../helpers/editorialAssignments.js';
+import { csvProyectosEdicion, listarProyectosEdicion, obtenerProyectoEdicionDetalle } from '../helpers/editorialProjects.js';
 const idSchema=z.object({id:z.string().uuid()});
 const filters=z.object({editor:z.string().uuid().optional(),project:z.string().uuid().optional(),filter:z.enum(['all','unassigned','overdue','risk','upcoming','waiting']).default('all'),search:z.string().max(150).default(''),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().min(1).max(50).default(20)});
 export async function editorialChiefRoutes(app:FastifyInstance){
@@ -17,6 +18,14 @@ export async function editorialChiefRoutes(app:FastifyInstance){
     if(!f)return;return listarAsignacionesEdicion({...f,tab:f.tab??'unassigned',search:f.search??'',page:f.page??1,pageSize:f.pageSize??10,sort:f.sort??'due'});
   });
   app.get('/equipo',chief,async()=>getEditorLoadSummary());
+  const projectFilters=z.object({search:z.string().max(150).default(''),service:z.string().uuid().optional(),state:z.string().max(40).optional(),editor:z.string().uuid().optional(),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10),sort:z.enum(['activity','delivery','title','state','editor']).default('activity')});
+  app.get('/proyectos',chief,async(req,reply)=>{const f=parseOrReply(projectFilters,req.query,reply);if(!f)return;return listarProyectosEdicion({...f,search:f.search??'',page:f.page??1,pageSize:f.pageSize??10,sort:f.sort??'activity'});});
+  app.get('/proyectos/export.csv',chief,async(_req,reply)=>reply.type('text/csv; charset=utf-8').header('Content-Disposition',`attachment; filename="proyectos-edicion-${new Date().toISOString().slice(0,10)}.csv"`).send(await csvProyectosEdicion()));
+  app.get('/proyectos/:projectId',chief,async(req,reply)=>{
+    const p=parseOrReply(z.object({projectId:z.string().uuid()}),req.params,reply);if(!p)return;
+    const detail=await obtenerProyectoEdicionDetalle(p.projectId);if(!detail)return reply.code(404).send({error:'Proyecto sin proceso de Edición registrado'});
+    return detail;
+  });
   app.get('/intervenciones/:id/candidatos',chief,async(req,reply)=>{
     const p=parseOrReply(idSchema,req.params,reply);if(!p)return;
     if(!(await editorialInterventions(undefined,undefined,undefined,p.id))[0])return reply.code(404).send({error:'Intervención de Edición no encontrada'});

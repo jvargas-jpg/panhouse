@@ -1,6 +1,6 @@
 import { apiFetch } from '../lib/api';
 import type { CargaEditor, ProyectoPendienteSeccion1 } from '../types/api';
-import type { EditorialActivity, EditorialDashboard, EditorialIntervention, EditorialAssignmentList, EditorialLoadSummary, EditorialRecommendation } from '../../../shared/editorialChief';
+import type { EditorialActivity, EditorialDashboard, EditorialIntervention, EditorialAssignmentList, EditorialLoadSummary, EditorialRecommendation, EditorialProjectList, EditorialProjectDetail } from '../../../shared/editorialChief';
 export const editorialKey = ['editorial-chief'];
 export const fetchEditorialDashboard = () => apiFetch<EditorialDashboard>('/editores/inicio');
 export const fetchEditorialActivity = () => apiFetch<{items:EditorialActivity[]}>('/editores/actividad');
@@ -10,6 +10,17 @@ export const decideEditor = (id:string,editorId:string,reason?:string,expectedEd
 export const fetchEditorialAssignments = (params: URLSearchParams) => apiFetch<EditorialAssignmentList>('/editores/asignaciones?'+params);
 export const fetchEditorialTeam = () => apiFetch<EditorialLoadSummary>('/editores/equipo');
 export const fetchEditorialCandidates = (id: string) => apiFetch<EditorialRecommendation>('/editores/intervenciones/'+id+'/candidatos');
+export const fetchEditorialProjects = (params: URLSearchParams) => apiFetch<EditorialProjectList>('/editores/proyectos?'+params);
+export const fetchEditorialProjectDetail = (projectId: string) => apiFetch<EditorialProjectDetail>('/editores/proyectos/'+projectId);
+export async function exportarProyectosEdicion() {
+  const response = await fetch('/api/editores/proyectos/export.csv', { credentials: 'include' });
+  if (!response.ok) throw new Error('No pudimos exportar los proyectos. Intenta de nuevo.');
+  const blob = await response.blob(), url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = `proyectos-edicion-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 // Punto de partida del flujo de jefe_edicion: mismo patrón que
 // "Autores sin proyecto" de jefe_area (server/helpers/proyectos.ts:listarProyectosSinEditor).

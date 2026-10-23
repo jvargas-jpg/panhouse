@@ -47,3 +47,38 @@ export interface EditorialRecommendation {
   candidates: (EditorialEditorLoad & {rank: number; reasons: string[]})[];
   explanation: string; limitations: string;
 }
+
+// Proyectos de edición: una fila = un proyecto (síntesis de sus intervenciones). Explica, no decide.
+export type EditorialProjectState = EditorialState | 'Por iniciar';
+export interface EditorialProjectSummary {
+  projectId: string; code: string; title: string; authors: string; coverUrl: string | null;
+  service: string; serviceId: string; serviceCode: string; subtype: string | null;
+  editorialState: EditorialProjectState; risk: boolean; overdue: boolean; blocker: string | null;
+  responsibleNow: 'editor' | 'especialista' | 'autor' | null;
+  interventionSummary: string; interventionCount: number;
+  // Sin denominador contractual real (capitulos_pactados es un rango de texto, no un total) — queda nullable a propósito.
+  progress: { completedUnits: number; totalUnits: number; unitLabel: string } | null;
+  editor: string | null; editorId: string | null; multipleEditors: boolean; editorCount: number;
+  specialist: string | null; specialistId: string | null;
+  nextDelivery: { label: string; date: string } | null;
+  lastActivity: { label: string; at: string } | null;
+}
+export interface EditorialProjectFilters {
+  search: string; service?: string; state?: string; editor?: string;
+  page: number; pageSize: number; sort: 'activity' | 'delivery' | 'title' | 'state' | 'editor';
+}
+export interface EditorialProjectList {
+  items: EditorialProjectSummary[]; total: number; page: number; pages: number;
+  counts: { inEditing: number; upcomingDeliveries: number; overdue: number; waitingAuthor: number };
+  options: { services: {id: string; name: string}[]; editors: {id: string; name: string}[]; states: string[] };
+}
+export interface EditorialProjectIntervention {
+  id: string; label: string; state: EditorialState; editor: string | null; editorId: string | null;
+  dueDate: string | null; overdue: boolean; deliveredAt: string | null; waitingOn: string | null; cta: string;
+}
+export interface EditorialProjectDrive { rootUrl: string | null; links: { key: string; label: string; url: string }[] }
+export interface EditorialProjectHistory { id: string; label: string; actor: string; at: string }
+export interface EditorialProjectDetail {
+  summary: EditorialProjectSummary; nextStep: string; interventions: EditorialProjectIntervention[];
+  interventionsTotal: number; drive: EditorialProjectDrive; history: EditorialProjectHistory[];
+}

@@ -111,6 +111,40 @@ Pantalla de **decisión**, no de analítica ni de navegación general: responde 
 
 **Responsive:** tabs con scroll horizontal y filtros en overlay a 375×812; tarjetas de carga a una columna; el panel de decisión pasa a hoja de pantalla completa con el botón de confirmación fijo. A 768×1024 el panel es drawer lateral. Sin checkboxes de selección múltiple ni "Asignación rápida" con autoasignación — se auditó y se retiraron de la referencia visual por no corresponder a una regla real del dominio (ver `## Cobertura y siguientes fases` para huecos documentales no resueltos).
 
+## Proyectos de edición
+
+Pantalla para **comprender**, no para decidir ni ejecutar: "¿cómo está el proceso de Edición de cada proyecto y quién tiene la responsabilidad ahora?". Asignaciones decide, Seguimiento supervisa desvíos, Proyectos de edición explica. Implementación: `server/helpers/editorialProjects.ts` (`listarProyectosEdicion`, `obtenerProyectoEdicionDetalle`, `csvProyectosEdicion`), rutas `GET /editores/proyectos`, `GET /editores/proyectos/:projectId`, `GET /editores/proyectos/export.csv`. Reutiliza `editorialInterventions` (la misma proyección canónica de Inicio/Asignaciones) como única fuente; no crea un segundo modelo de proyecto ni una "Matriz de Editores" literal.
+
+**Una fila = un proyecto** (nunca una intervención ni un work item): las filas de `editorialInterventions()` se agrupan en memoria por `projectId` y se sintetizan en un `EditorialProjectSummary`. Un proyecto con 10 work items históricos sigue siendo una sola fila.
+
+**Estado de edición sintetizado, no macro del proyecto:** cuando hay varias intervenciones activas con estados distintos (ej. un capítulo esperando autor y otro en edición), se elige el estado más urgente según prioridad fija (`Bloqueadas > Requiere ajustes > En edición > Pendiente/Por iniciar > Esperando autor > Esperando Especialista > En pausa`), nunca el estado macro del proyecto (`proyectos.estado`). "Por iniciar" es un estado derivado del dominio (`work_items.estado='pendiente'` sin transicionar), no un enum inventado — ver `server/helpers/editorialInterventions.ts:20`: un capítulo nuevo nace `en_progreso` si el proyecto ya tiene Editor, o `pendiente` si no, así que "Por iniciar" solo aparece cuando el capítulo se creó antes de la asignación.
+
+**Progreso, nullable a propósito y hoy siempre `null`:** no existe en el dominio actual un total de capítulos contractual confiable. `fichas_trazabilidad.capitulos_pactados` es texto libre con un rango (`'11 a 20'`, ver comentario en `server/db/schema/trazabilidad.ts:61-70`), nunca un entero — mostrar `5/12` inventaría un denominador que no existe. El DTO conserva `progress: {completedUnits,totalUnits,unitLabel} | null` para cuando (si alguna vez) exista un total real, pero hoy el campo siempre resuelve `null`; en su lugar, `interventionSummary` describe conteos reales sin fracción ("6 capítulos registrados · 2 completados", o la etiqueta de la intervención única para Tripa/Kit/SE).
+
+**Editor actual y múltiples Editores:** viene exclusivamente de `project_assignments`/`proyectos.editor_id` vía `editorialInterventions`, nunca de un campo manual. Si distintas intervenciones del mismo proyecto tienen Editores distintos (`editorCount>1`), la fila no inventa un único responsable: muestra "N Editores" y el detalle por intervención queda en la pestaña Intervenciones.
+
+**Responsable actual** (`responsibleNow`): dimensión separada del estado — `editor` cuando el estado es accionable por Edición, `autor` en Esperando autor, `especialista` en Esperando Especialista, `null` en pausa/completado. Nunca se interpreta una espera de autor como atraso del Editor.
+
+**Siguiente paso:** texto narrativo derivado del estado sintetizado y la intervención más urgente (`NEXT_STEP` en `editorialProjects.ts`), no texto libre inventado; si hay bloqueo explícito (`gate_bloqueante`), ese mensaje tiene prioridad.
+
+**Intervenciones (pestaña):** hasta 10 más relevantes (accionables primero, luego por fecha), con enlace "Ver todas (N) en Seguimiento" cuando hay más — Proyectos de edición nunca pagina cientos de intervenciones en el panel.
+
+**Archivos (pestaña):** usa `workspaceSummaries`/`projectDriveFolders` con las `key` reales de la plantilla de Edición (`EDITING_OUTPUT`, `FULL_MANUSCRIPT`, `EDITORIAL_KIT`, `EDITING_FEEDBACK` — ver `server/modules/project-workspaces/templates.ts:23-29`), nunca una ruta hardcodeada. Sello editorial (SE) no genera subárbol `EDITING` en absoluto (`if(key!=='SE')` en `templates.ts:23`): un proyecto SE con intervención de Edición registrada puede legítimamente no tener archivos de Edición en Drive, y la pestaña muestra el vacío honesto ("Este proyecto aún no tiene espacio documental de Edición disponible"), no un error.
+
+**Historial (pestaña):** mismo catálogo `EDITORIAL_EVENTS` que Asignaciones/Inicio (`EDITOR_SOLICITADO`, `EDITOR_ASIGNADO`, `EDITOR_REASIGNADO`, `CAPITULO_EDITOR_ENTREGADO`, `CAPITULO_ENVIADO_AUTOR`, `CAPITULO_FEEDBACK_REGISTRADO`, `CAPITULO_FEEDBACK_APLICADO`, `FEEDBACK_TRIPA_REGISTRADO`), filtrado por proyecto, máximo 10. No se audita "Jefe abrió el proyecto".
+
+**Integración, no sistema propio:** "Asignar Editor →" y "Ver en Seguimiento →" son enlaces a `/?vista=asignaciones` y `/?vista=seguimiento-edicion` con `search=<código>` — el mismo patrón ya usado por el panel de Asignaciones, no una acción nueva. Esta pantalla no permite operar el trabajo del Editor (no hay "marcar entregado" ni "aprobar feedback" aquí).
+
+**KPI (4, del conjunto completo filtrado, no de la página actual):** Proyectos en edición, Con entregas próximas, Con intervenciones vencidas, En espera de autor — los tres últimos cuentan **proyectos** con al menos una intervención en esa condición, nunca intervenciones individuales.
+
+**Filtros y estado en URL:** búsqueda server-side con debounce 300 ms (proyecto/autor/Editor), servicio (catálogo real, sin desglosar Crudo por subtipo en el filtro), estado de edición (derivado, no enum manual) y Editor; orden por última actividad/próxima entrega/título/estado/Editor; página/tamaño en `10|25|50`. Selección de fila (`?project=<id>`) persiste en URL y admite deep link desde Inicio/notificaciones.
+
+**Panel derecho no modal:** a diferencia del drawer de decisión de Asignaciones (una acción que requiere foco), el Quick View de Proyectos de edición es un panel lateral persistente (split-pane, sticky en desktop) que no bloquea la lista — explorar no es decidir. Se oculta por completo sin selección; en móvil (≤600px) pasa a pantalla completa.
+
+**Exportación:** CSV (mismo patrón sin dependencias que Indicadores/Asignaciones: BOM, CRLF, celdas con prefijo de fórmula neutralizado). Columnas: Proyecto, Autor, Servicio, Editor actual, Estado de edición, Intervención actual, Próxima entrega, Última actividad — sin teléfonos, emails ni payloads de auditoría.
+
+**RBAC/IDOR:** las tres rutas exigen `jefe_edicion`; un `projectId` sin intervenciones de Edición responde 404 (no expone proyectos fuera del dominio de Edición).
+
 ## Cobertura y siguientes fases
 
 No hay capacidad máxima formal, calendario de feriados ni SLA específico de aplicación de feedback. Tampoco existen requests nativas independientes de reasignación/apoyo de Edición: se reutiliza la reasignación con motivo y no se inventan tipos de solicitud. Tripa, kit, estructura y extracción conservan el modelo/configuración vigente; esta fase no crea tareas automáticas ni divide contenido sin registro real.
