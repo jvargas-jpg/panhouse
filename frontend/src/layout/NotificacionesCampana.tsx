@@ -50,8 +50,9 @@ export function NotificacionesCampana() {
   const queryClient = useQueryClient();
 
   const notificacionesQuery = useQuery({
-    queryKey: ['notificaciones'],
+    queryKey: ['notificaciones',user?.id],
     queryFn: fetchNotificaciones,
+    enabled:!!user?.id,
     refetchInterval: INTERVALO_REFETCH_MS,
   });
 
@@ -72,6 +73,10 @@ export function NotificacionesCampana() {
     setAbierto(false);
     if (notificacion.decisionId) {
       navigate(user?.rol==='jefe_area' ? `/?vista=decisiones&decision=${notificacion.decisionId}` : `/decisiones/${notificacion.decisionId}/responder`);
+    } else if(user?.rol==='jefe_edicion') {
+      navigate(notificacion.editorialRequestId?`/?vista=asignaciones&request=${notificacion.editorialRequestId}`:'/?vista=asignaciones&tab=all');
+    } else if(user?.rol==='editor') {
+      navigate('/');
     } else if (notificacion.proyectoId) {
       navigate(`/proyectos/${notificacion.proyectoId}`);
     }

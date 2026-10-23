@@ -20,7 +20,7 @@ export function EditorialRows({items,onOpen}:{items:EditorialIntervention[];onOp
     <td data-label="Situación"><span className={'ec-status '+(i.overdue?'ec-red':i.needsAssignment||i.atRisk?'ec-amber':'ec-blue')}>{i.situation??i.state}</span></td><td data-label="Editor actual">{i.editor??'Por asignar'}</td><td data-label="Fecha límite" className={i.overdue?'ec-deadline-overdue':''}>{editorialDate(i.dueDate)}</td><td data-label="Acción"><button className="ec-primary" onClick={()=>onOpen(i.id)}>{i.cta}</button></td>
   </tr>)}</tbody></table></div>:<EditorialEmpty>No hay situaciones que requieran tu atención.</EditorialEmpty>;
 }
-const COLORS:Record<EditorialState,string>={'En edición':'#76a8f3','Esperando autor':'#efc75e','Esperando Especialista':'#a2b9d6','Requiere ajustes':'#fa9386','Pendiente':'#cbb8ed','Completadas':'#9cd8af','Bloqueadas':'#cc7180'};
+const COLORS:Record<EditorialState,string>={'En edición':'#76a8f3','Esperando autor':'#efc75e','Esperando Especialista':'#a2b9d6','En pausa':'#b7bec8','Requiere ajustes':'#fa9386','Pendiente':'#cbb8ed','Completadas':'#9cd8af','Bloqueadas':'#cc7180'};
 export function EditorialDistribution({data}:{data:EditorialDashboard['interventionDistribution']}){
   const total=data.reduce((n,d)=>n+d.count,0);let start=0;
   const gradient=data.map(d=>{const from=start;start+=d.count/total*100;return `${COLORS[d.state]} ${from}% ${start}%`;}).join(',');

@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, or } from 'drizzle-orm';
+import { and, desc, eq, getTableColumns, isNull, or, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { notificaciones } from '../db/schema/index.js';
 
@@ -33,6 +33,12 @@ export async function listarNotificacionesPorRol(rolDestino: string, usuarioId?:
   const condicion = usuarioId
     ? and(filtroRol, or(isNull(notificaciones.usuarioDestinoId), eq(notificaciones.usuarioDestinoId, usuarioId)))
     : filtroRol;
+  if(rolDestino==='jefe_edicion')return db.select({...getTableColumns(notificaciones),editorialRequestId:sql<string|null>`(
+    SELECT wi.id FROM work_items wi JOIN proyectos p ON p.id=wi.proyecto_id
+    WHERE wi.proyecto_id="notificaciones"."proyecto_id" AND wi.tipo='edicion' AND wi.business_key='default'
+      AND p.editor_id IS NULL AND p.estado IN ('en_proceso','retrasado') AND wi.estado IN ('pendiente','en_progreso') AND wi.gate_bloqueante IS NULL
+      AND EXISTS(SELECT 1 FROM audit_logs a WHERE a.entity_id=wi.id AND a.accion='EDITOR_SOLICITADO')
+    LIMIT 1)`}).from(notificaciones).where(condicion).orderBy(desc(notificaciones.createdAt));
   return db.select().from(notificaciones).where(condicion).orderBy(desc(notificaciones.createdAt));
 }
 

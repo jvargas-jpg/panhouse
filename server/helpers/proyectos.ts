@@ -6,7 +6,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { auditLogs, autores, fichasTrazabilidad, monthlyGoals, notificaciones, projectAssignments, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
+import { auditLogs, autores, capitulos, fichasTrazabilidad, monthlyGoals, notificaciones, pausas, projectAssignments, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
@@ -735,14 +735,38 @@ export async function asignarEspecialista(
 // que el especialista pasara por /solicitar-editor primero, caso
 // legítimo hoy), lo crea directo en progreso: nunca deja un work item
 // fantasma en 'pendiente' después de que ya hay editor trabajando.
-export async function asignarEditor(proyectoId: string, editorId: string, asignadoPorId: string, motivo?:string, expectedEditorId?:string|null): Promise<void> {
+export interface EditorialAssignmentDecision {
+  interventionId: string; workItemId: string | null; expectedAssignmentId?: string | null;
+  recommendation?: {rule: string; observedAt: string; recommendedIds: string[]; selectedFacts: Record<string,number>; manualOverride: boolean};
+}
+export async function asignarEditor(proyectoId: string, editorId: string, asignadoPorId: string, motivo?:string, expectedEditorId?:string|null, decision?:EditorialAssignmentDecision): Promise<void> {
   await db.transaction(async (tx) => {
-    const [editor]=await tx.select({id:users.id}).from(users).where(and(eq(users.id,editorId),eq(users.rol,'editor'),eq(users.activo,true)));
+    const [editor]=await tx.select({id:users.id}).from(users).where(and(eq(users.id,editorId),eq(users.rol,'editor'),eq(users.activo,true))).for('share');
     if(!editor)throw Object.assign(new Error('Selecciona un Editor activo'),{statusCode:400});
     const [proyecto] = await tx.select({ id: proyectos.id, codigo: proyectos.codigo,especialistaId:proyectos.especialistaId,estado:proyectos.estado,editorId:proyectos.editorId,servicioId:proyectos.servicioId }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     if (!proyecto) throw Object.assign(new Error('Proyecto no encontrado'),{statusCode:404});
     if(!ESTADOS_ACTIVOS.includes(proyecto.estado))throw Object.assign(new Error('Proyecto cerrado'),{statusCode:409});
-    if(expectedEditorId!==undefined&&proyecto.editorId!==expectedEditorId&&proyecto.editorId!==editorId)throw Object.assign(new Error('La asignación cambió. Actualiza el contexto antes de decidir.'),{statusCode:409});
+    const [current]=await tx.select({id:projectAssignments.id,editorId:projectAssignments.usuarioId}).from(projectAssignments).where(and(eq(projectAssignments.proyectoId,proyectoId),eq(projectAssignments.tipo,'editor'),isNull(projectAssignments.workItemId),isNull(projectAssignments.finalizadoEn)));
+    const currentEditorId=current?.editorId??proyecto.editorId;
+    if(expectedEditorId!==undefined&&currentEditorId!==expectedEditorId&&currentEditorId!==editorId)throw Object.assign(new Error('La asignación cambió. Actualiza el contexto antes de decidir.'),{statusCode:409});
+    if(decision?.expectedAssignmentId!==undefined&&(current?.id??null)!==decision.expectedAssignmentId&&currentEditorId!==editorId)throw Object.assign(new Error('El historial de asignación cambió. Actualiza el contexto.'),{statusCode:409});
+    if(decision){
+      if(currentEditorId&&currentEditorId!==editorId&&!motivo?.trim())throw Object.assign(new Error('Indica el motivo de reasignación'),{statusCode:400});
+      if(decision.workItemId){
+        const [intervention]=await tx.select().from(workItems).where(and(eq(workItems.id,decision.workItemId),eq(workItems.proyectoId,proyectoId),eq(workItems.tipo,'edicion'))).for('update');
+        if(!intervention)throw Object.assign(new Error('Intervención fuera del alcance de Edición'),{statusCode:404});
+        if(intervention.estado==='cancelado'||(!currentEditorId&&(intervention.estado==='completado'||intervention.estado==='bloqueado'||intervention.gateBloqueante)))throw Object.assign(new Error('La intervención ya no está lista para asignación'),{statusCode:409});
+        if(!currentEditorId){
+          const [request]=await tx.select({id:auditLogs.id}).from(auditLogs).where(and(eq(auditLogs.entityId,intervention.id),eq(auditLogs.accion,'EDITOR_SOLICITADO'))).limit(1);
+          const pauses=await tx.select({inicio:pausas.fechaInicio,fin:pausas.fechaFin}).from(pausas).where(eq(pausas.proyectoId,proyectoId));
+          const now=new Date();
+          if(!request||['pausado','stand_by'].includes(proyecto.estado)||pauses.some(p=>p.inicio<=now&&(!p.fin||p.fin>now)))throw Object.assign(new Error('La solicitud no está lista para recibir Editor'),{statusCode:409});
+        }
+      }else{
+        const [chapter]=await tx.select({id:capitulos.id}).from(capitulos).where(and(eq(capitulos.id,decision.interventionId),eq(capitulos.proyectoId,proyectoId)));
+        if(!chapter||!currentEditorId)throw Object.assign(new Error('Intervención de Edición no encontrada'),{statusCode:404});
+      }
+    }
     const [service]=await tx.select({codigo:servicios.codigo}).from(servicios).where(eq(servicios.id,proyecto.servicioId));
     if(service?.codigo==='SE'){
       const [registered]=await tx.select({id:workItems.id}).from(workItems).where(and(eq(workItems.proyectoId,proyectoId),eq(workItems.tipo,'edicion'))).limit(1);
@@ -767,11 +791,11 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
       entityType: 'project_assignment',
       entityId: asignacionId,
       proyectoId,
-      detalles: { anterior: anteriorUsuarioId, nuevo: editorId, motivo:motivo??null },
+      detalles: { anterior: anteriorUsuarioId, nuevo: editorId, motivo:motivo??null, ...(decision?{interventionId:decision.interventionId,recommendation:decision.recommendation??null}: {}) },
     });
 
     const workId=await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
-    const [work]=await tx.select({estado:workItems.estado}).from(workItems).where(eq(workItems.id,workId));
+    const [work]=await tx.select({estado:workItems.estado,due:workItems.fechaFinPautada}).from(workItems).where(eq(workItems.id,workId));
     if(work?.estado==='pendiente')await transicionarWorkItem(tx, { proyectoId, tipo: 'edicion', estado: 'en_progreso' });
     const [pedido]=await tx.select({id:auditLogs.id}).from(auditLogs).where(and(eq(auditLogs.proyectoId,proyectoId),eq(auditLogs.accion,'EDITOR_SOLICITADO'))).limit(1);
     const owner=pedido?await obtenerEspecialistaActual(proyectoId,proyecto.especialistaId,tx):null;
@@ -781,7 +805,7 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
       proyectoId,
       rolDestino: 'editor',
       usuarioDestinoId: editorId,
-      mensaje: `Se te asignó el proyecto #${proyecto.codigo}.`,
+      mensaje: `Nuevo trabajo de Edición asignado · Proyecto #${proyecto.codigo}.${work?.due?` Fecha límite: ${work.due}.`:''} Revisa Mi trabajo.`,
     });
   });
 }

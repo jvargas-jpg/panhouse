@@ -20,6 +20,6 @@ function EditorAction({item}:{item:EditorialIntervention}){
 }
 export function EditorialWorkQueue(){
  const {data:user}=useMe();
- const q=useQuery({queryKey:['editorial-chief','my-work',user?.id],queryFn:()=>apiFetch<{items:EditorialIntervention[]}>('/editores/mi-trabajo'),enabled:user?.rol==='editor'});
+ const q=useQuery({queryKey:['editorial-chief','my-work',user?.id],queryFn:()=>apiFetch<{items:EditorialIntervention[]}>('/editores/mi-trabajo'),enabled:user?.rol==='editor',refetchInterval:30000});
  return <div className="ec-shell ec-editor-page"><div className="ec-body"><header className="ec-page-header"><div><span>ÁREA DE EDICIÓN</span><h1>Mi trabajo</h1><p>Intervenciones asignadas, entregas y feedback por aplicar.</p></div></header><EditorialPanel title="Intervenciones asignadas">{q.isPending?<p className="ec-empty" role="status">Cargando trabajo…</p>:q.isError?<p className="ec-empty" role="alert">{q.error.message}</p>:q.data.items.length?<div className="ec-editor-work">{q.data.items.map(i=><article key={i.id}><div><h3>{i.label}</h3><Link to={'/proyectos/'+i.projectId}><strong>{i.title} ↗</strong></Link><p>{i.authors} · {i.service}</p><span>{i.state} · {editorialDate(i.dueDate)}</span></div><EditorAction item={i}/></article>)}</div>:<EditorialEmpty>No tienes intervenciones asignadas.</EditorialEmpty>}</EditorialPanel></div></div>;
 }

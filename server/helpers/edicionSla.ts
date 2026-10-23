@@ -20,6 +20,23 @@ export function evaluarPlazoEdicion(fecha: string | null, accionable: boolean, h
 
 export const plazoCapituloEditor = (inicio: string) => sumarDiasHabiles(inicio, DIAS_HABILES_EDICION_CAPITULO);
 
+// Pauses are project-wide, externally caused and persisted in `pausas`.
+// At the date precision of Editor deadlines, each paused weekday in the SLA
+// window suspends one business day. Overlaps are counted once. A pause that
+// starts after an already missed deadline does not erase that previous delay.
+export function ajustarPlazoEdicionPorPausas(inicio: string|null, plazo: string|null, pausas: {start:string;end:string|null}[], hoy:string): string|null {
+  if(!inicio||!plazo||!pausas.length)return plazo;
+  let effective=plazo;
+  const day=new Date(inicio+'T12:00:00Z');
+  day.setUTCDate(day.getUTCDate()+1);
+  while(day.toISOString().slice(0,10)<=effective){
+    const date=day.toISOString().slice(0,10);
+    if(date<=hoy&&!esFinDeSemana(day)&&pausas.some(p=>date>=p.start&&date<(p.end??sumarDiasHabiles(hoy,1))))effective=sumarDiasHabiles(effective,1);
+    day.setUTCDate(day.getUTCDate()+1);
+  }
+  return effective;
+}
+
 function esFinDeSemana(fecha: Date): boolean {
   const dia = fecha.getUTCDay();
   return dia === 0 || dia === 6;
