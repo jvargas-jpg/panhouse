@@ -1,5 +1,5 @@
 import { pool } from '../db/client.js';
-import type { EditorialDashboard, EditorialIntervention, EditorialActivity, EditorialLoad } from '../../shared/editorialChief.js';
+import type { EditorialDashboard, EditorialIntervention, EditorialActivity, EditorialLoad, EditorialState } from '../../shared/editorialChief.js';
 import { diaCaracas } from './atencionEspecialista.js';
 import { ajustarPlazoEdicionPorPausas, evaluarPlazoEdicion, plazoCapituloEditor } from './edicionSla.js';
 
@@ -102,6 +102,13 @@ export async function editorialDashboard(now=new Date()):Promise<EditorialDashbo
     pendingRequests:requests.slice(0,4).map(r=>({id:r.id,projectId:r.projectId,title:r.title,authors:r.authors,requestedBy:r.requestedBy??'Especialista',requestedAt:r.requestedAt!,label:'Asignación de Editor',state:'Pendiente'}))};
 }
 export const EDITORIAL_EVENTS:Record<string,string>={EDITOR_SOLICITADO:'Solicitud de Editor recibida',EDITOR_ASIGNADO:'Editor asignado',EDITOR_REASIGNADO:'Editor reasignado',CAPITULO_EDITOR_ENTREGADO:'Capítulo entregado por Editor',CAPITULO_ENVIADO_AUTOR:'Capítulo enviado al autor',CAPITULO_FEEDBACK_REGISTRADO:'Feedback del autor registrado',CAPITULO_FEEDBACK_APLICADO:'Feedback aplicado por Editor',FEEDBACK_TRIPA_REGISTRADO:'Edición de tripa completada'};
+// Responsabilidad actual != Editor asignado: una intervención puede seguir asignada a un Editor
+// mientras la pelota está en otra cancha (autor/Especialista). Compartido por Proyectos de edición
+// y Seguimiento — una sola fuente de verdad para no divergir entre pantallas.
+export const EDITORIAL_RESPONSIBLE:Partial<Record<EditorialState,'editor'|'especialista'|'autor'>>={
+  'Bloqueadas':'editor','Requiere ajustes':'editor','En edición':'editor','Pendiente':'editor',
+  'Esperando autor':'autor','Esperando Especialista':'especialista',
+};
 const EVENTS=EDITORIAL_EVENTS;
 export async function editorialActivity():Promise<EditorialActivity[]> {
   const {rows}=await pool.query<{id:string;accion:string;title:string;actor:string;at:Date}>(`SELECT a.id,a.accion,coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial') title,coalesce(u.nombre,'Sistema') actor,a.created_at at FROM audit_logs a JOIN proyectos p ON p.id=a.proyecto_id LEFT JOIN usuarios u ON u.id=a.actor_id WHERE a.accion=ANY($1::text[]) ORDER BY a.created_at DESC,a.id DESC LIMIT 6`,[Object.keys(EVENTS)]);

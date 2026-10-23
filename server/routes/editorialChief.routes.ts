@@ -7,6 +7,7 @@ import { asignarEditor } from '../helpers/proyectos.js';
 import { actualizarCapituloEditor } from '../helpers/capitulos.js';
 import { getEditorLoadSummary, listarAsignacionesEdicion, recommendEditorsForIntervention } from '../helpers/editorialAssignments.js';
 import { csvProyectosEdicion, listarProyectosEdicion, obtenerProyectoEdicionDetalle } from '../helpers/editorialProjects.js';
+import { csvSeguimientoEdicion, listarSeguimientoEdicion, obtenerSeguimientoDetalle } from '../helpers/editorialTracking.js';
 const idSchema=z.object({id:z.string().uuid()});
 const filters=z.object({editor:z.string().uuid().optional(),project:z.string().uuid().optional(),filter:z.enum(['all','unassigned','overdue','risk','upcoming','waiting']).default('all'),search:z.string().max(150).default(''),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().min(1).max(50).default(20)});
 export async function editorialChiefRoutes(app:FastifyInstance){
@@ -24,6 +25,18 @@ export async function editorialChiefRoutes(app:FastifyInstance){
   app.get('/proyectos/:projectId',chief,async(req,reply)=>{
     const p=parseOrReply(z.object({projectId:z.string().uuid()}),req.params,reply);if(!p)return;
     const detail=await obtenerProyectoEdicionDetalle(p.projectId);if(!detail)return reply.code(404).send({error:'Proyecto sin proceso de Edición registrado'});
+    return detail;
+  });
+  const trackingFilters=z.object({tab:z.enum(['priority','overdue','risk','blocked','editing','waiting','all']).default('priority'),search:z.string().max(150).default(''),service:z.string().uuid().optional(),status:z.string().max(40).optional(),editor:z.string().uuid().optional(),responsible:z.enum(['editor','autor','especialista']).optional(),interventionType:z.string().max(200).optional(),from:z.string().date().optional(),to:z.string().date().optional(),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10),sort:z.enum(['due','status','editor','project']).default('due')});
+  app.get('/seguimiento',chief,async(req,reply)=>{const f=parseOrReply(trackingFilters,req.query,reply);if(!f)return;return listarSeguimientoEdicion({...f,search:f.search??'',page:f.page??1,pageSize:f.pageSize??10,sort:f.sort??'due',tab:f.tab??'priority'});});
+  app.get('/seguimiento/export.csv',chief,async(req,reply)=>{
+    const f=parseOrReply(trackingFilters.omit({page:true,pageSize:true}),req.query,reply);if(!f)return;
+    const csv=await csvSeguimientoEdicion({...f,search:f.search??'',sort:f.sort??'due',tab:f.tab??'priority'});
+    return reply.type('text/csv; charset=utf-8').header('Content-Disposition',`attachment; filename="seguimiento-edicion-${new Date().toISOString().slice(0,10)}.csv"`).send(csv);
+  });
+  app.get('/seguimiento/:id',chief,async(req,reply)=>{
+    const p=parseOrReply(idSchema,req.params,reply);if(!p)return;
+    const detail=await obtenerSeguimientoDetalle(p.id);if(!detail)return reply.code(404).send({error:'Intervención de Edición no encontrada'});
     return detail;
   });
   app.get('/intervenciones/:id/candidatos',chief,async(req,reply)=>{

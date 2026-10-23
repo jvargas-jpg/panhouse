@@ -82,3 +82,31 @@ export interface EditorialProjectDetail {
   summary: EditorialProjectSummary; nextStep: string; interventions: EditorialProjectIntervention[];
   interventionsTotal: number; drive: EditorialProjectDrive; history: EditorialProjectHistory[];
 }
+
+// Seguimiento: supervisión operativa. Unidad = intervención/work item, nunca proyecto — el mismo
+// proyecto puede aparecer varias veces (una fila por capítulo/intervención activa).
+export type CurrentResponsible = 'editor' | 'autor' | 'especialista' | null;
+export type EditorialTrackingTab = 'priority' | 'overdue' | 'risk' | 'blocked' | 'editing' | 'waiting' | 'all';
+export interface EditorialTrackingFilters {
+  tab: EditorialTrackingTab; search: string; service?: string; status?: string; editor?: string;
+  responsible?: Exclude<CurrentResponsible, null>; interventionType?: string; from?: string; to?: string;
+  page: number; pageSize: number; sort: 'due' | 'status' | 'editor' | 'project';
+}
+export interface EditorialTrackingRow extends EditorialIntervention {
+  currentResponsible: CurrentResponsible; daysLabel: string;
+}
+export interface EditorialTrackingList {
+  items: EditorialTrackingRow[]; total: number; page: number; pages: number;
+  counts: { overdue: number; risk: number; blocked: number; waitingThirdParty: number; priority: number; all: number };
+  options: { services: {id: string; name: string}[]; editors: {id: string; name: string}[]; states: string[]; interventionTypes: {id: string; name: string}[] };
+}
+export interface EditorialTrackingDrive { rootUrl: string | null; links: { key: string; label: string; url: string }[]; files: { label: string; url: string }[] }
+export interface EditorialTrackingSibling { id: string; label: string; state: EditorialState; dueDate: string | null; overdue: boolean }
+export interface EditorialTrackingDetail {
+  summary: EditorialTrackingRow;
+  project: { id: string; code: string; title: string; authors: string; service: string; coverUrl: string | null };
+  specialist: string | null; specialistId: string | null;
+  nextStep: string; riskReason: string | null; blockerReason: string | null;
+  siblings: EditorialTrackingSibling[]; siblingsTotal: number;
+  drive: EditorialTrackingDrive; history: EditorialProjectHistory[];
+}

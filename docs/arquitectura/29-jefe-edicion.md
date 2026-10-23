@@ -145,6 +145,40 @@ Pantalla para **comprender**, no para decidir ni ejecutar: "¿cómo está el pro
 
 **RBAC/IDOR:** las tres rutas exigen `jefe_edicion`; un `projectId` sin intervenciones de Edición responde 404 (no expone proyectos fuera del dominio de Edición).
 
+## Seguimiento
+
+Pantalla de **supervisión operativa**, no de decisión ni de explicación agregada: "¿qué intervenciones de Edición se están desviando, venciendo, bloqueando o requieren supervisión?". Asignaciones decide quién lo hace, Proyectos de edición explica el proyecto completo, Seguimiento supervisa cada intervención. Implementación: `server/helpers/editorialTracking.ts` (`listarSeguimientoEdicion`, `obtenerSeguimientoDetalle`, `csvSeguimientoEdicion`), rutas `GET /editores/seguimiento`, `GET /editores/seguimiento/:id`, `GET /editores/seguimiento/export.csv`. Misma fuente canónica (`editorialInterventions`) que Asignaciones/Proyectos de edición; cero queries nuevas al dominio.
+
+**Unidad = intervención/work item, nunca proyecto** (a diferencia de Proyectos de edición): el mismo proyecto puede — y debe — aparecer varias veces, una fila por capítulo/intervención activa. No hay agregación en memoria aquí, solo filtro + orden + paginación sobre `editorialInterventions()`.
+
+**Sin "Por asignar" ni botón "Asignar":** `listarSeguimientoEdicion` excluye explícitamente `needsAssignment` desde la primera línea — esas intervenciones pertenecen exclusivamente a Asignaciones y carga. La columna Acciones ofrece "Ver seguimiento", nunca "Asignar"; Seguimiento no implementa su propio flujo de asignación.
+
+**Responsable actual ≠ Editor asignado:** `EDITORIAL_RESPONSIBLE` (compartido con Proyectos de edición, `server/helpers/editorialChief.ts`) deriva `currentResponsible` (`editor`/`autor`/`especialista`/`null`) desde el estado real de la intervención — un Editor puede seguir asignado mientras la responsabilidad activa es del autor (esperando feedback) o del Especialista (esperando que gestione la entrega). Es una columna propia en la tabla, no un dato enterrado en texto pequeño, y también filtrable.
+
+**Vencida/en riesgo, con la misma fórmula central que ya usaban Asignaciones y Proyectos de edición** (`evaluarPlazoEdicion`, `server/helpers/edicionSla.ts`): `overdue = accionable && fecha < hoy`, `atRisk = accionable && fecha === hoy`. Ningún umbral nuevo, ningún `if (daysRemaining <= 3)` en React. Esperando autor/Especialista/pausa de proyecto **nunca** cuentan como vencidas del Editor — se verificó explícitamente en tests que una intervención `Esperando autor` con deadline original ya superado no aparece en el tab Vencidas ni en su KPI.
+
+**Columna "Días" con contexto, nunca un número crudo:** `diasLabel()` devuelve "Vence hoy", "N días", "Vencida hace N días", "Pausado" (pausa formal de proyecto) o "SLA en pausa" (esperando autor/Especialista) — jamás "-3" sin explicación.
+
+**Bloqueada: solo con `gate_bloqueante` explícito**, nunca inferido de inactividad ("no se movió hace N días" no existe como señal en este sistema). El panel de detalle muestra el motivo real tal cual está en el dominio.
+
+**KPI (4, del conjunto completo filtrado):** Vencidas, En riesgo, Bloqueadas, Esperando terceros — "Completadas" queda fuera de los KPI principales (pertenece a Indicadores); el tab "Todas" sigue siendo el único lugar donde aparecen.
+
+**Tab "Prioritarios"** (default): combina Vencidas ∪ En riesgo ∪ Bloqueadas como un filtro compuesto, sin persistir un estado nuevo — es pura composición de los mismos booleanos ya centralizados. El resto de tabs (Vencidas, En riesgo, Bloqueadas, En edición, Esperando terceros, Todas) son vistas directas sobre dimensiones reales del dominio.
+
+**Panel derecho centrado en la intervención, no en el proyecto:** el resumen muestra responsabilidad actual de forma prominente, tipo, Editor asignado, Especialista, deadline/tiempo, motivo de riesgo/bloqueo (solo si existen) y siguiente paso narrativo. El contexto del proyecto es secundario: cover + título + autor en el header, y hasta 6 "otras intervenciones de este proyecto" como lista compacta al final, con link a Proyectos de edición para el detalle completo — nunca domina el panel.
+
+**Historial, acotado a la intervención real:** se filtra `audit_logs` por `entity_id IN (id de la intervención, work_item_id, capítulo real si aplica)`, no todo el historial del proyecto — los eventos de capítulo (`CAPITULO_*`) usan `entity_id` = id del capítulo real (resuelto por `proyecto_id`+`numero`, ver `server/db/schema/capitulos.ts`), no el id compuesto que expone la proyección.
+
+**Archivos:** para intervenciones de capítulo, `capitulos.enlaces` (URLs reales registradas "de esa vuelta" — único campo de archivo por capítulo que existe en el dominio hoy) se muestra primero, seguido de los enlaces generales de la carpeta de Edición del proyecto (misma resolución por `folderKey`/`workspaceId` que Proyectos de edición, reexportada como `editorialDriveLinks`). Sin workspace o sin `enlaces`, vacío honesto — nunca un explorador Drive completo.
+
+**No se opera el trabajo del Editor desde aquí:** sin "marcar entregado", "completar capítulo" ni "aplicar feedback" — Ver ≠ Operar. Las únicas acciones son "Ver en proyecto →" (Proyectos de edición) y "Reasignar →" (reutiliza Asignaciones y carga vía `search=<código>`, mismo patrón ya usado en los otros dos módulos; no hay un segundo flujo de asignación).
+
+**Filtros y orden:** búsqueda server-side con debounce 300 ms, servicio, estado, Editor, responsable actual, tipo de intervención, rango de fechas; orden por fecha límite (default, con desempate por severidad: vencidas > bloqueadas > en riesgo > resto), estado, Editor o proyecto. "Última actividad" no es una opción de orden: no existe ese dato a nivel de intervención individual sin introducir N+1, así que se omitió en vez de aproximarlo.
+
+**Exportación respeta los filtros activos** (a diferencia de Proyectos de edición, cuyo CSV exporta el universo completo) — mismo patrón CSV sin dependencias. Columnas: Proyecto, Autor, Intervención, Servicio, Editor, Responsable actual, Estado, Fecha límite, Desvío.
+
+**RBAC/IDOR:** las tres rutas exigen `jefe_edicion`; un `id` sin intervención operativa real (o `needsAssignment`) responde 404.
+
 ## Cobertura y siguientes fases
 
 No hay capacidad máxima formal, calendario de feriados ni SLA específico de aplicación de feedback. Tampoco existen requests nativas independientes de reasignación/apoyo de Edición: se reutiliza la reasignación con motivo y no se inventan tipos de solicitud. Tripa, kit, estructura y extracción conservan el modelo/configuración vigente; esta fase no crea tareas automáticas ni divide contenido sin registro real.

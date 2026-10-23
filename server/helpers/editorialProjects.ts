@@ -1,5 +1,5 @@
 import { pool } from '../db/client.js';
-import { editorialInterventions, EDITORIAL_EVENTS } from './editorialChief.js';
+import { editorialInterventions, EDITORIAL_EVENTS, EDITORIAL_RESPONSIBLE } from './editorialChief.js';
 import { diaCaracas } from './atencionEspecialista.js';
 import { workspaceSummaries } from '../modules/project-workspaces/queries.js';
 import { db } from '../db/client.js';
@@ -9,12 +9,8 @@ import type { EditorialIntervention, EditorialProjectDetail, EditorialProjectFil
 
 // Qué intervención "manda" al sintetizar el estado de Edición de un proyecto: bloqueo/ajuste del
 // Editor primero, luego trabajo en curso, luego lo no iniciado; las esperas de terceros van al final
-// porque no son responsabilidad activa de Edición (ver EDITORIAL_WAITING_RESPONSIBLE más abajo).
+// porque no son responsabilidad activa de Edición (ver EDITORIAL_RESPONSIBLE en editorialChief.ts).
 const STATE_PRIORITY: EditorialIntervention['state'][] = ['Bloqueadas', 'Requiere ajustes', 'En edición', 'Pendiente', 'Esperando autor', 'Esperando Especialista', 'En pausa'];
-const RESPONSIBLE: Partial<Record<EditorialIntervention['state'], EditorialProjectSummary['responsibleNow']>> = {
-  'Bloqueadas': 'editor', 'Requiere ajustes': 'editor', 'En edición': 'editor', 'Pendiente': 'editor',
-  'Esperando autor': 'autor', 'Esperando Especialista': 'especialista',
-};
 const NEXT_STEP: Partial<Record<EditorialProjectState, (label: string) => string>> = {
   'Por iniciar': l => `El Editor debe iniciar: ${l}.`,
   'En edición': l => `En curso con el Editor: ${l}.`,
@@ -23,12 +19,15 @@ const NEXT_STEP: Partial<Record<EditorialProjectState, (label: string) => string
   'Esperando Especialista': l => `Pendiente de gestión del Especialista: ${l}.`,
   'En pausa': () => 'El proyecto está en pausa; no hay próximo paso activo de Edición.',
 };
-const DRIVE_LINKS: { key: string; label: string }[] = [
+// Claves reales de la plantilla de workspace de Edición (server/modules/project-workspaces/templates.ts),
+// compartidas con Seguimiento — nunca una ruta hardcodeada ni inventada por pantalla.
+export const EDITORIAL_DRIVE_LINKS: { key: string; label: string }[] = [
   { key: 'EDITING_OUTPUT', label: 'Capítulos editados' },
   { key: 'FULL_MANUSCRIPT', label: 'Tripa completa' },
   { key: 'EDITORIAL_KIT', label: 'Kit editorial' },
   { key: 'EDITING_FEEDBACK', label: 'Feedback del autor' },
 ];
+const DRIVE_LINKS = EDITORIAL_DRIVE_LINKS;
 
 function projectState(items: EditorialIntervention[]): EditorialProjectState {
   const active = items.filter(i => i.state !== 'Completadas');
@@ -52,7 +51,7 @@ function summarize(projectId: string, items: EditorialIntervention[], lastActivi
     projectId, code: first.code, title: first.title, authors: first.authors, coverUrl: first.coverUrl,
     service: first.service, serviceId: first.serviceId ?? '', serviceCode: first.serviceCode ?? '', subtype: first.subtype ?? null,
     editorialState: state, risk: active.some(i => i.atRisk), overdue: active.some(i => i.overdue), blocker: active.find(i => i.block)?.block ?? null,
-    responsibleNow: state === 'Por iniciar' ? 'editor' : RESPONSIBLE[state as EditorialIntervention['state']] ?? null,
+    responsibleNow: state === 'Por iniciar' ? 'editor' : EDITORIAL_RESPONSIBLE[state as EditorialIntervention['state']] ?? null,
     interventionSummary, interventionCount: items.length,
     progress: null,
     editor: multipleEditors ? null : editorFrom?.editor ?? null, editorId: multipleEditors ? null : editorFrom?.editorId ?? null, multipleEditors, editorCount: editors.size,
@@ -62,7 +61,7 @@ function summarize(projectId: string, items: EditorialIntervention[], lastActivi
   };
 }
 
-async function specialistsFor(projectIds: string[]): Promise<Map<string, { id: string; nombre: string }>> {
+export async function specialistsFor(projectIds: string[]): Promise<Map<string, { id: string; nombre: string }>> {
   if (!projectIds.length) return new Map();
   const { rows } = await pool.query<{ project_id: string; id: string; nombre: string }>(
     `SELECT p.id project_id, u.id, u.nombre FROM proyectos p
@@ -127,18 +126,8 @@ export async function listarProyectosEdicion(filters: EditorialProjectFilters, n
   return { items: rows.slice((page - 1) * filters.pageSize, page * filters.pageSize), total: rows.length, pages, page, counts, options };
 }
 
-export async function obtenerProyectoEdicionDetalle(projectId: string, now = new Date()): Promise<EditorialProjectDetail | null> {
-  const items = await editorialInterventions(diaCaracas(now), projectId);
-  if (!items.length) return null;
-  const [specialists, activity, workspace, history] = await Promise.all([
-    specialistsFor([projectId]), lastActivityFor([projectId]), workspaceSummaries([projectId]),
-    pool.query<{ id: string; accion: string; actor: string; created_at: Date }>(
-      `SELECT a.id, a.accion, coalesce(u.nombre,'Sistema') actor, a.created_at FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id
-       WHERE a.proyecto_id=$1 AND a.accion=ANY($2::text[]) ORDER BY a.created_at DESC, a.id DESC LIMIT 10`, [projectId, Object.keys(EDITORIAL_EVENTS)]),
-  ]);
-  const summaryBase = summarize(projectId, items, activity.get(projectId) ?? null);
-  const specialist = specialists.get(projectId);
-  const summary = { ...summaryBase, specialist: specialist?.nombre ?? null, specialistId: specialist?.id ?? null };
+export async function editorialDriveLinks(projectId: string): Promise<{ rootUrl: string | null; links: { key: string; label: string; url: string }[] }> {
+  const workspace = await workspaceSummaries([projectId]);
   const ws = workspace.get(projectId);
   const driveReady = ws?.status === 'READY' && !ws.contextChanged;
   const folders = driveReady && ws?.id
@@ -146,6 +135,21 @@ export async function obtenerProyectoEdicionDetalle(projectId: string, now = new
         .where(and(eq(projectDriveFolders.workspaceId, ws.id), inArray(projectDriveFolders.key, DRIVE_LINKS.map(d => d.key)), eq(projectDriveFolders.status, 'READY')))
     : [];
   const links = DRIVE_LINKS.flatMap(d => { const f = folders.find(x => x.key === d.key); return f?.url ? [{ key: d.key, label: d.label, url: f.url }] : []; });
+  return { rootUrl: driveReady ? ws!.rootFolderUrl : null, links };
+}
+
+export async function obtenerProyectoEdicionDetalle(projectId: string, now = new Date()): Promise<EditorialProjectDetail | null> {
+  const items = await editorialInterventions(diaCaracas(now), projectId);
+  if (!items.length) return null;
+  const [specialists, activity, drive, history] = await Promise.all([
+    specialistsFor([projectId]), lastActivityFor([projectId]), editorialDriveLinks(projectId),
+    pool.query<{ id: string; accion: string; actor: string; created_at: Date }>(
+      `SELECT a.id, a.accion, coalesce(u.nombre,'Sistema') actor, a.created_at FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id
+       WHERE a.proyecto_id=$1 AND a.accion=ANY($2::text[]) ORDER BY a.created_at DESC, a.id DESC LIMIT 10`, [projectId, Object.keys(EDITORIAL_EVENTS)]),
+  ]);
+  const summaryBase = summarize(projectId, items, activity.get(projectId) ?? null);
+  const specialist = specialists.get(projectId);
+  const summary = { ...summaryBase, specialist: specialist?.nombre ?? null, specialistId: specialist?.id ?? null };
   const sorted = [...items].sort((a, b) => (Number(b.actionable) - Number(a.actionable)) || (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999') || a.id.localeCompare(b.id));
   const active = items.find(i => i.actionable) ?? items.find(i => i.state !== 'Completadas');
   const nextStep = summary.editorialState === 'Completadas' ? 'Proceso de Edición finalizado.'
@@ -154,7 +158,7 @@ export async function obtenerProyectoEdicionDetalle(projectId: string, now = new
     summary, nextStep,
     interventions: sorted.slice(0, 10).map(i => ({ id: i.id, label: i.label, state: i.state, editor: i.editor, editorId: i.editorId, dueDate: i.dueDate, overdue: i.overdue, deliveredAt: i.deliveredAt, waitingOn: i.waitingOn ?? null, cta: i.cta })),
     interventionsTotal: items.length,
-    drive: { rootUrl: driveReady ? ws!.rootFolderUrl : null, links },
+    drive,
     history: history.rows.map(r => ({ id: r.id, label: EDITORIAL_EVENTS[r.accion]!, actor: r.actor, at: r.created_at.toISOString() })),
   };
 }

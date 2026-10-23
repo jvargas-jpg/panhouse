@@ -1,6 +1,6 @@
 import { apiFetch } from '../lib/api';
 import type { CargaEditor, ProyectoPendienteSeccion1 } from '../types/api';
-import type { EditorialActivity, EditorialDashboard, EditorialIntervention, EditorialAssignmentList, EditorialLoadSummary, EditorialRecommendation, EditorialProjectList, EditorialProjectDetail } from '../../../shared/editorialChief';
+import type { EditorialActivity, EditorialDashboard, EditorialIntervention, EditorialAssignmentList, EditorialLoadSummary, EditorialRecommendation, EditorialProjectList, EditorialProjectDetail, EditorialTrackingList, EditorialTrackingDetail } from '../../../shared/editorialChief';
 export const editorialKey = ['editorial-chief'];
 export const fetchEditorialDashboard = () => apiFetch<EditorialDashboard>('/editores/inicio');
 export const fetchEditorialActivity = () => apiFetch<{items:EditorialActivity[]}>('/editores/actividad');
@@ -18,6 +18,17 @@ export async function exportarProyectosEdicion() {
   const blob = await response.blob(), url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url; link.download = `proyectos-edicion-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+export const fetchEditorialTracking = (params: URLSearchParams) => apiFetch<EditorialTrackingList>('/editores/seguimiento?'+params);
+export const fetchEditorialTrackingDetail = (id: string) => apiFetch<EditorialTrackingDetail>('/editores/seguimiento/'+id);
+export async function exportarSeguimientoEdicion(params: URLSearchParams) {
+  const response = await fetch('/api/editores/seguimiento/export.csv?'+params, { credentials: 'include' });
+  if (!response.ok) throw new Error('No pudimos exportar el seguimiento. Intenta de nuevo.');
+  const blob = await response.blob(), url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = `seguimiento-edicion-${new Date().toISOString().slice(0, 10)}.csv`;
   document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

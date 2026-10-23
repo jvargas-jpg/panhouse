@@ -10,11 +10,11 @@ import { RrppIcon } from '../rrpp/RrppIcons';
 import './editorialChief.css';
 import './editorialProjects.css';
 
-const STATUS_CLASS: Record<string, string> = {
+export const EDITORIAL_STATUS_CLASS: Record<string, string> = {
   'Bloqueadas': 'ec-red', 'Requiere ajustes': 'ec-amber', 'Esperando autor': 'ec-amber', 'Esperando Especialista': 'ec-amber',
   'En edición': 'ec-blue', 'Por iniciar': 'ec-gray', 'En pausa': 'ec-gray', 'Completadas': 'ec-green',
 };
-function Badge({ state }: { state: string }) { return <span className={'ec-status ' + (STATUS_CLASS[state] ?? 'ec-blue')}>{state}</span>; }
+export function Badge({ state }: { state: string }) { return <span className={'ec-status ' + (EDITORIAL_STATUS_CLASS[state] ?? 'ec-blue')}>{state}</span>; }
 
 export function EditorialProjects() {
   const [params, setParams] = useSearchParams();
