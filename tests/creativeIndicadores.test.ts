@@ -1,9 +1,9 @@
 import {randomUUID} from 'node:crypto';
-import {afterAll,beforeAll,beforeEach,describe,expect,it} from 'vitest';
+import {afterAll,beforeAll,beforeEach,describe,expect,it,vi} from 'vitest';
 import {eq} from 'drizzle-orm';
 import {buildApp} from '../server/app.js';
 import {db} from '../server/db/client.js';
-import {fichaDisenoPropuestas,fichasTrazabilidad,proyectos,servicios,users} from '../server/db/schema/index.js';
+import {direccionesCreativas,fichaDisenoPropuestas,fichasTrazabilidad,proyectos,servicios,users} from '../server/db/schema/index.js';
 import {createSession} from '../server/helpers/session.js';
 import {createCreativeMeetingRequest,decideCreativeRequest} from '../server/helpers/creativeRequests.js';
 import {registrarBrief,registrarBriefAutor,registrarRecursosCreativos} from '../server/helpers/direccionCreativa.js';
@@ -47,6 +47,19 @@ beforeAll(()=>app.ready());afterAll(()=>app.close());
 beforeEach(async()=>{await limpiarBaseDeDatos();cookies.clear();leader=await person('lider_creativo');other=await person('lider_creativo');specialist=await person('especialista');});
 
 describe('Indicadores de Dirección Creativa',()=>{
+ it('cierre de recursos usa el día de Caracas cuando UTC ya cambió de fecha',async()=>{
+  const ctx=await conConceptosYRecursos();
+  const [first]=await db.select().from(fichaDisenoPropuestas).where(eq(fichaDisenoPropuestas.direccionCreativaId,ctx.processId));
+  await db.update(fichaDisenoPropuestas).set({fechaEnviadaAutor:hoy,fechaAprobadaAutor:hoy}).where(eq(fichaDisenoPropuestas.id,first!.id));
+  vi.useFakeTimers({toFake:['Date']});
+  try{
+   vi.setSystemTime(new Date(hoy+'T23:30:00-04:00'));
+   await registrarRecursosCreativos(ctx.processId,{recursoImagenUrl:'https://drive.test/img.png',recursoConceptoPdfUrl:'https://drive.test/concepto.pdf'},leader);
+   const [closed]=await db.select().from(direccionesCreativas).where(eq(direccionesCreativas.id,ctx.processId));
+   expect(closed!.fechaCierre).toBe(hoy);
+   expect((await obtenerIndicadoresCreativos(leader,{from:'2026-01-01',to:hoy})).summary.recursosEntregados).toBe(1);
+  }finally{vi.useRealTimers();}
+ });
  it('RBAC: exige sesión y rol lider_creativo',async()=>{
   expect((await app.inject({method:'GET',url:'/api/direccion-creativa/indicadores'})).statusCode).toBe(401);
   expect((await api('/direccion-creativa/indicadores',specialist)).statusCode).toBe(403);

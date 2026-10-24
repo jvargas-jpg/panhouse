@@ -1,0 +1,22 @@
+{
+  "image": "postgres:16-alpine",
+  "storage": "tmpfs",
+  "fsync": true,
+  "source": "Final frozen source after cached-dependency diagnosis and creative UTC rollover correction",
+  "files": [
+    "tests/editorialRequests.lifecycle.test.ts",
+    "tests/editorialRequests.test.ts",
+    "frontend/src/jefeEdicion/editorialRequests.test.tsx",
+    "tests/editorialChief.test.ts",
+    "tests/editorialAssignments.test.ts",
+    "tests/especialistaSolicitudes.test.ts",
+    "tests/creativeIndicadores.test.ts",
+    "tests/creativeLeader.test.ts",
+    "tests/creativeRequests.test.ts",
+    "tests/direccionCreativa.test.ts"
+  ],
+  "startedAt": "2026-10-24T02:46:41.032Z",
+  "cleanup": true,
+  "exitCode": 0,
+  "finishedAt": "2026-10-24T02:57:21.466Z"
+}

@@ -10,7 +10,7 @@ export interface EditorialIntervention {
   interventionType?: string; volume?: string | null; notes?: string | null;
   requestedById?: string | null; requestedByRole?: string | null;
   waitingOn?: 'author' | 'specialist' | 'project_pause' | null;
-  assignmentId?: string | null; plannedDueDate?: string | null;
+  assignmentId?: string | null; plannedDueDate?: string | null; requestVersion?: number; requestPending?: boolean;
 }
 export interface EditorialLoad { id: string; name: string; active: number; upcoming: number; overdue: number; waiting: number }
 export interface EditorialRequest { id: string; projectId: string; title: string; authors: string; label: string; requestedAt: string; requestedBy: string; state: 'Pendiente' }
@@ -114,7 +114,7 @@ export interface EditorialTrackingDetail {
 // Solicitudes: bandeja de decisiones, no de notificaciones. Hoy el único tipo real respaldado por el
 // dominio es asignación de Editor (EDITOR_SOLICITADO) — reasignación-como-solicitud, apoyo por carga y
 // escalación se auditaron y no tienen infraestructura propia; no se inventan (ver docs/arquitectura/29-jefe-edicion.md).
-export type EditorialRequestStatus = 'pendiente' | 'resuelta';
+export type EditorialRequestStatus = 'pendiente' | 'resuelta' | 'devuelta' | 'cancelada';
 export interface EditorialRequestSummary {
   id: string; projectId: string; code: string; title: string; authors: string; coverUrl: string | null;
   service: string; serviceId: string;
@@ -122,14 +122,19 @@ export interface EditorialRequestSummary {
   status: EditorialRequestStatus; requestedAt: string;
   resolvedAt: string | null; resolvedBy: string | null;
   resultEditorId: string | null; resultEditor: string | null; resultWorkItemId: string | null;
+  workItemId: string; businessKey: string; requestType: 'ASSIGN_EDITOR'; projectActive: boolean;
+  interventionLabel: string; description: string; volume: string | null; requestedDate: string | null;
+  notes: string | null; returnReason: string | null; actionable: boolean; assignmentReady: boolean; version: number;
+  resultAssignmentId: string | null;
 }
 export interface EditorialRequestFilters {
-  tab: 'pending' | 'resolved' | 'all'; search: string; service?: string; requester?: string;
+  tab: 'pending' | 'resolved' | 'returned' | 'all'; search: string; service?: string; requester?: string;
   from?: string; to?: string; page: number; pageSize: number; sort: 'oldest' | 'newest' | 'project';
 }
 export interface EditorialRequestList {
   items: EditorialRequestSummary[]; total: number; page: number; pages: number;
-  counts: { pending: number; resolved: number; all: number };
+  counts: { pending: number; resolved: number; all: number; returned: number };
+  pendingTotal: number;
   options: { services: { id: string; name: string }[]; requesters: { id: string; name: string }[] };
 }
 export interface EditorialRequestContext {
@@ -138,4 +143,7 @@ export interface EditorialRequestContext {
 }
 export interface EditorialRequestDetail {
   summary: EditorialRequestSummary; context: EditorialRequestContext | null; history: EditorialProjectHistory[];
+  files: { label: string; url: string }[];
+  recommendationSummary: { rule: EditorialRecommendation['rule']; observedAt: string; explanation: string; tied: number;
+    editor: Pick<EditorialEditorLoad, 'id' | 'name' | 'actionableNow' | 'overdue' | 'dueThisWeek'> | null } | null;
 }

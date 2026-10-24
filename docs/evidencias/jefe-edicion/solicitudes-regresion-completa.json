@@ -1,0 +1,883 @@
+{
+  "schema": "panhouse-validation-v1",
+  "generatedAt": "2026-10-24T03:00:29.177250+00:00",
+  "method": "Complete suite in three isolated shards; latest whole-file results from a clean final revalidation replace the affected modules without double counting. Original reports remain unchanged.",
+  "initialFullRun": {
+    "files": 92,
+    "totalTests": 1642,
+    "passed": 1639,
+    "failed": 3,
+    "pending": 0
+  },
+  "initialFailedTests": [
+    {
+      "file": "tests/creativeIndicadores.test.ts",
+      "test": "Indicadores de Dirección Creativa recursosEntregados cuenta la entrega formal completa (imagen+PDF), no cada archivo por separado"
+    },
+    {
+      "file": "tests/editorialRequests.lifecycle.test.ts",
+      "test": "Solicitudes · lifecycle independiente y decisión central una pausa o gate no oculta una decisión pendiente: puede devolverse aunque no esté lista para asignar"
+    },
+    {
+      "file": "tests/editorialRequests.lifecycle.test.ts",
+      "test": "Solicitudes · lifecycle independiente y decisión central asignar resuelve la petición, activa trabajo y devuelve IDs reales e historial correlacionado"
+    }
+  ],
+  "finalRevalidation": {
+    "source": "solicitudes-revalidacion-final.json",
+    "files": 10,
+    "totalTests": 187,
+    "passed": 187,
+    "failed": 0,
+    "addedTests": [
+      {
+        "file": "tests/creativeIndicadores.test.ts",
+        "test": "Indicadores de Dirección Creativa cierre de recursos usa el día de Caracas cuando UTC ya cambió de fecha"
+      }
+    ]
+  },
+  "final": {
+    "files": 92,
+    "totalTests": 1643,
+    "passed": 1643,
+    "failed": 0,
+    "pending": 0
+  },
+  "coverage": {
+    "missingFiles": [],
+    "unexpectedFiles": [],
+    "duplicateFilesAcrossShards": []
+  },
+  "temporaryContainersCleanedUp": true,
+  "success": true,
+  "files": [
+    {
+      "name": "frontend/src/jefeEdicion/editorialAssignments.test.tsx",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "frontend/src/jefeEdicion/editorialChief.test.tsx",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "frontend/src/jefeEdicion/editorialProjects.test.tsx",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "frontend/src/jefeEdicion/editorialRequests.test.tsx",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "frontend/src/jefeEdicion/editorialTracking.test.tsx",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "frontend/src/liderCreativo/creativeIndicadores.test.tsx",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "frontend/src/liderCreativo/creativePortfolio.test.tsx",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "frontend/src/liderCreativo/creativeRequests.test.tsx",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "frontend/src/liderCreativo/creativeWork.test.tsx",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/alertas.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/assignments.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/auth.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/autores.routes.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 31,
+      "passed": 31,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/calidad.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/capitulos.routes.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/capitulos.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/carga.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/catalogos.routes.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/comercialHandoff.routes.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 23,
+      "passed": 23,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/commercialProjectsModel.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/constraints.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/correcciones.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 22,
+      "passed": 22,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/correccionSla.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 17,
+      "passed": 17,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/creativeIndicadores.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/creativeLeader.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 47,
+      "passed": 47,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/creativeRequests.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/cronograma.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/decisiones.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 23,
+      "passed": 23,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/direccionCreativa.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 19,
+      "passed": 19,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/diseno.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 19,
+      "passed": 19,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/edicion5A.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/edicionSla.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/editores.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/editorialAssignments.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/editorialChief.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/editorialProjects.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/editorialRequests.lifecycle.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/editorialRequests.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/editorialTracking.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/especialistaCartera.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 24,
+      "passed": 24,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/especialistaCarteraUrlState.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/especialistaInicio.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 19,
+      "passed": 19,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/especialistaMiTrabajo.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 24,
+      "passed": 24,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/especialistas.routes.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 8,
+      "passed": 8,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/especialistaSolicitudes.test.ts",
+      "sourceReport": "solicitudes-revalidacion-final.json",
+      "tests": 23,
+      "passed": 23,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/fasesWorkflow.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/fichaViva.routes.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/gates.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 22,
+      "passed": 22,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/googleDrive.adapter.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/googleDrive.routes.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 20,
+      "passed": 20,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/googleDrive.security.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/indicadoresComerciales.routes.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 19,
+      "passed": 19,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/indicadoresComerciales.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 16,
+      "passed": 16,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/indicadoresJefatura.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 17,
+      "passed": 17,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/jefatura.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 23,
+      "passed": 23,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/jefaturaAsignaciones.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/jefaturaProyectos.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 23,
+      "passed": 23,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/metricas.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/metricas.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/monthlyGoals.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 45,
+      "passed": 45,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/notificaciones.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/operacionEspecialista.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 21,
+      "passed": 21,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/pagos.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/pagosProyecto.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 20,
+      "passed": 20,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/pausas.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 12,
+      "passed": 12,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/pausas.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/performance.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/portal.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 3,
+      "passed": 3,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/portalAutor.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 17,
+      "passed": 17,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/preparacionComercial.routes.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/preparacionComercial.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 15,
+      "passed": 15,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/projectCommandCenter.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 18,
+      "passed": 18,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/projectWorkspace.queue.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/projectWorkspace.routes.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 31,
+      "passed": 31,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/projectWorkspace.templates.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 11,
+      "passed": 11,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/proyectos.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 111,
+      "passed": 111,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/proyectos.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 14,
+      "passed": 14,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/rbac.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/rrppCrudoPlanificacion.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 7,
+      "passed": 7,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/rrppDashboard.routes.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 27,
+      "passed": 27,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/rrppIndicadores.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 50,
+      "passed": 50,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/rrppIngresos.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 29,
+      "passed": 29,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/rrppIngresosView.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 6,
+      "passed": 6,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/rrppLanzamientos.routes.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 60,
+      "passed": 60,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/rrppProyectos.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 46,
+      "passed": 46,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/seguimiento.routes.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 4,
+      "passed": 4,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/seguimientoOperativo.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 28,
+      "passed": 28,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/trazabilidad.routes.test.ts",
+      "sourceReport": "solicitudes-shard-2.json",
+      "tests": 158,
+      "passed": 158,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/trazabilidad.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 13,
+      "passed": 13,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/usuarios.routes.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 9,
+      "passed": 9,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/workflowCore.test.ts",
+      "sourceReport": "solicitudes-shard-3.json",
+      "tests": 2,
+      "passed": 2,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    },
+    {
+      "name": "tests/workItems.test.ts",
+      "sourceReport": "solicitudes-shard-1.json",
+      "tests": 5,
+      "passed": 5,
+      "failed": 0,
+      "pending": 0,
+      "status": "passed"
+    }
+  ]
+}

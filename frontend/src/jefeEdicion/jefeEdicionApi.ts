@@ -6,7 +6,7 @@ export const fetchEditorialDashboard = () => apiFetch<EditorialDashboard>('/edit
 export const fetchEditorialActivity = () => apiFetch<{items:EditorialActivity[]}>('/editores/actividad');
 export const fetchEditorialIntervention = (id:string) => apiFetch<EditorialIntervention>('/editores/intervenciones/'+id);
 export const fetchEditorialList = (params:URLSearchParams) => apiFetch<{items:EditorialIntervention[];total:number;pages:number;page:number}>('/editores/intervenciones?'+params);
-export const decideEditor = (id:string,editorId:string,reason?:string,expectedEditorId?:string|null,expectedAssignmentId?:string|null) => apiFetch('/editores/asignaciones/'+id,{method:'PATCH',body:JSON.stringify({editorId,reason,expectedEditorId,expectedAssignmentId})});
+export const decideEditor = (id:string,editorId:string,reason?:string,expectedEditorId?:string|null,expectedAssignmentId?:string|null,expectedRequestVersion?:number) => apiFetch('/editores/asignaciones/'+id,{method:'PATCH',body:JSON.stringify({editorId,reason,expectedEditorId,expectedAssignmentId,expectedRequestVersion})});
 export const fetchEditorialAssignments = (params: URLSearchParams) => apiFetch<EditorialAssignmentList>('/editores/asignaciones?'+params);
 export const fetchEditorialTeam = () => apiFetch<EditorialLoadSummary>('/editores/equipo');
 export const fetchEditorialCandidates = (id: string) => apiFetch<EditorialRecommendation>('/editores/intervenciones/'+id+'/candidatos');
@@ -54,3 +54,5 @@ export function asignarEditor(proyectoId: string, editorId: string) {
     body: JSON.stringify({ editorId }),
   });
 }
+
+export const returnEditorialRequest = (id:string,reason:string,expectedVersion:number) => apiFetch(`/editores/solicitudes/${id}/devolver`,{method:"POST",body:JSON.stringify({reason,expectedVersion})});

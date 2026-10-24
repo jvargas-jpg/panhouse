@@ -13,7 +13,7 @@ export function EditorialPanel({title,icon,action,children,className=''}:{title:
   return <section className={'ec-panel '+className}><header>{icon&&<RrppIcon nombre={icon}/>}<h2>{title}</h2>{action}</header>{children}</section>;
 }
 export function EditorialEmpty({children}:{children:ReactNode}){return <p className="ec-empty">{children}</p>;}
-export function EditorialCover(){return <span className="ec-cover" aria-label="Sin portada registrada"><RrppIcon nombre="libro"/></span>;}
+export function EditorialCover({url}:{url?:string|null}){const [failed,setFailed]=useState(false);return url&&/^https:\/\//i.test(url)&&!failed?<img className="ec-cover" src={url} alt="Portada del proyecto" onError={()=>setFailed(true)}/>:<span className="ec-cover" aria-label="Sin portada registrada"><RrppIcon nombre="libro"/></span>;}
 export function EditorialRows({items,onOpen}:{items:EditorialIntervention[];onOpen:(id:string)=>void}){
   return items.length?<div className="ec-table-wrap"><table className="ec-table"><thead><tr>{['Proyecto / Autor','Intervención','Servicio','Situación','Editor actual','Fecha límite','Acción'].map(t=><th key={t}>{t}</th>)}</tr></thead><tbody>{items.map(i=><tr key={i.id}>
     <td data-label="Proyecto / Autor"><div className="ec-project"><EditorialCover/><span><strong>{i.title}</strong><small>{i.authors}</small></span></div></td><td data-label="Intervención">{i.label}</td><td data-label="Servicio"><span className="ec-service">{i.service}</span></td>

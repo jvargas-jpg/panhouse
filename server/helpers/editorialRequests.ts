@@ -1,111 +1,122 @@
-import { pool } from '../db/client.js';
+import { and, eq } from 'drizzle-orm';
+import { db, pool } from '../db/client.js';
+import { notificaciones, proyectos, solicitudesArea, users } from '../db/schema/index.js';
 import { editorialInterventions, EDITORIAL_EVENTS } from './editorialChief.js';
 import { specialistsFor } from './editorialProjects.js';
 import { diaCaracas } from './atencionEspecialista.js';
-import { ESTADOS_ACTIVOS } from './carga.js';
+import { getEditorLoadSummary, recommendEditorsForIntervention } from './editorialAssignments.js';
+import { registrarEvento } from './auditLog.js';
 import type { EditorialRequestDetail, EditorialRequestFilters, EditorialRequestList, EditorialRequestSummary } from '../../shared/editorialChief.js';
 
-// Único tipo de solicitud real en este dominio hoy: ASSIGN_EDITOR (ver docs/arquitectura/29-jefe-edicion.md
-// § Solicitudes — se auditaron REASSIGN_EDITOR-como-solicitud, "apoyo por carga" y "escalación" y ninguno
-// tiene respaldo en el código/esquema actual; no se fabrican). Una solicitud = un evento EDITOR_SOLICITADO,
-// que por el guardián de idempotencia en solicitarEditor() solo puede existir una vez por work item contenedor.
-
-async function pendingFromInterventions(now: Date): Promise<EditorialRequestSummary[]> {
-  const items = await editorialInterventions(diaCaracas(now));
-  return items.filter(i => i.needsAssignment).map(i => ({
-    id: i.id, projectId: i.projectId, code: i.code, title: i.title, authors: i.authors, coverUrl: i.coverUrl,
-    service: i.service, serviceId: i.serviceId ?? '',
-    requester: i.requestedBy ?? null, requesterId: i.requestedById ?? null, requesterRole: i.requestedByRole ?? null,
-    status: 'pendiente' as const, requestedAt: i.requestedAt!,
-    resolvedAt: null, resolvedBy: null, resultEditorId: null, resultEditor: null, resultWorkItemId: null,
-  }));
+// The existing area handoff owns the decision. Execution remains in work_items.
+// Legacy requests with no surviving actor remain readable without inventing one.
+const SOURCE = `WITH origins AS (
+ SELECT r.id,r.proyecto_id,r.work_item_id,r.business_key,r.requested_by_id,r.requested_at,r.estado,r.motivo,r.version,r.descripcion
+ FROM solicitudes_area r WHERE r.tipo='editor'
+ UNION ALL
+ SELECT w.id,w.proyecto_id,w.id,w.business_key,a.actor_id,a.created_at,'pendiente',null::text,1,null::text
+ FROM work_items w JOIN LATERAL (SELECT actor_id,created_at FROM audit_logs WHERE entity_id=w.id AND accion='EDITOR_SOLICITADO' ORDER BY created_at,id LIMIT 1) a ON true
+ WHERE w.tipo='edicion' AND NOT EXISTS(SELECT 1 FROM solicitudes_area r WHERE r.tipo='editor' AND r.work_item_id=w.id)
+), requests AS (
+ SELECT r.*,p.codigo,p.estado::text project_state,coalesce(nullif(trim(p.titulo_definitivo),''),nullif(trim(p.titulo),''),'Proyecto editorial') title,
+ coalesce(au.names,a.nombre) authors,s.nombre service,s.id service_id,
+ req.nombre requester,req.rol::text requester_role,
+ coalesce(step.nombre,CASE WHEN w.business_key='default' THEN 'Inicio de edición' ELSE replace(w.business_key,'_',' ') END) intervention_label,
+ coalesce(r.descripcion,w.observaciones) notes,w.fecha_fin_pautada::text requested_date,p.manuscrito_url,
+ resolution.id assignment_id,resolution.usuario_id editor_id,ed.nombre editor,resolution.asignado_en resolved_at,rb.nombre resolver,
+ CASE WHEN resolution.id IS NOT NULL OR r.estado='resuelta' THEN 'resuelta' WHEN w.estado='cancelado' OR r.estado='cancelada' THEN 'cancelada'
+ WHEN r.estado='requiere_informacion' THEN 'devuelta' ELSE 'pendiente' END status,
+ (r.estado='pendiente' AND resolution.id IS NULL AND p.estado IN ('en_proceso','retrasado')
+  AND w.estado IN ('pendiente','en_progreso') AND w.gate_bloqueante IS NULL AND p.editor_id IS NULL
+  AND NOT EXISTS(SELECT 1 FROM project_assignments x WHERE x.proyecto_id=p.id AND x.tipo='editor' AND x.work_item_id IS NULL)
+  AND NOT EXISTS(SELECT 1 FROM pausas ps WHERE ps.proyecto_id=p.id AND ps.fecha_inicio<=now() AND (ps.fecha_fin IS NULL OR ps.fecha_fin>now()))) assignment_ready,
+ (r.estado='pendiente' AND resolution.id IS NULL AND p.estado IN ('en_proceso','retrasado','pausado','stand_by')
+  AND w.estado IN ('pendiente','en_progreso','bloqueado') AND p.editor_id IS NULL
+  AND NOT EXISTS(SELECT 1 FROM project_assignments x WHERE x.proyecto_id=p.id AND x.tipo='editor' AND x.work_item_id IS NULL)) actionable
+ FROM origins r JOIN work_items w ON w.id=r.work_item_id AND w.proyecto_id=r.proyecto_id AND w.tipo='edicion'
+ JOIN proyectos p ON p.id=r.proyecto_id JOIN autores a ON a.id=p.autor_id JOIN servicios s ON s.id=p.servicio_id
+ LEFT JOIN pasos step ON step.id=w.paso_id
+ LEFT JOIN (SELECT pa.proyecto_id,string_agg(au.nombre,', ' ORDER BY au.nombre) names FROM proyectos_autores pa JOIN autores au ON au.id=pa.autor_id GROUP BY pa.proyecto_id) au ON au.proyecto_id=p.id
+ LEFT JOIN usuarios req ON req.id=r.requested_by_id
+ LEFT JOIN LATERAL (SELECT pa.* FROM project_assignments pa WHERE pa.proyecto_id=p.id AND pa.tipo='editor' AND pa.work_item_id IS NULL AND pa.asignado_en>=r.requested_at ORDER BY pa.asignado_en,pa.id LIMIT 1) resolution ON true
+ LEFT JOIN usuarios ed ON ed.id=resolution.usuario_id LEFT JOIN usuarios rb ON rb.id=resolution.asignado_por_id
+)`;
+interface Row {
+ id:string; proyecto_id:string; work_item_id:string; business_key:string; requested_by_id:string|null; requested_at:string|Date;
+ title:string; codigo:string; authors:string; service:string; service_id:string; requester:string|null; requester_role:string|null;
+ status:EditorialRequestSummary['status']; resolved_at:string|Date|null; resolver:string|null; editor_id:string|null; editor:string|null;
+ assignment_id:string|null; intervention_label:string; notes:string|null; requested_date:string|null; motivo:string|null; version:number;
+ actionable:boolean; assignment_ready:boolean; manuscrito_url:string|null; descripcion:string|null; project_state:string;
+}
+const iso=(value:string|Date)=>new Date(value).toISOString();
+function summary(r:Row):EditorialRequestSummary {
+ return {id:r.id,projectId:r.proyecto_id,workItemId:r.work_item_id,businessKey:r.business_key,requestType:'ASSIGN_EDITOR',projectActive:!['culminado','retirado'].includes(r.project_state),
+  code:r.codigo,title:r.title,authors:r.authors,coverUrl:null,service:r.service,serviceId:r.service_id,
+  requester:r.requester,requesterId:r.requested_by_id,requesterRole:r.requester_role,status:r.status,requestedAt:iso(r.requested_at),
+  resolvedAt:r.resolved_at?iso(r.resolved_at):null,resolvedBy:r.resolver,resultEditorId:r.editor_id,resultEditor:r.editor,
+  resultWorkItemId:r.assignment_id?r.work_item_id:null,resultAssignmentId:r.assignment_id,
+  interventionLabel:r.intervention_label,description:r.descripcion??`Asignar Editor para ${r.intervention_label}.`,
+  volume:null,requestedDate:r.requested_date,notes:r.notes,returnReason:r.motivo,actionable:r.actionable,assignmentReady:r.assignment_ready,version:r.version};
 }
 
-async function resolvedRequests(): Promise<EditorialRequestSummary[]> {
-  const { rows } = await pool.query<{
-    work_item_id: string; proyecto_id: string; requested_at: Date; requester_id: string | null;
-    resolved_at: Date; resolved_by: string | null; editor_id: string | null;
-    codigo: string; title: string; authors: string; service: string; service_id: string;
-    requester: string | null; requester_role: string | null; editor: string | null; resolver: string | null;
-  }>(`WITH pedidos AS (
-    SELECT a.entity_id work_item_id, a.proyecto_id, a.created_at requested_at, a.actor_id requester_id
-    FROM audit_logs a WHERE a.accion='EDITOR_SOLICITADO'
-  ), resoluciones AS (
-    SELECT a.proyecto_id, a.created_at resolved_at, a.actor_id resolved_by, nullif(a.detalles->>'nuevo','')::uuid editor_id
-    FROM audit_logs a WHERE a.accion='EDITOR_ASIGNADO'
-  ), resolved AS (
-    SELECT DISTINCT ON (ped.work_item_id) ped.*, res.resolved_at, res.resolved_by, res.editor_id
-    FROM pedidos ped JOIN resoluciones res ON res.proyecto_id=ped.proyecto_id AND res.resolved_at>=ped.requested_at
-    ORDER BY ped.work_item_id, res.resolved_at
-  )
-  SELECT r.work_item_id, r.proyecto_id, r.requested_at, r.requester_id, r.resolved_at, r.resolved_by, r.editor_id,
-    p.codigo, coalesce(nullif(trim(p.titulo_definitivo),''),nullif(trim(p.titulo),''),'Proyecto editorial') title,
-    coalesce(au.names,a.nombre) authors, s.nombre service, s.id service_id,
-    req.nombre requester, req.rol::text requester_role, ed.nombre editor, rb.nombre resolver
-  FROM resolved r
-  JOIN proyectos p ON p.id=r.proyecto_id JOIN autores a ON a.id=p.autor_id JOIN servicios s ON s.id=p.servicio_id
-  LEFT JOIN (SELECT pa.proyecto_id, string_agg(au.nombre,', ' ORDER BY au.nombre) names FROM proyectos_autores pa JOIN autores au ON au.id=pa.autor_id GROUP BY pa.proyecto_id) au ON au.proyecto_id=p.id
-  LEFT JOIN usuarios req ON req.id=r.requester_id
-  LEFT JOIN usuarios ed ON ed.id=r.editor_id
-  LEFT JOIN usuarios rb ON rb.id=r.resolved_by
-  WHERE p.estado::text = ANY($1::text[])
-  ORDER BY r.resolved_at DESC`, [ESTADOS_ACTIVOS]);
-  return rows.map(r => ({
-    id: r.work_item_id, projectId: r.proyecto_id, code: r.codigo, title: r.title, authors: r.authors, coverUrl: null,
-    service: r.service, serviceId: r.service_id,
-    requester: r.requester, requesterId: r.requester_id, requesterRole: r.requester_role,
-    status: 'resuelta' as const, requestedAt: r.requested_at.toISOString(),
-    resolvedAt: r.resolved_at.toISOString(), resolvedBy: r.resolver,
-    resultEditorId: r.editor_id, resultEditor: r.editor, resultWorkItemId: r.work_item_id,
-  }));
+export async function listarSolicitudesEdicion(filters:EditorialRequestFilters, _now=new Date()):Promise<EditorialRequestList> {
+ const args:unknown[]=[];const bind=(v:unknown)=>{args.push(v);return '$'+args.length;};const conditions:string[]=[];
+ if(filters.search.trim()) conditions.push(`translate(lower(title||' '||authors||' '||codigo||' '||coalesce(requester,'')||' '||intervention_label||' '||coalesce(notes,'')),'áéíóúüñ','aeiouun') LIKE ${bind('%'+filters.search.trim().normalize('NFD').replace(/\p{Diacritic}/gu,'').toLowerCase().replace(/[\\%_]/g,'\\$&')+'%')}`);
+ if(filters.service)conditions.push(`service_id=${bind(filters.service)}::uuid`);
+ if(filters.requester)conditions.push(`requested_by_id=${bind(filters.requester)}::uuid`);
+ if(filters.from)conditions.push(`(requested_at AT TIME ZONE 'America/Caracas')::date>=${bind(filters.from)}::date`);
+ if(filters.to)conditions.push(`(requested_at AT TIME ZONE 'America/Caracas')::date<=${bind(filters.to)}::date`);
+ const bucket=filters.tab==='pending'?"status='pendiente' AND actionable":filters.tab==='resolved'?"status='resuelta'":filters.tab==='returned'?"status='devuelta'":'true';
+ const order={oldest:'requested_at ASC',newest:'requested_at DESC',project:'title ASC'}[filters.sort];
+ const size=bind(filters.pageSize),page=bind(filters.page);
+ const {rows}=await pool.query<{result:Omit<EditorialRequestList,'items'>&{items:Row[]}}>(`${SOURCE},
+ filtered AS(SELECT * FROM requests WHERE ${conditions.join(' AND ')||'true'}),
+ selected AS(SELECT * FROM filtered WHERE ${bucket}),
+ meta AS(SELECT count(*)::int total,greatest(1,ceil(count(*)::numeric/${size}))::int pages FROM selected),
+ paged AS(SELECT * FROM selected ORDER BY ${order},id LIMIT ${size} OFFSET ((SELECT least(${page},pages)-1 FROM meta)*${size}))
+ SELECT json_build_object('items',coalesce((SELECT json_agg(row_to_json(paged)) FROM paged),'[]'::json),
+ 'total',m.total,'pages',m.pages,'page',least(${page},m.pages),
+ 'counts',(SELECT json_build_object('pending',count(*) FILTER(WHERE status='pendiente' AND actionable),'resolved',count(*) FILTER(WHERE status='resuelta'),'returned',count(*) FILTER(WHERE status='devuelta'),'all',count(*)) FROM filtered),
+ 'pendingTotal',(SELECT count(*) FROM requests WHERE status='pendiente' AND actionable),
+ 'options',json_build_object('services',(SELECT coalesce(json_agg(x),'[]'::json) FROM (SELECT DISTINCT service_id id,service name FROM requests ORDER BY name,id) x),
+ 'requesters',(SELECT coalesce(json_agg(x),'[]'::json) FROM (SELECT DISTINCT requested_by_id id,requester name FROM requests WHERE requested_by_id IS NOT NULL ORDER BY name,id) x))) result FROM meta m`,args);
+ const result=rows[0]!.result;return {...result,items:result.items.map(summary)};
 }
 
-async function allRequests(now: Date): Promise<EditorialRequestSummary[]> {
-  const [pending, resolved] = await Promise.all([pendingFromInterventions(now), resolvedRequests()]);
-  return [...pending, ...resolved];
+export async function obtenerSolicitudEdicionDetalle(id:string,now=new Date()):Promise<EditorialRequestDetail|null> {
+ const {rows}=await pool.query<Row>(`${SOURCE} SELECT * FROM requests WHERE id=$1::uuid`,[id]);
+ const r=rows[0];if(!r)return null;
+ const s=summary(r);
+ const [items,specialists,history,recommendation]=await Promise.all([
+  editorialInterventions(diaCaracas(now),r.proyecto_id,undefined,r.work_item_id),specialistsFor([r.proyecto_id]),
+  pool.query<{id:string;accion:string;actor:string;created_at:Date;detalles:{motivo?:string}|null}>(
+   `SELECT a.id,a.accion,coalesce(u.nombre,'Sistema') actor,a.created_at,a.detalles FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id
+    WHERE a.proyecto_id=$1 AND (a.entity_id=$2 OR a.entity_id=$3 OR a.entity_id=$4) AND a.accion=ANY($5::text[])
+    ORDER BY a.created_at,a.id LIMIT 50`,[r.proyecto_id,id,r.work_item_id,r.assignment_id,['EDITOR_SOLICITADO','EDITOR_ASIGNADO','EDITOR_SOLICITUD_DEVUELTA','EDITOR_SOLICITUD_REENVIADA']]),
+  s.assignmentReady?getEditorLoadSummary(now).then(recommendEditorsForIntervention):Promise.resolve(null),
+ ]);
+ const item=items[0],editor=recommendation?.candidates.find(e=>recommendation.recommendedIds.includes(e.id));
+ return {summary:s,context:item?{editorialState:item.state,currentEditor:item.editor,specialist:specialists.get(r.proyecto_id)?.nombre??null,deadline:item.dueDate,waitingOn:item.waitingOn??null,blocker:item.block}:null,
+  history:history.rows.map(h=>({id:h.id,label:(EDITORIAL_EVENTS[h.accion]??h.accion)+(h.detalles?.motivo?' · '+h.detalles.motivo:''),actor:h.actor,at:h.created_at.toISOString()})),
+  files:r.manuscrito_url&&/^https:\/\//i.test(r.manuscrito_url)?[{label:'Manuscrito del proyecto',url:r.manuscrito_url}]:[],
+  recommendationSummary:recommendation?{rule:recommendation.rule,observedAt:recommendation.observedAt,explanation:recommendation.explanation,tied:recommendation.recommendedIds.length,
+   editor:editor?{id:editor.id,name:editor.name,actionableNow:editor.actionableNow,overdue:editor.overdue,dueThisWeek:editor.dueThisWeek}:null}:null};
 }
 
-export async function listarSolicitudesEdicion(filters: EditorialRequestFilters, now = new Date()): Promise<EditorialRequestList> {
-  const all = await allRequests(now);
-  const services = new Map<string, string>(), requesters = new Map<string, string>();
-  for (const r of all) { if (r.serviceId) services.set(r.serviceId, r.service.split(' · ')[0]!); if (r.requesterId && r.requester) requesters.set(r.requesterId, r.requester); }
-  const choices = (map: Map<string, string>) => [...map].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, 'es') || a.id.localeCompare(b.id));
-  const options = { services: choices(services), requesters: choices(requesters) };
-  const search = filters.search.trim().toLocaleLowerCase('es');
-  const matching = all.filter(r => (!search || `${r.title} ${r.authors} ${r.code} ${r.requester ?? ''}`.toLocaleLowerCase('es').includes(search)) &&
-    (!filters.service || r.serviceId === filters.service) && (!filters.requester || r.requesterId === filters.requester) &&
-    (!filters.from || r.requestedAt.slice(0, 10) >= filters.from) && (!filters.to || r.requestedAt.slice(0, 10) <= filters.to));
-  const counts = { pending: matching.filter(r => r.status === 'pendiente').length, resolved: matching.filter(r => r.status === 'resuelta').length, all: matching.length };
-  const sorters: Record<EditorialRequestFilters['sort'], (a: EditorialRequestSummary, b: EditorialRequestSummary) => number> = {
-    oldest: (a, b) => a.requestedAt.localeCompare(b.requestedAt),
-    newest: (a, b) => b.requestedAt.localeCompare(a.requestedAt),
-    project: (a, b) => a.title.localeCompare(b.title, 'es'),
-  };
-  const rows = matching.filter(r => filters.tab === 'all' || (filters.tab === 'pending' ? r.status === 'pendiente' : r.status === 'resuelta'))
-    .sort((a, b) => sorters[filters.sort](a, b) || a.id.localeCompare(b.id));
-  const pages = Math.max(1, Math.ceil(rows.length / filters.pageSize)), page = Math.min(filters.page, pages);
-  return { items: rows.slice((page - 1) * filters.pageSize, page * filters.pageSize), total: rows.length, pages, page, counts, options };
-}
-
-export async function obtenerSolicitudEdicionDetalle(id: string, now = new Date()): Promise<EditorialRequestDetail | null> {
-  const all = await allRequests(now);
-  const summary = all.find(r => r.id === id);
-  if (!summary) return null;
-  const [item] = await editorialInterventions(diaCaracas(now), undefined, undefined, id);
-  const [specialists, history] = await Promise.all([
-    specialistsFor([summary.projectId]),
-    pool.query<{ id: string; accion: string; actor: string; created_at: Date }>(
-      `SELECT a.id, a.accion, coalesce(u.nombre,'Sistema') actor, a.created_at FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id
-       WHERE a.proyecto_id=$1 AND a.accion=ANY($2::text[]) AND a.entity_id=$3 ORDER BY a.created_at DESC, a.id DESC LIMIT 10`,
-      [summary.projectId, ['EDITOR_SOLICITADO', 'EDITOR_ASIGNADO', 'EDITOR_REASIGNADO'], id]),
-  ]);
-  const specialist = specialists.get(summary.projectId);
-  return {
-    summary,
-    context: item ? {
-      editorialState: item.state, currentEditor: item.editor, specialist: specialist?.nombre ?? null,
-      deadline: item.dueDate, waitingOn: item.waitingOn ?? null, blocker: item.block,
-    } : null,
-    history: history.rows.map(r => ({ id: r.id, label: EDITORIAL_EVENTS[r.accion]!, actor: r.actor, at: r.created_at.toISOString() })),
-  };
+export async function devolverSolicitudEdicion(id:string,actor:{id:string;rol:string},reason:string,expectedVersion:number) {
+ const motivo=reason.trim();if(motivo.length<5||motivo.length>1000)throw Object.assign(new Error('Escribe un motivo de entre 5 y 1000 caracteres'),{statusCode:400});
+ if(actor.rol!=='jefe_edicion')throw Object.assign(new Error('Solo Jefatura de Edición puede devolver esta solicitud'),{statusCode:403});
+ return db.transaction(async tx=>{
+  const [origin]=await tx.select().from(solicitudesArea).where(and(eq(solicitudesArea.id,id),eq(solicitudesArea.tipo,'editor')));
+  if(!origin)throw Object.assign(new Error('Solicitud de Edición no encontrada'),{statusCode:404});
+  const [project]=await tx.select().from(proyectos).where(eq(proyectos.id,origin.proyectoId)).for('update');
+  const [r]=await tx.select().from(solicitudesArea).where(eq(solicitudesArea.id,id)).for('update');
+  if(!project||!r||r.estado!=='pendiente'||r.version!==expectedVersion||project.editorId||['culminado','retirado'].includes(project.estado))throw Object.assign(new Error('La solicitud cambió. Actualiza el detalle antes de decidir.'),{statusCode:409});
+  const [chief]=await tx.select({id:users.id}).from(users).where(and(eq(users.id,actor.id),eq(users.rol,'jefe_edicion'),eq(users.activo,true)));
+  if(!chief)throw Object.assign(new Error('Jefatura de Edición no autorizada'),{statusCode:403});
+  await tx.update(solicitudesArea).set({estado:'requiere_informacion',motivo,version:r.version+1}).where(eq(solicitudesArea.id,id));
+  await registrarEvento(tx,{actorId:actor.id,accion:'EDITOR_SOLICITUD_DEVUELTA',entityType:'solicitud',entityId:id,proyectoId:r.proyectoId,detalles:{motivo,workItemId:r.workItemId}});
+  if(r.requestedById)await tx.insert(notificaciones).values({proyectoId:r.proyectoId,rolDestino:'especialista',usuarioDestinoId:r.requestedById,mensaje:`Jefatura de Edición devolvió tu solicitud: ${motivo}`});
+  return {ok:true};
+ });
 }

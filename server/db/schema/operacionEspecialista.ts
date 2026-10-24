@@ -27,7 +27,7 @@ export const solicitudesArea = pgTable('solicitudes_area', {
   proyectoId: uuid('proyecto_id').notNull().references(() => proyectos.id, { onDelete: 'cascade' }),
   // Creative intake converts on acceptance. Earlier area handoffs retain their required work item.
   workItemId: uuid('work_item_id').references(() => workItems.id, { onDelete: 'cascade' }),
-  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa'>().notNull(),
+  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor'>().notNull(),
   businessKey: text('business_key').notNull(),
   // Null only for imported creative history whose originating actor was never recorded.
   requestedById: uuid('requested_by_id').references(() => users.id, { onDelete: 'restrict' }),

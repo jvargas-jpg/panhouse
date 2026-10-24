@@ -9,18 +9,18 @@ import {Link} from 'react-router-dom';
 export function EditorialDrawer({title,onClose,children,className=''}:{title:string;onClose:()=>void;children:ReactNode;className?:string}){
   const ref=useRef<HTMLDialogElement>(null);
   useEffect(()=>{const previous=document.activeElement as HTMLElement|null;ref.current?.showModal();return()=>{ref.current?.close();previous?.focus();};},[]);
-  return <dialog ref={ref} className={'ec-drawer '+className} onCancel={onClose} aria-label={title}><header><div><small>ÁREA DE EDICIÓN</small><h2>{title}</h2></div><button aria-label="Cerrar panel" onClick={onClose}>×</button></header><div className="ec-drawer-body">{children}</div></dialog>;
+  return <dialog ref={ref} className={'ec-drawer '+className} onCancel={e=>{e.preventDefault();onClose();}} aria-label={title}><header><div><small>ÁREA DE EDICIÓN</small><h2>{title}</h2></div><button aria-label="Cerrar panel" onClick={onClose}>×</button></header><div className="ec-drawer-body">{children}</div></dialog>;
 }
 export function useInvalidateEditorial(){
   const client=useQueryClient();
-  return ()=>Promise.all([editorialKey,['editores'],['capitulos'],['proyectos'],['proyecto'],['especialista-inicio'],['especialista-solicitudes'],['project-command-center'],['notificaciones']].map(queryKey=>client.invalidateQueries({queryKey})));
+  return ()=>Promise.all([editorialKey,['editores'],['capitulos'],['proyectos'],['proyecto'],['especialista-inicio'],['especialista-solicitudes'],['especialista-cartera'],['solicitudes'],['solicitud'],['mi-trabajo'],['project-workspace'],['ficha'],['ficha-viva'],['project-command-center'],['notificaciones']].map(queryKey=>client.invalidateQueries({queryKey})));
 }
 export function AsignarEditorCard({item,onAssigned,onCancel=()=>{},onConflict=()=>{}}:{item:EditorialIntervention;onAssigned:()=>void;onCancel?:()=>void;onConflict?:(message:string)=>void}){
   const team=useQuery({queryKey:[...editorialKey,'candidates',item.id],queryFn:()=>fetchEditorialCandidates(item.id)});
   const [editor,setEditor]=useState(''),[reason,setReason]=useState(''),[sort,setSort]=useState('load');
   const submitting=useRef(false);
   const invalidate=useInvalidateEditorial();
-  const mutation=useMutation({mutationFn:()=>decideEditor(item.id,editor,reason||undefined,item.editorId,item.assignmentId??null),onSuccess:async()=>{await invalidate();onAssigned();},onError:async(error)=>{if(error instanceof ApiError&&error.status===409)onConflict(error.message);await invalidate();setEditor('');},onSettled:()=>{submitting.current=false;}});
+  const mutation=useMutation({mutationFn:()=>decideEditor(item.id,editor,reason||undefined,item.editorId,item.assignmentId??null,item.requestVersion),onSuccess:async()=>{await invalidate();onAssigned();},onError:async(error)=>{if(error instanceof ApiError&&error.status===409)onConflict(error.message);await invalidate();setEditor('');},onSettled:()=>{submitting.current=false;}});
   const candidates=[...(team.data?.candidates??[])].sort((a,b)=>sort==='overdue'?a.overdue-b.overdue||a.rank-b.rank:sort==='name'?a.name.localeCompare(b.name,'es'):a.rank-b.rank);
   const selected=candidates.find(e=>e.id===editor),recommended=team.data?.candidates.filter(e=>team.data!.recommendedIds.includes(e.id))??[];
   return <form className="ec-assign-form ea-assign-form" onSubmit={e=>{e.preventDefault();if(!submitting.current&&selected){submitting.current=true;mutation.mutate();}}}>

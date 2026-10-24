@@ -26,9 +26,9 @@ const FUENTES = `WITH scope AS MATERIALIZED (
  CASE WHEN NOT EXISTS(SELECT 1 FROM project_assignments h WHERE h.proyecto_id=p.id AND h.tipo='especialista' AND h.work_item_id IS NULL) THEN p.especialista_id END)=$1::uuid)
 ), native AS (
  SELECT wi.id, p.id proyecto_id, wi.id work_item_id, wi.business_key, 'editor'::text tipo, 'edicion'::text proceso,
- CASE WHEN wi.estado='cancelado' THEN 'cancelada' WHEN ae.id IS NOT NULL THEN 'resuelta' ELSE 'pendiente' END estado,
- pedido.created_at requested_at, ae.asignado_en::text resolved_at, CASE WHEN ae.id IS NOT NULL THEN 'Editor asignado: '||ae.nombre END outcome
- FROM scope p JOIN work_items wi ON wi.proyecto_id=p.id AND wi.tipo='edicion'
+ CASE WHEN ae.id IS NOT NULL OR er.estado='resuelta' THEN 'resuelta' WHEN wi.estado='cancelado' OR er.estado='cancelada' THEN 'cancelada' WHEN er.estado='requiere_informacion' THEN 'requiere_informacion' ELSE 'pendiente' END estado,
+ pedido.created_at requested_at, ae.asignado_en::text resolved_at, CASE WHEN ae.id IS NOT NULL THEN 'Editor asignado: '||ae.nombre WHEN er.estado='requiere_informacion' THEN er.motivo END outcome
+ FROM scope p JOIN work_items wi ON wi.proyecto_id=p.id AND wi.tipo='edicion' LEFT JOIN solicitudes_area er ON er.work_item_id=wi.id AND er.tipo='editor'
  JOIN LATERAL (SELECT min(created_at) created_at FROM audit_logs WHERE entity_id=wi.id AND accion='EDITOR_SOLICITADO') pedido ON pedido.created_at IS NOT NULL
  LEFT JOIN LATERAL (SELECT x.id,x.asignado_en,u.nombre FROM project_assignments x JOIN usuarios u ON u.id=x.usuario_id WHERE x.proyecto_id=p.id AND x.tipo='editor' AND x.work_item_id IS NULL AND x.asignado_en>=pedido.created_at ORDER BY x.asignado_en,x.id LIMIT 1) ae ON true
  UNION ALL
@@ -52,7 +52,7 @@ const FUENTES = `WITH scope AS MATERIALIZED (
  FROM scope p JOIN work_items wi ON wi.proyecto_id=p.id AND wi.tipo='soporte_digital' AND wi.business_key='activacion_amazon' LEFT JOIN fichas_trazabilidad f ON f.proyecto_id=p.id
  UNION ALL
  SELECT r.id,p.id,r.work_item_id,r.business_key,r.tipo,CASE WHEN r.tipo='creativa' THEN 'direccion_creativa' ELSE r.tipo END,r.estado,r.requested_at,r.resolved_at::text,CASE WHEN r.tipo='creativa' AND r.estado='resuelta' THEN 'Solicitud aceptada · trabajo creativo iniciado' WHEN r.tipo='creativa' AND r.estado='rechazada' THEN r.motivo ELSE coalesce(r.outcome,r.motivo) END
- FROM scope p JOIN solicitudes_area r ON r.proyecto_id=p.id
+ FROM scope p JOIN solicitudes_area r ON r.proyecto_id=p.id AND r.tipo<>'editor'
 ), requests AS (
  SELECT n.*,p.codigo,p.titulo_actual,p.autores,p.servicio_nombre,p.fecha_fin_proyectada,p.subtitulo_definitivo FROM native n JOIN scope p ON p.id=n.proyecto_id
  WHERE ($2::text<>'talento_humano' OR n.tipo='contrato') AND ($2::text<>'rrpp' OR n.tipo IN ('lanzamiento','impresion'))
@@ -117,7 +117,7 @@ export async function detalleSolicitud(id:string,actor:Actor):Promise<DetalleSol
     eventTypes=['DISENO_HANDOFF_CALIDAD','CALIDAD_INICIADA','CALIDAD_REVISADA','CALIDAD_REVISION_FINAL_SOLICITADA'];
   } else if(r.tipo==='editor') {
     const assignments=await pool.query<{id:string}>(`SELECT id FROM project_assignments WHERE proyecto_id=$1 AND tipo='editor' AND work_item_id IS NULL AND asignado_en>=$2 ORDER BY asignado_en,id LIMIT 1`,[r.proyecto_id,r.requested_at]);
-    relatedIds.push(...assignments.rows.map(a=>a.id));eventTypes=['EDITOR_SOLICITADO','EDITOR_ASIGNADO','EDITOR_REASIGNADO'];
+    relatedIds.push(...assignments.rows.map(a=>a.id));eventTypes=['EDITOR_SOLICITADO','EDITOR_ASIGNADO','EDITOR_REASIGNADO','EDITOR_SOLICITUD_DEVUELTA','EDITOR_SOLICITUD_REENVIADA'];
     contexto.push({label:'Resultado',value:r.outcome ?? 'Jefatura de Edición debe asignar Editor'});
   } else {eventTypes=r.tipo==='digital'?['AMAZON_ACTIVACION_HABILITADA','AMAZON_ACTIVACION_REGISTRADA']:['PLANIFICACION_RRPP_CREADA','PLANIFICACION_RRPP_ACTUALIZADA'];}
   const events=await db.select({id:auditLogs.id,accion:auditLogs.accion,detalles:auditLogs.detalles,fecha:auditLogs.createdAt,actor:users.nombre}).from(auditLogs).leftJoin(users,eq(users.id,auditLogs.actorId)).where(and(eq(auditLogs.proyectoId,r.proyecto_id),r.tipo==='contrato'?eq(auditLogs.entityId,id):inArray(auditLogs.accion,eventTypes),r.tipo==='contrato'?undefined:r.tipo==='digital'?undefined:inArray(auditLogs.entityId,relatedIds))).orderBy(desc(auditLogs.createdAt),desc(auditLogs.id)).limit(50);

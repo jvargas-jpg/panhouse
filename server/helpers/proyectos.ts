@@ -6,7 +6,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { auditLogs, autores, capitulos, fichasTrazabilidad, monthlyGoals, notificaciones, pausas, projectAssignments, proyectos, proyectosAutores, servicios, users, workItems } from '../db/schema/index.js';
+import { auditLogs, autores, capitulos, fichasTrazabilidad, monthlyGoals, notificaciones, pausas, projectAssignments, proyectos, proyectosAutores, servicios, solicitudesArea, users, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
@@ -737,6 +737,7 @@ export async function asignarEspecialista(
 // fantasma en 'pendiente' después de que ya hay editor trabajando.
 export interface EditorialAssignmentDecision {
   interventionId: string; workItemId: string | null; expectedAssignmentId?: string | null;
+  expectedRequestVersion?: number;
   recommendation?: {rule: string; observedAt: string; recommendedIds: string[]; selectedFacts: Record<string,number>; manualOverride: boolean};
 }
 export async function asignarEditor(proyectoId: string, editorId: string, asignadoPorId: string, motivo?:string, expectedEditorId?:string|null, decision?:EditorialAssignmentDecision): Promise<void> {
@@ -748,6 +749,15 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
     if(!ESTADOS_ACTIVOS.includes(proyecto.estado))throw Object.assign(new Error('Proyecto cerrado'),{statusCode:409});
     const [current]=await tx.select({id:projectAssignments.id,editorId:projectAssignments.usuarioId}).from(projectAssignments).where(and(eq(projectAssignments.proyectoId,proyectoId),eq(projectAssignments.tipo,'editor'),isNull(projectAssignments.workItemId),isNull(projectAssignments.finalizadoEn)));
     const currentEditorId=current?.editorId??proyecto.editorId;
+    const [editorRequest]=await tx.select().from(solicitudesArea).where(and(eq(solicitudesArea.proyectoId,proyectoId),eq(solicitudesArea.tipo,'editor'))).for('update');
+    if(!currentEditorId&&editorRequest&&(editorRequest.estado!=='pendiente'||decision?.expectedRequestVersion!==undefined&&editorRequest.version!==decision.expectedRequestVersion))throw Object.assign(new Error('La solicitud cambió. Actualiza el contexto antes de decidir.'),{statusCode:409});
+    // The legacy project endpoint and the decision panel obey the same request gates.
+    if(!currentEditorId&&editorRequest){
+      const [requestWork]=await tx.select().from(workItems).where(and(eq(workItems.id,editorRequest.workItemId!),eq(workItems.proyectoId,proyectoId),eq(workItems.tipo,'edicion'))).for('update');
+      const projectPauses=await tx.select({inicio:pausas.fechaInicio,fin:pausas.fechaFin}).from(pausas).where(eq(pausas.proyectoId,proyectoId));
+      const now=new Date();
+      if(!requestWork||!['pendiente','en_progreso'].includes(requestWork.estado)||requestWork.gateBloqueante||['pausado','stand_by'].includes(proyecto.estado)||projectPauses.some(p=>p.inicio<=now&&(!p.fin||p.fin>now)))throw Object.assign(new Error('La solicitud no está lista para recibir Editor'),{statusCode:409});
+    }
     if(expectedEditorId!==undefined&&currentEditorId!==expectedEditorId&&currentEditorId!==editorId)throw Object.assign(new Error('La asignación cambió. Actualiza el contexto antes de decidir.'),{statusCode:409});
     if(decision?.expectedAssignmentId!==undefined&&(current?.id??null)!==decision.expectedAssignmentId&&currentEditorId!==editorId)throw Object.assign(new Error('El historial de asignación cambió. Actualiza el contexto.'),{statusCode:409});
     if(decision){
@@ -756,7 +766,7 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
         const [intervention]=await tx.select().from(workItems).where(and(eq(workItems.id,decision.workItemId),eq(workItems.proyectoId,proyectoId),eq(workItems.tipo,'edicion'))).for('update');
         if(!intervention)throw Object.assign(new Error('Intervención fuera del alcance de Edición'),{statusCode:404});
         if(intervention.estado==='cancelado'||(!currentEditorId&&(intervention.estado==='completado'||intervention.estado==='bloqueado'||intervention.gateBloqueante)))throw Object.assign(new Error('La intervención ya no está lista para asignación'),{statusCode:409});
-        if(!currentEditorId){
+        if(!currentEditorId&&!editorRequest){
           const [request]=await tx.select({id:auditLogs.id}).from(auditLogs).where(and(eq(auditLogs.entityId,intervention.id),eq(auditLogs.accion,'EDITOR_SOLICITADO'))).limit(1);
           const pauses=await tx.select({inicio:pausas.fechaInicio,fin:pausas.fechaFin}).from(pausas).where(eq(pausas.proyectoId,proyectoId));
           const now=new Date();
@@ -791,14 +801,15 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
       entityType: 'project_assignment',
       entityId: asignacionId,
       proyectoId,
-      detalles: { anterior: anteriorUsuarioId, nuevo: editorId, motivo:motivo??null, ...(decision?{interventionId:decision.interventionId,recommendation:decision.recommendation??null}: {}) },
+      detalles: { anterior: anteriorUsuarioId, nuevo: editorId, motivo:motivo??null, requestId:editorRequest?.id??null, ...(decision?{interventionId:decision.interventionId,recommendation:decision.recommendation??null}: {}) },
     });
 
     const workId=await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
     const [work]=await tx.select({estado:workItems.estado,due:workItems.fechaFinPautada}).from(workItems).where(eq(workItems.id,workId));
     if(work?.estado==='pendiente')await transicionarWorkItem(tx, { proyectoId, tipo: 'edicion', estado: 'en_progreso' });
+    if(editorRequest?.estado==='pendiente')await tx.update(solicitudesArea).set({estado:'resuelta',resolvedAt:new Date(),resolvedById:asignadoPorId,outcome:'EDITOR_ASIGNADO',version:editorRequest.version+1}).where(eq(solicitudesArea.id,editorRequest.id));
     const [pedido]=await tx.select({id:auditLogs.id}).from(auditLogs).where(and(eq(auditLogs.proyectoId,proyectoId),eq(auditLogs.accion,'EDITOR_SOLICITADO'))).limit(1);
-    const owner=pedido?await obtenerEspecialistaActual(proyectoId,proyecto.especialistaId,tx):null;
+    const owner=editorRequest?.estado==='pendiente'?editorRequest.requestedById:(pedido?await obtenerEspecialistaActual(proyectoId,proyecto.especialistaId,tx):null);
     if(owner)await tx.insert(notificaciones).values({proyectoId,rolDestino:'especialista',usuarioDestinoId:owner,mensaje:'Jefatura de Edición asignó Editor a tu solicitud.'});
 
     await tx.insert(notificaciones).values({
@@ -833,12 +844,23 @@ export async function solicitarEditor(proyectoId: string, actorId: string): Prom
 
     const workItemId = await crearWorkItemSiNoExiste(tx, { proyectoId, tipo: 'edicion' });
 
+    const [existingRequest]=await tx.select().from(solicitudesArea).where(and(eq(solicitudesArea.workItemId,workItemId),eq(solicitudesArea.tipo,'editor'))).for('update');
+    if(existingRequest?.estado==='requiere_informacion'){
+      await tx.update(solicitudesArea).set({estado:'pendiente',version:existingRequest.version+1}).where(eq(solicitudesArea.id,existingRequest.id));
+      await registrarEvento(tx,{actorId,accion:'EDITOR_SOLICITUD_REENVIADA',entityType:'solicitud',entityId:existingRequest.id,proyectoId,detalles:{workItemId}});
+      await tx.insert(notificaciones).values({proyectoId,rolDestino:'jefe_edicion',mensaje:`El Especialista reenvió la solicitud de Editor para #${proyecto.codigo}.`});
+      return;
+    }
+
     const [yaNotificado] = await tx
       .select({ id: auditLogs.id })
       .from(auditLogs)
       .where(and(eq(auditLogs.entityId,workItemId),eq(auditLogs.accion,'EDITOR_SOLICITADO')))
       .limit(1);
     if (yaNotificado) return;
+
+    // Keep the stable native public ID; decision state is independent of execution state.
+    await tx.insert(solicitudesArea).values({id:workItemId,proyectoId,workItemId,tipo:'editor',businessKey:'default',requestedById:actorId});
 
     await registrarEvento(tx, {
       actorId,

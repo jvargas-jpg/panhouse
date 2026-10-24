@@ -12,7 +12,7 @@ const SOURCE = `WITH assignments AS (
  FROM project_assignments WHERE tipo='editor' AND work_item_id IS NULL GROUP BY proyecto_id
 ), pedidos AS (
  SELECT entity_id,min(created_at) requested_at,(array_agg(actor_id ORDER BY created_at,id))[1] actor_id
- FROM audit_logs WHERE accion='EDITOR_SOLICITADO' GROUP BY entity_id
+ FROM audit_logs WHERE accion='EDITOR_SOLICITADO' AND NOT EXISTS(SELECT 1 FROM solicitudes_area req WHERE req.work_item_id=audit_logs.entity_id AND req.tipo='editor' AND req.estado<>'pendiente') GROUP BY entity_id
 ), pause_summary AS (
  SELECT proyecto_id,bool_or(fecha_inicio<=now() AND (fecha_fin IS NULL OR fecha_fin>now())) paused,
  jsonb_agg(jsonb_build_object('start',(fecha_inicio AT TIME ZONE 'America/Caracas')::date::text,'end',(fecha_fin AT TIME ZONE 'America/Caracas')::date::text)) pauses
@@ -46,8 +46,8 @@ const SOURCE = `WITH assignments AS (
  LEFT JOIN pasos step ON step.id=w.paso_id
  WHERE w.business_key NOT LIKE 'capitulo:%' AND (w.business_key<>'default' OR (NOT EXISTS(SELECT 1 FROM capitulos c WHERE c.proyecto_id=p.project_id) AND NOT EXISTS(SELECT 1 FROM work_items detail WHERE detail.proyecto_id=p.project_id AND detail.tipo='edicion' AND detail.business_key<>'default')) OR (p.editor_id IS NULL AND r.requested_at IS NOT NULL))
 )
-SELECT i.*,i.start_date::text start_date,i.delivered_at::text delivered_at,i.sent_at::text sent_at,i.feedback_at::text feedback_at,i.due_date::text due_date,e.nombre editor FROM interventions i LEFT JOIN usuarios e ON e.id=i.editor_id WHERE work_state<>'cancelado' AND ($2::uuid IS NULL OR i.editor_id=$2) AND ($3::uuid IS NULL OR i.id=$3)`;
-type Raw = { id:string; project_id:string; work_item_id:string|null; codigo:string; title:string; authors:string; service:string; service_id:string; service_code:string; subtype:string|null; editor_id:string|null; editor:string|null; chapter:number|null; start_date:string|null; delivered_at:string|null; sent_at:string|null; feedback_at:string|null; work_state:string; due_date:string|null; block:string|null; requested_at:Date|null; requester:string|null; requester_id:string|null; requester_role:string|null; notes:string|null; step_name:string|null; feedback_cycle:boolean; business_key:string; assignment_id:string|null; assigned_before:boolean; project_state:string; paused:boolean; pauses:{start:string;end:string|null}[] };
+SELECT i.*,decision_request.version request_version,i.start_date::text start_date,i.delivered_at::text delivered_at,i.sent_at::text sent_at,i.feedback_at::text feedback_at,i.due_date::text due_date,e.nombre editor FROM interventions i LEFT JOIN usuarios e ON e.id=i.editor_id LEFT JOIN solicitudes_area decision_request ON decision_request.work_item_id=i.work_item_id AND decision_request.tipo='editor' WHERE work_state<>'cancelado' AND ($2::uuid IS NULL OR i.editor_id=$2) AND ($3::uuid IS NULL OR i.id=$3)`;
+type Raw = { request_version:number|null; id:string; project_id:string; work_item_id:string|null; codigo:string; title:string; authors:string; service:string; service_id:string; service_code:string; subtype:string|null; editor_id:string|null; editor:string|null; chapter:number|null; start_date:string|null; delivered_at:string|null; sent_at:string|null; feedback_at:string|null; work_state:string; due_date:string|null; block:string|null; requested_at:Date|null; requester:string|null; requester_id:string|null; requester_role:string|null; notes:string|null; step_name:string|null; feedback_cycle:boolean; business_key:string; assignment_id:string|null; assigned_before:boolean; project_state:string; paused:boolean; pauses:{start:string;end:string|null}[] };
 
 function intervention(r:Raw,today:string): EditorialIntervention {
   const waiting = !!(r.sent_at && !r.feedback_at);
@@ -69,7 +69,8 @@ function intervention(r:Raw,today:string): EditorialIntervention {
     interventionType:feedback?'feedback':r.chapter?'chapter':r.step_name?'step:'+r.step_name:r.business_key,
     volume:r.chapter?'1 capítulo':null,notes:r.notes,requestedById:r.requester_id,requestedByRole:r.requester_role,
     waitingOn:waiting?'author':state==='Esperando Especialista'?'specialist':state==='En pausa'?'project_pause':null,
-    assignmentId:r.assignment_id,plannedDueDate:dueDate};
+    assignmentId:r.assignment_id,plannedDueDate:dueDate,requestVersion:r.request_version??undefined,
+    requestPending:!r.editor_id&&!r.assigned_before&&!!r.requested_at&&!r.chapter&&['pendiente','en_progreso','bloqueado'].includes(r.work_state)};
 }
 
 export async function editorialInterventions(today=diaCaracas(new Date()),projectId?:string,editorId?:string,id?:string) {
@@ -82,7 +83,7 @@ export async function editorialDashboard(now=new Date()):Promise<EditorialDashbo
     editorialInterventions(today),
     pool.query<{id:string;nombre:string}>(`SELECT id,nombre FROM usuarios WHERE rol='editor' AND activo ORDER BY nombre,id`),
   ]);
-  const requests=items.filter(i=>i.needsAssignment).sort((a,b)=>a.requestedAt!.localeCompare(b.requestedAt!)||a.id.localeCompare(b.id));
+  const requests=items.filter(i=>i.requestPending).sort((a,b)=>a.requestedAt!.localeCompare(b.requestedAt!)||a.id.localeCompare(b.id));
   const loads=new Map<string,EditorialLoad>(editors.rows.map(e=>[e.id,{id:e.id,name:e.nombre,active:0,upcoming:0,overdue:0,waiting:0}]));
   const weekEnd=new Date(today+'T12:00:00Z');weekEnd.setUTCDate(weekEnd.getUTCDate()+(7-weekEnd.getUTCDay())%7);
   const end=weekEnd.toISOString().slice(0,10);
@@ -95,13 +96,13 @@ export async function editorialDashboard(now=new Date()):Promise<EditorialDashbo
   }
   const order=(a:EditorialIntervention,b:EditorialIntervention)=>Number(b.needsAssignment)-Number(a.needsAssignment)||Number(b.overdue)-Number(a.overdue)||(a.dueDate??'9999').localeCompare(b.dueDate??'9999')||a.id.localeCompare(b.id);
   const attention=items.filter(i=>i.situation).sort(order);
-  return {updatedAt:now.toISOString(),today,summary:{unassigned:requests.length,overdue:items.filter(i=>i.overdue).length,atRisk:items.filter(i=>i.atRisk).length,pendingRequests:requests.length},
+  return {updatedAt:now.toISOString(),today,summary:{unassigned:items.filter(i=>i.needsAssignment).length,overdue:items.filter(i=>i.overdue).length,atRisk:items.filter(i=>i.atRisk).length,pendingRequests:requests.length},
     editorLoads:[...loads.values()].sort((a,b)=>b.active-a.active||a.name.localeCompare(b.name)),
     interventionDistribution:[...distribution].map(([state,count])=>({state,count})),attentionItems:attention.slice(0,6),attentionTotal:attention.length,
     upcomingDeliveries:items.filter(i=>i.actionable&&i.dueDate&&!i.overdue).sort((a,b)=>a.dueDate!.localeCompare(b.dueDate!)||a.id.localeCompare(b.id)).slice(0,6),
     pendingRequests:requests.slice(0,4).map(r=>({id:r.id,projectId:r.projectId,title:r.title,authors:r.authors,requestedBy:r.requestedBy??'Especialista',requestedAt:r.requestedAt!,label:'Asignación de Editor',state:'Pendiente'}))};
 }
-export const EDITORIAL_EVENTS:Record<string,string>={EDITOR_SOLICITADO:'Solicitud de Editor recibida',EDITOR_ASIGNADO:'Editor asignado',EDITOR_REASIGNADO:'Editor reasignado',CAPITULO_EDITOR_ENTREGADO:'Capítulo entregado por Editor',CAPITULO_ENVIADO_AUTOR:'Capítulo enviado al autor',CAPITULO_FEEDBACK_REGISTRADO:'Feedback del autor registrado',CAPITULO_FEEDBACK_APLICADO:'Feedback aplicado por Editor',FEEDBACK_TRIPA_REGISTRADO:'Edición de tripa completada'};
+export const EDITORIAL_EVENTS:Record<string,string>={EDITOR_SOLICITADO:'Solicitud de Editor recibida',EDITOR_SOLICITUD_DEVUELTA:'Solicitud devuelta',EDITOR_SOLICITUD_REENVIADA:'Solicitud reenviada',EDITOR_ASIGNADO:'Editor asignado',EDITOR_REASIGNADO:'Editor reasignado',CAPITULO_EDITOR_ENTREGADO:'Capítulo entregado por Editor',CAPITULO_ENVIADO_AUTOR:'Capítulo enviado al autor',CAPITULO_FEEDBACK_REGISTRADO:'Feedback del autor registrado',CAPITULO_FEEDBACK_APLICADO:'Feedback aplicado por Editor',FEEDBACK_TRIPA_REGISTRADO:'Edición de tripa completada'};
 // Responsabilidad actual != Editor asignado: una intervención puede seguir asignada a un Editor
 // mientras la pelota está en otra cancha (autor/Especialista). Compartido por Proyectos de edición
 // y Seguimiento — una sola fuente de verdad para no divergir entre pantallas.

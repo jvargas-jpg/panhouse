@@ -31,10 +31,10 @@ La matriz es una vista operativa. No se creó una tabla espejo, ni se importaron
 ## Ownership y transacciones
 
 1. El Especialista asignado solicita Editor por el comando existente `solicitarEditor`.
-2. La solicitud nativa es el `work_item` de Edición más su evento `EDITOR_SOLICITADO`. Se conserva la proyección de solicitudes ya utilizada por el Especialista; no hay un segundo lifecycle de requests.
+2. El pedido conserva `EDITOR_SOLICITADO` y el trabajo de Edición. La revisión de Solicitudes materializa su decisión en la tabla compartida `solicitudes_area`, con estado independiente del trabajo y conservando los IDs nativos (ver sección Solicitudes).
 3. Jefe de Edición decide mediante un único drawer compartido por Inicio, Asignaciones y Solicitudes.
 4. `asignarEditor` bloquea el proyecto, valida Editor real/activo, usa `asignarConHistorial`, mantiene el puntero, registra auditoría y notificaciones en la misma transacción.
-5. El historial de asignación posterior al pedido resuelve la solicitud nativa. No queda una request pendiente junto al trabajo asignado.
+5. La transacción de asignación resuelve `solicitudes_area` y activa el trabajo; el historial conserva el resultado. No queda una request pendiente junto al trabajo asignado.
 6. Un retry con el mismo Editor no duplica historial ni avisos. La unicity por scope y el bloqueo del proyecto evitan dos asignaciones activas. El nuevo comando detecta contexto obsoleto cuando dos decisiones distintas compiten.
 7. Reasignar conserva responsable anterior, inicio, fin y motivo; mueve la responsabilidad del proyecto y sus intervenciones, conforme al modelo vigente de Editor por proyecto. No se inventó asignación independiente por capítulo.
 
@@ -89,7 +89,7 @@ Sidebar: Inicio, Asignaciones y carga, Proyectos de edición, Seguimiento, Solic
 
 Pantalla de **decisión**, no de analítica ni de navegación general: responde "qué intervención necesita Editor y quién es la opción más adecuada según la carga real", nunca "qué pasó este mes" (eso es Indicadores) ni "cómo va el proyecto" (eso es Proyectos de edición). Implementación: `server/helpers/editorialAssignments.ts` (lecturas) + extensión de `asignarEditor` en `server/helpers/proyectos.ts` (decisión), rutas `GET /editores/asignaciones`, `GET /editores/equipo`, `GET /editores/intervenciones/:id/candidatos`, `PATCH /editores/asignaciones/:id` (ya existía; se extendió, no se duplicó).
 
-**Sin flujo paralelo.** No existe una segunda consulta ni una "Matriz de Editores" renderizada literalmente: `listarAsignacionesEdicion`, `getEditorLoadSummary` y `recommendEditorsForIntervention` reutilizan `editorialInterventions` (la misma proyección canónica de Inicio/Mi trabajo/Seguimiento) como única fuente de verdad. El modelo de solicitud→asignación tampoco cambia: `EDITOR_SOLICITADO` (audit log) sigue siendo la única petición nativa; `asignarEditor` resuelve la solicitud y crea/reutiliza el work item de Edición dentro de la misma transacción, igual que antes de esta ronda.
+**Sin flujo paralelo.** No existe una segunda consulta ni una "Matriz de Editores" renderizada literalmente: `listarAsignacionesEdicion`, `getEditorLoadSummary` y `recommendEditorsForIntervention` reutilizan `editorialInterventions` (la misma proyección canónica de Inicio/Mi trabajo/Seguimiento) como única fuente de verdad. El origen sigue siendo el pedido explícito `EDITOR_SOLICITADO`; la revisión de Solicitudes separa su estado en `solicitudes_area`. `asignarEditor` resuelve esa request y crea/reutiliza el work item de Edición dentro de la misma transacción.
 
 **Unidad de asignación:** el proyecto. La asignación de Editor vive en `project_assignments` (`tipo='editor'`, `work_item_id IS NULL`); los capítulos (`capitulos`) heredan ese Editor, no reciben asignación individual — por eso `needsAssignment` excluye intervenciones con `chapter` no nulo. El panel lo declara explícitamente: "La asignación es por proyecto: incluye sus intervenciones de Edición vigentes."
 
@@ -181,23 +181,61 @@ Pantalla de **supervisión operativa**, no de decisión ni de explicación agreg
 
 ## Solicitudes
 
-Pantalla de **bandeja de decisiones, no de notificaciones**: "¿qué decisiones de Editor esperan por mí?". Implementación: `server/helpers/editorialRequests.ts` (`listarSolicitudesEdicion`, `obtenerSolicitudEdicionDetalle`), rutas `GET /editores/solicitudes`, `GET /editores/solicitudes/:id`. Reutiliza `editorialInterventions()` para las pendientes y una consulta nueva de correlación de auditoría para las resueltas — cero sistema de solicitudes nuevo, cero tabla nueva.
+Actualización: 23 de octubre de 2026. Bandeja de decisiones del rol existente `jefe_edicion`: quién solicita, qué proyecto/intervención afecta y dónde se ejecuta la decisión.
 
-**Único tipo real hoy: Asignación de Editor.** Se auditó el dominio antes de construir esta pantalla, no se asumió la referencia visual (que mostraba Reasignación, Apoyo por carga y Escalación además de Asignación): `solicitarEditor()` (`server/helpers/proyectos.ts`) no tiene parámetro de nota ni de fecha requerida, y solo emite `EDITOR_SOLICITADO`; no existe un evento `EDITOR_SOPORTE_SOLICITADO` ni equivalente; `decisiones` (`server/db/schema/decisiones.ts`) tiene un CHECK que limita su `tipo` a `revision_previa_correccion`/`coleccion_inconsistente` con `targetRole` de Jefatura de Calidad — no es infraestructura de Edición y extenderla sin un requisito real violaría la regla de no inventar tipos. Por eso esta pantalla no tiene columna de "Tipo" variable (siempre "Asignación de Editor"), ni Prioridad, ni "notas del solicitante", ni "fecha requerida": ninguno de esos campos existe en el dominio.
+### Fuentes y alcance real
 
-**Ciclo de vida: solo `pendiente` → `resuelta`.** No hay "en revisión", "rechazada" ni "cancelada" — abrir el detalle es lectura, no una transición de estado (verificado: `obtenerSolicitudEdicionDetalle` no escribe nada). Una solicitud nace de un evento `EDITOR_SOLICITADO` (uno por work item contenedor, nunca más — `solicitarEditor` es idempotente: pedir dos veces no duplica la solicitud ni el evento) y se resuelve con el primer `EDITOR_ASIGNADO` posterior sobre ese proyecto. Una reasignación posterior (Editor A → B) es **otra decisión**, registrada en Asignaciones y Seguimiento con su propio motivo — no reabre ni reescribe la solicitud original; el resultado mostrado en Solicitudes sigue siendo el de la asignación que la resolvió.
+Se revisaron el manual local del Especialista, las auditorías y arquitectura existentes, solicitudes del Especialista, `solicitudes_area`, `work_items`, `project_assignments`, eventos, notificaciones, Asignaciones, Seguimiento y cola del Editor. En esta revisión no están disponibles los originales de la Matriz de Editores ni del PPTX de Indicadores; la documentación previa y `docs/auditoria/indicadores-fuente-2026-08.json` conservan su procedencia. No se importaron cifras ni personas de esos documentos o de la imagen.
 
-**Pendientes = exactamente las mismas filas que "Por asignar" en Asignaciones y carga** (`needsAssignment` de `editorialInterventions()`), sin campos ni orden propios inventados — es la misma necesidad de decisión vista desde una bandeja en vez de desde la carga del equipo. **Resueltas** es una vista nueva: correlaciona `EDITOR_SOLICITADO` con el `EDITOR_ASIGNADO` más próximo del mismo proyecto (`DISTINCT ON` sobre el work item, ordenado por fecha de resolución) y se limita a proyectos en estado activo (`ESTADOS_ACTIVOS`, `server/helpers/carga.ts` — mismo criterio de "proyecto activo" que usa el resto del dominio, no uno nuevo); una solicitud de un proyecto ya cerrado no se muestra como "pendiente de limpieza" en el historial.
+**Mapa de requests real:** `ASSIGN_EDITOR` / `tipo='editor'` → Especialista asignado al proyecto → Jefe de Edición, por rol → proyecto con intervención válida y pedido explícito → comando central `asignarEditor` → asignación formal, trabajo activo, resultado, auditoría y notificaciones. No hay destinatario individual de Jefatura en el dominio actual: el alcance es el conjunto de proyectos de Edición, no RRPP/Creativa/Comercial.
 
-**Sin selector de Editor propio:** el CTA "Revisar asignación →" de una fila pendiente llama al mismo `onOpen`/`open(id)` que usa Asignaciones y carga, lo que abre el `EditorialDecisionDrawer` global ya existente — nunca se construyó un segundo flujo de asignación. Una fila resuelta es de solo lectura ("Ver detalle →"): muestra Editor asignado, quién resolvió y cuándo, con un enlace a Proyectos de edición.
+No se inventaron requests de Reasignación, Escalación ni Apoyo por carga: no tienen origen formal en el negocio implementado. La reasignación real sigue en Asignaciones y carga con motivo e historial; un bloqueo se supervisa en Seguimiento y no se convierte automáticamente en escalación. No hay prioridad ni SLA de respuesta inventados.
 
-**Contexto operativo puede ser `null` para una solicitud resuelta — documentado, no un bug:** si el proyecto ya avanzó a capítulos reales después de ser resuelta, la intervención contenedora (`business_key='default'`) sale del alcance de `editorialInterventions()` (misma regla de alcance que usan Asignaciones/Proyectos/Seguimiento), así que no hay "estado de edición actual" que mostrar para esa intervención puntual — el panel lo explica ("Sin contexto operativo disponible") en vez de simular un dato que ya no aplica.
+### Request y trabajo tienen estados distintos
 
-**KPI (2, del conjunto completo filtrado):** Pendientes, Resueltas — no hay un tercer o cuarto KPI fabricado solo para llenar la fila; con un único tipo de solicitud, "resueltas por tipo" o "tiempo promedio de resolución" no están respaldados por ningún requisito real y no se construyeron.
+Se reutiliza **`solicitudes_area`**, sin tabla paralela ni motor nuevo. `0087_editor_request_lifecycle.sql` amplía su CHECK de tipos para `editor` y materializa solicitudes nativas preexistentes a partir de hechos registrados. Conserva solicitante, fecha y el ID público anterior (`work_item.id`), para no romper enlaces. Compartir ese UUID de compatibilidad no une las entidades: la decisión vive en `solicitudes_area`; la ejecución vive en `work_items`. Una lectura nunca migra ni modifica estado. Los registros legacy sin actor superviviente se leen de los hechos previos sin fabricar un solicitante; no se ofrece devolución sin destinatario rastreable.
 
-**Filtros y orden:** búsqueda server-side con debounce 300 ms (proyecto, autor, solicitante), servicio, solicitado por, rango de fechas; orden por fecha de solicitud (más antigua primero por defecto en Pendientes, más reciente primero en Resueltas) o proyecto. Tabs Pendientes (default) / Resueltas / Todas, sin tabs por tipo — hoy habría una sola.
+`businessKey`: la clave canónica del trabajo; pedido inicial `default`. Unicidad por `(proyecto_id,tipo,business_key)`, más bloqueo del proyecto al solicitar, evita duplicados concurrentes.
 
-**RBAC/IDOR:** ambas rutas exigen `jefe_edicion`; un `id` sin solicitud real responde 404.
+Lifecycle mínimo: **Pendiente → Resuelta**, o **Pendiente → Devuelta → Pendiente**. Devuelta usa el estado existente `requiere_informacion`; no se agrega un enum. Cancelaciones nativas se muestran como Cancelada, sin nuevo comando de cancelación. Abrir detalle no genera “en revisión”.
+
+`POST /editores/solicitudes/:id/devolver` exige motivo de 5–1000 caracteres y `expectedVersion`. Bloquea proyecto y request, comprueba rol, estado y versión; guarda motivo, incrementa versión, audita y notifica al solicitante dentro de una transacción. No completa ni cancela el trabajo. El Especialista ve `requiere_informacion`, motivo e historial en su bandeja. Puede reenviar mediante el comando existente `solicitarEditor`; conserva request y fecha originales, registra reenvío y notifica al Jefe. No duplica el evento inicial.
+
+### Resolución central y consistencia
+
+`asignarEditor` mantiene el orden de bloqueo **proyecto → solicitud → trabajo**, compartido con devolución. Revalida Editor activo, alcance, gates, asignación esperada, `expectedRequestVersion` y estado de la solicitud. Asignación, request resuelta, trabajo creado/activado, historial, auditoría y notificaciones se confirman juntos. Retry con el mismo Editor no duplica resultados. Dos decisiones distintas o devolver/asignar concurrentes dejan un solo resultado y un conflicto 409 para la segunda; el frontend actualiza el contexto.
+
+La primera asignación formal posterior al pedido es el resultado histórico; una reasignación posterior no lo reescribe. El DTO entrega `resultAssignmentId`, `resultEditorId`, `resultWorkItemId`, responsable y fecha reales. Se conserva el historial aunque cierre el proyecto. El detalle correlaciona el ID de la solicitud/trabajo con el **ID de project_assignment**: ya no pierde el evento de resolución por exigir que todos compartan entityId.
+
+### Contratos de lectura y rendimiento
+
+`GET /editores/solicitudes`: una consulta SQL con joins, filtros, conteos, opciones, orden, LIMIT y OFFSET. Una fila = una request, sin queries por proyecto, autor o solicitante. Búsqueda parametrizada y sin distinguir tildes por proyecto, autor, código, solicitante, intervención y notas; `%` y `_` se tratan como texto literal. Servicio, solicitante y rango de fechas; días según **America/Caracas**, no UTC. Rango invertido devuelve 400. Orden estable por fecha antigua/reciente o proyecto, con desempate por ID. Paginación validada: 10/25/50, página fuera de rango se ajusta al límite.
+
+El KPI `pendingTotal` no depende de filtros: solo pendientes **accionables**, coincidente con Inicio y badge del sidebar. Los conteos de tabs sí reflejan el conjunto filtrado completo, no la página. Devueltas e históricas no inflan Pendientes. Una request con pausa o gate sigue pendiente de decisión y puede devolverse: `actionable` controla la bandeja y `assignmentReady` controla exclusivamente el CTA/recomendación de asignación. No pasa a Por asignar hasta liberar los gates. Inicio distingue ambos conteos conservando dos consultas. Pendientes es la vista inicial.
+
+`GET /editores/solicitudes/:id`: consulta directamente esa request; no carga todo el inbox. Contexto, archivos e historial solo se consultan para la seleccionada. Hasta seis lecturas de dominio, constantes respecto de filas: resumen, intervención, Especialista, historial y dos consultas de carga. Sin HTTP externo ni Drive durante el render.
+
+`recommendationSummary` consume **`getEditorLoadSummary` + `recommendEditorsForIntervention`**, regla compartida `editorial-descriptive-v1`. Devuelve solo un resumen y el número de empates, nunca lista/radios ni otro algoritmo. No se confunde la recomendación descriptiva con capacidad o disponibilidad formal.
+
+Archivos: solo el enlace HTTPS al manuscrito canónico del proyecto relacionado con el pedido inicial. Sin explorador de Drive ni archivos de otras áreas. El dominio no almacena notas propias del solicitante ni volumen contractual numérico para el inicio: no se fabrican. Las notas operativas registradas se identifican como tales.
+
+### UX e integraciones
+
+Composición editorial con sidebar navy, branding en el pie, título serif, KPI pendiente, guía, filtros, tabs y tabla dominante. No hay KPI principal de Resueltas ni tabs de tipos inexistentes. Seleccionar fila conserva página y actualiza panel derecho, sin navegar. Estado de filtros, tab, página, selección y pestaña del detalle en URL. Fechas Hoy/Ayer incluyen hora Caracas.
+
+Detalle: **Resumen / Contexto / Archivos / Historial**. Resuelta es de solo lectura y muestra resultado y enlace al trabajo si sigue visible en Seguimiento. Si el contenedor dio paso a capítulos, el enlace muestra las intervenciones del proyecto; proyectos cerrados conservan el resultado sin enlaces a exploradores de activos. El contexto puntual puede ser nulo cuando el contenedor ya fue reemplazado visualmente por capítulos; se explica y se ofrece Proyectos de edición. “Ver en proyecto” selecciona ese proyecto; no abre Ficha.
+
+“Revisar y asignar Editor” y “Ver comparación completa” navegan a `?vista=asignaciones&request=<workItemId>&originRequest=<requestId>` y abren el **mismo EditorialDecisionDrawer**. Se desmonta el detalle antes de abrir la decisión: no hay modal sobre modal ni selector propio. Tras asignar, se vuelve al detalle de la request resuelta.
+
+Se invalidan TanStack keys reales: Edición, equipo, listas/detalles, cola, proyecto, ficha, workspace, `solicitudes`/`solicitud` del Especialista, Mi trabajo y notificaciones. No hay reload. Actividad independiente desde audit_logs, máximo cuatro eventos, con error/reintento local.
+
+Desktop: tabla y panel lateral de 344px; tablet: drawer y fondo; móvil: tarjetas y detalle de pantalla completa, scroll del fondo bloqueado, Escape y contención de foco. CSS para 1440/768/375; **la inspección visual real de esta ronda quedó bloqueada por Computer Use**, que no pudo verificar la URL de Chrome. No se afirma QA visual, capturas o comparación final que no se realizaron.
+
+Todas las rutas de consulta y devolución exigen sesión y `jefe_edicion`; IDs de requests/work items de otros dominios devuelven 404. El Especialista solo puede reenviar en su proyecto. Jefe no entrega, sube archivos, aplica feedback, asigna Especialistas ni opera otras áreas desde Solicitudes.
+
+Pruebas y resultados de esta revisión: `docs/auditoria/29-solicitudes-edicion-validacion.md` y `docs/evidencias/jefe-edicion/solicitudes-*.json`.
+
+La regresión completa detectó además un desajuste previo entre el cierre creativo en UTC y los indicadores diarios de Caracas. Las fechas generadas de cierre y aprobación RRPP en `direccionCreativa.ts` ahora reutilizan `diaCaracas`; una prueba de cambio de día y la revalidación de los flujos creativos verifican la corrección. No se modifican permisos ni procesos de esa área.
 
 ## Cobertura y siguientes fases
 

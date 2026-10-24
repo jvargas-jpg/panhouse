@@ -1,0 +1,28 @@
+{
+  "image": "postgres:16-alpine",
+  "storage": "tmpfs",
+  "fsync": true,
+  "shards": 3,
+  "startedAt": "2026-10-24T02:00:58.815Z",
+  "databases": [
+    "panhouse_s1_test",
+    "panhouse_s2_test",
+    "panhouse_s3_test"
+  ],
+  "cleanup": true,
+  "results": [
+    {
+      "shard": 1,
+      "code": 0
+    },
+    {
+      "shard": 2,
+      "code": 0
+    },
+    {
+      "shard": 3,
+      "code": 1
+    }
+  ],
+  "finishedAt": "2026-10-24T02:50:59.684Z"
+}

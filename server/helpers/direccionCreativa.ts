@@ -23,6 +23,7 @@ import { crearWorkItemSiNoExiste, transicionarWorkItemPorId } from './workItems.
 import {lockCreativeForLeader} from './creativeLeaderCommands.js';
 import {saveCreativeDelivery} from './creativeDeliveries.js';
 import {CreativeError} from './creativeLeader.js';
+import {diaCaracas} from './atencionEspecialista.js';
 import {obtenerEspecialistaActual} from './carga.js';
 
 async function obtenerDireccionCreativa(tx: Tx, id: string) {
@@ -331,7 +332,7 @@ export async function aprobarConceptoRrpp(propuestaId: string, datos: DatosAprob
     await tx
       .update(fichaDisenoPropuestas)
       .set({
-        fechaAprobadaRrpp: datos.aprobar ? new Date().toISOString().slice(0, 10) : null,
+        fechaAprobadaRrpp: datos.aprobar ? diaCaracas(new Date()) : null,
         estado: datos.aprobar ? 'Aprobada por RRPP' : 'Devuelta por RRPP',
         feedbackRrpp:datos.aprobar?null:datos.observaciones??null,
       })
@@ -479,7 +480,7 @@ export async function registrarRecursosCreativos(direccionCreativaId: string, da
       .where(eq(direccionesCreativas.id, direccionCreativaId));
 
     if(image&&pdf){
-      await tx.update(direccionesCreativas).set({resultadoFinal:'aprobado',fechaCierre:new Date().toISOString().slice(0,10)}).where(eq(direccionesCreativas.id,direccion.id));
+      await tx.update(direccionesCreativas).set({resultadoFinal:'aprobado',fechaCierre:diaCaracas(new Date())}).where(eq(direccionesCreativas.id,direccion.id));
       await transicionarWorkItemPorId(tx,direccion.workItemId,'completado');
       await registrarEvento(tx,{actorId,accion:'DIRECCION_CREATIVA_CERRADA',entityType:'work_item',entityId:direccion.workItemId,proyectoId:direccion.proyectoId,detalles:{resultadoFinal:'aprobado',reason:'Recursos completos del concepto aprobado'}});
       const [p]=await tx.select({especialistaId:proyectos.especialistaId}).from(proyectos).where(eq(proyectos.id,direccion.proyectoId));
@@ -510,7 +511,7 @@ export async function cerrarDireccionCreativa(direccionCreativaId: string, datos
     if (!direccion) throw new Error(`Dirección creativa no encontrada: ${direccionCreativaId}`);
     if(direccion.fechaCierre&&direccion.resultadoFinal===datos.resultadoFinal)return;
 
-    const fechaCierre = new Date().toISOString().slice(0, 10);
+    const fechaCierre = diaCaracas(new Date());
     await tx
       .update(direccionesCreativas)
       .set({ resultadoFinal: datos.resultadoFinal, observaciones: datos.observaciones ?? direccion.observaciones, fechaCierre })

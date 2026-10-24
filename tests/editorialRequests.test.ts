@@ -2,7 +2,7 @@ import {beforeEach,describe,expect,it} from 'vitest';
 import request from 'supertest';
 import {eq} from 'drizzle-orm';
 import {db} from '../server/db/client.js';
-import {auditLogs,proyectos} from '../server/db/schema/index.js';
+import {auditLogs,proyectos,solicitudesArea} from '../server/db/schema/index.js';
 import {crearUsuario,crearProyectoDePrueba} from './helpers/fixtures.js';
 import {limpiarBaseDeDatos} from './helpers/db.js';
 import {crearAppDePrueba} from './helpers/testApp.js';
@@ -70,16 +70,17 @@ describe('Solicitudes · bandeja de decisiones de Edición',()=>{
   expect(detail?.context).toBeNull();
   expect(detail?.summary.status).toBe('resuelta');
  });
- it('solicitud de un proyecto cerrado no aparece en resueltas (mismo criterio de "proyecto activo" que el resto del dominio)',async()=>{
+ it('conserva el resultado histórico al cerrar el proyecto',async()=>{
   const {project}=await pending(),chief=await crearUsuario('jefe_edicion'),editor=await crearUsuario('editor');
   await asignarEditor(project.id,editor.id,chief.id);
   await db.update(proyectos).set({estado:'culminado'}).where(eq(proyectos.id,project.id));
   const resolvedList=await listarSolicitudesEdicion({...filters,tab:'resolved',pageSize:200},now);
-  expect(resolvedList.items.some(r=>r.projectId===project.id)).toBe(false);
+  expect(resolvedList.items.some(r=>r.projectId===project.id)).toBe(true);
  });
  it('filtra por servicio, solicitante, rango de fechas y busca proyecto/autor/solicitante en servidor',async()=>{
   const {specialist,project}=await pending();await db.update(proyectos).set({titulo:'Proyecto Aurora'}).where(eq(proyectos.id,project.id));
   const other=await pending();
+  await db.update(solicitudesArea).set({requestedAt:now});
   expect((await listarSolicitudesEdicion({...filters,service:project.servicioId},now)).items.map(i=>i.projectId)).toEqual([project.id]);
   expect((await listarSolicitudesEdicion({...filters,requester:specialist.id},now)).items.map(i=>i.projectId)).toEqual([project.id]);
   expect((await listarSolicitudesEdicion({...filters,search:'Aurora'},now)).items.map(i=>i.projectId)).toEqual([project.id]);
