@@ -1,5 +1,5 @@
-import { and, eq } from 'drizzle-orm';
-import { capitulos, proyectos, workItems } from '../db/schema/index.js';
+import { and, eq, isNull } from 'drizzle-orm';
+import { capitulos, editorialBlockers, proyectos, workItems } from '../db/schema/index.js';
 import type { Tx } from './tx.js';
 import { crearWorkItemSiNoExiste } from './workItems.js';
 import { plazoCapituloEditor } from './edicionSla.js';
@@ -17,7 +17,12 @@ export async function sincronizarCapituloEditorial(tx: Tx, capituloId: string, e
   const vuelve = evento === 'autor' && feedback;
   const legacyFeedback=!entrega && !prev && !!c.fechaRespuestaReal && (!c.fechaEntregaEditor || c.fechaRespuestaReal>=c.fechaEntregaEditor);
   const feedbackCycle=vuelve || legacyFeedback || !!(c.fechaRespuestaReal && prev?.fechaInicioReal===c.fechaRespuestaReal);
-  const estado = vuelve || legacyFeedback ? 'en_progreso' : entrega || (!prev && c.fechaEntregaEditor) ? 'completado' : prev?.estado ?? (p?.editorId ? 'en_progreso' : 'pendiente');
+  // Un bloqueo reportado por el Editor (editorial_blockers, resuelto_at
+  // IS NULL) nunca lo levanta de rebote un sync normal del capítulo --
+  // solo lo levanta resolverBloqueoEditorial. Defensa en profundidad: el
+  // endpoint de entrega/inicio ya revisa esto antes de llegar acá.
+  const bloqueoAbierto = prev ? !!(await tx.select({ id: editorialBlockers.id }).from(editorialBlockers).where(and(eq(editorialBlockers.workItemId, prev.id), isNull(editorialBlockers.resolvedAt))))[0] : false;
+  const estado = bloqueoAbierto ? 'bloqueado' : vuelve || legacyFeedback ? 'en_progreso' : entrega || (!prev && c.fechaEntregaEditor) ? 'completado' : prev?.estado ?? (p?.editorId ? 'en_progreso' : 'pendiente');
   await tx.update(workItems).set({ estado,
     fechaInicioReal: feedbackCycle ? c.fechaRespuestaReal : c.fechaInicioEditor,
     // El manual no fija SLA de aplicación de feedback. No fabricar otro.

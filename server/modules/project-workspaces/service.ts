@@ -17,7 +17,10 @@ import { ensureReservedFolder } from './folders.js';
 import type { Tx } from '../../helpers/tx.js';
 
 export async function workspaceAccess(projectId:string,actor:ActorFicha,write=false,client:typeof db|Tx= db){
-  if(!['especialista','jefe_area','rrpp','direccion'].includes(actor.rol)||write&&!['especialista','direccion'].includes(actor.rol))throw new WorkspaceError('FORBIDDEN',403,'No autorizado para esta operación documental.');
+  // 'editor' solo lectura: necesita abrir sus propias carpetas de trabajo
+  // (Mi trabajo), nunca crear/reintentar el espacio -- eso sigue siendo
+  // responsabilidad del Especialista al confirmar la asignación inicial.
+  if(!['especialista','jefe_area','rrpp','direccion','editor'].includes(actor.rol)||write&&!['especialista','direccion'].includes(actor.rol))throw new WorkspaceError('FORBIDDEN',403,'No autorizado para esta operación documental.');
   const project=await verificarAccesoFichaViva(projectId,actor,client);
   if(write&&['culminado','retirado'].includes(project.estado))throw new WorkspaceError('PROJECT_CLOSED');
   return project;

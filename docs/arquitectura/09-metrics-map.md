@@ -32,13 +32,63 @@
 
 ---
 
-## 3. Indicadores de Edición (Jefe de Edición y Editores)
+## 3. Indicadores de Edición (Jefe de Edición)
 
-| Métrica | Definición | Fórmula / Consulta |
-|---|---|---|
-| **Carga Ponderada de Editores** | Suma de complejidad de proyectos asignados al editor en `proyectos.editor_id`. | `SELECT SUM(s.peso_complejidad) FROM proyectos p JOIN servicios s ON p.servicio_id = s.id WHERE p.editor_id = :editorId AND p.estado IN ('en_proceso', 'retrasado')` |
-| **Cumplimiento de SLA por Capítulo** | Porcentaje de entregas de capítulos realizadas dentro del plazo de 3 días laborables. | `SELECT (COUNT(CASE WHEN fecha_entrega_editor <= fecha_inicio_editor + INTERVAL '3 days' THEN 1 END)::float / COUNT(*)) * 100 FROM capitulos ...` |
-| **Promedio de Páginas Editadas** | Promedio de páginas procesadas por entrega. | `AVG(paginas) FROM capitulos WHERE editor_id = :editorId` |
+Implementación: `GET /api/editores/indicadores?preset=este-mes|mes-anterior|ultimos-3-meses|ultimos-6-meses|este-anio|personalizado&from=&to=&service=<uuid>&editor=<uuid>&interventionType=`,
+export `GET /api/editores/indicadores/export.csv`.
+Owner: **Jefe de Edición** (`jefe_edicion`), sobre toda el Área de Edición (no hay
+recorte de "alcance propio" por usuario, a diferencia de Líder Creativo: Jefatura
+de Edición ve el área completa).
+Documentación completa (alcance, SLA, espera/pausa, servicio, filtros, export, RBAC):
+[docs/arquitectura/29-jefe-edicion.md § Indicadores](./29-jefe-edicion.md).
+
+Dos fuentes, nunca mezcladas:
+- **Corte actual** (snapshot): reutiliza `editorialInterventions()` (mismo
+  read-model que Inicio/Asignaciones/Proyectos/Seguimiento), restringido a
+  proyectos con estado activo (`en_proceso`,`retrasado`,`stand_by`,`pausado`).
+- **Histórico/período** (`historiaCompletadas()`, propio de este módulo):
+  capítulos y work_items de Edición completados, SIN restringir por estado del
+  proyecto (un proyecto puede haberse cerrado desde entonces) — entregas
+  completadas, SLA y tiempo de ciclo necesitan ver historia, no solo el presente.
+
+Ambas fuentes reusan las mismas reglas centrales de `server/helpers/edicionSla.ts`
+(días hábiles, ajuste por pausas) — nunca un segundo cálculo de SLA paralelo.
+`historiaCompletadas()` distingue explícitamente "nunca se sincronizó un
+work_item" (ahí sí reconstruye un plazo de respaldo) de "el work_item existe y a
+propósito no tiene plazo" (ej. aplicación de feedback, sin SLA definido por el
+manual) — un `NULL` intencional del dominio nunca resucita un plazo fabricado.
+
+### Catálogo: NAME / SOURCE / DEFINITION-FORMULA / POPULATION / PERIOD / OWNER
+
+| NAME | SOURCE | DEFINITION / FORMULA | POPULATION | PERIOD | OWNER |
+|---|---|---|---|---|---|
+| Proyectos en edición | `editorialInterventions()` (snapshot) | COUNT DISTINCT de `projectId` con intervención de Edición activa; nunca cuenta intervenciones (un proyecto con 3 capítulos cuenta 1) | Proyectos activos con intervención de Edición, tras filtros de servicio/Editor/tipo | Corte de hoy (snapshot) | Jefe de Edición |
+| Entregas completadas | `historiaCompletadas()` (capítulos con `fecha_entrega_editor`, work_items de Edición `estado='completado'`) | COUNT de intervenciones con fecha de cierre dentro de `[from,to]` del período elegido | Capítulos y work_items de Edición completados, con filtros de servicio/Editor/tipo | Período elegido; comparación vs. período anterior equivalente (`null` si el anterior es cero, nunca `+∞%`) | Jefe de Edición |
+| Intervenciones vencidas | `editorialInterventions()` (snapshot) · `overdue` | COUNT de intervenciones accionables bajo responsabilidad de Edición cuya fecha exigible ya pasó; espera de autor/Especialista nunca cuenta aquí (responsabilidad ajena, ver `EDITORIAL_RESPONSIBLE`) | Igual que Proyectos en edición | Corte de hoy (snapshot, sin comparación) | Jefe de Edición |
+| En espera de autor | `editorialInterventions()` (snapshot) · `waitingOn='author'` | COUNT de intervenciones esperando respuesta del autor; señal operacional, no negativa por definición | Igual que Proyectos en edición | Corte de hoy (snapshot, sin comparación) | Jefe de Edición |
+| Estado de las intervenciones editoriales | `editorialInterventions()` (snapshot) · `EditorialState` | COUNT y porcentaje por estado (`En edición`, `Esperando autor`, `Esperando Especialista`, `En pausa`, `Requiere ajustes`, `Pendiente`, `Bloqueadas`); nunca incluye Completadas | Igual que Proyectos en edición | Corte de hoy (snapshot) | Jefe de Edición |
+| Intervenciones por semana | `historiaCompletadas()` + `editorialInterventions()` | Iniciadas (fecha de inicio real) y Completadas (fecha de cierre) del histórico; Vencidas (`dueDate` vencido) del snapshot actual, agrupadas por semana lunes-domingo, máx. 12 semanas | Igual que Entregas completadas (iniciadas/completadas) y Proyectos en edición (vencidas) | Período elegido | Jefe de Edición |
+| Actividad del equipo editorial (por Editor) | `editorialInterventions()` (activas/vencidas/vencen esta semana/esperando terceros) + `historiaCompletadas()` agrupada por el `editor_id` vigente AL MOMENTO de cada cierre (vía `project_assignments`, no el editor actual del proyecto) | Columnas de hechos, sin ranking ni score ni "mejor Editor" | Editores con al menos una fila en el corte actual o histórico del período | Activas/vencidas/vencen esta semana/esperando terceros: snapshot. Entregas completadas/SLA: período | Jefe de Edición |
+| Cumplimiento SLA (por Editor) | `historiaCompletadas()` · `onTime` | % de entregas completadas en plazo sobre el total con plazo aplicable; entregas sin SLA formal (ej. aplicación de feedback) se excluyen del denominador; `null`/"Sin datos" sin muestras, nunca `0%` | Mismo `editor_id` histórico que la fila de Actividad del equipo | Período elegido | Jefe de Edición |
+| Tiempo de ciclo por tipo de intervención | `historiaCompletadas()` · `completed_at - start_date` | Promedio en días de tiempo bajo responsabilidad de Edición: desde el inicio registrado del Editor hasta su entrega, SIN descontar espera del autor (es una intervención aparte, no un descuento); `null`/"Datos insuficientes" sin muestras | Capítulos y work_items de Edición completados con inicio y cierre resueltos, en el período | Período elegido | Jefe de Edición |
+| Intervenciones activas por servicio | `editorialInterventions()` (snapshot) · `service` | COUNT por servicio real del catálogo (`servicios.nombre`), nunca etiquetas fijas que puedan no coincidir con el catálogo vigente | Igual que Proyectos en edición | Corte de hoy (snapshot) | Jefe de Edición |
+| Proyectos con trabajo editorial en riesgo | `editorialInterventions()` (snapshot) agrupado por proyecto + `projectState()` | Una fila por PROYECTO (no por intervención): intervenciones en riesgo (`overdue`, `atRisk` o `Bloqueadas`), próxima entrega no vencida más cercana, estado editorial sintetizado (misma prioridad que Proyectos de edición) | Proyectos con al menos una intervención en riesgo, máx. 8 | Corte de hoy (snapshot) | Jefe de Edición |
+| Actividad reciente | `editorialActivity()` (mismo feed de Inicio) | Eventos de `audit_logs` del dominio de Edición exclusivamente (nunca RRPP/Comercial/Pago/Creativa); máx. 8 | Igual que Inicio del Jefe de Edición | Más reciente, sin filtro de período propio | Jefe de Edición |
+
+Comparación vs. período anterior solo para **Entregas completadas** (el único
+KPI de tipo "flujo del período"; los demás son snapshot del corte de hoy,
+etiquetados "Corte actual" sin comparación). `null` cuando el período anterior
+es cero, nunca `+∞%` (misma fórmula `cambio()` que RRPP/Líder Creativo). Deltas
+con color neutro: más volumen no es automáticamente mejor.
+
+Filtros de servicio/Editor/tipo de intervención aplican de forma consistente a
+todos los widgets que admiten ese filtro (snapshot e histórico comparten la
+misma población filtrada); ningún widget aplica el filtro "a medias".
+
+Prohibido explícitamente en este módulo (igual que el resto de Indicadores de
+área): score/ranking/"mejor Editor", GAP general de Jefatura (ya cubierto por
+Seguimiento editorial con sus propios plazos) y recomputar SLA/plazos fuera de
+`edicionSla.ts`.
 
 ---
 

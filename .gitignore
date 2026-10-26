@@ -15,3 +15,8 @@ secrets/
 # Documentos internos de negocio (Excel/Word reales, pueden contener
 # datos personales de autores/equipo) — nunca deben entrar a git.
 fuentes-negocio/
+
+# Override local de compose (ej. volumen Postgres distinto por una
+# migración de versión en esta máquina) — nunca algo que el repositorio
+# deba imponerle a otros entornos.
+docker-compose.override.yml

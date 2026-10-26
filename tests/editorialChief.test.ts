@@ -97,8 +97,8 @@ describe('Centro de decisiones de Edición',()=>{
    const p=await crearProyectoDePrueba({especialistaId:spec.id});await solicitarEditor(p.id,spec.id);
    const dash=await request(app.server).get('/api/editores/inicio').set('Cookie',chief);expect(dash.status,dash.text).toBe(200);const id=dash.body.attentionItems[0].id;
    expect((await request(app.server).patch('/api/editores/asignaciones/'+id).set('Cookie',chief).send({editorId:spec.id})).status).toBe(400);
-   expect((await request(app.server).patch('/api/editores/mi-trabajo/'+id+'/entrega').set('Cookie',chief).send({date:'2026-10-23'})).status).toBe(403);
-   expect((await request(app.server).patch('/api/editores/mi-trabajo/'+id+'/entrega').set('Cookie',editorCookie).send({date:'2026-10-23'})).status).toBe(404);
+   expect((await request(app.server).patch('/api/editores/mi-trabajo/'+id+'/entrega').set('Cookie',chief).send({driveUrl:'https://drive.google.com/file/d/qa/view'})).status).toBe(403);
+   expect((await request(app.server).patch('/api/editores/mi-trabajo/'+id+'/entrega').set('Cookie',editorCookie).send({driveUrl:'https://drive.google.com/file/d/qa/view'})).status).toBe(403);
    const editor=await crearUsuario('editor');expect((await request(app.server).patch('/api/editores/asignaciones/'+id).set('Cookie',chief).send({editorId:editor.id})).status).toBe(200);
    const other=await crearUsuario('editor');expect((await request(app.server).patch('/api/editores/asignaciones/'+id).set('Cookie',chief).send({editorId:other.id})).status).toBe(400);
    const list=await request(app.server).get('/api/editores/intervenciones?pageSize=1').set('Cookie',chief);expect(list.body.items).toHaveLength(1);

@@ -28,3 +28,5 @@ export * from './monthlyGoals.js';
 export * from './integrations.js';
 export * from './projectDriveWorkspaces.js';
 export * from './creativeDeliveries.js';
+export * from './editorialDeliveries.js';
+export * from './editorialBlockers.js';

@@ -29,7 +29,9 @@ export const EDITORIAL_DRIVE_LINKS: { key: string; label: string }[] = [
 ];
 const DRIVE_LINKS = EDITORIAL_DRIVE_LINKS;
 
-function projectState(items: EditorialIntervention[]): EditorialProjectState {
+// Exportado para Indicadores (proyectos en riesgo) -- misma síntesis que
+// Proyectos de edición, nunca una segunda prioridad de estados.
+export function projectState(items: EditorialIntervention[]): EditorialProjectState {
   const active = items.filter(i => i.state !== 'Completadas');
   if (!active.length) return items.length ? 'Completadas' : 'Pendiente';
   for (const s of STATE_PRIORITY) { if (active.some(i => i.state === s)) return s === 'Pendiente' ? 'Por iniciar' : s; }

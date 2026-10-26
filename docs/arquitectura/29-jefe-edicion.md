@@ -24,7 +24,7 @@ Fuentes leídas, sin importar sus cifras o identidades al producto:
 | Inicio, fase C1–C6/Parte/Tripa, páginas, entrega | `capitulos` y `work_items` repetibles | Mi trabajo del Editor y Seguimiento |
 | Inicio/aplicación/entrega de feedback | Fechas del capítulo, intervención y auditoría | Cola del Editor y coordinación del Especialista |
 | Estatus, descripción, causa de retraso | Estado de intervención, gate, auditoría y espera del autor | Seguimiento; atención sólo si hay decisión |
-| GAP, fin de edición, días y total real de ejecución | Plazos y hechos canónicos; no fórmulas copiadas | Indicadores históricos futuros |
+| GAP, fin de edición, días y total real de ejecución | Plazos y hechos canónicos; no fórmulas copiadas | Indicadores (ver sección § Indicadores) |
 
 La matriz es una vista operativa. No se creó una tabla espejo, ni se importaron sus filas o nombres. EF y Crudo se leen del catálogo y subtipo de ficha. Sello no recibe Editor automáticamente: el comando exige una intervención de Edición previamente registrada.
 
@@ -237,10 +237,51 @@ Pruebas y resultados de esta revisión: `docs/auditoria/29-solicitudes-edicion-v
 
 La regresión completa detectó además un desajuste previo entre el cierre creativo en UTC y los indicadores diarios de Caracas. Las fechas generadas de cierre y aprobación RRPP en `direccionCreativa.ts` ahora reutilizan `diaCaracas`; una prueba de cambio de día y la revalidación de los flujos creativos verifican la corrección. No se modifican permisos ni procesos de esa área.
 
+## Indicadores
+
+`GET /api/editores/indicadores` y `GET /api/editores/indicadores/export.csv` (`requireRole('jefe_edicion')`). Analítica agregada del área de Edición: responde "qué está pasando en volumen, cumplimiento, tiempos y desviaciones" — nunca "qué necesita mi atención hoy" (eso es Inicio/Asignaciones/Seguimiento/Solicitudes). Catálogo de métricas, fórmulas y población: ver [docs/arquitectura/09-metrics-map.md §3](./09-metrics-map.md). Implementación: `server/helpers/editorialIndicadores.ts`.
+
+**Alcance:** toda el área de Edición, sin recorte de "mi propia asignación" (a diferencia de Líder Creativo) — Jefatura de Edición ve el conjunto completo de proyectos e intervenciones de Edición. Pasar `service`/`editor`/`interventionType` como filtro **nunca** amplía el alcance ni evita RBAC: son recortes dentro del mismo dominio autorizado, nunca un parámetro que abra datos de otra área.
+
+**Dos fuentes, nunca mezcladas:**
+
+- **Corte actual (snapshot):** reutiliza `editorialInterventions()`, el mismo read-model que Inicio/Asignaciones/Proyectos de edición/Seguimiento, restringido a proyectos con estado activo (`en_proceso`, `retrasado`, `stand_by`, `pausado`). De aquí salen `projectsInEditing`, `overdueInterventions`, `waitingAuthor`, la distribución por estado, el desglose "activas/vencidas/vencen esta semana/esperando terceros" por Editor, el desglose por servicio y la tabla de proyectos en riesgo.
+- **Histórico/período (`historiaCompletadas()`):** consulta capítulos (`fecha_entrega_editor IS NOT NULL`) y work_items de Edición completados **sin** restringir por el estado actual del proyecto — un proyecto puede haberse cerrado desde entonces y la entrega sigue siendo real. De aquí salen `completedDeliveries`, las entregas/SLA por Editor y el tiempo de ciclo. El Editor atribuido a cada fila histórica es el que estaba vigente **al momento del cierre** (`project_assignments` con `asignado_en <= completed_at`), no el Editor actual del proyecto — una reasignación posterior no reescribe quién entregó qué.
+
+Ambas fuentes reutilizan exactamente las mismas reglas de `server/helpers/edicionSla.ts` (3 días hábiles para capítulo EF/Crudo, ajuste por pausas vía `ajustarPlazoEdicionPorPausas`) — nunca un segundo cálculo de SLA paralelo ni una regla aplicada a ciegas a cualquier tipo de intervención.
+
+**Plazo honesto, nunca fabricado:** `historiaCompletadas()` distingue "el work_item nunca se sincronizó" (ahí sí reconstruye un plazo de respaldo a partir del inicio registrado) de "el work_item existe y a propósito no tiene plazo" — el caso real es la aplicación de feedback sobre un capítulo: `sincronizarCapituloEditorial` deja `fecha_fin_pautada = NULL` porque el manual no define SLA para esa segunda vuelta. Antes de esta ronda, el `??` de respaldo no distinguía ambos casos y resucitaba un plazo fabricado a partir del inicio original, atribuyendo a Edición un tiempo de espera que no le correspondía; se corrigió añadiendo `has_work_item` a la consulta y usándolo como guarda explícita. Cubierto por la prueba "SLA honesto" en `tests/editorialIndicadores.test.ts`.
+
+**KPI (máximo 4):** `Proyectos en edición` (snapshot, proyectos distintos — nunca intervenciones), `Entregas completadas` (período, con comparación), `Intervenciones vencidas` (snapshot, solo responsabilidad de Edición) y `En espera de autor` (snapshot, señal operacional neutra). Solo `Entregas completadas` compara contra el período anterior equivalente (`cambio()`, `null` si el anterior es cero, nunca `+∞%`); los otros tres son corte de hoy y se etiquetan explícitamente "Corte actual" en vez de simular una comparación que no existe.
+
+**Estado de las intervenciones editoriales (donut):** distribución del snapshot actual por `EditorialState`, nunca progreso del período ni avance acumulado. No incluye "Completadas" — esa es una noción de período, no de corte actual.
+
+**Intervenciones por semana:** Iniciadas/Completadas se leen del histórico (fecha de inicio real / fecha de cierre); Vencidas se lee del snapshot actual agrupando por la semana de su `dueDate` vencido — no existe un registro histórico de "cuándo se volvió vencida", así que esta serie mezcla deliberadamente una proyección de hoy con el histórico del período, y así se documenta en el tooltip.
+
+**Actividad del equipo editorial:** columnas de hechos (activas, vencidas, vencen esta semana, esperando terceros, entregas completadas, cumplimiento SLA) — sin ranking, sin medallas, sin score, sin "mejor Editor". Cumplimiento SLA excluye del denominador toda entrega sin plazo aplicable y reporta "Sin datos" (nunca `0%`) cuando no hay muestras comparables.
+
+**Tiempo de ciclo por tipo de intervención:** promedio de días bajo responsabilidad de Edición — desde el inicio registrado del Editor hasta su entrega, sin descontar la espera del autor (esa espera es una intervención aparte, "Esperando autor", no un descuento sobre el tiempo de Edición). Tipos reales (`chapter`, `step:<nombre>`), nunca las etiquetas del mockup de referencia (Capítulo EF/Crudo/Tripa completa/Kit editorial) si no coinciden con el catálogo vigente. Sin muestras, `null`/"Datos insuficientes".
+
+**Intervenciones activas por servicio:** snapshot actual agrupado por `servicios.nombre` real, nunca una lista fija EF/EEC/EET/SE que pueda haber quedado desactualizada frente al catálogo vigente.
+
+**Proyectos con trabajo editorial en riesgo:** única tabla donde una fila = un proyecto (no una intervención) — cuenta cuántas de sus intervenciones están en riesgo (`overdue`, `atRisk` o `Bloqueadas`), la próxima entrega no vencida más cercana y el estado editorial sintetizado por `projectState()` (exportada de `editorialProjects.ts`, misma prioridad de estados que Proyectos de edición). Máximo 8 proyectos.
+
+**Actividad reciente:** reutiliza `editorialActivity()` (mismo feed de Inicio) — eventos de `audit_logs` exclusivamente del dominio de Edición, nunca RRPP/Comercial/Pago/Dirección Creativa. Máximo 8.
+
+**Filtros:** período (los 6 presets del prompt — Este mes, Mes anterior, Últimos 3/6 meses, Este año, Personalizado — nunca un mes fijo como "Agosto 2026"), servicio, Editor y tipo de intervención. Snapshot e histórico comparten la misma población filtrada, así que un filtro afecta de forma consistente a todos los widgets que lo admiten; ningún widget lo aplica "a medias". Las listas de opciones del filtro (`filters.services/editors/interventionTypes`) provienen del snapshot **sin filtrar**, para que nunca se reduzcan a una sola opción tras elegirla.
+
+**Exportación:** CSV (`csvIndicadoresEdicion`, mismo patrón sin dependencias que `indicadoresJefatura.ts`/`creativeIndicadores.ts`: BOM, CRLF, celdas con prefijo de fórmula neutralizado). No hay infraestructura XLSX/PDF en el proyecto — no se agrega un botón con exportación defectuosa solo por tenerlo. Respeta período y filtros activos; mismo RBAC que la pantalla (nunca un endpoint público).
+
+**Mapeo de términos legacy del PPTX** (`INDICADORES AGOSTO 2026.pptx`, estatus general y récord por Editor): "Pausados"/"Stand-by" del PPTX corresponden al `waitingOn`/estado `En pausa` ya modelado (ver tabla de Mapeo de la matriz arriba); "Retrasados" corresponde a `overdue` bajo responsabilidad de Edición. El PPTX no define una fórmula de "Estatus general" ni de "Récord General" por Editor más allá de un conteo visual mensual — no hay cifra ni fórmula ponderada que auditar y confirmar como oficial, y esta pantalla deliberadamente no reconstruye un "récord" o ranking a partir de esos datos (ver Prohibiciones abajo). Cualquier equivalencia adicional que no esté ya confirmada por código o por esta tabla queda `PENDIENTE_VALIDACION_DOCUMENTAL`, nunca asumida porque "suena lógica".
+
+**Prohibido explícitamente:** score/porcentaje de productividad, ranking o "mejor Editor"; copiar el GAP general de Jefatura (Seguimiento editorial ya tiene sus propios plazos); recomputar SLA/plazos fuera de `edicionSla.ts`; atribuir espera de autor/Especialista como vencimiento de Edición; porcentaje `+∞%`; `0%` cuando el denominador es cero (debe ser "Sin datos"); cifras del mockup de referencia (28/18/6/3/64/22/14/11/5/3/9/3.2/4.1/6.8/2.9/5.0/88%/100%/71%) hardcodeadas en cualquier parte del código.
+
+**Pruebas:** `tests/editorialIndicadores.test.ts` (backend: RBAC, validación, conteo de proyectos distintos, límites de período, comparación sin base, espera de autor vs. vencida, SLA honesto con exclusión de ciclos sin plazo, ciclo sin muestras, riesgo por proyecto, filtros consistentes, IDOR, CSV, HTTP) y `frontend/src/jefeEdicion/editorialIndicadores.test.tsx` (header sin fecha fija, máximo 4 KPI, snapshot vs. período, tabla sin ranking, definición de ciclo visible, estados vacíos, error con reintento).
+
 ## Cobertura y siguientes fases
 
-No hay capacidad máxima formal, calendario de feriados ni SLA específico de aplicación de feedback. Tampoco existen requests nativas independientes de reasignación/apoyo de Edición: se reutiliza la reasignación con motivo y no se inventan tipos de solicitud. Tripa, kit, estructura y extracción conservan el modelo/configuración vigente; esta fase no crea tareas automáticas ni divide contenido sin registro real.
+No hay capacidad máxima formal, calendario de feriados ni SLA específico de aplicación de feedback más allá de "sin plazo aplicable" (ver § Indicadores). Tampoco existen requests nativas independientes de reasignación/apoyo de Edición: se reutiliza la reasignación con motivo y no se inventan tipos de solicitud. Tripa, kit, estructura y extracción conservan el modelo/configuración vigente; esta fase no crea tareas automáticas ni divide contenido sin registro real.
 
-Indicadores completos —producción por Editor, completadas por período y récord general— quedan para su fase histórica. La pantalla Indicadores enlazada informa el corte operativo disponible sin simular esos históricos. No se agregaron dependencias ni un motor de workflow nuevo.
+Indicadores completos —producción por Editor, completadas por período y cumplimiento SLA— ya están implementados (ver § Indicadores arriba). Deliberadamente no se reconstruyó un "récord general" ni un ranking por Editor: el PPTX histórico no define esa fórmula de forma auditable, y el prompt que originó esta fase prohíbe explícitamente inventar un score. No se agregaron dependencias ni un motor de workflow nuevo.
 
 Validación y evidencia: `docs/auditoria/29-jefe-edicion-validacion.md` y `docs/evidencias/jefe-edicion/`.

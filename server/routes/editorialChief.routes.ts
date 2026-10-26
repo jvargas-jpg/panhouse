@@ -1,14 +1,24 @@
 import type { FastifyInstance } from 'fastify';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
+import { db } from '../db/client.js';
+import { proyectos } from '../db/schema/index.js';
 import { editorialActivity, editorialDashboard, editorialInterventions } from '../helpers/editorialChief.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { asignarEditor } from '../helpers/proyectos.js';
-import { actualizarCapituloEditor } from '../helpers/capitulos.js';
 import { getEditorLoadSummary, listarAsignacionesEdicion, recommendEditorsForIntervention } from '../helpers/editorialAssignments.js';
 import { csvProyectosEdicion, listarProyectosEdicion, obtenerProyectoEdicionDetalle } from '../helpers/editorialProjects.js';
 import { csvSeguimientoEdicion, listarSeguimientoEdicion, obtenerSeguimientoDetalle } from '../helpers/editorialTracking.js';
 import { listarSolicitudesEdicion, obtenerSolicitudEdicionDetalle, devolverSolicitudEdicion } from '../helpers/editorialRequests.js';
+import { csvIndicadoresEdicion, obtenerIndicadoresEdicion } from '../helpers/editorialIndicadores.js';
+import { PRESETS_INDICADORES_EDICION } from '../../shared/editorialIndicadores.js';
+import { getEditorDashboard } from '../helpers/editorDashboard.js';
+import { listarMiTrabajo, obtenerDetalleMiTrabajo } from '../helpers/editorWork.js';
+import { iniciarTrabajoEditorial, registrarEntregaEditorial } from '../helpers/editorialDeliveries.js';
+import { reportarBloqueoEditorial, resolverBloqueoEditorial } from '../helpers/editorialBlockers.js';
+import { cancelarRequestEditor, crearRequestEditor, listarRequestsEditor, obtenerRequestEditorDetalle } from '../helpers/editorOwnRequests.js';
+import { EDITOR_REQUEST_TYPES } from '../../shared/editorOwn.js';
 const idSchema=z.object({id:z.string().uuid()});
 const filters=z.object({editor:z.string().uuid().optional(),project:z.string().uuid().optional(),filter:z.enum(['all','unassigned','overdue','risk','upcoming','waiting']).default('all'),search:z.string().max(150).default(''),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().min(1).max(50).default(20)});
 export async function editorialChiefRoutes(app:FastifyInstance){
@@ -81,13 +91,62 @@ export async function editorialChiefRoutes(app:FastifyInstance){
       recommendation:{rule:recommendation.rule,observedAt:recommendation.observedAt,recommendedIds:recommendation.recommendedIds,manualOverride:!recommendation.recommendedIds.includes(body.editorId),selectedFacts:selected?{actionableNow:selected.actionableNow,overdue:selected.overdue,dueThisWeek:selected.dueThisWeek,waitingThirdParty:selected.waitingThirdParty}:{}}});
     return {ok:true};
   });
-  app.get('/mi-trabajo',{preHandler:[requireAuth,requireRole('editor')]},async(req)=>({items:await editorialInterventions(undefined,undefined,req.user!.id)}));
-  app.patch('/mi-trabajo/:id/entrega',{preHandler:[requireAuth,requireRole('editor')]},async(req,reply)=>{
-    const p=parseOrReply(idSchema,req.params,reply),body=parseOrReply(z.object({date:z.string().date()}),req.body,reply);if(!p||!body)return;
-    const item=(await editorialInterventions(undefined,undefined,req.user!.id,p.id))[0];
-    if(!item)return reply.code(404).send({error:'Trabajo no encontrado'});
-    if(!item.chapter||!item.actionable)return reply.code(409).send({error:'Esta intervención no admite entrega de capítulo'});
-    await actualizarCapituloEditor(item.projectId,item.chapter,{fechaEntregaEditor:body.date},req.user!.id);
+  const indicadoresFilters=z.object({preset:z.enum(PRESETS_INDICADORES_EDICION).default('este-mes'),from:z.string().date().optional(),to:z.string().date().optional(),service:z.string().uuid().optional(),editor:z.string().uuid().optional(),interventionType:z.string().max(200).optional()}).strict()
+    .refine(f=>f.preset!=='personalizado'||(!!f.from&&!!f.to),{message:'Indica el rango personalizado'}).refine(f=>!f.from||!f.to||f.from<=f.to,{message:'El rango de fechas no es válido'});
+  app.get('/indicadores',chief,async(req,reply)=>{const f=parseOrReply(indicadoresFilters,req.query,reply);if(!f)return;return obtenerIndicadoresEdicion({...f,preset:f.preset??'este-mes'});});
+  app.get('/indicadores/export.csv',chief,async(req,reply)=>{
+    const f=parseOrReply(indicadoresFilters,req.query,reply);if(!f)return;
+    const csv=csvIndicadoresEdicion(await obtenerIndicadoresEdicion({...f,preset:f.preset??'este-mes'}));
+    return reply.type('text/csv; charset=utf-8').header('Content-Disposition',`attachment; filename="indicadores-edicion-${new Date().toISOString().slice(0,10)}.csv"`).send(csv);
+  });
+  const self={preHandler:[requireAuth,requireRole('editor')]};
+  const miTrabajoFilters=z.object({tab:z.enum(['all','today','inProgress','feedback','waiting','completed']).default('all'),search:z.string().max(150).default(''),service:z.string().uuid().optional(),interventionType:z.string().max(200).optional(),project:z.string().uuid().optional(),date:z.string().date().optional(),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10)});
+  app.get('/mi-inicio',self,async(req)=>getEditorDashboard(req.user!.id));
+  app.get('/mi-trabajo',self,async(req,reply)=>{const f=parseOrReply(miTrabajoFilters,req.query,reply);if(!f)return;return listarMiTrabajo(req.user!.id,{...f,tab:f.tab??'all',search:f.search??'',page:f.page??1,pageSize:f.pageSize??10});});
+  app.get('/mi-trabajo/:id',self,async(req,reply)=>{
+    const p=parseOrReply(idSchema,req.params,reply);if(!p)return;
+    const detail=await obtenerDetalleMiTrabajo(p.id,req.user!.id);if(!detail)return reply.code(404).send({error:'Trabajo no encontrado'});
+    return detail;
+  });
+  app.post('/mi-trabajo/:id/iniciar',self,async(req,reply)=>{const p=parseOrReply(idSchema,req.params,reply);if(!p)return;await iniciarTrabajoEditorial(p.id,req.user!.id);return {ok:true};});
+  app.patch('/mi-trabajo/:id/entrega',self,async(req,reply)=>{
+    const p=parseOrReply(idSchema,req.params,reply),body=parseOrReply(z.object({driveUrl:z.string().trim().url().max(2000),observaciones:z.string().trim().max(1000).optional()}),req.body,reply);if(!p||!body)return;
+    const delivery=await registrarEntregaEditorial(p.id,body.driveUrl,req.user!.id,body.observaciones);
+    return {ok:true,deliveryId:delivery.id};
+  });
+  app.post('/mi-trabajo/:id/bloqueo',self,async(req,reply)=>{
+    const p=parseOrReply(idSchema,req.params,reply),body=parseOrReply(z.object({reason:z.string().trim().min(5).max(1000)}),req.body,reply);if(!p||!body)return;
+    const blocker=await reportarBloqueoEditorial(p.id,body.reason,req.user!.id);
+    return {ok:true,blockerId:blocker.id};
+  });
+  app.post('/mi-trabajo/:id/bloqueo/resolver',{preHandler:[requireAuth,requireRole('editor','jefe_edicion')]},async(req,reply)=>{
+    const p=parseOrReply(idSchema,req.params,reply),body=parseOrReply(z.object({resolution:z.string().trim().max(1000).optional()}),req.body,reply);if(!p||!body)return;
+    await resolverBloqueoEditorial(p.id,req.user!,body.resolution);
     return {ok:true};
+  });
+  const misProyectosFilters=z.object({search:z.string().max(150).default(''),service:z.string().uuid().optional(),state:z.string().max(40).optional(),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10),sort:z.enum(['activity','delivery','title','state','editor']).default('activity')});
+  app.get('/mis-proyectos',self,async(req,reply)=>{const f=parseOrReply(misProyectosFilters,req.query,reply);if(!f)return;return listarProyectosEdicion({...f,search:f.search??'',page:f.page??1,pageSize:f.pageSize??10,sort:f.sort??'activity',editor:req.user!.id});});
+  app.get('/mis-proyectos/:projectId',self,async(req,reply)=>{
+    const p=parseOrReply(z.object({projectId:z.string().uuid()}),req.params,reply);if(!p)return;
+    const [proyecto]=await db.select({editorId:proyectos.editorId}).from(proyectos).where(eq(proyectos.id,p.projectId));
+    if(!proyecto||proyecto.editorId!==req.user!.id)return reply.code(404).send({error:'Proyecto no encontrado'});
+    const detail=await obtenerProyectoEdicionDetalle(p.projectId);if(!detail)return reply.code(404).send({error:'Proyecto no encontrado'});
+    return detail;
+  });
+  const misSolicitudesFilters=z.object({tab:z.enum(['all','pending','resolved','returned','cancelled']).default('all'),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10)});
+  app.get('/mis-solicitudes',self,async(req,reply)=>{const f=parseOrReply(misSolicitudesFilters,req.query,reply);if(!f)return;return listarRequestsEditor(req.user!.id,f.tab??'all',f.page??1,f.pageSize??10);});
+  app.post('/mis-solicitudes',self,async(req,reply)=>{
+    const body=parseOrReply(z.object({workItemId:z.string().uuid(),type:z.enum(EDITOR_REQUEST_TYPES),motivo:z.string().trim().min(5).max(1000)}),req.body,reply);if(!body)return;
+    const row=await crearRequestEditor(req.user!.id,body.workItemId,body.type,body.motivo);
+    return {ok:true,id:row.id};
+  });
+  app.get('/mis-solicitudes/:id',self,async(req,reply)=>{
+    const p=parseOrReply(idSchema,req.params,reply);if(!p)return;
+    const detail=await obtenerRequestEditorDetalle(p.id,req.user!.id);if(!detail)return reply.code(404).send({error:'Solicitud no encontrada'});
+    return detail;
+  });
+  app.post('/mis-solicitudes/:id/cancelar',self,async(req,reply)=>{
+    const p=parseOrReply(idSchema,req.params,reply),body=parseOrReply(z.object({expectedVersion:z.number().int().positive()}),req.body,reply);if(!p||!body)return;
+    return cancelarRequestEditor(p.id,req.user!.id,body.expectedVersion);
   });
 }

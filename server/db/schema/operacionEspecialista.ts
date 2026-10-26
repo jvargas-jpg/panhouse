@@ -27,7 +27,12 @@ export const solicitudesArea = pgTable('solicitudes_area', {
   proyectoId: uuid('proyecto_id').notNull().references(() => proyectos.id, { onDelete: 'cascade' }),
   // Creative intake converts on acceptance. Earlier area handoffs retain their required work item.
   workItemId: uuid('work_item_id').references(() => workItems.id, { onDelete: 'cascade' }),
-  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor'>().notNull(),
+  // 'editor': el Especialista solicita que Jefatura de Edición asigne un
+  // Editor (semántica preexistente, intocada). 'editor_apoyo'/
+  // 'editor_reasignacion'/'editor_aclaracion': el PROPIO Editor solicita
+  // algo sobre un work item ya asignado -- nunca el mismo tipo 'editor',
+  // que significaría otra cosa (ver docs/arquitectura/30-editor.md).
+  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion'>().notNull(),
   businessKey: text('business_key').notNull(),
   // Null only for imported creative history whose originating actor was never recorded.
   requestedById: uuid('requested_by_id').references(() => users.id, { onDelete: 'restrict' }),

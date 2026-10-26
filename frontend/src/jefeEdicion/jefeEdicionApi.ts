@@ -56,3 +56,14 @@ export function asignarEditor(proyectoId: string, editorId: string) {
 }
 
 export const returnEditorialRequest = (id:string,reason:string,expectedVersion:number) => apiFetch(`/editores/solicitudes/${id}/devolver`,{method:"POST",body:JSON.stringify({reason,expectedVersion})});
+
+export const fetchIndicadoresEdicion = (params: URLSearchParams) => apiFetch<import('../../../shared/editorialIndicadores').IndicadoresEdicion>('/editores/indicadores?'+params);
+export async function exportarIndicadoresEdicion(params: URLSearchParams) {
+  const response = await fetch('/api/editores/indicadores/export.csv?'+params, { credentials: 'include' });
+  if (!response.ok) throw new Error('No pudimos exportar los indicadores. Intenta de nuevo.');
+  const blob = await response.blob(), url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = `indicadores-edicion-${new Date().toISOString().slice(0, 10)}.csv`;
+  document.body.append(link); link.click(); link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

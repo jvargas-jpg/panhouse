@@ -617,6 +617,13 @@
       "when": 1792800000000,
       "tag": "0087_editor_request_lifecycle",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1792970338029,
+      "tag": "0088_fluffy_cerise",
+      "breakpoints": true
     }
   ]
 }
