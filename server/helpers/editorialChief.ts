@@ -27,7 +27,8 @@ const SOURCE = `WITH assignments AS (
  CASE WHEN x.proyecto_id IS NOT NULL THEN x.editor_id ELSE p.editor_id END editor_id
  FROM proyectos p JOIN autores a ON a.id=p.autor_id JOIN servicios s ON s.id=p.servicio_id
  LEFT JOIN fichas_trazabilidad f ON f.proyecto_id=p.id LEFT JOIN assignments x ON x.proyecto_id=p.id LEFT JOIN authors au ON au.proyecto_id=p.id LEFT JOIN pause_summary ps ON ps.proyecto_id=p.id
- WHERE p.estado IN ('en_proceso','retrasado','stand_by','pausado')
+ WHERE ($4::boolean OR p.estado IN ('en_proceso','retrasado','stand_by','pausado'))
+ AND ($5::uuid IS NULL OR p.editor_id=$5 OR EXISTS(SELECT 1 FROM project_assignments own WHERE own.proyecto_id=p.id AND own.tipo='editor' AND own.usuario_id=$5))
  AND ($1::uuid IS NULL OR p.id=$1)
 ), interventions AS (
  SELECT coalesce(w.id,c.id) id,w.id work_item_id,p.*,c.numero chapter,c.fecha_inicio_editor start_date,c.fecha_entrega_editor delivered_at,c.fecha_envio_autor sent_at,c.fecha_respuesta_real feedback_at,
@@ -69,12 +70,12 @@ function intervention(r:Raw,today:string): EditorialIntervention {
     interventionType:feedback?'feedback':r.chapter?'chapter':r.step_name?'step:'+r.step_name:r.business_key,
     volume:r.chapter?'1 capítulo':null,notes:r.notes,requestedById:r.requester_id,requestedByRole:r.requester_role,
     waitingOn:waiting?'author':state==='Esperando Especialista'?'specialist':state==='En pausa'?'project_pause':null,
-    assignmentId:r.assignment_id,plannedDueDate:dueDate,requestVersion:r.request_version??undefined,
+    startedAt:r.start_date,assignmentId:r.assignment_id,plannedDueDate:dueDate,requestVersion:r.request_version??undefined,
     requestPending:!r.editor_id&&!r.assigned_before&&!!r.requested_at&&!r.chapter&&['pendiente','en_progreso','bloqueado'].includes(r.work_state)};
 }
 
-export async function editorialInterventions(today=diaCaracas(new Date()),projectId?:string,editorId?:string,id?:string) {
-  const {rows}=await pool.query<Raw>(SOURCE,[projectId??null,editorId??null,id??null]);
+export async function editorialInterventions(today=diaCaracas(new Date()),projectId?:string,editorId?:string,id?:string,includeClosed=false,participantId?:string) {
+  const {rows}=await pool.query<Raw>(SOURCE,[projectId??null,editorId??null,id??null,includeClosed,participantId??null]);
   return rows.map(r=>intervention(r,today));
 }
 export async function editorialDashboard(now=new Date()):Promise<EditorialDashboard> {
@@ -104,7 +105,8 @@ export async function editorialDashboard(now=new Date()):Promise<EditorialDashbo
 }
 export const EDITORIAL_EVENTS:Record<string,string>={EDITOR_SOLICITADO:'Solicitud de Editor recibida',EDITOR_SOLICITUD_DEVUELTA:'Solicitud devuelta',EDITOR_SOLICITUD_REENVIADA:'Solicitud reenviada',EDITOR_ASIGNADO:'Editor asignado',EDITOR_REASIGNADO:'Editor reasignado',CAPITULO_EDITOR_ENTREGADO:'Capítulo entregado por Editor',CAPITULO_ENVIADO_AUTOR:'Capítulo enviado al autor',CAPITULO_FEEDBACK_REGISTRADO:'Feedback del autor registrado',CAPITULO_FEEDBACK_APLICADO:'Feedback aplicado por Editor',FEEDBACK_TRIPA_REGISTRADO:'Edición de tripa completada',
   EDITOR_TRABAJO_INICIADO:'Editor inició trabajo',EDITOR_ENTREGA_REGISTRADA:'Editor registró una entrega',EDITOR_BLOQUEO_REPORTADO:'Editor reportó un bloqueo',EDITOR_BLOQUEO_RESUELTO:'Bloqueo resuelto',
-  EDITOR_REQUEST_CREADA:'Editor envió una solicitud',EDITOR_REQUEST_CANCELADA:'Editor canceló una solicitud',EDITOR_REQUEST_RESUELTA:'Solicitud del Editor resuelta'};
+  EDITOR_REQUEST_CREADA:'Editor envió una solicitud',EDITOR_REQUEST_CANCELADA:'Editor canceló una solicitud',EDITOR_REQUEST_RESUELTA:'Solicitud del Editor resuelta',
+  EDITOR_AVANCE_REGISTRADO:'Avance registrado',EDITOR_REQUEST_DEVUELTA:'Solicitud devuelta',EDITOR_REQUEST_REENVIADA:'Solicitud reenviada',EDITOR_REQUEST_EN_REVISION:'Solicitud en revisión',EDITOR_ARCHIVO_CARGADO:'Archivo cargado en la carpeta de trabajo'};
 // Responsabilidad actual != Editor asignado: una intervención puede seguir asignada a un Editor
 // mientras la pelota está en otra cancha (autor/Especialista). Compartido por Proyectos de edición
 // y Seguimiento — una sola fuente de verdad para no divergir entre pantallas.
@@ -115,5 +117,12 @@ export const EDITORIAL_RESPONSIBLE:Partial<Record<EditorialState,'editor'|'espec
 const EVENTS=EDITORIAL_EVENTS;
 export async function editorialActivity():Promise<EditorialActivity[]> {
   const {rows}=await pool.query<{id:string;accion:string;title:string;actor:string;at:Date}>(`SELECT a.id,a.accion,coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial') title,coalesce(u.nombre,'Sistema') actor,a.created_at at FROM audit_logs a JOIN proyectos p ON p.id=a.proyecto_id LEFT JOIN usuarios u ON u.id=a.actor_id WHERE a.accion=ANY($1::text[]) ORDER BY a.created_at DESC,a.id DESC LIMIT 6`,[Object.keys(EVENTS)]);
+  return rows.map(r=>({...r,text:EVENTS[r.accion]!,at:r.at.toISOString()}));
+}
+// Misma fuente que editorialActivity(), acotada al Editor dueño del proyecto
+// (Inicio del Editor §21-35 -- "Actividad reciente" es el mismo audit trail,
+// solo filtrado, no una bitácora nueva).
+export async function editorialActivityForEditor(editorId:string):Promise<EditorialActivity[]> {
+  const {rows}=await pool.query<{id:string;accion:string;title:string;actor:string;at:Date}>(`SELECT a.id,a.accion,coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial') title,coalesce(u.nombre,'Sistema') actor,a.created_at at FROM audit_logs a JOIN proyectos p ON p.id=a.proyecto_id LEFT JOIN usuarios u ON u.id=a.actor_id WHERE a.accion=ANY($1::text[]) AND p.editor_id=$2::uuid ORDER BY a.created_at DESC,a.id DESC LIMIT 6`,[Object.keys(EVENTS),editorId]);
   return rows.map(r=>({...r,text:EVENTS[r.accion]!,at:r.at.toISOString()}));
 }

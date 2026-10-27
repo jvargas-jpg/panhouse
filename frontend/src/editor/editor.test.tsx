@@ -18,10 +18,11 @@ const dashboard:EditorDashboard={
  summary:{pendingToday:1,dueSoon:0,blocked:0,feedbackToApply:0},
  attentionItems:[item],
  upcomingDeliveries:[],
- recentFeedback:[{id:'f1',text:'Feedback del autor recibido',title:'Proyecto de verificación',actor:'Especialista QA',at:'2026-10-20T12:00:00Z'}],
+ recentActivity:[{id:'f1',text:'Feedback del autor registrado',title:'Proyecto de verificación',actor:'Especialista QA',at:'2026-10-20T12:00:00Z'}],
  weekStatus:{completed:2,inProgress:3,dueSoon:0,blocked:0},
 };
-const miTrabajoList={items:[item],total:1,pages:1,page:1,counts:{all:1,today:1,inProgress:0,feedback:0,waiting:0,completed:0}};
+const workRow={...item,lastActivity:{label:'Entrega registrada',at:'2026-10-20T12:00:00Z'}};
+const miTrabajoList={items:[workRow],total:1,pages:1,page:1,counts:{all:1,today:1,inProgress:0,feedback:0,waiting:0,completed:0}};
 const misProyectosList:EditorialProjectList={items:[{projectId:'project-qa',code:'QAS01',title:'Proyecto de verificación',authors:'Autora de prueba',coverUrl:null,service:'Escritura fantasma',serviceId:'service-qa',serviceCode:'EF',subtype:null,editorialState:'En edición',risk:false,overdue:true,blocker:null,responsibleNow:'editor',interventionSummary:'5 capítulos registrados · 2 completados',interventionCount:5,progress:null,editor:'Editor de verificación',editorId:'editor-qa',multipleEditors:false,editorCount:1,specialist:'Especialista QA',specialistId:'spec-qa',nextDelivery:{label:'Capítulo 4',date:'2026-10-20'},lastActivity:{label:'Entrega registrada',at:'2026-10-20T12:00:00Z'}}],total:1,page:1,pages:1,counts:{inEditing:1,upcomingDeliveries:1,overdue:1,waitingAuthor:0},options:{services:[],editors:[],states:[]}};
 const misSolicitudesList:EditorRequestList={items:[{id:'req-1',type:'editor_apoyo',projectId:'project-qa',code:'QAS01',title:'Proyecto de verificación',workItemId:'work-qa',interventionLabel:'Capítulo 4',motivo:'Necesito apoyo con este capítulo',status:'pendiente',target:'Jefe de Edición',requestedAt:'2026-10-25T12:00:00Z',resolvedAt:null,outcome:null,version:1}],total:1,pages:1,page:1,counts:{pending:1,resolved:0,returned:0,cancelled:0,all:1}};
 
@@ -54,9 +55,10 @@ describe('Editor · Inicio',()=>{
 });
 
 describe('Editor · Mi trabajo',()=>{
- it('una fila = un work item, con tabs y acción según estado',()=>{
+ it('una fila = un work item, sin KPI cards y con última actividad real',()=>{
   const html=render(<EditorMiTrabajo/>,c=>c.setQueryData(['editor','mi-trabajo','tab=all&search=&page=1&pageSize=10'],miTrabajoList));
-  expect(html).toContain('Capítulo 4');expect(html).toContain('Para hoy');expect(html).toContain('Abrir');
+  expect(html).toContain('Capítulo 4');expect(html).toContain('Para hoy');expect(html).toContain('Entrega registrada');
+  expect(html).not.toContain('Intervenciones activas');
  });
  it('vacío con filtros explica, no es un error',()=>{
   const html=render(<EditorMiTrabajo/>,c=>c.setQueryData(['editor','mi-trabajo','tab=all&search=&page=1&pageSize=10'],{...miTrabajoList,items:[],total:0}));

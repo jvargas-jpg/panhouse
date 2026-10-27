@@ -1,6 +1,7 @@
+import { lockEditorWork, editorError } from './editorAccess.js';
 import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { editorialBlockers, proyectos, workItems } from '../db/schema/index.js';
+import { editorialBlockers, proyectos, workItems, notificaciones } from '../db/schema/index.js';
 import { registrarEvento } from './auditLog.js';
 import { sincronizarCapituloEditorial } from './editorialInterventions.js';
 
@@ -12,15 +13,15 @@ import { sincronizarCapituloEditorial } from './editorialInterventions.js';
 // estado (editorialChief.ts), sin tocar esa consulta compartida.
 export async function reportarBloqueoEditorial(workItemId: string, reason: string, actorId: string) {
   return db.transaction(async tx => {
-    const [item] = await tx.select({ id: workItems.id, proyectoId: workItems.proyectoId, businessKey: workItems.businessKey }).from(workItems).where(eq(workItems.id, workItemId)).for('update');
-    if (!item) throw Object.assign(new Error('Intervención no encontrada'), { statusCode: 404 });
-    const [proyecto] = await tx.select({ editorId: proyectos.editorId }).from(proyectos).where(eq(proyectos.id, item.proyectoId));
-    if (proyecto?.editorId !== actorId) throw Object.assign(new Error('Esta intervención no está asignada a este Editor'), { statusCode: 403 });
+    if(reason.trim().length<5||reason.trim().length>1000)throw editorError('Escribe un motivo de entre 5 y 1000 caracteres',400);
+    const {item}=await lockEditorWork(tx,workItemId,actorId);
+    if(['completado','cancelado'].includes(item.estado))throw editorError('La intervención ya no admite un bloqueo');
     const [existing] = await tx.select({ id: editorialBlockers.id }).from(editorialBlockers).where(and(eq(editorialBlockers.workItemId, workItemId), isNull(editorialBlockers.resolvedAt)));
     if (existing) throw Object.assign(new Error('Ya hay un bloqueo abierto para esta intervención'), { statusCode: 409 });
     const [blocker] = await tx.insert(editorialBlockers).values({ workItemId, reason, createdBy: actorId }).returning();
     await tx.update(workItems).set({ estado: 'bloqueado', gateBloqueante: reason }).where(eq(workItems.id, workItemId));
     await registrarEvento(tx, { actorId, accion: 'EDITOR_BLOQUEO_REPORTADO', entityType: 'work_item', entityId: workItemId, proyectoId: item.proyectoId, detalles: { reason } });
+    await tx.insert(notificaciones).values({proyectoId:item.proyectoId,rolDestino:'jefe_edicion',targetPath:'/?vista=seguimiento-edicion&workItem='+workItemId,mensaje:'El Editor reportó un bloqueo: '+reason.trim()});
     return blocker!;
   });
 }
@@ -30,12 +31,16 @@ export async function reportarBloqueoEditorial(workItemId: string, reason: strin
 // el suyo, nunca el de otro (IDOR, prompt §171).
 export async function resolverBloqueoEditorial(workItemId: string, actor: { id: string; rol: string }, resolution?: string) {
   return db.transaction(async tx => {
-    const [item] = await tx.select({ id: workItems.id, proyectoId: workItems.proyectoId, businessKey: workItems.businessKey }).from(workItems).where(eq(workItems.id, workItemId)).for('update');
-    if (!item) throw Object.assign(new Error('Intervención no encontrada'), { statusCode: 404 });
-    if (actor.rol === 'editor') {
-      const [proyecto] = await tx.select({ editorId: proyectos.editorId }).from(proyectos).where(eq(proyectos.id, item.proyectoId));
-      if (proyecto?.editorId !== actor.id) throw Object.assign(new Error('Esta intervención no está asignada a este Editor'), { statusCode: 403 });
+    if(!['editor','jefe_edicion'].includes(actor.rol))throw editorError('No autorizado',403);
+    let item;
+    if(actor.rol==='editor')item=(await lockEditorWork(tx,workItemId,actor.id)).item;
+    else {
+      const [origin]=await tx.select().from(workItems).where(eq(workItems.id,workItemId));
+      if(!origin||origin.tipo!=='edicion')throw editorError('Intervención no encontrada',404);
+      await tx.select({id:proyectos.id}).from(proyectos).where(eq(proyectos.id,origin.proyectoId)).for('update');
+      [item]=await tx.select().from(workItems).where(eq(workItems.id,workItemId)).for('update');
     }
+    if(!item)throw editorError('Intervención no encontrada',404);
     const [blocker] = await tx.select().from(editorialBlockers).where(and(eq(editorialBlockers.workItemId, workItemId), isNull(editorialBlockers.resolvedAt))).for('update');
     if (!blocker) throw Object.assign(new Error('No hay un bloqueo abierto para esta intervención'), { statusCode: 404 });
     await tx.update(editorialBlockers).set({ resolvedBy: actor.id, resolvedAt: new Date(), resolution: resolution ?? null }).where(eq(editorialBlockers.id, blocker.id));
@@ -49,6 +54,8 @@ export async function resolverBloqueoEditorial(workItemId: string, actor: { id: 
     await tx.update(workItems).set({ gateBloqueante: null, estado: 'en_progreso' }).where(eq(workItems.id, workItemId));
     if (item.businessKey.startsWith('capitulo:')) await sincronizarCapituloEditorial(tx, item.businessKey.slice('capitulo:'.length), 'editor');
     await registrarEvento(tx, { actorId: actor.id, accion: 'EDITOR_BLOQUEO_RESUELTO', entityType: 'work_item', entityId: workItemId, proyectoId: item.proyectoId, detalles: { resolution } });
+    const [project]=await tx.select({editorId:proyectos.editorId}).from(proyectos).where(eq(proyectos.id,item.proyectoId));
+    if(actor.rol==='jefe_edicion'&&project?.editorId)await tx.insert(notificaciones).values({proyectoId:item.proyectoId,rolDestino:'editor',usuarioDestinoId:project.editorId,targetPath:'/?vista=mi-trabajo&workItem='+workItemId,mensaje:'Se resolvió el bloqueo de tu intervención.'});
     return blocker;
   });
 }

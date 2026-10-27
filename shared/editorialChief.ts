@@ -10,7 +10,7 @@ export interface EditorialIntervention {
   interventionType?: string; volume?: string | null; notes?: string | null;
   requestedById?: string | null; requestedByRole?: string | null;
   waitingOn?: 'author' | 'specialist' | 'project_pause' | null;
-  assignmentId?: string | null; plannedDueDate?: string | null; requestVersion?: number; requestPending?: boolean;
+  startedAt?: string | null; assignmentId?: string | null; plannedDueDate?: string | null; requestVersion?: number; requestPending?: boolean;
 }
 export interface EditorialLoad { id: string; name: string; active: number; upcoming: number; overdue: number; waiting: number }
 export interface EditorialRequest { id: string; projectId: string; title: string; authors: string; label: string; requestedAt: string; requestedBy: string; state: 'Pendiente' }
@@ -52,6 +52,7 @@ export interface EditorialRecommendation {
 export type EditorialProjectState = EditorialState | 'Por iniciar';
 export interface EditorialProjectSummary {
   projectId: string; code: string; title: string; authors: string; coverUrl: string | null;
+  editingDriveUrl?: string | null; currentIntervention?: string | null; activeInterventions?: number; participation?: 'active' | 'history';
   service: string; serviceId: string; serviceCode: string; subtype: string | null;
   editorialState: EditorialProjectState; risk: boolean; overdue: boolean; blocker: string | null;
   responsibleNow: 'editor' | 'especialista' | 'autor' | null;
@@ -65,12 +66,13 @@ export interface EditorialProjectSummary {
 }
 export interface EditorialProjectFilters {
   search: string; service?: string; state?: string; editor?: string;
-  page: number; pageSize: number; sort: 'activity' | 'delivery' | 'title' | 'state' | 'editor';
+  specialist?:string; participation?:'active'|'history'; page: number; pageSize: number; sort: 'activity' | 'delivery' | 'title' | 'state' | 'editor';
 }
 export interface EditorialProjectList {
   items: EditorialProjectSummary[]; total: number; page: number; pages: number;
   counts: { inEditing: number; upcomingDeliveries: number; overdue: number; waitingAuthor: number };
-  options: { services: {id: string; name: string}[]; editors: {id: string; name: string}[]; states: string[] };
+  options: { services: {id: string; name: string}[]; editors: {id: string; name: string}[]; specialists?: {id:string;name:string}[]; states: string[] };
+  editorOverview?: {interventionCount:number;loads:{projectId:string;title:string;active:number}[];upcoming:{id:string;title:string;label:string;dueDate:string|null}[]};
 }
 export interface EditorialProjectIntervention {
   id: string; label: string; state: EditorialState; editor: string | null; editorId: string | null;
@@ -111,9 +113,9 @@ export interface EditorialTrackingDetail {
   drive: EditorialTrackingDrive; history: EditorialProjectHistory[];
 }
 
-// Solicitudes: bandeja de decisiones, no de notificaciones. Hoy el único tipo real respaldado por el
-// dominio es asignación de Editor (EDITOR_SOLICITADO) — reasignación-como-solicitud, apoyo por carga y
-// escalación se auditaron y no tienen infraestructura propia; no se inventan (ver docs/arquitectura/29-jefe-edicion.md).
+// Shared decision inbox: Specialist assignment requests and Editor-authored
+// support/reassignment requests keep their native lifecycle in solicitudes_area.
+// Clarifications are addressed to the current Specialist, not this chief inbox.
 export type EditorialRequestStatus = 'pendiente' | 'resuelta' | 'devuelta' | 'cancelada';
 export interface EditorialRequestSummary {
   id: string; projectId: string; code: string; title: string; authors: string; coverUrl: string | null;
@@ -122,7 +124,7 @@ export interface EditorialRequestSummary {
   status: EditorialRequestStatus; requestedAt: string;
   resolvedAt: string | null; resolvedBy: string | null;
   resultEditorId: string | null; resultEditor: string | null; resultWorkItemId: string | null;
-  workItemId: string; businessKey: string; requestType: 'ASSIGN_EDITOR'; projectActive: boolean;
+  workItemId: string; businessKey: string; requestType: 'ASSIGN_EDITOR' | 'editor_apoyo' | 'editor_reasignacion'; outcome?: string | null; projectActive: boolean;
   interventionLabel: string; description: string; volume: string | null; requestedDate: string | null;
   notes: string | null; returnReason: string | null; actionable: boolean; assignmentReady: boolean; version: number;
   resultAssignmentId: string | null;

@@ -814,6 +814,7 @@ export async function asignarEditor(proyectoId: string, editorId: string, asigna
 
     await tx.insert(notificaciones).values({
       proyectoId,
+      targetPath:'/?vista=mi-trabajo&project='+proyectoId,
       rolDestino: 'editor',
       usuarioDestinoId: editorId,
       mensaje: `Nuevo trabajo de Edición asignado · Proyecto #${proyecto.codigo}.${work?.due?` Fecha límite: ${work.due}.`:''} Revisa Mi trabajo.`,

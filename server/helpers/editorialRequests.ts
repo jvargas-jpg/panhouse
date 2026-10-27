@@ -11,38 +11,38 @@ import type { EditorialRequestDetail, EditorialRequestFilters, EditorialRequestL
 // The existing area handoff owns the decision. Execution remains in work_items.
 // Legacy requests with no surviving actor remain readable without inventing one.
 const SOURCE = `WITH origins AS (
- SELECT r.id,r.proyecto_id,r.work_item_id,r.business_key,r.requested_by_id,r.requested_at,r.estado,r.motivo,r.version,r.descripcion
- FROM solicitudes_area r WHERE r.tipo='editor'
+ SELECT r.id,r.proyecto_id,r.work_item_id,r.business_key,r.requested_by_id,r.requested_at,r.estado,r.motivo,r.version,r.descripcion,r.tipo,r.outcome,r.resolved_at decided_at,r.resolved_by_id
+ FROM solicitudes_area r WHERE r.tipo IN ('editor','editor_apoyo','editor_reasignacion')
  UNION ALL
- SELECT w.id,w.proyecto_id,w.id,w.business_key,a.actor_id,a.created_at,'pendiente',null::text,1,null::text
+ SELECT w.id,w.proyecto_id,w.id,w.business_key,a.actor_id,a.created_at,'pendiente',null::text,1,null::text,'editor',null::text,null::timestamptz,null::uuid
  FROM work_items w JOIN LATERAL (SELECT actor_id,created_at FROM audit_logs WHERE entity_id=w.id AND accion='EDITOR_SOLICITADO' ORDER BY created_at,id LIMIT 1) a ON true
  WHERE w.tipo='edicion' AND NOT EXISTS(SELECT 1 FROM solicitudes_area r WHERE r.tipo='editor' AND r.work_item_id=w.id)
 ), requests AS (
  SELECT r.*,p.codigo,p.estado::text project_state,coalesce(nullif(trim(p.titulo_definitivo),''),nullif(trim(p.titulo),''),'Proyecto editorial') title,
  coalesce(au.names,a.nombre) authors,s.nombre service,s.id service_id,
  req.nombre requester,req.rol::text requester_role,
- coalesce(step.nombre,CASE WHEN w.business_key='default' THEN 'Inicio de edición' ELSE replace(w.business_key,'_',' ') END) intervention_label,
+ coalesce(step.nombre,CASE WHEN w.business_key='default' THEN 'Inicio de edición' WHEN chapter.numero IS NOT NULL THEN 'Capítulo '||chapter.numero ELSE replace(w.business_key,'_',' ') END) intervention_label,
  coalesce(r.descripcion,w.observaciones) notes,w.fecha_fin_pautada::text requested_date,p.manuscrito_url,
- resolution.id assignment_id,resolution.usuario_id editor_id,ed.nombre editor,resolution.asignado_en resolved_at,rb.nombre resolver,
- CASE WHEN resolution.id IS NOT NULL OR r.estado='resuelta' THEN 'resuelta' WHEN w.estado='cancelado' OR r.estado='cancelada' THEN 'cancelada'
+ resolution.id assignment_id,resolution.usuario_id editor_id,ed.nombre editor,coalesce(r.decided_at,resolution.asignado_en) resolved_at,coalesce(decider.nombre,rb.nombre) resolver,
+ CASE WHEN resolution.id IS NOT NULL OR r.estado IN ('resuelta','rechazada') THEN 'resuelta' WHEN w.estado='cancelado' OR r.estado='cancelada' THEN 'cancelada'
  WHEN r.estado='requiere_informacion' THEN 'devuelta' ELSE 'pendiente' END status,
- (r.estado='pendiente' AND resolution.id IS NULL AND p.estado IN ('en_proceso','retrasado')
+ (r.tipo='editor' AND r.estado='pendiente' AND resolution.id IS NULL AND p.estado IN ('en_proceso','retrasado')
   AND w.estado IN ('pendiente','en_progreso') AND w.gate_bloqueante IS NULL AND p.editor_id IS NULL
   AND NOT EXISTS(SELECT 1 FROM project_assignments x WHERE x.proyecto_id=p.id AND x.tipo='editor' AND x.work_item_id IS NULL)
   AND NOT EXISTS(SELECT 1 FROM pausas ps WHERE ps.proyecto_id=p.id AND ps.fecha_inicio<=now() AND (ps.fecha_fin IS NULL OR ps.fecha_fin>now()))) assignment_ready,
  (r.estado='pendiente' AND resolution.id IS NULL AND p.estado IN ('en_proceso','retrasado','pausado','stand_by')
   AND w.estado IN ('pendiente','en_progreso','bloqueado') AND p.editor_id IS NULL
-  AND NOT EXISTS(SELECT 1 FROM project_assignments x WHERE x.proyecto_id=p.id AND x.tipo='editor' AND x.work_item_id IS NULL)) actionable
+  AND NOT EXISTS(SELECT 1 FROM project_assignments x WHERE x.proyecto_id=p.id AND x.tipo='editor' AND x.work_item_id IS NULL) OR r.tipo<>'editor' AND r.estado IN ('pendiente','en_revision') AND p.estado NOT IN ('culminado','retirado')) actionable
  FROM origins r JOIN work_items w ON w.id=r.work_item_id AND w.proyecto_id=r.proyecto_id AND w.tipo='edicion'
  JOIN proyectos p ON p.id=r.proyecto_id JOIN autores a ON a.id=p.autor_id JOIN servicios s ON s.id=p.servicio_id
- LEFT JOIN pasos step ON step.id=w.paso_id
+ LEFT JOIN pasos step ON step.id=w.paso_id LEFT JOIN capitulos chapter ON w.business_key='capitulo:'||chapter.id::text
  LEFT JOIN (SELECT pa.proyecto_id,string_agg(au.nombre,', ' ORDER BY au.nombre) names FROM proyectos_autores pa JOIN autores au ON au.id=pa.autor_id GROUP BY pa.proyecto_id) au ON au.proyecto_id=p.id
  LEFT JOIN usuarios req ON req.id=r.requested_by_id
- LEFT JOIN LATERAL (SELECT pa.* FROM project_assignments pa WHERE pa.proyecto_id=p.id AND pa.tipo='editor' AND pa.work_item_id IS NULL AND pa.asignado_en>=r.requested_at ORDER BY pa.asignado_en,pa.id LIMIT 1) resolution ON true
- LEFT JOIN usuarios ed ON ed.id=resolution.usuario_id LEFT JOIN usuarios rb ON rb.id=resolution.asignado_por_id
+ LEFT JOIN LATERAL (SELECT pa.* FROM project_assignments pa WHERE r.tipo='editor' AND pa.proyecto_id=p.id AND pa.tipo='editor' AND pa.work_item_id IS NULL AND pa.asignado_en>=r.requested_at ORDER BY pa.asignado_en,pa.id LIMIT 1) resolution ON true
+ LEFT JOIN usuarios ed ON ed.id=resolution.usuario_id LEFT JOIN usuarios rb ON rb.id=resolution.asignado_por_id LEFT JOIN usuarios decider ON decider.id=r.resolved_by_id
 )`;
 interface Row {
- id:string; proyecto_id:string; work_item_id:string; business_key:string; requested_by_id:string|null; requested_at:string|Date;
+ tipo:string;outcome:string|null; id:string; proyecto_id:string; work_item_id:string; business_key:string; requested_by_id:string|null; requested_at:string|Date;
  title:string; codigo:string; authors:string; service:string; service_id:string; requester:string|null; requester_role:string|null;
  status:EditorialRequestSummary['status']; resolved_at:string|Date|null; resolver:string|null; editor_id:string|null; editor:string|null;
  assignment_id:string|null; intervention_label:string; notes:string|null; requested_date:string|null; motivo:string|null; version:number;
@@ -50,7 +50,7 @@ interface Row {
 }
 const iso=(value:string|Date)=>new Date(value).toISOString();
 function summary(r:Row):EditorialRequestSummary {
- return {id:r.id,projectId:r.proyecto_id,workItemId:r.work_item_id,businessKey:r.business_key,requestType:'ASSIGN_EDITOR',projectActive:!['culminado','retirado'].includes(r.project_state),
+ return {id:r.id,projectId:r.proyecto_id,workItemId:r.work_item_id,businessKey:r.business_key,outcome:r.outcome,requestType:r.tipo==='editor'?'ASSIGN_EDITOR':r.tipo as 'editor_apoyo'|'editor_reasignacion',projectActive:!['culminado','retirado'].includes(r.project_state),
   code:r.codigo,title:r.title,authors:r.authors,coverUrl:null,service:r.service,serviceId:r.service_id,
   requester:r.requester,requesterId:r.requested_by_id,requesterRole:r.requester_role,status:r.status,requestedAt:iso(r.requested_at),
   resolvedAt:r.resolved_at?iso(r.resolved_at):null,resolvedBy:r.resolver,resultEditorId:r.editor_id,resultEditor:r.editor,
@@ -92,7 +92,7 @@ export async function obtenerSolicitudEdicionDetalle(id:string,now=new Date()):P
   pool.query<{id:string;accion:string;actor:string;created_at:Date;detalles:{motivo?:string}|null}>(
    `SELECT a.id,a.accion,coalesce(u.nombre,'Sistema') actor,a.created_at,a.detalles FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id
     WHERE a.proyecto_id=$1 AND (a.entity_id=$2 OR a.entity_id=$3 OR a.entity_id=$4) AND a.accion=ANY($5::text[])
-    ORDER BY a.created_at,a.id LIMIT 50`,[r.proyecto_id,id,r.work_item_id,r.assignment_id,['EDITOR_SOLICITADO','EDITOR_ASIGNADO','EDITOR_SOLICITUD_DEVUELTA','EDITOR_SOLICITUD_REENVIADA']]),
+    ORDER BY a.created_at,a.id LIMIT 50`,[r.proyecto_id,id,r.work_item_id,r.assignment_id,['EDITOR_SOLICITADO','EDITOR_ASIGNADO','EDITOR_SOLICITUD_DEVUELTA','EDITOR_SOLICITUD_REENVIADA','EDITOR_REQUEST_CREADA','EDITOR_REQUEST_CANCELADA','EDITOR_REQUEST_RESUELTA','EDITOR_REQUEST_DEVUELTA','EDITOR_REQUEST_REENVIADA','EDITOR_REQUEST_EN_REVISION']]),
   s.assignmentReady?getEditorLoadSummary(now).then(recommendEditorsForIntervention):Promise.resolve(null),
  ]);
  const item=items[0],editor=recommendation?.candidates.find(e=>recommendation.recommendedIds.includes(e.id));

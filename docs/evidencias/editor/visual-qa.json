@@ -1,0 +1,134 @@
+{
+  "screens": [
+    {
+      "view": "inicio",
+      "width": 1440,
+      "height": 900,
+      "file": "inicio-desktop.png",
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "overflow": [],
+      "panelCount": 5
+    },
+    {
+      "view": "mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "mi-trabajo-desktop.png",
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "overflow": [],
+      "panelCount": 2
+    },
+    {
+      "view": "mis-proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "mis-proyectos-desktop.png",
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "overflow": [],
+      "panelCount": 2
+    },
+    {
+      "view": "mis-solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "mis-solicitudes-desktop.png",
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "overflow": [],
+      "panelCount": 1
+    },
+    {
+      "view": "inicio",
+      "width": 768,
+      "height": 1024,
+      "file": "inicio-tablet.png",
+      "documentWidth": 768,
+      "viewport": 768,
+      "overflow": [],
+      "panelCount": 5
+    },
+    {
+      "view": "mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "mi-trabajo-tablet.png",
+      "documentWidth": 768,
+      "viewport": 768,
+      "overflow": [],
+      "panelCount": 2
+    },
+    {
+      "view": "mis-proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "mis-proyectos-tablet.png",
+      "documentWidth": 768,
+      "viewport": 768,
+      "overflow": [],
+      "panelCount": 2
+    },
+    {
+      "view": "mis-solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "mis-solicitudes-tablet.png",
+      "documentWidth": 768,
+      "viewport": 768,
+      "overflow": [],
+      "panelCount": 1
+    },
+    {
+      "view": "inicio",
+      "width": 375,
+      "height": 812,
+      "file": "inicio-mobile.png",
+      "documentWidth": 375,
+      "viewport": 375,
+      "overflow": [],
+      "panelCount": 5
+    },
+    {
+      "view": "mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "mi-trabajo-mobile.png",
+      "documentWidth": 375,
+      "viewport": 375,
+      "overflow": [],
+      "panelCount": 2
+    },
+    {
+      "view": "mis-proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "mis-proyectos-mobile.png",
+      "documentWidth": 375,
+      "viewport": 375,
+      "overflow": [],
+      "panelCount": 2
+    },
+    {
+      "view": "mis-solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "mis-solicitudes-mobile.png",
+      "documentWidth": 375,
+      "viewport": 375,
+      "overflow": [],
+      "panelCount": 1
+    }
+  ],
+  "errors": [],
+  "checks": [
+    "mobile detail opens and closes with Escape",
+    "projects cards/table toggle works",
+    "project detail opens",
+    "new request opens contextual picker",
+    "desktop close action leaves a real empty selection",
+    "global account menu works",
+    "contextual error and retry recover the work list"
+  ]
+}

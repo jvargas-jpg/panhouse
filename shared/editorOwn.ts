@@ -2,19 +2,23 @@
 // (docs/arquitectura/30-editor.md). Reutiliza EditorialIntervention y
 // EditorialState (shared/editorialChief.ts) como unidad de trabajo -- esto
 // NO es una segunda matriz, es otra vista sobre el mismo dominio.
-import type { EditorialIntervention } from './editorialChief.js';
+import type { EditorialIntervention, EditorialActivity } from './editorialChief.js';
 
 export interface EditorDashboard {
   today: string;
   summary: { pendingToday: number; dueSoon: number; blocked: number; feedbackToApply: number };
   attentionItems: EditorialIntervention[];
   upcomingDeliveries: { id: string; label: string; title: string; dueDate: string | null }[];
-  recentFeedback: { id: string; text: string; title: string; actor: string; at: string }[];
+  recentActivity: EditorialActivity[];
   weekStatus: { completed: number; inProgress: number; dueSoon: number; blocked: number };
 }
 
+export interface EditorWorkRow extends EditorialIntervention {
+  lastActivity: { label: string; at: string } | null;
+}
+
 export interface EditorWorkDetail {
-  item: EditorialIntervention;
+  item: EditorialIntervention; specialist?: string | null; assignedAt?: string | null;
   folders: { key: string; label: string; driveUrl: string | null }[];
   deliveries: { id: string; driveUrl: string; observaciones: string | null; submittedAt: string }[];
   blocker: { id: string; reason: string; createdAt: string; resolvedAt: string | null; resolution: string | null } | null;
@@ -45,7 +49,8 @@ export interface EditorRequestSummary {
   requestedAt: string;
   resolvedAt: string | null;
   outcome: string | null;
-  version: number;
+  reassignment?: {previousEditor:string;nextEditor:string;assignedAt:string} | null;
+  version: number; returnReason?: string | null; resolvedBy?: string | null;
 }
 
 export interface EditorRequestList {
@@ -58,6 +63,6 @@ export interface EditorRequestList {
 
 export interface EditorRequestDetail {
   summary: EditorRequestSummary;
-  description: string | null;
+  description: string | null; observations?: {id:string;question:string;answer:string|null;at:string}[];
   history: { id: string; label: string; actor: string; at: string }[];
 }

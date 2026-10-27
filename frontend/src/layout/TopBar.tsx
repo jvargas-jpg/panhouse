@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLogout, useMe } from '../auth/useAuth';
 import { NotificacionesCampana } from './NotificacionesCampana';
 
-export function TopBar({ compacto = false }: { compacto?: boolean }) {
+export function TopBar({ compacto = false, roleLabel }: { compacto?: boolean; roleLabel?: string }) {
   const Container = compacto ? 'div' : 'header';
   const { data: user } = useMe();
   const logout = useLogout();
@@ -19,6 +19,7 @@ export function TopBar({ compacto = false }: { compacto?: boolean }) {
       <div className="flex shrink-0 items-center gap-2 sm:gap-3">
         {user?.rol === 'direccion' && <Link to="/configuracion/integraciones/google-drive" className="rounded-md px-2 py-1.5 text-xs font-medium text-tinta hover:bg-tinta/5">Integraciones</Link>}
         <NotificacionesCampana />
+        {compacto&&roleLabel?<details className="eo-account-menu"><summary><span className="jp-avatar" aria-hidden="true">{user?.nombre.split(/\s+/).slice(0,2).map(n=>n[0]).join('')}</span><span><strong>{user?.nombre}</strong><small>{roleLabel}</small></span><span aria-hidden="true">⌄</span></summary><div><button type="button" disabled={logout.isPending} onClick={handleLogout}>Cerrar sesión</button></div></details>:<>
         <span className="hidden text-sm text-tinta/70 sm:inline">{user?.nombre}</span>
         {compacto && <span className="jp-avatar jp-account-avatar" aria-hidden="true">{user?.nombre.split(/\s+/).slice(0, 2).map(n => n[0]).join('')}</span>}
         <button
@@ -28,7 +29,7 @@ export function TopBar({ compacto = false }: { compacto?: boolean }) {
           className={compacto ? 'jp-account-logout' : 'shrink-0 whitespace-nowrap rounded-md border border-tinta/20 px-3 py-1.5 text-xs font-medium text-tinta transition hover:bg-tinta/5 disabled:opacity-60 sm:text-sm'}
         >
           Cerrar sesión
-        </button>
+        </button></>}
       </div>
     </Container>
   );

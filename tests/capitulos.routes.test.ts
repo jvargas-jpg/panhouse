@@ -1,3 +1,4 @@
+import { obtenerCapitulosProyecto } from '../server/helpers/capitulos.js';
 import request from 'supertest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { registrarYLoguear } from './helpers/auth.js';
@@ -200,7 +201,7 @@ describe('rutas de capítulos', () => {
   });
 
   describe('PATCH /api/capitulos/:proyectoId/:numero/editor', () => {
-    it('permite a un editor marcar la entrega del capítulo en su propio proyecto', async () => {
+    it('permite registrar páginas propias y rechaza alterar fechas por la ruta legacy', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
@@ -222,11 +223,17 @@ describe('rutas de capítulos', () => {
       const respuesta = await request(app.server)
         .patch(`/api/capitulos/${proyecto.id}/1/editor`)
         .set('Cookie', cookie)
-        .send({ fechaEntregaEditor: '2026-03-01', paginas: 22 });
+        .send({ paginas: 22 });
 
       expect(respuesta.status).toBe(200);
-      expect(respuesta.body.capitulo.fechaEntregaEditor).toBe('2026-03-01');
+      expect(respuesta.body.capitulo.fechaEntregaEditor).toBeNull();
       expect(respuesta.body.capitulo.paginas).toBe(22);
+      for(const dates of [{fechaEntregaEditor:'2026-03-01'},{fechaInicioEditor:'2026-12-01'}]){
+        const attempt=await request(app.server).patch(`/api/capitulos/${proyecto.id}/1/editor`).set('Cookie',cookie).send(dates);
+        expect(attempt.status,attempt.text).toBe(409);
+      }
+      const [unchanged]=await obtenerCapitulosProyecto(proyecto.id);
+      expect(unchanged!.fechaEntregaEditor).toBeNull();expect(unchanged!.fechaInicioEditor).toBeNull();
 
       await app.close();
     });

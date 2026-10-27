@@ -137,7 +137,12 @@ export async function capitulosRoutes(app: FastifyInstance) {
         return reply.code(acceso.status).send({ error: acceso.error });
       }
 
-      const capitulo = await actualizarCapituloEditor(params.proyectoId, params.numero, body, request.user.id);
+      // Dates are consequences of operational commands. The legacy endpoint
+      // may record page counts, but cannot bypass verified delivery or SLA start.
+      if(body.fechaEntregaEditor!==undefined||body.fechaInicioEditor!==undefined){
+        return reply.code(409).send({error:'Usa Iniciar trabajo o Registrar entrega desde Mi trabajo; las fechas las registra el sistema.'});
+      }
+      const capitulo = await actualizarCapituloEditor(params.proyectoId, params.numero, {paginas:body.paginas}, request.user.id);
       return reply.send({ capitulo });
     },
   );

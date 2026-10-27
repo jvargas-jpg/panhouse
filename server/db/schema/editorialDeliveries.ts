@@ -3,20 +3,11 @@ import { proyectos } from './proyectos.js';
 import { users } from './users.js';
 import { workItems } from './workItems.js';
 
-// Metadata only -- mismo patrón que creative_deliveries.ts (Dirección
-// Creativa): nunca se guarda el archivo, solo la referencia. driveUrl es
-// la entrada canónica que pega el Editor (abre la carpeta de salida vía
-// el folderKey correspondiente, sube ahí con su propia cuenta de Drive,
-// pega el enlace acá); driveFileId es mejor-esfuerzo -- GoogleDriveAdapter
-// corre bajo scope drive.file (ver server/modules/integrations/google-drive/
-// oauth.ts), que NO garantiza visibilidad de archivos añadidos por el
-// Editor directamente en Drive, así que nunca se bloquea una entrega real
-// solo porque el backend no pudo resolver el id.
-//
-// Varias filas por work item a propósito: cada "Registrar entrega" es un
-// evento nuevo (primera entrega, reentrega tras feedback...), nunca un
-// UPDATE que borra la entrega anterior -- es el historial real de qué se
-// entregó y cuándo.
+// Metadata only: Drive retains the file; PanHouse retains its delivery meaning.
+// New deliveries require a verified Drive file ID belonging to the project's
+// persisted workspace. driveFileId remains nullable only for legacy rows.
+// Each feedback cycle can create a new version. The command serializes on the
+// project/work item and returns the completed cycle's existing delivery on retry.
 export const editorialDeliveries = pgTable('editorial_deliveries', {
   id: uuid('id').primaryKey().defaultRandom(),
   projectId: uuid('project_id').notNull().references(() => proyectos.id, { onDelete: 'cascade' }),

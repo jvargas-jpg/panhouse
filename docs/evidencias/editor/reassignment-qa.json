@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "resolution requires an actual reassignment",
+    "chief resolves through UI after canonical assignment command",
+    "former Editor sees actual previous/new Editor and assignment date",
+    "work moves to new Editor and former Editor retains own request"
+  ],
+  "errors": []
+}

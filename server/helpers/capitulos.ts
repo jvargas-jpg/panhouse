@@ -6,6 +6,7 @@ import { registrarEvento } from './auditLog.js';
 import { calcularFechaPautadaFeedbackCapitulo } from './edicionSla.js';
 import { ESTADOS_ACTIVOS, obtenerEspecialistaActual } from './carga.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
+import type { Tx } from './tx.js';
 
 // El capítulo nace cuando alguien lo crea por primera vez (típicamente
 // el editor, al arrancar su parte), con los campos de contenido
@@ -55,13 +56,13 @@ export async function actualizarCapituloAutor(proyectoId: string, numero: number
 
     if (!fila) throw new Error(`Capítulo no encontrado: proyecto ${proyectoId}, número ${numero}`);
     const feedback=!!datos.fechaRespuestaReal && datos.fechaRespuestaReal!==anterior?.fechaRespuestaReal;
-    await sincronizarCapituloEditorial(tx,fila.id,'autor',false,feedback);
+    const synced=await sincronizarCapituloEditorial(tx,fila.id,'autor',false,feedback);
     for (const [cambia,accion] of [[feedback,'CAPITULO_FEEDBACK_REGISTRADO'],[!!datos.fechaEnvioAutor && datos.fechaEnvioAutor!==anterior?.fechaEnvioAutor,'CAPITULO_ENVIADO_AUTOR']] as const) {
       if(cambia)await registrarEvento(tx,{actorId,accion,entityType:'capitulo',entityId:fila.id,proyectoId,detalles:{numero}});
     }
     if(feedback){
       const [p]=await tx.select({editorId:proyectos.editorId}).from(proyectos).where(eq(proyectos.id,proyectoId));
-      if(p?.editorId)await tx.insert(notificaciones).values({proyectoId,rolDestino:'editor',usuarioDestinoId:p.editorId,mensaje:`Feedback del autor disponible para el capítulo ${numero}.`});
+      if(p?.editorId)await tx.insert(notificaciones).values({proyectoId,targetPath:'/?vista=mi-trabajo&workItem='+synced?.workItemId,rolDestino:'editor',usuarioDestinoId:p.editorId,mensaje:`Feedback del autor disponible para el capítulo ${numero}.`});
     }
     if (numero === 4 && fila.fechaEnvioAutor) await habilitarPlanificacionRrpp(tx, proyectoId, actorId);
     return fila;
@@ -77,8 +78,8 @@ export interface DatosCapituloEditor {
 // Lado editor del capítulo (flujo operativo, fuera de la ficha de
 // trazabilidad): nunca toca las columnas "cara al autor" — mismo
 // principio de aislamiento que actualizarCapituloAutor, en reversa.
-export async function actualizarCapituloEditor(proyectoId: string, numero: number, datos: DatosCapituloEditor, actorId:string|null=null) {
-  return db.transaction(async tx=>{
+export async function actualizarCapituloEditor(proyectoId: string, numero: number, datos: DatosCapituloEditor, actorId:string|null=null, transaction?: Tx) {
+  const update = async (tx: Tx) => {
   const [project]=await tx.select({id:proyectos.id,editorId:proyectos.editorId,especialistaId:proyectos.especialistaId}).from(proyectos).where(eq(proyectos.id,proyectoId)).for('update');
   if(actorId&&project?.editorId!==actorId)throw Object.assign(new Error('El proyecto ya no está asignado a este Editor'),{statusCode:403});
   const [anterior]=await tx.select().from(capitulos).where(and(eq(capitulos.proyectoId,proyectoId),eq(capitulos.numero,numero)));
@@ -96,7 +97,8 @@ export async function actualizarCapituloEditor(proyectoId: string, numero: numbe
     if(owner)await tx.insert(notificaciones).values({proyectoId,rolDestino:'especialista',usuarioDestinoId:owner,mensaje:`Editor entregó el capítulo ${numero}.`});
   }
   return fila;
-  });
+  };
+  return transaction ? update(transaction) : db.transaction(update);
 }
 
 export async function obtenerCapitulosProyecto(proyectoId: string) {

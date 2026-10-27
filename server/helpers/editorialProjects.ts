@@ -27,7 +27,7 @@ export const EDITORIAL_DRIVE_LINKS: { key: string; label: string }[] = [
   { key: 'EDITORIAL_KIT', label: 'Kit editorial' },
   { key: 'EDITING_FEEDBACK', label: 'Feedback del autor' },
 ];
-const DRIVE_LINKS = EDITORIAL_DRIVE_LINKS;
+const DRIVE_LINKS = [{key:'EDITING',label:'Carpeta de Edición'},...EDITORIAL_DRIVE_LINKS];
 
 // Exportado para Indicadores (proyectos en riesgo) -- misma síntesis que
 // Proyectos de edición, nunca una segunda prioridad de estados.
@@ -50,6 +50,7 @@ function summarize(projectId: string, items: EditorialIntervention[], lastActivi
     : first.label;
   const deliveries = active.filter(i => i.dueDate).sort((a, b) => a.dueDate!.localeCompare(b.dueDate!));
   return {
+    currentIntervention:active.find(i=>i.actionable)?.label??active[0]?.label??null, activeInterventions:active.filter(i=>i.actionable).length,
     projectId, code: first.code, title: first.title, authors: first.authors, coverUrl: first.coverUrl,
     service: first.service, serviceId: first.serviceId ?? '', serviceCode: first.serviceCode ?? '', subtype: first.subtype ?? null,
     editorialState: state, risk: active.some(i => i.atRisk), overdue: active.some(i => i.overdue), blocker: active.find(i => i.block)?.block ?? null,
@@ -87,28 +88,37 @@ async function lastActivityFor(projectIds: string[]): Promise<Map<string, Editor
   return new Map(rows.map(r => [r.proyecto_id, { label: EDITORIAL_EVENTS[r.accion]!, at: r.created_at.toISOString() }]));
 }
 
-async function projectSummaries(now: Date): Promise<EditorialProjectSummary[]> {
-  const items = await editorialInterventions(diaCaracas(now));
+async function projectSummaries(now: Date, editorId?: string, history=false): Promise<EditorialProjectSummary[]> {
+  const items = await editorialInterventions(diaCaracas(now),undefined,history?undefined:editorId,undefined,!!editorId,history?editorId:undefined);
   const byProject = new Map<string, EditorialIntervention[]>();
   for (const i of items) { const list = byProject.get(i.projectId) ?? []; list.push(i); byProject.set(i.projectId, list); }
   const ids = [...byProject.keys()];
   const [specialists, activity] = await Promise.all([specialistsFor(ids), lastActivityFor(ids)]);
+  const workspaces=editorId?await workspaceSummaries(ids):new Map();
+  const folders=editorId&&ids.length?await pool.query<{project_id:string;url:string}>(`SELECT w.project_id,f.drive_url url FROM project_drive_workspaces w JOIN project_drive_folders f ON f.workspace_id=w.id WHERE w.project_id=ANY($1::uuid[]) AND f.key='EDITING' AND f.status='READY'`,[ids]):null;
+  const closed=editorId&&ids.length?await pool.query<{id:string}>("SELECT id FROM proyectos WHERE id=ANY($1::uuid[]) AND estado IN ('culminado','retirado')",[ids]):null;
   return ids.map(id => {
     const summary = summarize(id, byProject.get(id)!, activity.get(id) ?? null);
     const specialist = specialists.get(id);
-    return { ...summary, specialist: specialist?.nombre ?? null, specialistId: specialist?.id ?? null };
+    const historical=!!editorId&&(summary.editorId!==editorId||!!closed?.rows.some(p=>p.id===id));
+    const ws=workspaces.get(id);
+    return { ...summary, participation:historical?'history' as const:'active' as const,
+      ...(historical?{interventionSummary:'Participación finalizada',currentIntervention:null,activeInterventions:0,nextDelivery:null}:{}),
+      editingDriveUrl:!historical&&ws?.status==='READY'&&!ws.contextChanged?folders?.rows.find(f=>f.project_id===id)?.url??null:null,
+      specialist: specialist?.nombre ?? null, specialistId: specialist?.id ?? null };
   });
 }
 
 export async function listarProyectosEdicion(filters: EditorialProjectFilters, now = new Date()): Promise<EditorialProjectList> {
-  const all = await projectSummaries(now);
+  const all = await projectSummaries(now,filters.editor,filters.participation==='history');
   const services = new Map<string, string>(), editors = new Map<string, string>();
   for (const p of all) { if (p.serviceId) services.set(p.serviceId, p.service.split(' · ')[0]!); if (p.editorId && p.editor) editors.set(p.editorId, p.editor); }
   const choices = (map: Map<string, string>) => [...map].map(([id, name]) => ({ id, name })).sort((a, b) => a.name.localeCompare(b.name, 'es') || a.id.localeCompare(b.id));
-  const options = { services: choices(services), editors: choices(editors), states: [...new Set(all.map(p => p.editorialState))].sort() };
+  const specialists = new Map(all.filter(p=>p.specialistId&&p.specialist).map(p=>[p.specialistId!,p.specialist!]));
+  const options = { specialists:choices(specialists),services: choices(services), editors: choices(editors), states: [...new Set(all.map(p => p.editorialState))].sort() };
   const search = filters.search.trim().toLocaleLowerCase('es');
   const matching = all.filter(p => (!search || `${p.title} ${p.authors} ${p.editor ?? ''}`.toLocaleLowerCase('es').includes(search)) &&
-    (!filters.service || p.serviceId === filters.service) && (!filters.state || p.editorialState === filters.state) && (!filters.editor || p.editorId === filters.editor));
+    (!filters.specialist || p.specialistId===filters.specialist) && (!filters.service || p.serviceId === filters.service) && (!filters.state || p.editorialState === filters.state) && (!filters.editor || (filters.participation==='history'?p.participation==='history':p.editorId === filters.editor&&p.participation==='active')));
   // Cada contador es "proyectos con al menos un X", nunca intervenciones (ver §14-17 del spec).
   const counts = {
     inEditing: matching.length,
@@ -125,7 +135,8 @@ export async function listarProyectosEdicion(filters: EditorialProjectFilters, n
   };
   const rows = [...matching].sort((a, b) => sorters[filters.sort](a, b) || a.projectId.localeCompare(b.projectId));
   const pages = Math.max(1, Math.ceil(rows.length / filters.pageSize)), page = Math.min(filters.page, pages);
-  return { items: rows.slice((page - 1) * filters.pageSize, page * filters.pageSize), total: rows.length, pages, page, counts, options };
+  const editorOverview=filters.editor?{interventionCount:matching.reduce((n,p)=>n+p.interventionCount,0),loads:matching.filter(p=>p.activeInterventions).slice(0,6).map(p=>({projectId:p.projectId,title:p.title,active:p.activeInterventions!})),upcoming:matching.filter(p=>p.nextDelivery).sort((a,b)=>a.nextDelivery!.date.localeCompare(b.nextDelivery!.date)).slice(0,5).map(p=>({id:p.projectId,title:p.title,label:p.nextDelivery!.label,dueDate:p.nextDelivery!.date}))}:undefined;
+  return { items: rows.slice((page - 1) * filters.pageSize, page * filters.pageSize), total: rows.length, pages, page, counts, options, editorOverview };
 }
 
 export async function editorialDriveLinks(projectId: string): Promise<{ rootUrl: string | null; links: { key: string; label: string; url: string }[] }> {
@@ -140,14 +151,25 @@ export async function editorialDriveLinks(projectId: string): Promise<{ rootUrl:
   return { rootUrl: driveReady ? ws!.rootFolderUrl : null, links };
 }
 
-export async function obtenerProyectoEdicionDetalle(projectId: string, now = new Date()): Promise<EditorialProjectDetail | null> {
-  const items = await editorialInterventions(diaCaracas(now), projectId);
+export async function obtenerProyectoEdicionDetalle(projectId: string, now = new Date(), editorId?: string): Promise<EditorialProjectDetail | null> {
+  let items = await editorialInterventions(diaCaracas(now), projectId,undefined,undefined,!!editorId,editorId);
+  const historical=!!editorId&&items[0]?.editorId!==editorId;
+  if(historical){
+    const own=await pool.query<{work_item_id:string}>("SELECT DISTINCT work_item_id FROM editorial_deliveries WHERE project_id=$1 AND submitted_by=$2",[projectId,editorId]);
+    items=items.filter(i=>own.rows.some(r=>r.work_item_id===i.id));
+  }
+  if (historical) {
+    const prior=(await projectSummaries(now,editorId,true)).find(p=>p.projectId===projectId);
+    if(!prior)return null;
+    const events=await pool.query<{id:string;name:string;at:Date}>(`SELECT a.id,u.nombre name,a.asignado_en at FROM project_assignments a JOIN usuarios u ON u.id=a.asignado_por_id WHERE a.proyecto_id=$1 AND a.tipo='editor' AND a.usuario_id=$2 ORDER BY a.asignado_en DESC`,[projectId,editorId]);
+    return {summary:prior,nextStep:'Tu participación en este proyecto finalizó.',interventions:[],interventionsTotal:0,drive:{rootUrl:null,links:[]},history:events.rows.map(h=>({id:h.id,label:'Asignación del Editor',actor:h.name,at:h.at.toISOString()}))};
+  }
   if (!items.length) return null;
   const [specialists, activity, drive, history] = await Promise.all([
-    specialistsFor([projectId]), lastActivityFor([projectId]), editorialDriveLinks(projectId),
+    specialistsFor([projectId]), lastActivityFor([projectId]), historical?Promise.resolve({rootUrl:null,links:[]}):editorialDriveLinks(projectId),
     pool.query<{ id: string; accion: string; actor: string; created_at: Date }>(
       `SELECT a.id, a.accion, coalesce(u.nombre,'Sistema') actor, a.created_at FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id
-       WHERE a.proyecto_id=$1 AND a.accion=ANY($2::text[]) ORDER BY a.created_at DESC, a.id DESC LIMIT 10`, [projectId, Object.keys(EDITORIAL_EVENTS)]),
+       WHERE a.proyecto_id=$1 AND a.accion=ANY($2::text[]) AND ($3::uuid IS NULL OR a.actor_id=$3 OR a.entity_id IN (SELECT id FROM project_assignments WHERE proyecto_id=$1 AND usuario_id=$3)) ORDER BY a.created_at DESC, a.id DESC LIMIT 10`, [projectId, Object.keys(EDITORIAL_EVENTS),editorId??null]),
   ]);
   const summaryBase = summarize(projectId, items, activity.get(projectId) ?? null);
   const specialist = specialists.get(projectId);

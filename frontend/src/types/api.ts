@@ -845,6 +845,7 @@ export interface Pago {
 // rolDestino === el rol de la sesión, así que lo que llega acá siempre
 // es "mío".
 export interface Notificacion {
+  targetPath?: string | null;
   editorialRequestId?: string | null;
   decisionId?: string | null;
   id: string;

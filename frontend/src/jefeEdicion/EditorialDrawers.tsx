@@ -13,7 +13,7 @@ export function EditorialDrawer({title,onClose,children,className=''}:{title:str
 }
 export function useInvalidateEditorial(){
   const client=useQueryClient();
-  return ()=>Promise.all([editorialKey,['editores'],['capitulos'],['proyectos'],['proyecto'],['especialista-inicio'],['especialista-solicitudes'],['especialista-cartera'],['solicitudes'],['solicitud'],['mi-trabajo'],['project-workspace'],['ficha'],['ficha-viva'],['project-command-center'],['notificaciones']].map(queryKey=>client.invalidateQueries({queryKey})));
+  return ()=>Promise.all([editorialKey,['editor'],['editores'],['capitulos'],['proyectos'],['proyecto'],['especialista-inicio'],['especialista-solicitudes'],['especialista-cartera'],['solicitudes'],['solicitud'],['mi-trabajo'],['project-workspace'],['ficha'],['ficha-viva'],['project-command-center'],['notificaciones']].map(queryKey=>client.invalidateQueries({queryKey})));
 }
 export function AsignarEditorCard({item,onAssigned,onCancel=()=>{},onConflict=()=>{}}:{item:EditorialIntervention;onAssigned:()=>void;onCancel?:()=>void;onConflict?:(message:string)=>void}){
   const team=useQuery({queryKey:[...editorialKey,'candidates',item.id],queryFn:()=>fetchEditorialCandidates(item.id)});

@@ -71,12 +71,14 @@ export function NotificacionesCampana() {
       mutacionLeer.mutate(notificacion.id);
     }
     setAbierto(false);
-    if (notificacion.decisionId) {
+    if (notificacion.targetPath?.startsWith('/?')) {
+      navigate(notificacion.targetPath);
+    } else if (notificacion.decisionId) {
       navigate(user?.rol==='jefe_area' ? `/?vista=decisiones&decision=${notificacion.decisionId}` : `/decisiones/${notificacion.decisionId}/responder`);
     } else if(user?.rol==='jefe_edicion') {
       navigate(notificacion.editorialRequestId?`/?vista=asignaciones&request=${notificacion.editorialRequestId}`:'/?vista=asignaciones&tab=all');
     } else if(user?.rol==='editor') {
-      navigate('/');
+      navigate(notificacion.proyectoId?'/?vista=mi-trabajo&project='+notificacion.proyectoId:'/?vista=mi-trabajo');
     } else if (notificacion.proyectoId) {
       navigate(`/proyectos/${notificacion.proyectoId}`);
     }

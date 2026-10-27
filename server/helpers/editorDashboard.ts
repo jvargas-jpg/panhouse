@@ -1,5 +1,5 @@
 import { pool } from '../db/client.js';
-import { editorialInterventions } from './editorialChief.js';
+import { editorialInterventions, editorialActivityForEditor } from './editorialChief.js';
 import { diaCaracas } from './atencionEspecialista.js';
 import type { EditorDashboard } from '../../shared/editorOwn.js';
 
@@ -20,16 +20,13 @@ export async function getEditorDashboard(editorId: string, ahora = new Date()): 
   const upcomingDeliveries = items.filter(i => i.actionable && i.dueDate && !i.overdue).sort((a, b) => a.dueDate!.localeCompare(b.dueDate!)).slice(0, 6)
     .map(i => ({ id: i.id, label: i.label, title: i.title, dueDate: i.dueDate }));
 
-  const { rows: feedback } = await pool.query<{ id: string; title: string; actor: string; at: Date; chapter: number | null }>(
-    `SELECT a.id,coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial') title,coalesce(u.nombre,'Sistema') actor,a.created_at at,(a.detalles->>'numero')::int chapter
-     FROM audit_logs a JOIN proyectos p ON p.id=a.proyecto_id LEFT JOIN usuarios u ON u.id=a.actor_id
-     WHERE a.accion='CAPITULO_FEEDBACK_REGISTRADO' AND p.editor_id=$1::uuid ORDER BY a.created_at DESC,a.id DESC LIMIT 5`, [editorId]);
-  const recentFeedback = feedback.map(f => ({ id: f.id, text: f.chapter ? `Feedback del autor para el capítulo ${f.chapter}` : 'Feedback del autor recibido', title: f.title, actor: f.actor, at: f.at.toISOString() }));
+  const recentActivity = await editorialActivityForEditor(editorId);
 
   const monday = new Date(`${hoy}T12:00:00Z`); monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
   const weekFrom = monday.toISOString().slice(0, 10);
+  const completed=await pool.query<{total:number}>(`SELECT count(DISTINCT work_item_id)::int total FROM editorial_deliveries WHERE submitted_by=$1 AND (submitted_at AT TIME ZONE 'America/Caracas')::date >= $2::date AND (submitted_at AT TIME ZONE 'America/Caracas')::date <= $3::date`,[editorId,weekFrom,hoy]);
   const weekStatus = {
-    completed: items.filter(i => i.state === 'Completadas' && i.deliveredAt && i.deliveredAt.slice(0, 10) >= weekFrom).length,
+    completed: completed.rows[0]?.total??0,
     inProgress: items.filter(i => i.state === 'En edición').length,
     dueSoon: dueSoon.length,
     blocked: blocked.length,
@@ -38,6 +35,6 @@ export async function getEditorDashboard(editorId: string, ahora = new Date()): 
   return {
     today: hoy,
     summary: { pendingToday: pendingToday.length, dueSoon: dueSoon.length, blocked: blocked.length, feedbackToApply: feedbackToApply.length },
-    attentionItems, upcomingDeliveries, recentFeedback, weekStatus,
+    attentionItems, upcomingDeliveries, recentActivity, weekStatus,
   };
 }

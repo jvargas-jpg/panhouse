@@ -1,15 +1,16 @@
 import { drive, type drive_v3 } from '@googleapis/drive';
+import { Readable } from 'node:stream';
 import type { OAuth2Client } from 'google-auth-library';
 import { DriveIntegrationError, safeDriveError } from './errors.js';
 import type { ProjectDriveStorageProvider, StorageItem } from './provider.js';
 
 export const FOLDER_MIME='application/vnd.google-apps.folder';
 export const SMOKE_PURPOSE='panhouse_connection_smoke_v1';
-const fields='id,name,mimeType,webViewLink,parents,appProperties';
+const fields='id,name,mimeType,webViewLink,parents,appProperties,trashed';
 const escapeQuery=(s:string)=>s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 function item(f:drive_v3.Schema$File):StorageItem {
   if(!f.id||!f.name||!f.mimeType)throw new DriveIntegrationError('INVALID_RESPONSE',502);
-  return {providerFileId:f.id,name:f.name,mimeType:f.mimeType,webViewLink:f.webViewLink ?? null,parents:f.parents ?? [],appProperties:f.appProperties ?? {}};
+  return {trashed:f.trashed??false,providerFileId:f.id,name:f.name,mimeType:f.mimeType,webViewLink:f.webViewLink ?? null,parents:f.parents ?? [],appProperties:f.appProperties ?? {}};
 }
 export class GoogleDriveAdapter implements ProjectDriveStorageProvider {
   private client:drive_v3.Drive;
@@ -44,6 +45,22 @@ export class GoogleDriveAdapter implements ProjectDriveStorageProvider {
     }catch(e){throw safeDriveError(e);}
   }
   async getMetadata(id:string) {try{return item((await this.client.files.get({fileId:id,fields,supportsAllDrives:true})).data);}catch(e){throw safeDriveError(e);}}
+  async listFiles(input:{parentFolderId:string;pageToken?:string}) {
+    try {
+      const r=await this.client.files.list({q:`'${escapeQuery(input.parentFolderId)}' in parents and trashed=false and mimeType!='${FOLDER_MIME}'`,
+        fields:'nextPageToken,files('+fields+')',pageSize:50,supportsAllDrives:true,includeItemsFromAllDrives:true,
+        ...(input.pageToken?{pageToken:input.pageToken}:{})});
+      return {items:(r.data.files??[]).map(item),nextPageToken:r.data.nextPageToken??null};
+    } catch(e) {throw safeDriveError(e);}
+  }
+  async uploadFile(input:{name:string;mimeType:string;parentFolderId:string;content:Buffer}) {
+    try {
+      const response=await this.client.files.create({supportsAllDrives:true,fields,
+        requestBody:{name:input.name,mimeType:input.mimeType,parents:[input.parentFolderId]},
+        media:{mimeType:input.mimeType,body:Readable.from(input.content)}});
+      return item(response.data);
+    }catch(e){throw safeDriveError(e);}
+  }
   async deleteFileOrFolder(id:string) {try{await this.client.files.delete({fileId:id,supportsAllDrives:true});}catch(e){throw safeDriveError(e);}}
   async shareFolder(id:string,email:string) {
     try{const r=await this.client.permissions.create({fileId:id,supportsAllDrives:true,sendNotificationEmail:false,

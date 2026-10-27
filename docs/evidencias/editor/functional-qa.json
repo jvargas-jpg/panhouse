@@ -1,0 +1,14 @@
+{
+  "checks": [
+    "chapter started through UI with derived deadline",
+    "progress note persisted through UI",
+    "contextual support request created through UI",
+    "chief received and returned the Editor request through shared inbox",
+    "Editor completed information and resent original request",
+    "chief resolution appears in Editor detail",
+    "resolution notification targets the exact request",
+    "Specialist receives and answers clarification through UI",
+    "server search empty state and clearing filters"
+  ],
+  "errors": []
+}

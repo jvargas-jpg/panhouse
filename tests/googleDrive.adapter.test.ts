@@ -24,6 +24,17 @@ describe('Google Drive · adapter oficial mockeado',()=>{
     expect(sdk.files.list.mock.calls[0]![0].q).toContain("'parent\\'quoted' in parents");
     expect(sdk.files.list.mock.calls[1]![0].pageToken).toBe('page-2');
   });
+  it('selección contextual lista archivos de una sola carpeta, sin carpetas ni papelera y con paginación',async()=>{
+    sdk.files.list.mockResolvedValue({data:{files:[{...file,mimeType:'application/pdf'}],nextPageToken:'next-file-page'}});
+    const result=await adapter.listFiles({parentFolderId:"project'folder",pageToken:'first-page'});
+    expect(result.items).toHaveLength(1);expect(result.nextPageToken).toBe('next-file-page');
+    expect(sdk.files.list).toHaveBeenCalledWith(expect.objectContaining({q:"'project\\'folder' in parents and trashed=false and mimeType!='application/vnd.google-apps.folder'",pageSize:50,pageToken:'first-page',supportsAllDrives:true,includeItemsFromAllDrives:true}));
+  });
+  it('carga un documento como archivo de la app en la carpeta autorizada usando el adaptador existente',async()=>{
+    sdk.files.create.mockResolvedValue({data:{...file,mimeType:'application/pdf'}});
+    const result=await adapter.uploadFile({name:'Entrega.pdf',mimeType:'application/pdf',parentFolderId:'unit-parent',content:Buffer.from('contenido')});
+    expect(result.providerFileId).toBe('unit-file');expect(sdk.files.create).toHaveBeenCalledWith(expect.objectContaining({requestBody:{name:'Entrega.pdf',mimeType:'application/pdf',parents:['unit-parent']},media:{mimeType:'application/pdf',body:expect.anything()}}));
+  });
   it('recupera únicamente carpetas de smoke etiquetadas por la app',async()=>{
     sdk.files.list.mockResolvedValue({data:{files:[]}});await adapter.listFolders({testRootsOnly:true});
     expect(sdk.files.list.mock.calls[0]![0].q).toContain("appProperties has { key='panhousePurpose'");

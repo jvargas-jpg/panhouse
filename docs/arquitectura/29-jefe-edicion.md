@@ -285,3 +285,8 @@ No hay capacidad máxima formal, calendario de feriados ni SLA específico de ap
 Indicadores completos —producción por Editor, completadas por período y cumplimiento SLA— ya están implementados (ver § Indicadores arriba). Deliberadamente no se reconstruyó un "récord general" ni un ranking por Editor: el PPTX histórico no define esa fórmula de forma auditable, y el prompt que originó esta fase prohíbe explícitamente inventar un score. No se agregaron dependencias ni un motor de workflow nuevo.
 
 Validación y evidencia: `docs/auditoria/29-jefe-edicion-validacion.md` y `docs/evidencias/jefe-edicion/`.
+
+
+## Integración con el espacio del Editor — 26 de octubre de 2026
+
+La bandeja incluye ahora `editor_apoyo` y `editor_reasignacion`, además de la asignación inicial `editor`. Estos pedidos son decisiones con respuesta; no se presentan como nuevas solicitudes de asignación. Se pueden revisar, devolver para completar o resolver con resultado y notificación al Editor. La reasignación efectiva conserva el comando y el historial existentes. Las aclaraciones se dirigen al Especialista actual. La especificación y el mapa de propiedad compartido están en [30-editor.md](./30-editor.md), que actualiza las limitaciones de solicitudes descritas en las fases anteriores de este documento.
