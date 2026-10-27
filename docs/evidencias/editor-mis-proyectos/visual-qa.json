@@ -1,0 +1,65 @@
+{
+  "screens": [
+    {
+      "width": 1440,
+      "height": 900,
+      "label": "desktop",
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "rows": 12,
+      "rowHeights": [
+        78,
+        78,
+        78,
+        78,
+        78
+      ],
+      "overflow": []
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "label": "tablet",
+      "documentWidth": 768,
+      "viewport": 768,
+      "rows": 12,
+      "rowHeights": [
+        86,
+        86,
+        99,
+        86,
+        86
+      ],
+      "overflow": []
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "label": "mobile",
+      "documentWidth": 375,
+      "viewport": 375,
+      "rows": 12,
+      "rowHeights": [
+        273,
+        273,
+        273,
+        273,
+        294
+      ],
+      "overflow": []
+    }
+  ],
+  "checks": [
+    "tablet: detail opens, switches sections, closes with Escape and restores focus/scroll",
+    "mobile: detail opens, switches sections, closes with Escape and restores focus/scroll",
+    "all twelve interventions are visible in detail and exact work-item deep link opens Mi trabajo",
+    "material, deliveries and feedback render honest empty states without broken Drive buttons",
+    "server pagination and sorting preserve URL state and reset page correctly",
+    "debounced search includes code, filtered empty state and clear recovery",
+    "historical participation is explicit and has no live Drive or execution actions",
+    "row keyboard selection and close retain the portfolio",
+    "detail failure is independent; contextual retry restores it",
+    "real API rejects another editor reading the selected project"
+  ],
+  "errors": []
+}

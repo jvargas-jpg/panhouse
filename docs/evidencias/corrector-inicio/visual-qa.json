@@ -1,0 +1,62 @@
+{
+  "completed": true,
+  "screens": [
+    {
+      "label": "desktop",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "rowHeights": [
+        71,
+        71,
+        92,
+        71,
+        71,
+        71
+      ],
+      "overflow": []
+    },
+    {
+      "label": "tablet",
+      "width": 768,
+      "height": 1024,
+      "documentWidth": 768,
+      "viewport": 768,
+      "rowHeights": [
+        71,
+        71,
+        92,
+        82,
+        82,
+        81
+      ],
+      "overflow": []
+    },
+    {
+      "label": "mobile",
+      "width": 375,
+      "height": 812,
+      "documentWidth": 375,
+      "viewport": 375,
+      "rowHeights": [
+        188,
+        208,
+        223,
+        189,
+        189,
+        189
+      ],
+      "overflow": []
+    }
+  ],
+  "checks": [
+    "1440/768/375: four real summary values, correct row count, no horizontal overflow; mobile menu opens and closes with Escape",
+    "home CTA opens the exact correction in the existing work page and returns to Inicio",
+    "reusable corrector accounts with zero and one assignment render valid compact states",
+    "assignment-scoped dashboard and deep-link IDOR reject another Corrector work item",
+    "real reassignment moves only that intervention between reusable Corrector accounts",
+    "dashboard failure keeps shell and contextual retry restores the summary"
+  ],
+  "errors": []
+}

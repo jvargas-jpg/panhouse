@@ -3,7 +3,8 @@ import { AutoresPage } from './autores/AutoresPage';
 import { useMe } from './auth/useAuth';
 import { AuditoriaPagosPage } from './cobranzas/AuditoriaPagosPage';
 import { ComercialDashboardPage } from './comercial/ComercialDashboardPage';
-import { MisCorreccionesPage } from './corrector/MisCorreccionesPage';
+import { CorrectorHomePage } from './corrector/CorrectorHomePage';
+import { CorrectorMiTrabajo } from './corrector/CorrectorMiTrabajo';
 import { MisTrabajosDisenoPage } from './disenador/MisTrabajosDisenoPage';
 import { EditorHomePage } from './editor/EditorHomePage';
 import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
@@ -68,7 +69,7 @@ export function HomePage() {
   }
 
   if (user?.rol === 'corrector') {
-    return <MisCorreccionesPage />;
+    return new URLSearchParams(location.search).get('vista') === 'mi-trabajo' ? <CorrectorMiTrabajo /> : <CorrectorHomePage />;
   }
 
   if (user?.rol === 'disenador') {

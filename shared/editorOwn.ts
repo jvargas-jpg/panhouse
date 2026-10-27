@@ -19,6 +19,7 @@ export interface EditorWorkRow extends EditorialIntervention {
 
 export interface EditorWorkDetail {
   item: EditorialIntervention; specialist?: string | null; assignedAt?: string | null;
+  materialUnavailable?: boolean; slaLabel?: string | null;
   folders: { key: string; label: string; driveUrl: string | null }[];
   deliveries: { id: string; driveUrl: string; observaciones: string | null; submittedAt: string }[];
   blocker: { id: string; reason: string; createdAt: string; resolvedAt: string | null; resolution: string | null } | null;
@@ -33,7 +34,7 @@ export const EDITOR_REQUEST_LABELS: Record<EditorRequestType, string> = {
   editor_aclaracion: 'Solicitar aclaración',
 };
 
-export type EditorRequestStatus = 'pendiente' | 'en_revision' | 'devuelta' | 'resuelta' | 'cancelada';
+export type EditorRequestStatus = 'pendiente' | 'en_revision' | 'devuelta' | 'resuelta' | 'rechazada' | 'cancelada';
 
 export interface EditorRequestSummary {
   id: string;
@@ -51,6 +52,9 @@ export interface EditorRequestSummary {
   outcome: string | null;
   reassignment?: {previousEditor:string;nextEditor:string;assignedAt:string} | null;
   version: number; returnReason?: string | null; resolvedBy?: string | null;
+  authors?: string; coverUrl?: string | null; requestedBy?: string;
+  updatedAt?: string; lastEventLabel?: string; workAccessible?: boolean; canRespond?: boolean;
+  resultReferences?: { projectId: string; workItemId: string; assignmentId: string | null; resolvedById: string | null };
 }
 
 export interface EditorRequestList {
@@ -58,11 +62,12 @@ export interface EditorRequestList {
   total: number;
   pages: number;
   page: number;
-  counts: { pending: number; resolved: number; returned: number; cancelled: number; all: number };
+  counts: { pending: number; resolved: number; returned: number; cancelled: number; all: number; rejected?: number };
+  options?: { projects: {id: string; name: string}[] };
 }
 
 export interface EditorRequestDetail {
   summary: EditorRequestSummary;
-  description: string | null; observations?: {id:string;question:string;answer:string|null;at:string}[];
+  description: string | null; observations?: {id:string;question:string;answer:string|null;at:string;askedBy?:string;answeredBy?:string|null;answeredAt?:string|null}[];
   history: { id: string; label: string; actor: string; at: string }[];
 }

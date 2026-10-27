@@ -30,3 +30,5 @@ export * from './projectDriveWorkspaces.js';
 export * from './creativeDeliveries.js';
 export * from './editorialDeliveries.js';
 export * from './editorialBlockers.js';
+export * from './correccionDeliveries.js';
+export * from './correccionBlockers.js';

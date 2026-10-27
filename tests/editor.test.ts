@@ -239,6 +239,14 @@ describe('Editor · Inicio / Mi trabajo / Mis proyectos / Mis solicitudes', () =
     expect((await request(app.server).post(`/api/editores/mi-trabajo/${w!.id}/bloqueo`).set('Cookie', cookieA).send({ reason: 'intento ajeno' })).status).toBe(403);
     expect((await request(app.server).post('/api/editores/mis-solicitudes').set('Cookie', cookieA).send({ workItemId: w!.id, type: 'editor_apoyo', motivo: 'intento ajeno de solicitud' })).status).toBe(403);
     expect((await request(app.server).get(`/api/editores/mis-proyectos/${p.id}`).set('Cookie', cookieA)).status).toBe(404);
+    expect((await request(app.server).get(`/api/editores/mi-trabajo?project=${p.id}`).set('Cookie', cookieA)).body.total).toBe(0);
+    expect((await request(app.server).post(`/api/editores/mi-trabajo/${w!.id}/iniciar`).set('Cookie', cookieA).send({})).status).toBe(403);
+    expect((await request(app.server).get(`/api/editores/mi-trabajo/${w!.id}/archivos?folderKey=EDITING_OUTPUT`).set('Cookie', cookieA)).status).toBe(403);
+    const cookieB=await loginComo(app,editorB.email);
+    const ownRequest=await request(app.server).post('/api/editores/mis-solicitudes').set('Cookie',cookieB).send({workItemId:w!.id,type:'editor_apoyo',motivo:'Solicitud propia del Editor B'});
+    expect(ownRequest.status,ownRequest.text).toBe(200);
+    expect((await request(app.server).get(`/api/editores/mis-solicitudes/${ownRequest.body.id}`).set('Cookie',cookieA)).status).toBe(404);
+    expect((await request(app.server).post(`/api/editores/mis-solicitudes/${ownRequest.body.id}/cancelar`).set('Cookie',cookieA).send({expectedVersion:1})).status).toBe(404);
     await app.close();
   });
 
@@ -258,6 +266,8 @@ describe('Editor · Inicio / Mi trabajo / Mis proyectos / Mis solicitudes', () =
     const [proyectoNow] = await db.select({ editorId: proyectos.editorId }).from(proyectos).where(eq(proyectos.id, p.id));
     expect(proyectoNow!.editorId).toBe(newEditor.id);
     const detail = await request(app.server).get(`/api/editores/mi-trabajo/${w!.id}`).set('Cookie', newCookie);
+    expect(detail.body.history.some((h:any)=>h.label==='Editor asignado')).toBe(true);
+    expect(detail.body.history.some((h:any)=>h.label==='Editor reasignado · Redistribución')).toBe(true);
     expect(detail.status, detail.text).toBe(200);
     expect(detail.body.item.editorId).toBe(newEditor.id);
     await app.close();
@@ -331,6 +341,39 @@ describe('Editor · Inicio / Mi trabajo / Mis proyectos / Mis solicitudes', () =
     const projects=await request(f.app.server).get('/api/editores/mis-proyectos').set('Cookie',f.cookie);expect(projects.status,projects.text).toBe(200);expect(projects.body.items).toHaveLength(1);expect(projects.body.items[0].progress).toBeNull();expect(projects.body.options.editors.every((e:any)=>e.id===f.editor.id)).toBe(true);
     const filtered=await request(f.app.server).get('/api/editores/mi-trabajo?interventionType=feedback').set('Cookie',f.cookie);expect(filtered.body.total).toBe(0);
     await f.app.close();
+  });
+
+  it('Mi trabajo cuenta pendientes y bloqueadas antes de paginar, ordena y filtra en servidor',async()=>{
+    const f=await scenario();
+    try {
+      for(let n=2;n<=12;n++)await crearCapitulo(f.p.id,n,f.editor.id);
+      const list=(query:string)=>request(f.app.server).get('/api/editores/mi-trabajo?'+query).set('Cookie',f.cookie);
+      expect((await request(f.app.server).post(`/api/editores/mi-trabajo/${f.w.id}/iniciar`).set('Cookie',f.cookie).send({})).status).toBe(200);
+      let all=await list('pageSize=10');expect(all.status,all.text).toBe(200);expect(all.body.items).toHaveLength(10);expect(all.body.total).toBe(12);
+      const blockId=all.body.items.find((i:any)=>i.id!==f.w.id).id;
+      expect((await request(f.app.server).post(`/api/editores/mi-trabajo/${blockId}/bloqueo`).set('Cookie',f.cookie).send({reason:'Falta material para continuar'})).status).toBe(200);
+      all=await list('pageSize=10&page=2');expect(all.body.items).toHaveLength(2);expect(all.body.counts).toMatchObject({all:12,pending:10,inProgress:1,blocked:1});
+      const pending=await list('tab=pending&pageSize=10');expect(pending.body.total).toBe(10);expect(pending.body.items.every((i:any)=>!i.startedAt&&i.state!=='Bloqueadas')).toBe(true);
+      const blocked=await list('tab=blocked');expect(blocked.body.items.map((i:any)=>i.id)).toEqual([blockId]);
+      const due=await list('sort=due');expect(due.body.items[0].id).toBe(f.w.id);
+      const filtered=await list('search='+encodeURIComponent('Capítulo 12'));expect(filtered.body.total).toBe(1);expect(filtered.body.items[0].label).toBe('Capítulo 12');
+      expect((await list('sort=unsupported')).status).toBe(400);
+      expect((await list('pageSize=5')).status).toBe(400);
+      expect(driveControl.metadataCalls).toBe(0);
+    } finally { await f.app.close(); }
+  });
+
+  it('el feedback del historial no desaparece después de ocho avances de la misma intervención',async()=>{
+    const f=await scenario();
+    try {
+      await actualizarCapituloEditor(f.p.id,1,{fechaInicioEditor:'2026-10-01',fechaEntregaEditor:'2026-10-02'},f.editor.id);
+      await actualizarCapituloAutor(f.p.id,1,{fechaEnvioAutor:'2026-10-02',fechaRespuestaReal:'2026-10-05'},f.specialist.id);
+      for(let n=0;n<9;n++)expect((await request(f.app.server).post(`/api/editores/mi-trabajo/${f.w.id}/avance`).set('Cookie',f.cookie).send({note:'Avance posterior al feedback '+n})).status).toBe(200);
+      const detail=await request(f.app.server).get(`/api/editores/mi-trabajo/${f.w.id}`).set('Cookie',f.cookie);
+      expect(detail.status,detail.text).toBe(200);expect(detail.body.history.length).toBeGreaterThan(8);
+      expect(detail.body.history.some((h:any)=>h.label==='Feedback del autor registrado')).toBe(true);
+      expect(detail.body.slaLabel).toBeNull();expect(driveControl.metadataCalls).toBe(0);
+    } finally { await f.app.close(); }
   });
 
   it('participación histórica conserva contexto y pierde material y escritura tras reasignar',async()=>{

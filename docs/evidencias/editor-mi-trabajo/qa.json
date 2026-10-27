@@ -1,0 +1,51 @@
+{
+  "screens": [
+    {
+      "width": 1440,
+      "height": 900,
+      "label": "desktop",
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "listWidth": 794,
+      "overflow": []
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "label": "tablet",
+      "documentWidth": 768,
+      "viewport": 768,
+      "listWidth": 724,
+      "overflow": []
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "label": "mobile",
+      "documentWidth": 375,
+      "viewport": 375,
+      "listWidth": 351,
+      "overflow": []
+    }
+  ],
+  "checks": [
+    "desktop: filters open and close with Escape",
+    "tablet: filters open and close with Escape",
+    "tablet: accessible detail opens, changes content and closes with focus restored",
+    "mobile: filters open and close with Escape",
+    "mobile: accessible detail opens, changes content and closes with focus restored",
+    "desktop selection, close and keyboard selection",
+    "all five detail sections change without navigation",
+    "blocked tab is server filtered",
+    "sorting and page size are preserved in URL",
+    "debounced server search, empty state and clear filters",
+    "detail error is isolated from list and contextual retry recovers",
+    "blocker and support/reassignment dialogs trap focus and Escape preserves detail",
+    "UI start persists startedAt and derives SLA in API",
+    "UI advance, report blocker and resolve persist in real API and history",
+    "UI contextual request persists work item and destination; QA request cleaned up",
+    "waiting detail shows paused SLA and no invalid execution/request actions",
+    "mobile nested modal Escape preserves detail"
+  ],
+  "errors": []
+}

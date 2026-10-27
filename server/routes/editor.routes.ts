@@ -1,8 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
-import { db, pool } from '../db/client.js';
-import { eq } from 'drizzle-orm';
-import { proyectos } from '../db/schema/index.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { getEditorDashboard } from '../helpers/editorDashboard.js';
@@ -11,12 +8,12 @@ import { iniciarTrabajoEditorial, registrarEntregaEditorial, registrarAvanceEdit
 import { listEditorialDriveFiles, uploadEditorialDriveFile } from '../helpers/editorDrive.js';
 import { reportarBloqueoEditorial, resolverBloqueoEditorial } from '../helpers/editorialBlockers.js';
 import { cancelarRequestEditor, crearRequestEditor, listarRequestsEditor, obtenerRequestEditorDetalle, responderRequestEditor, decidirRequestEditor, listarAclaracionesRecibidas } from '../helpers/editorOwnRequests.js';
-import { listarProyectosEdicion, obtenerProyectoEdicionDetalle } from '../helpers/editorialProjects.js';
+import { listarMisProyectos, obtenerMiProyecto } from '../helpers/editorProjects.js';
 import { EDITOR_REQUEST_TYPES } from '../../shared/editorOwn.js';
 const idSchema=z.object({id:z.string().uuid()});
 export async function editorRoutes(app: FastifyInstance) {
   const self={preHandler:[requireAuth,requireRole('editor')]};
-  const miTrabajoFilters=z.object({tab:z.enum(['all','today','inProgress','feedback','waiting','completed']).default('all'),search:z.string().max(150).default(''),status:z.string().max(80).optional(),risk:z.enum(['dueSoon','overdue']).optional(),service:z.string().uuid().optional(),interventionType:z.string().max(200).optional(),project:z.string().uuid().optional(),date:z.string().date().optional(),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10)});
+  const miTrabajoFilters=z.object({tab:z.enum(['all','today','pending','blocked','inProgress','feedback','waiting','completed']).default('all'),search:z.string().max(150).default(''),status:z.string().max(80).optional(),risk:z.enum(['dueSoon','overdue']).optional(),service:z.string().uuid().optional(),interventionType:z.string().max(200).optional(),project:z.string().uuid().optional(),date:z.string().date().optional(),sort:z.enum(['priority','due','project']).default('priority'),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10)});
   app.get('/mi-inicio',self,async(req)=>getEditorDashboard(req.user!.id));
   app.get('/mi-trabajo',self,async(req,reply)=>{const f=parseOrReply(miTrabajoFilters,req.query,reply);if(!f)return;return listarMiTrabajo(req.user!.id,{...f,tab:f.tab??'all',search:f.search??'',page:f.page??1,pageSize:f.pageSize??10});});
   app.get('/mi-trabajo/:id',self,async(req,reply)=>{
@@ -40,21 +37,17 @@ export async function editorRoutes(app: FastifyInstance) {
     await resolverBloqueoEditorial(p.id,req.user!,body.resolution);
     return {ok:true};
   });
-  const misProyectosFilters=z.object({specialist:z.string().uuid().optional(),participation:z.enum(['active','history']).optional(),search:z.string().max(150).default(''),service:z.string().uuid().optional(),state:z.string().max(40).optional(),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10),sort:z.enum(['activity','delivery','title','state','editor']).default('activity')});
-  app.get('/mis-proyectos',self,async(req,reply)=>{const f=parseOrReply(misProyectosFilters,req.query,reply);if(!f)return;return listarProyectosEdicion({...f,search:f.search??'',page:f.page??1,pageSize:f.pageSize??10,sort:f.sort??'activity',editor:req.user!.id});});
+  const misProyectosFilters=z.object({specialist:z.string().uuid().optional(),participation:z.enum(['active','history']).optional(),search:z.string().max(150).default(''),service:z.string().uuid().optional(),state:z.string().max(40).optional(),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10),sort:z.enum(['priority','activity','delivery','title','state']).default('priority')});
+  app.get('/mis-proyectos',self,async(req,reply)=>{const f=parseOrReply(misProyectosFilters,req.query,reply);if(!f)return;return listarMisProyectos(req.user!.id,{...f,search:f.search??'',page:f.page??1,pageSize:f.pageSize??10,sort:f.sort??'priority'});});
   app.get('/mis-proyectos/:projectId',self,async(req,reply)=>{
     const p=parseOrReply(z.object({projectId:z.string().uuid()}),req.params,reply);if(!p)return;
-    const [proyecto]=await db.select({editorId:proyectos.editorId}).from(proyectos).where(eq(proyectos.id,p.projectId));
-    const participation=await pool.query('SELECT id FROM project_assignments WHERE proyecto_id=$1 AND usuario_id=$2 AND tipo=\'editor\' LIMIT 1',[p.projectId,req.user!.id]);
-    if(!proyecto||(proyecto.editorId!==req.user!.id&&!participation.rowCount))return reply.code(404).send({error:'Proyecto no encontrado'});
-    const detail=await obtenerProyectoEdicionDetalle(p.projectId,new Date(),req.user!.id);if(!detail)return reply.code(404).send({error:'Proyecto no encontrado'});
-    detail.drive.rootUrl=detail.drive.links.find(l=>l.key==='EDITING')?.url??null;
+    const detail=await obtenerMiProyecto(req.user!.id,p.projectId);if(!detail)return reply.code(404).send({error:'Proyecto no encontrado'});
     return detail;
   });
-  const misSolicitudesFilters=z.object({search:z.string().max(150).default(''),type:z.enum(EDITOR_REQUEST_TYPES).optional(),project:z.string().uuid().optional(),tab:z.enum(['all','pending','resolved','returned','cancelled']).default('all'),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10)});
+  const misSolicitudesFilters=z.object({search:z.string().max(150).default(''),type:z.enum(EDITOR_REQUEST_TYPES).optional(),project:z.string().uuid().optional(),from:z.string().date().optional(),to:z.string().date().optional(),target:z.enum(['chief','specialist']).optional(),sort:z.enum(['priority','newest','activity']).default('priority'),tab:z.enum(['all','pending','resolved','returned','cancelled','rejected']).default('all'),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10)}).refine(f=>!f.from||!f.to||f.from<=f.to,{message:'La fecha inicial debe ser anterior a la final',path:['to']});
   app.get('/mis-solicitudes',self,async(req,reply)=>{const f=parseOrReply(misSolicitudesFilters,req.query,reply);if(!f)return;return listarRequestsEditor(req.user!.id,f.tab??'all',f.page??1,f.pageSize??10,f);});
   app.post('/mis-solicitudes',self,async(req,reply)=>{
-    const body=parseOrReply(z.object({workItemId:z.string().uuid(),type:z.enum(EDITOR_REQUEST_TYPES),motivo:z.string().trim().min(5).max(1000)}),req.body,reply);if(!body)return;
+    const body=parseOrReply(z.object({workItemId:z.string().uuid(),type:z.enum(EDITOR_REQUEST_TYPES),motivo:z.string().trim().min(5).max(1000)}).strict(),req.body,reply);if(!body)return;
     const row=await crearRequestEditor(req.user!.id,body.workItemId,body.type,body.motivo);
     return {ok:true,id:row.id};
   });

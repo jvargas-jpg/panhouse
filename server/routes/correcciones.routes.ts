@@ -14,6 +14,9 @@ import {
 } from '../helpers/correcciones.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
+import { getCorrectorDashboard } from '../helpers/correctorHome.js';
+import { listarMiTrabajoCorrector, obtenerDetalleTrabajoCorrector, registrarEntregaCorrectorConArchivos, reportarBloqueoCorreccion } from '../helpers/correctorWork.js';
+import { listCorreccionDriveFiles } from '../helpers/correccionDrive.js';
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 
@@ -69,13 +72,62 @@ async function verificarAccesoAEjecucion(
   return { ok: false, status: 403, error: 'No autorizado para esta corrección' };
 }
 
+const workItemParamSchema = z.object({ workItemId: z.string().uuid() });
+const miTrabajoFiltersSchema = z.object({
+  tab: z.enum(['active', 'completed', 'all']).default('active'), search: z.string().max(150).default(''),
+  status: z.enum(['asignada', 'en_correccion', 'bloqueada', 'completada']).optional(),
+  scope: z.string().max(80).optional(), project: z.string().uuid().optional(),
+  page: z.coerce.number().int().min(1).max(10000).default(1), pageSize: z.coerce.number().int().refine(n => [10, 25, 50].includes(n)).default(10),
+}).strict();
+
 export async function correccionesRoutes(app: FastifyInstance) {
+  const corrector = { preHandler: [requireAuth, requireRole('corrector')] };
+  app.get('/inicio', corrector, async (request, reply) => {
+    if (!parseOrReply(z.object({}).strict(), request.query, reply)) return;
+    return getCorrectorDashboard(request.user!.id);
+  });
+  // "Mi trabajo" del Corrector (master prompt dedicado, Mi trabajo): UNA
+  // FILA = UNA INTERVENCIÓN DE CORRECCIÓN, scoped por assignment vigente
+  // (listarMiTrabajoCorrector reutiliza listarMisCorrecciones, ya
+  // acotado por cuenta -- ver server/helpers/correctorWork.ts).
+  app.get('/mi-trabajo', corrector, async (request, reply) => {
+    const f = parseOrReply(miTrabajoFiltersSchema, request.query, reply); if (!f) return;
+    return listarMiTrabajoCorrector(request.user!.id, { ...f, tab: f.tab ?? 'active', search: f.search ?? '', page: f.page ?? 1, pageSize: f.pageSize ?? 10 });
+  });
+  app.get('/mi-trabajo/:workItemId', corrector, async (request, reply) => {
+    const p = parseOrReply(workItemParamSchema, request.params, reply); if (!p) return;
+    const detail = await obtenerDetalleTrabajoCorrector(p.workItemId, request.user!.id);
+    if (!detail) return reply.code(404).send({ error: 'Corrección no disponible para tu cuenta' });
+    return detail;
+  });
+  app.get('/mi-trabajo/:workItemId/archivos', corrector, async (request, reply) => {
+    const p = parseOrReply(workItemParamSchema, request.params, reply), f = parseOrReply(z.object({ folderKey: z.string().max(80), pageToken: z.string().max(2000).optional() }), request.query, reply);
+    if (!p || !f) return;
+    return listCorreccionDriveFiles(p.workItemId, request.user!.id, f.folderKey, f.pageToken);
+  });
+  app.patch('/mi-trabajo/:workItemId/entrega', corrector, async (request, reply) => {
+    const p = parseOrReply(workItemParamSchema, request.params, reply);
+    const body = parseOrReply(z.object({ tripaUrl: z.string().trim().url().max(2000), reportUrl: z.string().trim().url().max(2000), observaciones: z.string().trim().max(1000).optional() }).strict(), request.body, reply);
+    if (!p || !body) return;
+    const delivery = await registrarEntregaCorrectorConArchivos(p.workItemId, request.user!.id, { tripaUrl: body.tripaUrl, reportUrl: body.reportUrl, observaciones: body.observaciones });
+    return { ok: true, deliveryId: delivery.id };
+  });
+  app.post('/mi-trabajo/:workItemId/bloqueo', corrector, async (request, reply) => {
+    const p = parseOrReply(workItemParamSchema, request.params, reply), body = parseOrReply(z.object({ reason: z.string().trim().min(5).max(1000) }).strict(), request.body, reply);
+    if (!p || !body) return;
+    const blocker = await reportarBloqueoCorreccion(p.workItemId, body.reason, request.user!.id);
+    return { ok: true, blockerId: blocker.id };
+  });
   // "Mis Correcciones" (master prompt §19) — solo correctores con
   // cuenta de sistema llegan acá (ver rol 'corrector' en ROLES).
   app.get('/mias', { preHandler: [requireAuth, requireRole('corrector')] }, async (request, reply) => {
     if (!request.user) return reply.code(401).send({ error: 'No autenticado' });
+    const query = parseOrReply(z.object({workItem:z.string().uuid().optional()}).strict(), request.query, reply);
+    if (!query) return;
     const trabajos = await listarMisCorrecciones(request.user.id);
-    return reply.send({ trabajos });
+    const selected = query.workItem ? trabajos.filter(t=>t.workItemId===query.workItem) : trabajos;
+    if (query.workItem && !selected.length) return reply.code(404).send({error:'Corrección no disponible para tu cuenta'});
+    return reply.send({ trabajos:selected });
   });
 
   // "Seguimiento de Corrección" (master prompt §18/§21) — jefatura.

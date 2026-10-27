@@ -1,5 +1,5 @@
 import { apiFetch } from '../lib/api';
-import type { AlcanceCorreccion, Correccion, CorreccionSeguimiento, ResultadoCorreccion, TrabajoCorrector } from '../types/api';
+import type { AlcanceCorreccion, Correccion, CorreccionSeguimiento, ResultadoCorreccion } from '../types/api';
 
 export function fetchCorreccionesDeProyecto(proyectoId: string) {
   return apiFetch<{ correcciones: Correccion[] }>(`/proyectos/${proyectoId}/correcciones`);
@@ -48,11 +48,6 @@ export function cerrarCorreccion(correccionId: string, datos: { resultado: Resul
     method: 'PATCH',
     body: JSON.stringify(datos),
   });
-}
-
-// "Mis Correcciones" — rol corrector.
-export function fetchMisCorrecciones() {
-  return apiFetch<{ trabajos: TrabajoCorrector[] }>('/correcciones/mias');
 }
 
 // "Seguimiento de Corrección" — rol jefe_area.

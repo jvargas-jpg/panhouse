@@ -1,0 +1,9 @@
+/* Mi trabajo reutiliza los componentes genéricos de Editor (editor.css,
+   miTrabajo.css), que dependen de las variables --eo-* definidas bajo
+   .editor-shell/.editor-layout. Acá se redeclaran con los mismos valores
+   que ya usa .corrector-layout (correctorHome.css), para que el detalle,
+   los formularios y los botones se vean consistentes con el resto del
+   rol sin heredar el fondo/sidebar de Editor. */
+.corrector-home.editor-shell { --eo-ink: #172b43; --eo-muted: #6c7d93; --eo-line: #e5e9ed; --eo-navy: #0c2030; --eo-gold: #b38e42; }
+.corrector-home .mw-detail-header .coh-cover { width: 38px; height: 54px; }
+.corrector-home .coh-blocker-reason { font-size: 10px; color: #8090a4; display: block; margin-top: 4px; }

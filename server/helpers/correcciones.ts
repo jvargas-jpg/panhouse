@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, ne } from 'drizzle-orm';
+import { and, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import type { Rol } from '../db/schema/index.js';
 import { autores, contratosCorreccion, correcciones, decisiones, notificaciones, projectAssignments, proyectos, servicios, users, workItems as workItemsTable } from '../db/schema/index.js';
@@ -445,6 +445,13 @@ export interface TrabajoCorrector extends CorreccionDeProyecto {
   proyectoCodigo: string;
   autorNombre: string;
   servicioCodigo: string;
+  // Solo listarMisCorrecciones lo selecciona (Mi trabajo del Corrector
+  // necesita mostrar el motivo real de bloqueo sin una segunda consulta
+  // por fila, y el título real del libro en vez de solo autor+código) --
+  // opcionales porque listarSeguimientoCorreccion, que también devuelve
+  // TrabajoCorrector, no los trae.
+  gateBloqueante?: string | null;
+  proyectoTitulo?: string;
 }
 
 // "Mis Correcciones" (master prompt §19): a diferencia de
@@ -476,8 +483,10 @@ export async function listarMisCorrecciones(correctorId: string): Promise<Trabaj
       resultado: correcciones.resultado,
       observaciones: correcciones.observaciones,
       estado: workItemsTable.estado,
+      gateBloqueante: workItemsTable.gateBloqueante,
       proyectoId: proyectos.id,
       proyectoCodigo: proyectos.codigo,
+      proyectoTitulo: sql<string>`coalesce(nullif(trim(${proyectos.tituloDefinitivo}),''),nullif(trim(${proyectos.titulo}),''),'Proyecto editorial')`,
       autorNombre: autores.nombre,
       servicioCodigo: servicios.codigo,
     })
@@ -486,7 +495,12 @@ export async function listarMisCorrecciones(correctorId: string): Promise<Trabaj
     .innerJoin(proyectos, eq(correcciones.proyectoId, proyectos.id))
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
-    .where(and(eq(correcciones.correctorId, correctorId), ne(workItemsTable.estado, 'cancelado')))
+    .where(and(ne(workItemsTable.estado, 'cancelado'), eq(workItemsTable.tipo, 'correccion'), eq(workItemsTable.proyectoId, correcciones.proyectoId), sql`(CASE
+      WHEN EXISTS(SELECT 1 FROM project_assignments a WHERE a.work_item_id=${correcciones.workItemId} AND a.proyecto_id=${correcciones.proyectoId} AND a.tipo='corrector')
+      THEN EXISTS(SELECT 1 FROM project_assignments a WHERE a.work_item_id=${correcciones.workItemId} AND a.proyecto_id=${correcciones.proyectoId} AND a.tipo='corrector' AND a.finalizado_en IS NULL AND a.usuario_id=${correctorId})
+      ELSE ${correcciones.correctorId}=${correctorId} END OR (${workItemsTable.estado}='completado' AND ${correcciones.correctorId}=${correctorId} AND EXISTS(
+        SELECT 1 FROM project_assignments a WHERE a.work_item_id=${correcciones.workItemId} AND a.proyecto_id=${correcciones.proyectoId} AND a.tipo='corrector' AND a.usuario_id=${correctorId} AND a.finalizado_en IS NOT NULL AND
+        ((${correcciones.entregadoEn}>=a.asignado_en AND ${correcciones.entregadoEn}<=a.finalizado_en) OR (${correcciones.entregadoEn} IS NULL AND ${correcciones.fechaEntrega}>=(a.asignado_en AT TIME ZONE 'America/Caracas')::date AND ${correcciones.fechaEntrega}<=(a.finalizado_en AT TIME ZONE 'America/Caracas')::date)))))`))
     .orderBy(desc(correcciones.fechaAsignada));
 
   return filas.map(conPlazo);

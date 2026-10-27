@@ -15,7 +15,7 @@ const DESCRIPTIONS: Record<string,string>={
  inicio:'Tu panorama editorial de hoy. Aquí encontrarás tus pendientes, próximas entregas y novedades de tus proyectos.',
  'mi-trabajo':'Gestiona tus intervenciones asignadas, registra avances, entregas y bloqueos.',
  'mis-proyectos':'Consulta los proyectos en los que participas, su estado y tu historial de intervención.',
- 'mis-solicitudes':'Haz seguimiento a tus solicitudes de apoyo, reasignación y aclaraciones.'
+ 'mis-solicitudes':'Consulta las solicitudes que has enviado y revisa su estado, respuesta y resultado.'
 };
 export function EditorHomePage(){
  const [params]=useSearchParams();

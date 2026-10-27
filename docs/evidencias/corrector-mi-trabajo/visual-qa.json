@@ -1,0 +1,29 @@
+{
+  "completed": true,
+  "screens": [
+    {
+      "label": "tablet",
+      "width": 768,
+      "height": 1024,
+      "documentWidth": 768,
+      "viewport": 768
+    },
+    {
+      "label": "mobile",
+      "width": 375,
+      "height": 812,
+      "documentWidth": 375,
+      "viewport": 375
+    }
+  ],
+  "checks": [
+    "lista real: 3 filas para la cuenta demo",
+    "sin columna \"Progreso\" ni porcentajes falsos: [\"Proyecto / Autor\",\"Intervención\",\"Estado\",\"Fecha límite\",\"Última actividad\",\"Abrir detalle\"]",
+    "detalle abre con master-detail, tab Detalle activo por defecto",
+    "tab Archivos muestra Material para corregir y Entregas registradas",
+    "tab Historial renderiza timeline real",
+    "bloque de Acciones presente: true",
+    "filtro sin resultados muestra vacío honesto, no error"
+  ],
+  "errors": []
+}

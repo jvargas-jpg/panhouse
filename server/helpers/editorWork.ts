@@ -4,14 +4,15 @@ import { db, pool } from '../db/client.js';
 import { capitulos, editorialBlockers, editorialDeliveries } from '../db/schema/index.js';
 import { editorialInterventions, EDITORIAL_EVENTS } from './editorialChief.js';
 import { getProjectWorkspaceFolders } from '../modules/project-workspaces/service.js';
+import { DIAS_HABILES_EDICION_CAPITULO } from './edicionSla.js';
 import { diaCaracas } from './atencionEspecialista.js';
 import type { EditorialIntervention } from '../../shared/editorialChief.js';
 import type { EditorWorkDetail } from '../../shared/editorOwn.js';
 
-export type MiTrabajoTab = 'all' | 'today' | 'inProgress' | 'feedback' | 'waiting' | 'completed';
+export type MiTrabajoTab = 'all' | 'today' | 'pending' | 'blocked' | 'inProgress' | 'feedback' | 'waiting' | 'completed';
 export interface MiTrabajoFiltros {
   tab: MiTrabajoTab; search: string; status?: string; risk?: string; service?: string; interventionType?: string; project?: string; date?: string;
-  page: number; pageSize: number;
+  page: number; pageSize: number; sort?: 'priority' | 'due' | 'project';
 }
 
 // Mi trabajo (prompt Editor §36-61): UNA FILA = UN WORK ITEM, nunca
@@ -50,19 +51,25 @@ export async function listarMiTrabajo(editorId: string, f: MiTrabajoFiltros, aho
   const inTab = (i: EditorialIntervention): boolean => {
     switch (f.tab) {
       case 'today': return i.actionable && (i.overdue || i.dueDate === hoy);
-      case 'inProgress': return i.state === 'En edición';
+      case 'pending': return i.actionable && !i.startedAt && i.state !== 'Bloqueadas' && i.state !== 'Requiere ajustes';
+      case 'blocked': return i.state === 'Bloqueadas';
+      case 'inProgress': return i.state === 'En edición' && !!i.startedAt;
       case 'feedback': return i.state === 'Requiere ajustes';
       case 'waiting': return i.state === 'Esperando autor' || i.state === 'Esperando Especialista' || i.state === 'En pausa';
       case 'completed': return i.state === 'Completadas';
       default: return true;
     }
   };
-  const bucket = filtered.filter(inTab).sort((a, b) => priority(a) - priority(b) || (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999') || a.id.localeCompare(b.id));
+  const bucket = filtered.filter(inTab).sort((a, b) =>
+    (f.sort === 'project' ? a.title.localeCompare(b.title, 'es') : f.sort === 'due' ? 0 : priority(a) - priority(b)) ||
+    (a.dueDate ?? '9999').localeCompare(b.dueDate ?? '9999') || a.id.localeCompare(b.id));
   const pages = Math.max(1, Math.ceil(bucket.length / f.pageSize)), page = Math.min(f.page, pages);
   const counts = {
     all: filtered.length,
     today: filtered.filter(i => i.actionable && (i.overdue || i.dueDate === hoy)).length,
-    inProgress: filtered.filter(i => i.state === 'En edición').length,
+    pending: filtered.filter(i => i.actionable && !i.startedAt && i.state !== 'Bloqueadas' && i.state !== 'Requiere ajustes').length,
+    blocked: filtered.filter(i => i.state === 'Bloqueadas').length,
+    inProgress: filtered.filter(i => i.state === 'En edición' && !!i.startedAt).length,
     feedback: filtered.filter(i => i.state === 'Requiere ajustes').length,
     waiting: filtered.filter(i => i.state === 'Esperando autor' || i.state === 'Esperando Especialista' || i.state === 'En pausa').length,
     completed: filtered.filter(i => i.state === 'Completadas').length,
@@ -85,7 +92,7 @@ export async function listarMiTrabajo(editorId: string, f: MiTrabajoFiltros, aho
 async function withLastActivity(items: EditorialIntervention[]) {
   const ids = [...new Set(items.flatMap(i => [i.id, i.workItemId].filter((v): v is string => !!v)))];
   const activity = ids.length ? await pool.query<{ entity_id: string; accion: string; created_at: Date }>(
-    `SELECT entity_id,accion,created_at FROM audit_logs WHERE entity_id=ANY($1::uuid[]) ORDER BY created_at DESC`, [ids]) : { rows: [] };
+    `SELECT DISTINCT ON (entity_id) entity_id,accion,created_at FROM audit_logs WHERE entity_id=ANY($1::uuid[]) ORDER BY entity_id,created_at DESC,id DESC`, [ids]) : { rows: [] };
   const latest = new Map<string, { accion: string; created_at: Date }>();
   for (const r of activity.rows) if (!latest.has(r.entity_id)) latest.set(r.entity_id, r);
   return items.map(i => {
@@ -124,21 +131,24 @@ export async function obtenerDetalleMiTrabajo(id: string, editorId: string, ahor
   const capituloId = item.chapter ? (await db.select({ id: capitulos.id }).from(capitulos).where(and(eq(capitulos.proyectoId, item.projectId), eq(capitulos.numero, item.chapter))))[0]?.id : undefined;
   const entityIds = [...new Set([item.id, item.workItemId, capituloId].filter((v): v is string => !!v))];
   const [allFolders, deliveries, blocker, history] = await Promise.all([
-    getProjectWorkspaceFolders(item.projectId, { id: editorId, rol: 'editor' }).catch(() => []),
+    getProjectWorkspaceFolders(item.projectId, { id: editorId, rol: 'editor' }).then(folders => ({ folders, unavailable: false }), () => ({ folders: [], unavailable: true })),
     item.workItemId ? db.select().from(editorialDeliveries).where(eq(editorialDeliveries.workItemId, item.workItemId)).orderBy(desc(editorialDeliveries.submittedAt)) : Promise.resolve([]),
     item.workItemId ? db.select().from(editorialBlockers).where(and(eq(editorialBlockers.workItemId, item.workItemId), isNull(editorialBlockers.resolvedAt))).then(r => r[0] ?? null) : Promise.resolve(null),
     pool.query<{ id: string; accion: string; actor: string; created_at: Date; detalles: { motivo?: string } | null }>(
       `SELECT a.id,a.accion,coalesce(u.nombre,'Sistema') actor,a.created_at,a.detalles FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id
-       WHERE a.entity_id=ANY($1::uuid[]) ORDER BY a.created_at DESC,a.id DESC LIMIT 8`, [entityIds]),
+       WHERE a.entity_id=ANY($1::uuid[]) OR
+         (a.proyecto_id=$2::uuid AND a.entity_type='project_assignment' AND a.accion IN ('EDITOR_ASIGNADO','EDITOR_REASIGNADO'))
+       ORDER BY a.created_at DESC,a.id DESC`, [entityIds, item.projectId]),
   ]);
   const folderLabels = Object.fromEntries(folderKeysPara(item).map(f => [f.key, f.label]));
-  const folders = allFolders.filter(f => wanted.has(f.key)).map(f => ({ key: f.key, label: folderLabels[f.key] ?? f.displayName, driveUrl: f.driveUrl }));
+  const folders = allFolders.folders.filter(f => wanted.has(f.key)).map(f => ({ key: f.key, label: folderLabels[f.key] ?? f.displayName, driveUrl: f.driveUrl }));
   const specialists = await specialistsFor([item.projectId]);
   const assignment = item.assignmentId ? await pool.query<{at:Date}>('SELECT asignado_en at FROM project_assignments WHERE id=$1',[item.assignmentId]) : null;
   return {
     specialist:specialists.get(item.projectId)?.nombre??null,assignedAt:assignment?.rows[0]?.at.toISOString()??null,
     item,
-    folders,
+    folders, materialUnavailable: allFolders.unavailable,
+    slaLabel: item.chapter && item.interventionType !== 'feedback' ? `${DIAS_HABILES_EDICION_CAPITULO} días hábiles desde el inicio` : null,
     deliveries: deliveries.map(d => ({ id: d.id, driveUrl: d.driveUrl, observaciones: d.observaciones, submittedAt: d.submittedAt.toISOString() })),
     blocker: blocker ? { id: blocker.id, reason: blocker.reason, createdAt: blocker.createdAt.toISOString(), resolvedAt: null, resolution: null } : null,
     history: history.rows.map(h => ({ id: h.id, label: (EDITORIAL_EVENTS[h.accion] ?? h.accion) + (h.detalles?.motivo ? ' · ' + h.detalles.motivo : ''), actor: h.actor, at: h.created_at.toISOString() })),

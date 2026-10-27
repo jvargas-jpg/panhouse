@@ -34,25 +34,27 @@ export function EditorSkeleton({label='Cargando información'}:{label?:string}) 
   return <div className="eo-skeleton" role="status" aria-label={label}><i/><i/><i/><i/></div>;
 }
 
-export function EditorDetail({title,open,onClose,children}:{title:string;open:boolean;onClose:()=>void;children:ReactNode}) {
+export function EditorDetail({title,open,onClose,children,modal=false}:{title:string;open:boolean;onClose:()=>void;children:ReactNode;modal?:boolean}) {
   const ref=useRef<HTMLElement>(null);
   useEffect(()=>{
     if(!open)return;
     const previous=document.activeElement as HTMLElement|null;
     const mobile=window.matchMedia('(max-width:1199px)').matches;
+    const overflow=document.body.style.overflow;
+    if(modal)document.body.style.overflow='hidden';
     if(mobile)ref.current?.focus();
     const key=(e:KeyboardEvent)=>{
       if(e.key==='Escape')onClose();
       if(e.key!=='Tab'||!mobile)return;
-      const controls=Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input,select,textarea,[tabindex="0"]')??[]);
+      const controls=Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled),a[href],input,select,textarea,[tabindex="0"]')??[]).filter(el=>el.getClientRects().length>0);
       const first=controls[0],last=controls[controls.length-1];
       if(e.shiftKey&&(document.activeElement===first||document.activeElement===ref.current)){e.preventDefault();last?.focus();}
       else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
     };
     document.addEventListener('keydown',key);
-    return()=>{document.removeEventListener('keydown',key);if(mobile)previous?.focus();};
-  },[open]);
-  return <><button className={'eo-detail-backdrop'+(open?' is-open':'')} aria-label="Cerrar detalle" onClick={onClose}/><aside ref={ref} tabIndex={-1} className={'eo-detail'+(open?' is-open':'')} aria-label={title}><header className="eo-detail-title"><RrppIcon nombre="ingreso"/><h2>{title}</h2><button aria-label="Cerrar detalle" onClick={onClose}>×</button></header>{children}</aside></>;
+    return()=>{document.removeEventListener('keydown',key);if(modal)document.body.style.overflow=overflow;if(mobile)previous?.focus();};
+  },[open,modal]);
+  return <><button className={'eo-detail-backdrop'+(open?' is-open':'')} aria-label="Cerrar detalle" tabIndex={-1} onClick={onClose}/><aside ref={ref} tabIndex={-1} role={modal&&open?'dialog':undefined} aria-modal={modal&&open?true:undefined} className={'eo-detail'+(open?' is-open':'')} aria-label={title}><header className="eo-detail-title"><RrppIcon nombre="ingreso"/><h2>{title}</h2><button aria-label="Cerrar detalle" onClick={onClose}>×</button></header>{children}</aside></>;
 }
 
 export function EditorStatus({state}:{state:string}) {

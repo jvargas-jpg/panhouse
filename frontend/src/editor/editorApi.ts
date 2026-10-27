@@ -1,5 +1,5 @@
 import { apiFetch } from '../lib/api';
-import type { EditorialProjectDetail, EditorialProjectList } from '../../../shared/editorialChief';
+import type { EditorProjectDetail, EditorProjectList } from '../../../shared/editorProjects';
 import type { EditorDashboard, EditorRequestDetail, EditorRequestList, EditorRequestType, EditorWorkDetail, EditorWorkRow } from '../../../shared/editorOwn';
 
 export const editorKey = ['editor'];
@@ -16,8 +16,8 @@ export const reportarBloqueo = (id: string, reason: string) =>
 export const resolverBloqueo = (id: string, resolution?: string) =>
   apiFetch<{ ok: true }>('/editores/mi-trabajo/' + id + '/bloqueo/resolver', { method: 'POST', body: JSON.stringify({ resolution: resolution || undefined }) });
 
-export const fetchMisProyectos = (params: URLSearchParams) => apiFetch<EditorialProjectList>('/editores/mis-proyectos?' + params);
-export const fetchMiProyectoDetalle = (projectId: string) => apiFetch<EditorialProjectDetail>('/editores/mis-proyectos/' + projectId);
+export const fetchMisProyectos = (params: URLSearchParams) => apiFetch<EditorProjectList>('/editores/mis-proyectos?' + params);
+export const fetchMiProyectoDetalle = (projectId: string) => apiFetch<EditorProjectDetail>('/editores/mis-proyectos/' + projectId);
 
 export const fetchMisSolicitudes = (params: URLSearchParams) => apiFetch<EditorRequestList>('/editores/mis-solicitudes?' + params);
 export const fetchMiSolicitudDetalle = (id: string) => apiFetch<EditorRequestDetail>('/editores/mis-solicitudes/' + id);

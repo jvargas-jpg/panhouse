@@ -1,0 +1,61 @@
+{
+  "completed": true,
+  "screens": [
+    {
+      "label": "desktop",
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "viewport": 1440,
+      "rowHeights": [
+        73,
+        73,
+        73,
+        73,
+        73
+      ],
+      "overflow": []
+    },
+    {
+      "label": "tablet",
+      "width": 768,
+      "height": 1024,
+      "documentWidth": 768,
+      "viewport": 768,
+      "rowHeights": [
+        73,
+        73,
+        73,
+        73,
+        73
+      ],
+      "overflow": []
+    },
+    {
+      "label": "mobile",
+      "width": 375,
+      "height": 812,
+      "documentWidth": 375,
+      "viewport": 375,
+      "rowHeights": [
+        173,
+        174,
+        174,
+        174,
+        174
+      ],
+      "overflow": []
+    }
+  ],
+  "checks": [
+    "tablet: accessible detail, visible CTA, history, Escape, focus and scroll restoration",
+    "mobile: accessible detail, visible CTA, history, Escape, focus and scroll restoration",
+    "returned request completed through UI, same request ID, persisted response and actor/date",
+    "UI creation requires project/work, duplicate rejected; confirmation Escape retains detail; cancellation keeps history",
+    "chief resolves while Editor has cancellation open; stale write rejected and UI refreshes to read-only result",
+    "pagination, ordering, debounced search, filtered empty state, clear recovery and request type filter",
+    "independent detail error and retry retain the list",
+    "Editor B IDOR blocked; own decisions forbidden; arbitrary attachment rejected"
+  ],
+  "errors": []
+}
