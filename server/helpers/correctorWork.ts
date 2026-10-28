@@ -10,6 +10,7 @@ import { transicionarWorkItemPorId } from './workItems.js';
 import { getProjectWorkspaceFolders } from '../modules/project-workspaces/service.js';
 import { lockCorrectorWork, correctorError, correctorWorkContext } from './correctorAccess.js';
 import { CORRECCION_FOLDER_KEYS, validateCorreccionDriveFile } from './correccionDrive.js';
+import { HORAS_CONTINUAS_POR_ALCANCE } from './correccionSla.js';
 import { withCorporateDrive, type CorporateDriveOperation } from '../modules/integrations/google-drive/corporate.js';
 import type { CorrectorWorkDetail, CorrectorWorkFilters, CorrectorWorkList, CorrectorWorkRow, CorrectorWorkStatus } from '../../shared/correctorWork.js';
 
@@ -20,8 +21,15 @@ const EVENTS: Record<string, string> = {
 };
 
 const ETIQUETA_ALCANCE: Record<string, string> = { tripa_completa: 'Tripa completa', preliminares: 'Preliminares', cubierta_extendida: 'Cubierta extendida' };
-function etiquetaAlcance(alcance: string): string {
+export function etiquetaAlcance(alcance: string): string {
   return ETIQUETA_ALCANCE[alcance] ?? (alcance.includes('-') ? `${ETIQUETA_ALCANCE[alcance.split('-')[0]!] ?? alcance} · ronda ${alcance.split('-')[1]}` : alcance);
+}
+// Mismo helper central que calcula el dueAt real (correccionSla.ts) --
+// nunca un número repetido a mano, para que un cambio de SLA no deje
+// este label desincronizado del plazo que sí se persiste.
+function horasPorAlcance(alcance: string): number {
+  const base = alcance.split('-')[0]!;
+  return (HORAS_CONTINUAS_POR_ALCANCE as Record<string, number>)[base] ?? HORAS_CONTINUAS_POR_ALCANCE.tripa_completa;
 }
 
 function estadoFila(t: TrabajoCorrector): CorrectorWorkStatus {
@@ -62,11 +70,16 @@ function fila(t: TrabajoCorrector): CorrectorWorkRow {
 
 // Última actividad por fila (mismo patrón que withLastActivity en
 // editorWork.ts): una sola consulta por página visible, nunca por fila.
+// accion=ANY(EVENTS) es imprescindible (encontrado en QA visual real,
+// no hipotético): sin ese filtro, un work_item puede tener eventos de
+// OTROS dominios sobre el mismo entity_id (p.ej. SEGUIMIENTO_NOTA_
+// REGISTRADA de Jefatura) y la columna termina mostrando un código
+// crudo ajeno a Corrección en vez de "Entrega registrada"/etc.
 async function withLastActivity(rows: CorrectorWorkRow[]): Promise<CorrectorWorkRow[]> {
   const ids = rows.map(r => r.id);
   if (!ids.length) return rows;
   const { rows: activity } = await pool.query<{ entity_id: string; accion: string; created_at: Date }>(
-    `SELECT DISTINCT ON (entity_id) entity_id,accion,created_at FROM audit_logs WHERE entity_id=ANY($1::uuid[]) ORDER BY entity_id,created_at DESC,id DESC`, [ids]);
+    `SELECT DISTINCT ON (entity_id) entity_id,accion,created_at FROM audit_logs WHERE entity_id=ANY($1::uuid[]) AND accion=ANY($2::text[]) ORDER BY entity_id,created_at DESC,id DESC`, [ids, Object.keys(EVENTS)]);
   const latest = new Map(activity.map(a => [a.entity_id, a]));
   return rows.map(r => {
     const a = latest.get(r.id);
@@ -106,7 +119,7 @@ export async function obtenerDetalleTrabajoCorrector(workItemId: string, correct
     db.select().from(correccionBlockers).where(and(eq(correccionBlockers.workItemId, workItemId), isNull(correccionBlockers.resolvedAt))).then(r => r[0] ?? null),
     pool.query<{ id: string; accion: string; actor: string; created_at: Date }>(
       `SELECT a.id,a.accion,coalesce(u.nombre,'Sistema') actor,a.created_at FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id
-       WHERE a.entity_id=$1 ORDER BY a.created_at DESC,a.id DESC LIMIT 15`, [workItemId]),
+       WHERE a.entity_id=$1 AND a.accion=ANY($2::text[]) ORDER BY a.created_at DESC,a.id DESC LIMIT 15`, [workItemId, Object.keys(EVENTS)]),
   ]);
   const labels = Object.fromEntries(CORRECCION_FOLDER_KEYS.map(f => [f.key, f.label]));
   const folders = folderResult.folders.filter(f => labels[f.key]).map(f => ({ key: f.key, label: labels[f.key]!, driveUrl: f.driveUrl }));
@@ -114,7 +127,7 @@ export async function obtenerDetalleTrabajoCorrector(workItemId: string, correct
   return {
     summary: row!, assignedAt: t.fechaAsignada ? t.fechaAsignada + 'T12:00:00Z' : null, specialist: specialists.get(t.proyectoId)?.nombre ?? null,
     folders, materialUnavailable: folderResult.unavailable,
-    slaLabel: `${t.alcance === 'tripa_completa' ? '120' : '12'} horas continuas desde la asignación`,
+    slaLabel: `${horasPorAlcance(t.alcance)} horas continuas desde la asignación`,
     deliveries: deliveries.map(d => ({ id: d.id, tripaDriveUrl: d.tripaDriveUrl, reportDriveUrl: d.reportDriveUrl, observaciones: d.observaciones, submittedAt: d.submittedAt.toISOString() })),
     blocker: blocker ? { id: blocker.id, reason: blocker.reason, createdAt: blocker.createdAt.toISOString(), resolvedAt: null, resolution: null } : null,
     history: history.rows.map(h => ({ id: h.id, label: EVENTS[h.accion] ?? h.accion, actor: h.actor, at: h.created_at.toISOString() })),

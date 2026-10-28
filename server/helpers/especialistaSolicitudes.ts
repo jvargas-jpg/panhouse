@@ -52,7 +52,7 @@ const FUENTES = `WITH scope AS MATERIALIZED (
  FROM scope p JOIN work_items wi ON wi.proyecto_id=p.id AND wi.tipo='soporte_digital' AND wi.business_key='activacion_amazon' LEFT JOIN fichas_trazabilidad f ON f.proyecto_id=p.id
  UNION ALL
  SELECT r.id,p.id,r.work_item_id,r.business_key,r.tipo,CASE WHEN r.tipo='creativa' THEN 'direccion_creativa' ELSE r.tipo END,r.estado,r.requested_at,r.resolved_at::text,CASE WHEN r.tipo='creativa' AND r.estado='resuelta' THEN 'Solicitud aceptada · trabajo creativo iniciado' WHEN r.tipo='creativa' AND r.estado='rechazada' THEN r.motivo ELSE coalesce(r.outcome,r.motivo) END
- FROM scope p JOIN solicitudes_area r ON r.proyecto_id=p.id AND r.tipo NOT IN ('editor','editor_apoyo','editor_reasignacion','editor_aclaracion')
+ FROM scope p JOIN solicitudes_area r ON r.proyecto_id=p.id AND r.tipo NOT IN ('editor','editor_apoyo','editor_reasignacion','editor_aclaracion','corrector_material','corrector_aclaracion','corrector_tecnico')
 ), requests AS (
  SELECT n.*,p.codigo,p.titulo_actual,p.autores,p.servicio_nombre,p.fecha_fin_proyectada,p.subtitulo_definitivo FROM native n JOIN scope p ON p.id=n.proyecto_id
  WHERE ($2::text<>'talento_humano' OR n.tipo='contrato') AND ($2::text<>'rrpp' OR n.tipo IN ('lanzamiento','impresion'))

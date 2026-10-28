@@ -638,6 +638,13 @@
       "when": 1793115209644,
       "tag": "0090_equal_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1793140800000,
+      "tag": "0091_corrector_request_types",
+      "breakpoints": true
     }
   ]
 }

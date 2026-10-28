@@ -17,6 +17,8 @@ import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import { getCorrectorDashboard } from '../helpers/correctorHome.js';
 import { listarMiTrabajoCorrector, obtenerDetalleTrabajoCorrector, registrarEntregaCorrectorConArchivos, reportarBloqueoCorreccion } from '../helpers/correctorWork.js';
 import { listCorreccionDriveFiles } from '../helpers/correccionDrive.js';
+import { cancelarRequestCorrector, crearRequestCorrector, decidirRequestCorrector, listarRequestsCorrector, obtenerRequestCorrectorDetalle, responderRequestCorrector } from '../helpers/correctorRequests.js';
+import { CORRECTOR_REQUEST_TYPES } from '../../shared/correctorRequests.js';
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 
@@ -79,6 +81,12 @@ const miTrabajoFiltersSchema = z.object({
   scope: z.string().max(80).optional(), project: z.string().uuid().optional(),
   page: z.coerce.number().int().min(1).max(10000).default(1), pageSize: z.coerce.number().int().refine(n => [10, 25, 50].includes(n)).default(10),
 }).strict();
+const misSolicitudesFiltersSchema = z.object({
+  tab: z.enum(['all', 'pending', 'resolved', 'returned', 'cancelled', 'rejected']).default('all'), search: z.string().max(150).default(''),
+  type: z.enum(CORRECTOR_REQUEST_TYPES).optional(), project: z.string().uuid().optional(),
+  from: z.string().date().optional(), to: z.string().date().optional(),
+  page: z.coerce.number().int().min(1).max(10000).default(1), pageSize: z.coerce.number().int().refine(n => [10, 25, 50].includes(n)).default(25),
+}).strict().refine(f => !f.from || !f.to || f.from <= f.to, { message: 'La fecha inicial debe ser anterior a la final', path: ['to'] });
 
 export async function correccionesRoutes(app: FastifyInstance) {
   const corrector = { preHandler: [requireAuth, requireRole('corrector')] };
@@ -117,6 +125,41 @@ export async function correccionesRoutes(app: FastifyInstance) {
     if (!p || !body) return;
     const blocker = await reportarBloqueoCorreccion(p.workItemId, body.reason, request.user!.id);
     return { ok: true, blockerId: blocker.id };
+  });
+  // Mis solicitudes (master prompt dedicado) — reutiliza solicitudes_area,
+  // mismo patrón que /editores/mis-solicitudes.
+  app.get('/mis-solicitudes', corrector, async (request, reply) => {
+    const f = parseOrReply(misSolicitudesFiltersSchema, request.query, reply); if (!f) return;
+    return listarRequestsCorrector(request.user!.id, f.tab ?? 'all', f.page ?? 1, f.pageSize ?? 25, f);
+  });
+  app.post('/mis-solicitudes', corrector, async (request, reply) => {
+    const body = parseOrReply(z.object({ workItemId: z.string().uuid(), type: z.enum(CORRECTOR_REQUEST_TYPES), motivo: z.string().trim().min(5).max(1000) }).strict(), request.body, reply);
+    if (!body) return;
+    const row = await crearRequestCorrector(request.user!.id, body.workItemId, body.type, body.motivo);
+    return { ok: true, id: row.id };
+  });
+  app.get('/mis-solicitudes/:id', corrector, async (request, reply) => {
+    const p = parseOrReply(idParamSchema, request.params, reply); if (!p) return;
+    const detail = await obtenerRequestCorrectorDetalle(p.id, request.user!.id);
+    if (!detail) return reply.code(404).send({ error: 'Solicitud no encontrada' });
+    return detail;
+  });
+  app.post('/mis-solicitudes/:id/cancelar', corrector, async (request, reply) => {
+    const p = parseOrReply(idParamSchema, request.params, reply), body = parseOrReply(z.object({ expectedVersion: z.number().int().positive() }).strict(), request.body, reply);
+    if (!p || !body) return;
+    return cancelarRequestCorrector(p.id, request.user!.id, body.expectedVersion);
+  });
+  app.post('/mis-solicitudes/:id/responder', corrector, async (request, reply) => {
+    const p = parseOrReply(idParamSchema, request.params, reply), body = parseOrReply(z.object({ expectedVersion: z.number().int().positive(), text: z.string().trim().min(5).max(1000) }).strict(), request.body, reply);
+    if (!p || !body) return;
+    return responderRequestCorrector(p.id, request.user!.id, body.expectedVersion, body.text);
+  });
+  // Decisión del Especialista -- sin UI dedicada todavía (ver reporte),
+  // pero el comando ya existe completo y probado detrás de su propio guard.
+  app.post('/solicitudes-corrector/:id/decidir', { preHandler: [requireAuth, requireRole('especialista')] }, async (request, reply) => {
+    const p = parseOrReply(idParamSchema, request.params, reply), body = parseOrReply(z.object({ expectedVersion: z.number().int().positive(), action: z.enum(['review', 'return', 'resolve']), text: z.string().trim().min(5).max(1000) }).strict(), request.body, reply);
+    if (!p || !body) return;
+    return decidirRequestCorrector(p.id, request.user!, body.expectedVersion, body.action, body.text);
   });
   // "Mis Correcciones" (master prompt §19) — solo correctores con
   // cuenta de sistema llegan acá (ver rol 'corrector' en ROLES).

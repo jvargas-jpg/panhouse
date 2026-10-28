@@ -5,6 +5,7 @@ import { AuditoriaPagosPage } from './cobranzas/AuditoriaPagosPage';
 import { ComercialDashboardPage } from './comercial/ComercialDashboardPage';
 import { CorrectorHomePage } from './corrector/CorrectorHomePage';
 import { CorrectorMiTrabajo } from './corrector/CorrectorMiTrabajo';
+import { CorrectorMisSolicitudes } from './corrector/CorrectorMisSolicitudes';
 import { MisTrabajosDisenoPage } from './disenador/MisTrabajosDisenoPage';
 import { EditorHomePage } from './editor/EditorHomePage';
 import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
@@ -19,6 +20,7 @@ const EspecialistaInicioPage = lazy(() => import('./especialista/EspecialistaIni
 import { RrppHomePage } from './rrpp/RrppHomePage';
 import { SoporteDigitalHomePage } from './soporteDigital/SoporteDigitalHomePage';
 import { SoporteEditorialHomePage } from './soporteEditorial/SoporteEditorialHomePage';
+import { SoporteEditorialMiTrabajo } from './soporteEditorial/SoporteEditorialMiTrabajo';
 
 // Punto de entrada autenticado: qué pantalla ve cada quien depende del
 // rol de la sesión, no de la ruta. RequireAuth ya garantizó que hay
@@ -69,7 +71,10 @@ export function HomePage() {
   }
 
   if (user?.rol === 'corrector') {
-    return new URLSearchParams(location.search).get('vista') === 'mi-trabajo' ? <CorrectorMiTrabajo /> : <CorrectorHomePage />;
+    const vista = new URLSearchParams(location.search).get('vista');
+    if (vista === 'mi-trabajo') return <CorrectorMiTrabajo />;
+    if (vista === 'mis-solicitudes') return <CorrectorMisSolicitudes />;
+    return <CorrectorHomePage />;
   }
 
   if (user?.rol === 'disenador') {
@@ -85,6 +90,8 @@ export function HomePage() {
   }
 
   if (user?.rol === 'soporte_editorial') {
+    const vista = new URLSearchParams(location.search).get('vista');
+    if (vista === 'mi-trabajo') return <SoporteEditorialMiTrabajo />;
     return <SoporteEditorialHomePage />;
   }
 

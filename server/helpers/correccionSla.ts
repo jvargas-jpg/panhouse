@@ -12,7 +12,7 @@ export type AlcanceCorreccion = (typeof ALCANCES_CORRECCION)[number];
 // (0.125/0.3/0.5 días observados) — redondear eso a 1 día de calendario
 // perdía la mitad del plazo real. 1 día continuo = 24h exactas, 5 días
 // continuos = 120h exactas; 0.5 día = 12h exactas, sin redondeo.
-const HORAS_CONTINUAS_POR_ALCANCE: Record<AlcanceCorreccion, number> = {
+export const HORAS_CONTINUAS_POR_ALCANCE: Record<AlcanceCorreccion, number> = {
   tripa_completa: 120,
   preliminares: 12,
   cubierta_extendida: 12,

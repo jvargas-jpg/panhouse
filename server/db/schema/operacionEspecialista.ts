@@ -32,7 +32,11 @@ export const solicitudesArea = pgTable('solicitudes_area', {
   // 'editor_reasignacion'/'editor_aclaracion': el PROPIO Editor solicita
   // algo sobre un work item ya asignado -- nunca el mismo tipo 'editor',
   // que significaría otra cosa (ver docs/arquitectura/30-editor.md).
-  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion'>().notNull(),
+  // 'corrector_material'/'corrector_aclaracion'/'corrector_tecnico': el
+  // PROPIO Corrector reporta algo sobre una corrección ya asignada --
+  // mismo patrón que editor_*, siempre dirigido al Especialista
+  // coordinador (ver docs/arquitectura/35-corrector-mis-solicitudes.md).
+  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion' | 'corrector_material' | 'corrector_aclaracion' | 'corrector_tecnico'>().notNull(),
   businessKey: text('business_key').notNull(),
   // Null only for imported creative history whose originating actor was never recorded.
   requestedById: uuid('requested_by_id').references(() => users.id, { onDelete: 'restrict' }),
