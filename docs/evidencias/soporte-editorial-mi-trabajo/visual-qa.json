@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-28",
+  "timezone": "America/Caracas",
+  "origin": "http://127.0.0.1:5175",
+  "database": "panhouse_calidad_preview_20261028",
+  "responsive": [
+    {
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440,
+      "layout": "master-detail"
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "documentWidth": 768,
+      "layout": "table and modal drawer"
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "documentWidth": 375,
+      "layout": "compact cards and full-screen detail"
+    }
+  ],
+  "checks": {
+    "explicitNotApplicable": true,
+    "unreviewedCriteriaRejected": true,
+    "draftSurvivesTabs": true,
+    "draftSurvivesReload": true,
+    "draftScopedToRound": true,
+    "startValidation": true,
+    "diagrammedAndSourceLinks": true,
+    "previousVersionAndComments": true,
+    "returnWithComments": true,
+    "waitingDesignReadOnly": true,
+    "approveF2V2": true,
+    "resultPreservesReviewer": true,
+    "historyPreserved": true,
+    "blockedNoExecutionCTA": true,
+    "focusTrap": true,
+    "escapeCloses": true,
+    "paginationRows": [
+      10,
+      3
+    ],
+    "paginationTotal": 13,
+    "filteredEmpty": true
+  },
+  "console": {
+    "errors": 0,
+    "warnings": "React Router v7 future flags"
+  },
+  "limitations": [
+    "Synthetic QA file URLs; real Google Drive ACL access not exercised",
+    "SLA calendar definition remains pending"
+  ]
+}

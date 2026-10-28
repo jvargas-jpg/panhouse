@@ -1,0 +1,9 @@
+﻿ .../soporteEditorial/SoporteEditorialMiTrabajo.tsx |  80 +++++++++++-----
+ .../soporteEditorial/soporteEditorialMiTrabajo.css |  33 ++++++-
+ .../soporteEditorialMiTrabajo.test.tsx             |  24 +++++
+ server/helpers/calidad.ts                          |   5 +
+ server/helpers/soporteEditorialWork.ts             | 104 ++++++++++++---------
+ server/routes/calidad.routes.ts                    |   5 +-
+ shared/soporteEditorialWork.ts                     |   3 +
+ tests/soporteEditorialWork.test.ts                 |  66 ++++++++++++-
+ 8 files changed, 243 insertions(+), 77 deletions(-)

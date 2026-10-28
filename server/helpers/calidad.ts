@@ -25,6 +25,11 @@ async function conRonda<T>(id: string, actor: Actor, rol: Rol, fn: (tx: Tx, q: t
     if (rol === 'especialista') exigir(await obtenerEspecialistaActual(p.id,p.especialistaId,tx) === actor.id, 'Proyecto de otro especialista', 403);
     const [q] = await tx.select().from(fichaCalidadFases).where(eq(fichaCalidadFases.id, id));
     exigir(q?.workItemId && q.disenoVersionId, 'Ronda histórica: use la consulta legacy', 400);
+    if (rol === 'soporte_editorial') {
+      exigir(!['pausado', 'retirado', 'culminado'].includes(p.estado), 'El proyecto no admite acciones de validación en su estado actual');
+      const [work] = await tx.select().from(workItems).where(eq(workItems.id, q.workItemId));
+      exigir(work && !['bloqueado', 'cancelado'].includes(work.estado), 'La ronda está bloqueada o cancelada');
+    }
     const [v] = await tx.select().from(disenoVersiones).where(eq(disenoVersiones.id, q.disenoVersionId));
     exigir(v, 'Versión no encontrada', 404);
     const [d] = await tx.select().from(disenos).where(eq(disenos.id, v.disenoId));

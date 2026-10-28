@@ -35,6 +35,8 @@ export interface ValidatorWorkRow {
   deadlineState: EstadoPlazoCalidad | null;
   lastActivity: { label: string; at: string } | null;
   actionable: boolean;
+  paused?: boolean;
+  blockedReason?: string | null;
   cta: string;
 }
 
@@ -62,6 +64,7 @@ export interface ValidatorWorkDetail {
   materials: ValidatorMaterial[];
   criteria: ValidatorCriterion[];
   approved: boolean | null;
+  reviewedBy?: string | null;
   pagesReviewed: number | null;
   commentsCount: number | null;
   commentsUrl: string | null;

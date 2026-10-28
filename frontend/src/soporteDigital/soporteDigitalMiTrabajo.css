@@ -1,0 +1,9 @@
+/* Mi trabajo reutiliza los componentes genéricos de Editor (editor.css,
+   miTrabajo.css), que dependen de las variables --eo-* definidas bajo
+   .editor-shell. Acá se redeclaran con los mismos valores que ya usa
+   .soporte-digital-layout (soporteDigitalHome.css), para que el detalle,
+   los formularios y los botones se vean consistentes con Inicio sin
+   heredar la paleta propia de Editor. */
+.soporte-digital-home.editor-shell { --eo-ink: #172b43; --eo-muted: #6c7d93; --eo-line: #e5e9ed; --eo-navy: #0c2030; --eo-gold: #b1914e; }
+.soporte-digital-home .mw-detail-header .sd-cover { width: 38px; height: 54px; }
+.soporte-digital-home .sd-blocker-reason { font-size: 10px; color: #8090a4; display: block; margin-top: 4px; }

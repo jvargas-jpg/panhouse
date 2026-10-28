@@ -1,0 +1,33 @@
+﻿ M frontend/src/HomePage.tsx
+ M frontend/src/especialista/SolicitudesPage.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialMiTrabajo.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialUi.tsx
+ M frontend/src/soporteEditorial/soporteEditorialHome.test.tsx
+ M frontend/src/soporteEditorial/soporteEditorialMiTrabajo.css
+ M frontend/src/soporteEditorial/soporteEditorialMiTrabajo.test.tsx
+ M server/db/migrations/meta/_journal.json
+ M server/db/schema/operacionEspecialista.ts
+ M server/helpers/auditLog.ts
+ M server/helpers/calidad.ts
+ M server/helpers/especialistaSolicitudes.ts
+ M server/helpers/soporteEditorialWork.ts
+ M server/routes/calidad.routes.ts
+ M shared/soporteEditorialWork.ts
+ M tests/soporteEditorialWork.test.ts
+?? docs/auditoria/35-soporte-editorial-mi-trabajo.md
+?? docs/auditoria/36-soporte-editorial-mis-solicitudes.md
+?? docs/evidencias/soporte-editorial-mi-trabajo/
+?? docs/evidencias/soporte-editorial-mis-solicitudes/
+?? frontend/src/soporteEditorial/QualityIncomingRequests.tsx
+?? frontend/src/soporteEditorial/SoporteEditorialMisSolicitudes.tsx
+?? frontend/src/soporteEditorial/soporteEditorialMisSolicitudes.css
+?? frontend/src/soporteEditorial/soporteEditorialMisSolicitudes.test.tsx
+?? frontend/src/soporteEditorial/soporteEditorialRequestsApi.ts
+?? scripts/soporte-editorial-requests-qa.ts
+?? scripts/soporte-editorial-work-qa-server.ts
+?? server/db/migrations/0092_quality_requests.sql
+?? server/db/migrations/meta/0092_snapshot.json
+?? server/helpers/soporteEditorialRequests.ts
+?? server/routes/soporteEditorialRequests.routes.ts
+?? shared/soporteEditorialRequests.ts
+?? tests/soporteEditorialRequests.test.ts

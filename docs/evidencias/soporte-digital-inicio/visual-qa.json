@@ -1,0 +1,16 @@
+{
+  "completed": true,
+  "checks": [
+    "título real renderizado, no copiado de la imagen",
+    "sidebar: Mi trabajo/Mis solicitudes presentes pero no navegables (fuera de alcance de esta iteración)",
+    "4 cards de resumen con etiquetas reales: [\"En preparación\",\"Para pruebas KDP\",\"Cargas registradas\",\"Digital completado\"]",
+    "tabla de tareas prioritarias: 6 filas reales (una por tarea, no por proyecto)",
+    "sin KPIs de Amazon inventados, sin charts, sin botones globales de publicar/reintentar",
+    "estados especiales (espera de paquete, gate de solvencia, pausa) correctamente distinguidos, sin datos financieros expuestos",
+    "counts de flow y cards superiores coinciden: [\"4\",\"1\",\"0\",\"1\"]",
+    "deep link de \"Abrir tarea\" apunta al proyecto real: /proyectos/a202ba1e-3eab-4da8-b589-202f2740ceb8?workItem=eb00c313-44f7-4323-8358-4fa0db0de0a9#digital",
+    "tablet (768x1024): sin overflow horizontal, captura guardada",
+    "mobile (375x812): sin overflow horizontal, captura guardada"
+  ],
+  "errors": []
+}

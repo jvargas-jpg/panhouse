@@ -106,4 +106,28 @@ describe('Soporte Editorial · Mi trabajo', () => {
     const html = render(c => { c.setQueryData(listKey, list); c.setQueryData(detailKey, withPrevious); });
     expect(html).toContain('Proviene de Ronda F1.0');
   });
+
+  it('Sin revisar y No aplica son elecciones diferentes antes de enviar el resultado', () => {
+    const html = render(c => { c.setQueryData(listKey, list); c.setQueryData(detailKey, detail); }, '/?vista=mi-trabajo&workItem=fase-1&detailTab=observaciones');
+    expect(html).toContain('value="" selected="">Sin revisar');
+    expect(html).toContain('value="na">No aplica');
+    expect(html).toContain('El borrador se conserva');
+  });
+
+  it('el detalle ofrece acciones para iniciar y consultar los materiales en la misma pantalla', () => {
+    const html = render(c => { c.setQueryData(listKey, list); c.setQueryData(detailKey, detail); });
+    expect(html).toContain('se-validation-actions');
+    expect(html).toContain('Consultar materiales');
+    expect(html).toContain('Continuar validación');
+  });
+
+  it('pausa y bloqueo muestran el contexto sin permitir registrar una revisión', () => {
+    for (const condition of [{ paused: true }, { blockedReason: 'Falta el material autorizado.' }]) {
+      const restricted = { ...row, ...condition, actionable: false };
+      const html = render(c => { c.setQueryData(listKey, { ...list, items: [restricted] }); c.setQueryData(detailKey, { ...detail, summary: restricted }); }, '/?vista=mi-trabajo&workItem=fase-1&detailTab=observaciones');
+      expect(html).toContain('Revisión no disponible');
+      expect(html).not.toContain('Aprobar versión');
+      expect(html).not.toContain('>Continuar validación');
+    }
+  });
 });

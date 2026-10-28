@@ -1,4 +1,5 @@
 import { EditorIncomingClarifications } from '../editor/EditorIncomingClarifications';
+import { QualityIncomingRequests } from '../soporteEditorial/QualityIncomingRequests';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -98,6 +99,7 @@ export function SolicitudesPage() {
         {selected?<Detail key={selected} id={selected} panel={panel} origen={origin} talento={talento} onPanel={panel=>update({panel},false)} onBack={()=>update({request:'',panel:''},false)}/>:<section className="sr-detail sr-detail-empty"><Book/><h2>Tu seguimiento, en un lugar</h2><p>Selecciona una solicitud para consultar su contexto y recorrido.</p></section>}
       </div>
       {user?.rol==='especialista'&&<EditorIncomingClarifications/>}
+      {user?.rol==='especialista'&&<QualityIncomingRequests/>}
       <p className="sr-updated">Actualizado {fechaSolicitud(data.actualizadoEn,true)} <button onClick={()=>query.refetch()}>Actualizar</button></p>
       {filterOpen&&<Filters params={params} data={data} onApply={update} onClose={()=>setFilterOpen(false)}/>}
     </>}

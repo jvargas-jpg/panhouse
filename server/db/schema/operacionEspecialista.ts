@@ -1,4 +1,4 @@
-import { boolean, check, index, integer, pgTable, text, timestamp, unique, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, index, integer, pgTable, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { proyectos } from './proyectos.js';
 import { users } from './users.js';
@@ -36,12 +36,15 @@ export const solicitudesArea = pgTable('solicitudes_area', {
   // PROPIO Corrector reporta algo sobre una corrección ya asignada --
   // mismo patrón que editor_*, siempre dirigido al Especialista
   // coordinador (ver docs/arquitectura/35-corrector-mis-solicitudes.md).
-  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion' | 'corrector_material' | 'corrector_aclaracion' | 'corrector_tecnico'>().notNull(),
+  // calidad_*: el Validador reporta una necesidad sobre una ronda real;
+  // se conserva workItemId y de allí su identidad única en Calidad.
+  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion' | 'corrector_material' | 'corrector_aclaracion' | 'corrector_tecnico' | 'calidad_material' | 'calidad_aclaracion' | 'calidad_tecnico'>().notNull(),
   businessKey: text('business_key').notNull(),
   // Null only for imported creative history whose originating actor was never recorded.
   requestedById: uuid('requested_by_id').references(() => users.id, { onDelete: 'restrict' }),
   targetUserId: uuid('target_user_id').references(() => users.id, { onDelete: 'restrict' }),
   descripcion: text('descripcion'),
+  asunto: text('asunto'),
   estado: text('estado').$type<'pendiente' | 'en_revision' | 'requiere_informacion' | 'resuelta' | 'rechazada' | 'cancelada'>().notNull().default('pendiente'),
   requestedAt: timestamp('requested_at', { withTimezone: true }).notNull().defaultNow(),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
@@ -50,6 +53,12 @@ export const solicitudesArea = pgTable('solicitudes_area', {
   motivo: text('motivo'),
   version: integer('version').notNull().default(1),
 }, t => ({ instancia: unique('solicitudes_area_instancia_unique').on(t.proyectoId, t.tipo, t.businessKey), bandeja: index('solicitudes_area_estado_idx').on(t.estado, t.tipo),
+  calidadAbierta: uniqueIndex('solicitudes_calidad_abierta_unique').on(t.requestedById, t.workItemId, t.tipo)
+    .where(sql`${t.tipo} IN ('calidad_material','calidad_aclaracion','calidad_tecnico') AND ${t.estado} IN ('pendiente','en_revision','requiere_informacion')`),
+  calidadEnvio: uniqueIndex('solicitudes_calidad_envio_unique').on(t.requestedById, t.businessKey)
+    .where(sql`${t.tipo} IN ('calidad_material','calidad_aclaracion','calidad_tecnico')`),
+  calidadRequester: index('solicitudes_calidad_requester_idx').on(t.requestedById, t.requestedAt.desc())
+    .where(sql`${t.tipo} IN ('calidad_material','calidad_aclaracion','calidad_tecnico')`),
   conversion: check('solicitudes_area_conversion_valid',sql`(${t.tipo}='creativa' or (${t.workItemId} is not null and ${t.requestedById} is not null)) and (${t.tipo}<>'creativa' or ${t.estado}<>'resuelta' or ${t.workItemId} is not null)`),
 }));
 

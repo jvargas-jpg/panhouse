@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-28",
+  "environment": "panhouse_calidad_preview_20261028",
+  "productionFixtures": false,
+  "viewports": [
+    {
+      "width": 1440,
+      "height": 900,
+      "documentWidth": 1440
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "documentWidth": 768
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "documentWidth": 375
+    }
+  ],
+  "checks": {
+    "creationContext": "F2 · Ronda 2 · V3",
+    "recipient": "Especialista coordinador derivado por servidor",
+    "twoRoleLifecycle": "created → returned → answered same ID → resolved with existing round reference",
+    "staleCancellation": "409 and read-only resolved detail",
+    "mobile": "create and cancel same entity with reason; history preserved",
+    "notification": "opened exact original request",
+    "pagination": "11–15 de 15; global tab counts unchanged",
+    "filters": "status and type combined; search and no results verified",
+    "dateFilters": "backend automated Caracas boundary and invalid ranges",
+    "focus": "drawer and nested dialog circular Tab/Shift+Tab; Escape closes top only",
+    "draft": "unsent answer preserved switching Detalle / Historial",
+    "runtimeErrors": []
+  },
+  "testResults": {
+    "finalFocused": "49/49",
+    "regression": "237/237",
+    "backendTypecheck": "passed",
+    "backendBuild": "passed",
+    "frontendTypecheck": "passed",
+    "frontendBuild": "passed; existing >500KB chunk warning"
+  },
+  "attachments": "No request attachment infrastructure; no uploader or Files tab",
+  "screenshots": [
+    "desktop-final.jpg",
+    "desktop-crear-contextual.jpg",
+    "desktop-devuelta.jpg",
+    "tablet-detalle.jpg",
+    "tablet-lista.jpg",
+    "mobile-lista.jpg",
+    "mobile-crear.jpg",
+    "mobile-cancelar.jpg",
+    "mobile-cancelada.jpg",
+    "mobile-historial.jpg",
+    "mobile-sin-resultados.jpg"
+  ]
+}

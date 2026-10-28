@@ -1,0 +1,13 @@
+import { apiFetch } from '../lib/api';
+import type { CreateQualityRequest, QualityRequestDetail, QualityRequestEligibility, QualityRequestList, QualityRequestRow } from '../../../shared/soporteEditorialRequests';
+export const qualityRequestsKey = ['soporte-editorial', 'solicitudes'] as const;
+export const qualityIncomingKey = ['calidad', 'solicitudes-recibidas'] as const;
+export const fetchQualityRequests = (params: URLSearchParams) => apiFetch<QualityRequestList>('/calidad/mis-solicitudes?' + params);
+export const fetchQualityRequestDetail = (id: string) => apiFetch<QualityRequestDetail>('/calidad/mis-solicitudes/' + id);
+export const fetchQualityRequestContexts = (params: URLSearchParams) => apiFetch<QualityRequestEligibility>('/calidad/mis-solicitudes/contextos?' + params);
+export const createQualityRequest = (body: CreateQualityRequest) => apiFetch<{ id: string; reused: boolean }>('/calidad/mis-solicitudes', { method: 'POST', body: JSON.stringify(body) });
+export const answerQualityRequest = (id: string, expectedVersion: number, questionId: string, text: string) => apiFetch('/calidad/mis-solicitudes/' + id + '/responder', { method: 'POST', body: JSON.stringify({ expectedVersion, questionId, text }) });
+export const cancelQualityRequest = (id: string, expectedVersion: number, reason: string) => apiFetch('/calidad/mis-solicitudes/' + id + '/cancelar', { method: 'POST', body: JSON.stringify({ expectedVersion, reason: reason || undefined }) });
+export const fetchIncomingQualityRequests = (page: number) => apiFetch<{ items: QualityRequestRow[]; total: number; pages: number; page: number }>('/calidad/solicitudes-recibidas?page=' + page);
+export const fetchIncomingQualityDetail = (id: string) => apiFetch<QualityRequestDetail>('/calidad/solicitudes-recibidas/' + id);
+export const decideQualityRequest = (id: string, expectedVersion: number, action: 'review' | 'return' | 'resolve', text: string, resultQualityPhaseId?: string) => apiFetch('/calidad/solicitudes-recibidas/' + id + '/decidir', { method: 'POST', body: JSON.stringify({ expectedVersion, action, text, resultQualityPhaseId }) });

@@ -1,0 +1,11 @@
+﻿ M frontend/src/soporteEditorial/SoporteEditorialMiTrabajo.tsx
+ M frontend/src/soporteEditorial/soporteEditorialMiTrabajo.css
+ M frontend/src/soporteEditorial/soporteEditorialMiTrabajo.test.tsx
+ M server/helpers/calidad.ts
+ M server/helpers/soporteEditorialWork.ts
+ M server/routes/calidad.routes.ts
+ M shared/soporteEditorialWork.ts
+ M tests/soporteEditorialWork.test.ts
+?? docs/auditoria/35-soporte-editorial-mi-trabajo.md
+?? docs/evidencias/soporte-editorial-mi-trabajo/
+?? scripts/soporte-editorial-work-qa-server.ts

@@ -19,8 +19,10 @@ import { lazy, Suspense } from 'react';
 const EspecialistaInicioPage = lazy(() => import('./especialista/EspecialistaInicioPage').then(m => ({default:m.EspecialistaInicioPage})));
 import { RrppHomePage } from './rrpp/RrppHomePage';
 import { SoporteDigitalHomePage } from './soporteDigital/SoporteDigitalHomePage';
+import { SoporteDigitalMiTrabajo } from './soporteDigital/SoporteDigitalMiTrabajo';
 import { SoporteEditorialHomePage } from './soporteEditorial/SoporteEditorialHomePage';
 import { SoporteEditorialMiTrabajo } from './soporteEditorial/SoporteEditorialMiTrabajo';
+import { SoporteEditorialMisSolicitudes } from './soporteEditorial/SoporteEditorialMisSolicitudes';
 
 // Punto de entrada autenticado: qué pantalla ve cada quien depende del
 // rol de la sesión, no de la ruta. RequireAuth ya garantizó que hay
@@ -92,10 +94,13 @@ export function HomePage() {
   if (user?.rol === 'soporte_editorial') {
     const vista = new URLSearchParams(location.search).get('vista');
     if (vista === 'mi-trabajo') return <SoporteEditorialMiTrabajo />;
+    if (vista === 'mis-solicitudes') return <SoporteEditorialMisSolicitudes />;
     return <SoporteEditorialHomePage />;
   }
 
   if (user?.rol === 'soporte_digital') {
+    const vista = new URLSearchParams(location.search).get('vista');
+    if (vista === 'mi-trabajo') return <SoporteDigitalMiTrabajo />;
     return <SoporteDigitalHomePage />;
   }
 

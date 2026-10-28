@@ -4,7 +4,10 @@ import { ApiError } from './api';
 export const queryClient = new QueryClient({
   // Workspace changes invalidate the shared dossier without copying data.
   mutationCache: new MutationCache({
-    onSuccess: () => { void queryClient.invalidateQueries({ queryKey: ['ficha-viva'] }); },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['ficha-viva'] });
+      void queryClient.invalidateQueries({ queryKey: ['soporte-digital', 'inicio'] });
+    },
   }),
   defaultOptions: {
     queries: {

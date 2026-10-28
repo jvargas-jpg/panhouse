@@ -1,5 +1,7 @@
 import { disenoRoutes } from './routes/diseno.routes.js';
 import { calidadRoutes } from './routes/calidad.routes.js';
+import { soporteDigitalHomeRoutes } from './routes/soporteDigitalHome.routes.js';
+import { soporteDigitalWorkRoutes } from './routes/soporteDigitalWork.routes.js';
 import { projectCommandCenterRoutes } from './routes/projectCommandCenter.routes.js';
 import { especialistaInicioRoutes } from './routes/especialistaInicio.routes.js';
 import { especialistaCarteraRoutes } from './routes/especialistaCartera.routes.js';
@@ -69,6 +71,8 @@ export function buildApp() {
   app.register(editorialChiefRoutes, { prefix: '/api/editores' });
   app.register(disenoRoutes, { prefix: '/api/diseno' });
   app.register(calidadRoutes, { prefix: '/api/calidad' });
+  app.register(soporteDigitalHomeRoutes, { prefix: '/api/soporte-digital' });
+  app.register(soporteDigitalWorkRoutes, { prefix: '/api/soporte-digital' });
   app.register(disenadoresRoutes, { prefix: '/api/disenadores' });
   app.register(pausasRoutes, { prefix: '/api/pausas' });
   app.register(capitulosRoutes, { prefix: '/api/capitulos' });

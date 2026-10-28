@@ -1,0 +1,17 @@
+{
+  "completed": true,
+  "checks": [
+    "título real de Mi trabajo, no copiado de la imagen",
+    "sin cards de KPI: arranca directo en tabs+búsqueda+lista+detalle",
+    "tabs reales por etapa, mismas etiquetas que Inicio: [\"Todas\\n9\",\"En preparación\\n5\",\"Para pruebas KDP\\n2\",\"Cargas registradas\\n1\",\"Digital completado\\n1\"]",
+    "lista: 9 filas reales (una por tarea, no por proyecto)",
+    "detalle abre con master-detail, Información de la tarea + Siguiente paso",
+    "bloqueo por solvencia visible sin datos financieros",
+    "tab Materiales renderizó: error controlado y recuperable (proyecto QA sin espacio documental propio, 409 real -- ver Reintentar)",
+    "tab Amazon/KDP sin credenciales, campos reales del catálogo",
+    "tab Historial renderiza eventos reales",
+    "tablet (768x1024): sin overflow horizontal",
+    "mobile (375x812): sin overflow horizontal"
+  ],
+  "errors": []
+}

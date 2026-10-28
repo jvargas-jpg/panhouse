@@ -1,0 +1,17 @@
+﻿ frontend/src/HomePage.tsx                          |   2 +
+ frontend/src/especialista/SolicitudesPage.tsx      |   2 +
+ .../soporteEditorial/SoporteEditorialMiTrabajo.tsx |  81 +++++++++++-----
+ .../src/soporteEditorial/SoporteEditorialUi.tsx    |   7 +-
+ .../soporteEditorial/soporteEditorialHome.test.tsx |   2 +-
+ .../soporteEditorial/soporteEditorialMiTrabajo.css |  33 ++++++-
+ .../soporteEditorialMiTrabajo.test.tsx             |  24 +++++
+ server/db/migrations/meta/_journal.json            |   9 +-
+ server/db/schema/operacionEspecialista.ts          |  13 ++-
+ server/helpers/auditLog.ts                         |   1 +
+ server/helpers/calidad.ts                          |   5 +
+ server/helpers/especialistaSolicitudes.ts          |   2 +-
+ server/helpers/soporteEditorialWork.ts             | 104 ++++++++++++---------
+ server/routes/calidad.routes.ts                    |   7 +-
+ shared/soporteEditorialWork.ts                     |   3 +
+ tests/soporteEditorialWork.test.ts                 |  66 ++++++++++++-
+ 16 files changed, 275 insertions(+), 86 deletions(-)

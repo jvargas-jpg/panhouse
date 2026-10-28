@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { eq } from 'drizzle-orm';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../server/app.js';
-import { db } from '../server/db/client.js';
+import { db, pool } from '../server/db/client.js';
 import { direccionesCreativas, disenos, disenoVersiones, fichasTrazabilidad, proyectos, workItems } from '../server/db/schema/index.js';
 import { criteriosDeFase } from '../server/helpers/calidad.js';
 import { listarMiTrabajoValidador, obtenerDetalleTrabajoValidador } from '../server/helpers/soporteEditorialWork.js';
@@ -150,5 +150,67 @@ describe('Soporte Editorial · Mi trabajo — bandeja compartida de Calidad', ()
     await db.update(proyectos).set({ estado: 'retirado' }).where(eq(proyectos.id, p.id));
     const list = await listarMiTrabajoValidador({ ...FILTROS, tab: 'all' });
     expect(list.items).toHaveLength(0);
+  });
+
+  it('busca versión y ronda por separado, pagina en SQL y agrega todos los resultados sin N+1', async () => {
+    for (let i = 0; i < 11; i++) {
+      expect((await call('PATCH', `/calidad/${faseId}/resultado`, { aprobar: false, cantidadComentarios: 1, comentariosUrl: 'https://drive.google.com/comentado', checklist: i === 0 ? lista() : undefined, ...(i > 0 ? { cambiosPendientesPorAplicar: 1, cambiosNuevosSugeridos: 0 } : {}) })).status).toBe(200);
+      await entregar();
+    }
+    const spy = vi.spyOn(pool, 'query');
+    try {
+      const first = await listarMiTrabajoValidador({ ...FILTROS, tab: 'all' });
+      expect(first).toMatchObject({ total: 12, pages: 2, counts: { active: 1, completed: 11, all: 12 } });
+      expect(first.items).toHaveLength(10);
+      expect(spy.mock.calls.length).toBe(4);
+      const last = await listarMiTrabajoValidador({ ...FILTROS, tab: 'all', page: 999 });
+      expect(last).toMatchObject({ page: 2, total: 12 });
+      expect(last.items).toHaveLength(2);
+      expect(new Set([...first.items, ...last.items].map(r => r.id)).size).toBe(12);
+      const version = await listarMiTrabajoValidador({ ...FILTROS, search: 'V12' });
+      expect(version.items[0]).toMatchObject({ ronda: 11, versionLabel: 'V12', numeroFase: 2 });
+      expect((await listarMiTrabajoValidador({ ...FILTROS, search: 'ronda 11' })).total).toBe(1);
+    } finally { spy.mockRestore(); }
+  });
+
+  it('no crea nueva ronda ni termina la espera al subir un PDF antes del handoff de Calidad', async () => {
+    expect((await call('PATCH', `/calidad/${faseId}/resultado`, { aprobar: false, cantidadComentarios: 1, comentariosUrl: 'https://drive.google.com/comentado', checklist: lista() })).status).toBe(200);
+    expect((await call('POST', `/diseno/${disenoId}/versiones`, { enlace: 'https://drive.google.com/nuevo-pdf', entregaKey: randomUUID() }, cookies.disenador)).status).toBe(201);
+    const waiting = await listarMiTrabajoValidador({ ...FILTROS, tab: 'waiting' });
+    expect(waiting).toMatchObject({ total: 1, counts: { active: 0, waiting: 1, completed: 0, all: 1 } });
+    expect(waiting.items[0]).toMatchObject({ id: faseId, actionable: false });
+  });
+
+  it('pausa y bloqueo impiden iniciar y resolver incluso accediendo directamente a la API', async () => {
+    await db.update(proyectos).set({ estado: 'pausado' }).where(eq(proyectos.id, p.id));
+    expect((await obtenerDetalleTrabajoValidador(faseId))?.summary).toMatchObject({ actionable: false, paused: true, deadline: null });
+    expect((await call('PATCH', `/calidad/${faseId}/inicio`, {})).status).toBe(409);
+    expect((await call('PATCH', `/calidad/${faseId}/resultado`, { aprobar: true, cantidadComentarios: 0, checklist: lista() })).status).toBe(409);
+    await db.update(proyectos).set({ estado: 'en_proceso' }).where(eq(proyectos.id, p.id));
+    const detail = await obtenerDetalleTrabajoValidador(faseId);
+    await db.update(workItems).set({ estado: 'bloqueado', gateBloqueante: 'Falta confirmar el material fuente' }).where(eq(workItems.id, detail!.summary.workItemId));
+    expect((await obtenerDetalleTrabajoValidador(faseId))?.summary).toMatchObject({ actionable: false, blockedReason: 'Falta confirmar el material fuente' });
+    expect((await call('PATCH', `/calidad/${faseId}/inicio`, {})).status).toBe(409);
+    expect((await call('PATCH', `/calidad/${faseId}/resultado`, { aprobar: true, cantidadComentarios: 0, checklist: lista() })).status).toBe(409);
+  });
+
+  it('preserva resultado y materiales al culminar el proyecto y rechaza modificaciones históricas', async () => {
+    expect((await call('PATCH', `/calidad/${faseId}/resultado`, { aprobar: true, cantidadComentarios: 0, checklist: lista(), observaciones: 'Revisión registrada.' })).status).toBe(200);
+    await db.update(proyectos).set({ estado: 'culminado' }).where(eq(proyectos.id, p.id));
+    const detail = await obtenerDetalleTrabajoValidador(faseId);
+    expect(detail).toMatchObject({ approved: true, observations: 'Revisión registrada.', summary: { status: 'completed', actionable: false } });
+    expect(detail!.materials).toHaveLength(2);
+    expect((await call('PATCH', `/calidad/${faseId}/inicio`, {})).status).toBe(409);
+  });
+
+  it('revisión final de la misma versión referencia la ronda anterior sin confundir ronda y archivo', async () => {
+    const previousId = faseId;
+    expect((await call('PATCH', `/calidad/${faseId}/resultado`, { aprobar: true, cantidadComentarios: 0, checklist: lista() })).status).toBe(200);
+    expect((await call('PATCH', `/calidad/${faseId}/coordinacion`, { accion: 'enviar_autor' }, cookies.especialista)).status).toBe(200);
+    expect((await call('PATCH', `/calidad/${faseId}/coordinacion`, { accion: 'aprobar_autor' }, cookies.especialista)).status).toBe(200);
+    expect((await call('PATCH', `/calidad/${faseId}/coordinacion`, { accion: 'revision_final' }, cookies.especialista)).status).toBe(200);
+    const list = await listarMiTrabajoValidador(FILTROS), detail = await obtenerDetalleTrabajoValidador(list.items[0]!.id);
+    expect(detail).toMatchObject({ summary: { numeroFase: 3, ronda: 1, versionLabel: 'V1', cta: 'Iniciar revisión final' }, previousRound: { id: previousId, label: 'F1.1' } });
+    expect((await obtenerDetalleTrabajoValidador(previousId))?.reviewedBy).toBe(soporte.nombre);
   });
 });
