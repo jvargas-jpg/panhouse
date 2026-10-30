@@ -9,7 +9,7 @@ import { WorkspaceError } from './errors.js';
 import { ensureReservedFolder } from './folders.js';
 export const DEV_PROJECTS_ROOT_NAME='PANHOUSE - PROYECTOS EDITORIALES - DEV';
 export async function configureDevProjectsRoot(actor:ActorFicha,operate:CorporateDriveOperation=withCorporateDrive){
-  if(actor.rol!=='direccion')throw new WorkspaceError('FORBIDDEN',403,'Solo Dirección puede configurar la raíz documental.');
+  if(!['direccion','admin'].includes(actor.rol))throw new WorkspaceError('FORBIDDEN',403,'Solo Dirección o Administración puede configurar la raíz documental.');
   if(env.NODE_ENV==='production')throw new WorkspaceError('DEV_ROOT_ONLY',409,'Configura una raíz de producción mediante administración antes de crear workspaces.');
   return operate(async({integration,storage})=>{
     let id=integration.projectsRootFolderId;

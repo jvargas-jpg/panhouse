@@ -9,6 +9,7 @@ export const users = pgTable('usuarios', {
   nombre: text('nombre').notNull(),
   rol: rolEnum('rol').notNull(),
   activo: boolean('activo').notNull().default(true),
+  accountType: text('account_type').$type<'internal' | 'external'>().notNull().default('internal'),
   // Vínculo entre la cuenta de login (rol 'autor') y la entidad autores
   // que gestiona Comercial — hasta ahora eran dos tablas sin relación:
   // autores.email lo usaba solo el SSO del portal de pago (ver

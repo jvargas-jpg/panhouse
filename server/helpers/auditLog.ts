@@ -14,6 +14,9 @@ export const rrppEnviadoAtSql = sql<string | null>`(select min(evento.created_at
 // Mantener este tipo sincronizado es responsabilidad de quien agrega un
 // evento nuevo; no es una validación de runtime.
 export type AccionAuditoria =
+  | 'ADMIN_USER_CREATED' | 'ADMIN_USER_UPDATED' | 'ADMIN_SESSION_REVOKED' | 'ADMIN_ASSIGNMENT_REFERENCE_REPAIRED' | 'ADMIN_REASSIGN' | 'ADMIN_REOPEN_WORK_ITEM'
+  | 'ADMIN_REQUEST_CANCELLED' | 'ADMIN_REQUEST_TARGET_REPAIRED' | 'ADMIN_WORKSPACE_REPAIR' | 'ADMIN_SERVICE_AVAILABILITY'
+  | 'ADMIN_VIEW_AS_STARTED' | 'ADMIN_VIEW_AS_STOPPED' | 'ADMIN_INTEGRATION_ACTION'
   | 'DRIVE_PROJECTS_ROOT_CONFIGURADA' | 'PROJECT_WORKSPACE_INICIADO' | 'PROJECT_WORKSPACE_CONFIGURADO' | 'PROJECT_WORKSPACE_FALLIDO' | 'PROJECT_WORKSPACE_REINTENTO_EXITOSO' | 'PROJECT_WORKSPACE_INCONSISTENCIA'
   | 'PROJECT_WORKSPACE_RECUPERACION_SOLICITADA' | 'PROJECT_WORKSPACE_ATENCION_REQUERIDA'
   | 'GOOGLE_DRIVE_CONECTADO' | 'GOOGLE_DRIVE_DESCONECTADO' | 'GOOGLE_DRIVE_VERIFICADO' | 'GOOGLE_DRIVE_CARPETA_PRUEBA_CREADA'
@@ -24,6 +27,9 @@ export type AccionAuditoria =
   | 'PROYECTO_AVANCE_REGISTRADO'
   | 'PROYECTO_TITULOS_REGISTRADOS'
   | 'AMAZON_ACTIVACION_HABILITADA' | 'AMAZON_ACTIVACION_REGISTRADA'
+  | 'DIGITAL_TRABAJO_INICIADO' | 'DIGITAL_HITO_REGISTRADO' | 'DIGITAL_CONTROL_COMPLETADO' | 'DIGITAL_DATOS_ACTUALIZADOS'
+  | 'DIGITAL_REQUEST_CREADA' | 'DIGITAL_REQUEST_EN_REVISION' | 'DIGITAL_REQUEST_DEVUELTA' | 'DIGITAL_REQUEST_REENVIADA'
+  | 'DIGITAL_REQUEST_RESUELTA' | 'DIGITAL_REQUEST_CANCELADA' | 'DIGITAL_REQUEST_ARCHIVO' | 'DIGITAL_REQUEST_BLOQUEO_RESUELTO'
   | 'PROYECTO_ESTADO_CAMBIADO'
   | 'SEGUIMIENTO_NOTA_REGISTRADA' | 'SEGUIMIENTO_EVALUACION_REGISTRADA'
   | 'SEGUIMIENTO_PAGO_REGISTRADO' | 'SEGUIMIENTO_DATOS_REGISTRADOS'
@@ -85,7 +91,7 @@ export type AccionAuditoria =
 export interface RegistrarEventoInput {
   actorId: string | null;
   accion: AccionAuditoria;
-  entityType: 'external_integration' | 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision' | 'solicitud' | 'monthly_goal' | 'capitulo';
+  entityType: 'usuario' | 'sesion' | 'admin_operation' | 'servicio' | 'external_integration' | 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision' | 'solicitud' | 'monthly_goal' | 'capitulo';
   entityId: string;
   proyectoId?: string | null;
   detalles?: Record<string, unknown>;

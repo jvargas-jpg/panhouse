@@ -15,7 +15,7 @@ import type { Tx } from './tx.js';
 import { EVENTOS_PROYECTO_RRPP } from './rrppProyectoEventos.js';
 import type { ActorFicha } from './intakeRrpp.js';
 import type { AccionFicha, ActividadFicha, AreaFicha, AreaResumen, CampoFicha, EquipoFicha, EstadoArea, ExpedienteFicha, HistorialFicha, ResumenFichaViva } from '../../shared/fichaViva.js';
-export const ROLES_FICHA_VIVA: Rol[] = ['comercial', 'rrpp', 'especialista', 'editor', 'jefe_edicion', 'corrector', 'disenador', 'lider_creativo', 'jefe_area', 'soporte_editorial', 'soporte_digital', 'impresion', 'distribucion', 'direccion'];
+export const ROLES_FICHA_VIVA: Rol[] = ['admin','comercial', 'rrpp', 'especialista', 'editor', 'jefe_edicion', 'corrector', 'disenador', 'lider_creativo', 'jefe_area', 'soporte_editorial', 'soporte_digital', 'impresion', 'distribucion', 'direccion'];
 export const AREAS_FICHA: {
     id: AreaFicha;
     name: string;
@@ -455,7 +455,7 @@ export async function expedienteFichaViva(id: string, actor: ActorFicha): Promis
         const group = def.area === 'correccion' ? def.label.split(' · ')[0] : 'Campos de la ficha original';
         byArea(def.area as AreaFicha).fields!.push({ key: def.key, label: def.label, value, source: 'ficha_documental_datos', type: def.type, editable: def.roles.includes(actor.rol) && (def.area!=='impresion'||printingEditable) && (correctionScopes === null || correctionScopes.some(prefix => def.key.startsWith(prefix))), group });
     }
-    const contactsAllowed = ['comercial', 'rrpp', 'especialista', 'jefe_area', 'direccion'].includes(actor.rol);
+    const contactsAllowed = ['admin','comercial', 'rrpp', 'especialista', 'jefe_area', 'direccion'].includes(actor.rol);
     for (const a of read<Awaited<ReturnType<typeof autoresFicha>>>(1, [])) {
         for (const [key, value] of Object.entries(a)) {
             if (key === 'id' || (!contactsAllowed && ['email', 'telefono', 'fechaNacimiento', 'personalidad'].includes(key)))

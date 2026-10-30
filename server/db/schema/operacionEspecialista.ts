@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { proyectos } from './proyectos.js';
 import { users } from './users.js';
 import { workItems } from './workItems.js';
+import { editorialBlockers } from './editorialBlockers.js';
 
 // Preparación posterior a la asignación. Las fechas de RRPP no se reutilizan.
 export const preparacionesProyecto = pgTable('preparaciones_proyecto', {
@@ -38,7 +39,8 @@ export const solicitudesArea = pgTable('solicitudes_area', {
   // coordinador (ver docs/arquitectura/35-corrector-mis-solicitudes.md).
   // calidad_*: el Validador reporta una necesidad sobre una ronda real;
   // se conserva workItemId y de allí su identidad única en Calidad.
-  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion' | 'corrector_material' | 'corrector_aclaracion' | 'corrector_tecnico' | 'calidad_material' | 'calidad_aclaracion' | 'calidad_tecnico'>().notNull(),
+  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion' | 'corrector_material' | 'corrector_aclaracion' | 'corrector_tecnico' | 'calidad_material' | 'calidad_aclaracion' | 'calidad_tecnico' | 'digital_material' | 'digital_aclaracion' | 'digital_tecnico'>().notNull(),
+  blockerId: uuid('blocker_id').references(() => editorialBlockers.id, { onDelete: 'set null' }),
   businessKey: text('business_key').notNull(),
   // Null only for imported creative history whose originating actor was never recorded.
   requestedById: uuid('requested_by_id').references(() => users.id, { onDelete: 'restrict' }),
@@ -59,6 +61,12 @@ export const solicitudesArea = pgTable('solicitudes_area', {
     .where(sql`${t.tipo} IN ('calidad_material','calidad_aclaracion','calidad_tecnico')`),
   calidadRequester: index('solicitudes_calidad_requester_idx').on(t.requestedById, t.requestedAt.desc())
     .where(sql`${t.tipo} IN ('calidad_material','calidad_aclaracion','calidad_tecnico')`),
+  digitalAbierta: uniqueIndex('solicitudes_digital_abierta_unique').on(t.requestedById, t.workItemId, t.tipo)
+    .where(sql`${t.tipo} IN ('digital_material','digital_aclaracion','digital_tecnico') AND ${t.estado} IN ('pendiente','en_revision','requiere_informacion')`),
+  digitalEnvio: uniqueIndex('solicitudes_digital_envio_unique').on(t.requestedById, t.businessKey)
+    .where(sql`${t.tipo} IN ('digital_material','digital_aclaracion','digital_tecnico')`),
+  digitalRequester: index('solicitudes_digital_requester_idx').on(t.requestedById, t.requestedAt.desc())
+    .where(sql`${t.tipo} IN ('digital_material','digital_aclaracion','digital_tecnico')`),
   conversion: check('solicitudes_area_conversion_valid',sql`(${t.tipo}='creativa' or (${t.workItemId} is not null and ${t.requestedById} is not null)) and (${t.tipo}<>'creativa' or ${t.estado}<>'resuelta' or ${t.workItemId} is not null)`),
 }));
 

@@ -30,6 +30,7 @@ export function useLogin() {
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) => loginRequest(email, password),
     onSuccess: ({ user }) => {
+      queryClient.clear();
       queryClient.setQueryData(meQueryKey, user);
     },
   });
@@ -41,6 +42,7 @@ export function useLogout() {
   return useMutation({
     mutationFn: logoutRequest,
     onSuccess: () => {
+      queryClient.clear();
       queryClient.setQueryData(meQueryKey, null);
     },
   });

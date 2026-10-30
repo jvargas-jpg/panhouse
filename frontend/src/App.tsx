@@ -26,6 +26,7 @@ import { GoogleDrivePage } from './integrations/GoogleDrivePage';
 const MetricasPage = lazy(() => import('./comercial/MetricasPage').then((m) => ({ default: m.MetricasPage })));
 const ProyectoCommandCenterPage = lazy(() => import('./proyectos/ProyectoCommandCenterPage').then(m => ({ default: m.ProyectoCommandCenterPage })));
 const RrppMetricasPage = lazy(() => import('./rrpp/RrppMetricasPage').then((m) => ({ default: m.RrppMetricasPage })));
+const AdminApp=lazy(()=>import('./admin/AdminApp').then(m=>({default:m.AdminApp})));
 
 export function App() {
   return (
@@ -33,6 +34,7 @@ export function App() {
       <Route path="/login" element={<LoginPage />} />
 
       <Route element={<RequireAuth />}>
+        <Route path="/admin/*" element={<Suspense fallback={<p role="status">Abriendo Administración…</p>}><AdminApp/></Suspense>}/>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/configuracion/integraciones/google-drive" element={<GoogleDrivePage />} />

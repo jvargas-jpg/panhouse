@@ -2,6 +2,7 @@ import { disenoRoutes } from './routes/diseno.routes.js';
 import { calidadRoutes } from './routes/calidad.routes.js';
 import { soporteDigitalHomeRoutes } from './routes/soporteDigitalHome.routes.js';
 import { soporteDigitalWorkRoutes } from './routes/soporteDigitalWork.routes.js';
+import { soporteDigitalRequestsRoutes } from './routes/soporteDigitalRequests.routes.js';
 import { projectCommandCenterRoutes } from './routes/projectCommandCenter.routes.js';
 import { especialistaInicioRoutes } from './routes/especialistaInicio.routes.js';
 import { especialistaCarteraRoutes } from './routes/especialistaCartera.routes.js';
@@ -40,6 +41,8 @@ import { monthlyGoalsRoutes } from './routes/monthlyGoals.routes.js';
 import { googleDriveRoutes } from './modules/integrations/google-drive/routes.js';
 import { safeRequestUrl } from './modules/integrations/google-drive/logging.js';
 import { projectWorkspaceRoutes } from './modules/project-workspaces/routes.js';
+import {enforceSessionContext} from './middleware/auth.middleware.js';
+import {adminRoutes} from './modules/admin/routes.js';
 
 export function buildApp() {
   const app = Fastify({
@@ -51,6 +54,8 @@ export function buildApp() {
   });
 
   app.register(cookie);
+  app.addHook('preHandler',enforceSessionContext);
+  app.register(adminRoutes,{prefix:'/api/admin'});
   app.register(googleDriveRoutes, { prefix: '/api' });
   app.register(projectWorkspaceRoutes, { prefix: '/api' });
   app.register(monthlyGoalsRoutes, { prefix: '/api/monthly-goals' });
@@ -73,6 +78,7 @@ export function buildApp() {
   app.register(calidadRoutes, { prefix: '/api/calidad' });
   app.register(soporteDigitalHomeRoutes, { prefix: '/api/soporte-digital' });
   app.register(soporteDigitalWorkRoutes, { prefix: '/api/soporte-digital' });
+  app.register(soporteDigitalRequestsRoutes, { prefix: '/api/soporte-digital' });
   app.register(disenadoresRoutes, { prefix: '/api/disenadores' });
   app.register(pausasRoutes, { prefix: '/api/pausas' });
   app.register(capitulosRoutes, { prefix: '/api/capitulos' });

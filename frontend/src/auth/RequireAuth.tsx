@@ -1,5 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useMe } from './useAuth';
+import {AdminViewAsBanner} from './AdminViewAsBanner';
 
 export function RequireAuth() {
   const { data: user, isLoading } = useMe();
@@ -12,5 +13,5 @@ export function RequireAuth() {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
+  return user.adminView?<div className="view-as-root"><AdminViewAsBanner user={user}/><div className="view-as-surface"><Outlet/></div></div>:<Outlet />;
 }

@@ -97,10 +97,11 @@ export async function crearProyecto(datos: DatosNuevoProyecto): Promise<Resultad
   const [autorPrincipal] = autorIds;
   if (!autorPrincipal) throw new Error('crearProyecto necesita al menos un autorId');
 
-  const [servicio] = await db.select({ codigo: servicios.codigo }).from(servicios).where(eq(servicios.id, datosProyecto.servicioId)).limit(1);
+  const [servicio] = await db.select({ codigo: servicios.codigo,activo:servicios.activo }).from(servicios).where(eq(servicios.id, datosProyecto.servicioId)).limit(1);
   if (!servicio) {
     return { ok: false, status: 400, error: 'Servicio no encontrado' };
   }
+  if(!servicio.activo)return {ok:false,status:400,error:'Este servicio está desactivado para nuevas contrataciones'};
   if (!CODIGOS_SERVICIO_PERMITIDOS_EN_ALTA.includes(servicio.codigo as (typeof CODIGOS_SERVICIO_PERMITIDOS_EN_ALTA)[number])) {
     return {
       ok: false,
@@ -128,6 +129,8 @@ async function crearProyectoConCodigo(
   autorIds: string[],
 ) {
   return db.transaction(async (tx) => {
+    const [currentService]=await tx.select({active:servicios.activo}).from(servicios).where(eq(servicios.id,datosProyecto.servicioId)).for('share');
+    if(!currentService?.active)throw Object.assign(new Error('El servicio fue desactivado. Actualiza el catálogo antes de crear el proyecto.'),{statusCode:409});
     // Etapa aditiva de la migración a coautoría (ver proyectos_autores en
     // schema/proyectos.ts): proyectos.autorId (columna legacy, todavía
     // vigente) se sigue llenando con el PRIMER autor del array — es la

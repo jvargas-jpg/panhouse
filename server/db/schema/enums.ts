@@ -27,6 +27,7 @@ export const ROLES = [
   'cobranzas',
   'talento_humano',
   'direccion',
+  'admin',
   'autor',
 ] as const;
 

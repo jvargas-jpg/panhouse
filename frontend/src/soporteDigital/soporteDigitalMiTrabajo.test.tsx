@@ -16,6 +16,8 @@ const row: DigitalWorkRow = {
 };
 const list: DigitalWorkList = { items: [row], total: 1, page: 1, pages: 1, counts: { all: 1, preparation: 1, testing: 0, loaded: 0, completed: 0 }, options: { projects: [{ id: 'project-1', name: 'Proyecto digital de prueba' }] } };
 const detail: DigitalWorkDetail = {
+  revision: 'a'.repeat(64), canStart: false, canEditData: true, startedAt: null,
+  currentLoads: { kdp: false, kindle: false },
   summary: row, specialist: 'Especialista de prueba', assignedAt: '2026-10-20T12:00:00Z',
   cuentaAmazon: null, formSentAt: null, activatedAt: null, digitalEstatus: null, packageAvailable: false,
   nextAction: { kind: 'enviarFormulario' }, waitingOn: null,
@@ -80,7 +82,7 @@ describe('Soporte Digital · Mi trabajo', () => {
 
   it('materiales: con paquete disponible lista los archivos reales de la carpeta KDP, no todo Drive', () => {
     const d2: DigitalWorkDetail = { ...detail, materialsAvailable: true };
-    const html = render(c => { c.setQueryData(listKey, list); c.setQueryData(detailKey, d2); c.setQueryData(materialsKey, materials); }, '/?vista=mi-trabajo&workItem=work-1&detailTab=materiales');
+    const html = render(c => { c.setQueryData(listKey, list); c.setQueryData(detailKey, d2); c.setQueryData(materialsKey, { pages: [materials], pageParams: [undefined] }); }, '/?vista=mi-trabajo&workItem=work-1&detailTab=materiales');
     expect(html).toContain('Interior.epub');
   });
 
@@ -123,5 +125,27 @@ describe('Soporte Digital · Mi trabajo', () => {
     expect(html).not.toMatch(/<svg[^>]*class="[^"]*chart/i);
     expect(html).not.toContain('>Publicar<');
     expect(html).not.toContain('>Reportar problema<');
+  });
+
+  it('ofrece estado, etapa, vencimiento, bloqueo y orden sin perder la unidad tarea', () => {
+    const html = render(c => { c.setQueryData(listKey, list); c.setQueryData(detailKey, detail); });
+    for (const label of ['Estado', 'Etapa', 'Fecha límite', 'Bloqueo', 'Ordenar tareas']) expect(html).toContain(`aria-label="${label}"`);
+    expect(html).toContain('Tarea actual');
+    expect(html).not.toContain('Etapa / Tarea');
+  });
+
+  it('iniciar es una acción explícita con fecha real, independiente de abrir la fila', () => {
+    const html = render(c => { c.setQueryData(listKey, list); c.setQueryData(detailKey, { ...detail, canStart: true }); });
+    expect(html).toContain('Iniciar tarea');
+    expect(html).not.toContain('type="date"');
+  });
+
+  it('Materiales permite paginar y abrir únicamente su carpeta KDP', () => {
+    const html = render(c => { c.setQueryData(listKey, list); c.setQueryData(detailKey, { ...detail, materialsAvailable: true }); c.setQueryData(materialsKey, {
+      pages: [{ ...materials, nextPageToken: 'next', folderUrl: 'https://drive.google.com/drive/folders/kdp-1' }], pageParams: [undefined],
+    }); }, '/?vista=mi-trabajo&workItem=work-1&detailTab=materiales');
+    expect(html).toContain('Ver más archivos');
+    expect(html).toContain('Abrir materiales en Drive');
+    expect(html).toContain('folders/kdp-1');
   });
 });

@@ -15,17 +15,14 @@ export function DigitalCover({ url }: { url: string | null }) {
   return url && !failed ? <img className="sd-cover" src={url} alt="" loading="lazy" onError={() => setFailed(true)} /> : <span className="sd-cover sd-cover-empty" aria-label="Sin portada registrada"><RrppIcon nombre="libro" /></span>;
 }
 
-// Mis solicitudes todavía no existe para este rol (fuera del alcance de
-// esta iteración, ver master prompt de Mi trabajo §118) -- sigue como
-// elemento no interactivo, igual que lo era Mi trabajo antes de esta
-// tarea.
-export type DigitalActiveRoute = 'inicio' | 'mi-trabajo';
+// Navegación del rol: la bandeja de solicitudes es saliente y privada.
+export type DigitalActiveRoute = 'inicio' | 'mi-trabajo' | 'mis-solicitudes';
 
 export function DigitalNavigation({ active, close }: { active: DigitalActiveRoute; close?: () => void }) {
   return <nav aria-label="Navegación de Soporte Digital">
     <Link to="/" aria-current={active === 'inicio' ? 'page' : undefined} onClick={close}><RrppIcon nombre="inicio" />Inicio</Link>
     <Link to={miTrabajoUrl()} aria-current={active === 'mi-trabajo' ? 'page' : undefined} onClick={close}><RrppIcon nombre="proceso" />Mi trabajo</Link>
-    <span aria-disabled="true" title="Pantalla fuera de esta iteración"><RrppIcon nombre="comentarios" />Mis solicitudes</span>
+    <Link to="/?vista=mis-solicitudes" aria-current={active === 'mis-solicitudes' ? 'page' : undefined} onClick={close}><RrppIcon nombre="comentarios" />Mis solicitudes</Link>
   </nav>;
 }
 

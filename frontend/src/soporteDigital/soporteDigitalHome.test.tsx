@@ -32,7 +32,7 @@ describe('Soporte Digital · Inicio · interfaz', () => {
     expect(h).toContain('Hola, Valentina Cruz');
     expect(h).toContain('>Mi trabajo<');
     expect(h).toContain('>Mis solicitudes<');
-    expect(h).toContain('Pantalla fuera de esta iteración');
+    expect(h).toContain('href="/?vista=mis-solicitudes"');
   });
 
   it('cuatro indicadores reales de etapas digitales, sin KPIs ni ventas inventadas', () => {

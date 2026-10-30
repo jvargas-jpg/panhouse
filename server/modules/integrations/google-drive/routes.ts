@@ -8,10 +8,11 @@ import { googleDriveService } from './service.js';
 
 export const googleDriveRoutes: FastifyPluginAsync = async app => {
   app.addHook('preHandler',requireAuth);
-  app.addHook('preHandler',requireRole('direccion'));
+  app.addHook('preHandler',requireRole('direccion','admin'));
   app.addHook('onSend',async (_request,reply,payload)=>{reply.header('Cache-Control','no-store');reply.header('Referrer-Policy','no-referrer');return payload;});
   app.addHook('preHandler',async (request,reply)=>{
     if (request.method !== 'POST') return;
+    if(request.user?.rol==='admin'){await reply.code(403).send({error:'Utiliza las acciones auditadas del centro de Administración'});return;}
     const origin = request.headers.origin;
     // Browsers must originate in our configured frontend; non-browser administration remains possible.
     if (origin && origin !== new URL(env.APP_FRONTEND_URL).origin) { await reply.code(403).send({error:'Origen no autorizado'}); return; }
@@ -27,7 +28,7 @@ export const googleDriveRoutes: FastifyPluginAsync = async app => {
   app.post('/integrations/google-drive/test',async request=>googleDriveService.test(request.user!.id));
   app.get('/auth/google/callback',async (request,reply)=>{
     const config = googleDriveConfig();
-    const destination = new URL(DRIVE_UI_PATH,config.frontendUrl);
+    const destination = new URL(request.user!.rol==='admin'?'/admin/integraciones':DRIVE_UI_PATH,config.frontendUrl);
     try {
       const query = z.object({state:z.string().min(32).max(200),code:z.string().min(1).max(4096).optional(),error:z.string().max(100).optional()}).safeParse(request.query);
       if (!query.success) throw new DriveIntegrationError('INVALID_STATE',400);

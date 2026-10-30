@@ -13,25 +13,44 @@ export type DigitalWorkItemRow = {
   deadline: string | null; created_at: Date; task_name: string | null;
   activation: string | null; form_sent: string | null; digital_status: string | null;
   package_available: boolean; tested: boolean; loaded: boolean;
+  loaded_kdp?: boolean; loaded_kindle?: boolean;
+  material_revision?: string;
+  digital_revision?: string;
+  work_updated_at?: Date; control_updated_at?: Date; material_updated_at?: Date | null; digital_updated_at?: Date | null; started_at?: string | null;
 };
 type Row = DigitalWorkItemRow;
+// Proveniencia de los hitos nuevos sobre el manifiesto real del paquete.
+// Las fechas documentales legacy siguen siendo legibles; una prueba nueva
+// queda vinculada al manifiesto que se verificó, sin consultar Drive por fila.
+const packageRevisionSql = `md5(jsonb_build_object('cargado',d.datos->'paqueteFinalCargado','entrega',d.datos->'paqueteFinalEntrega','archivos',d.datos->'paqueteFinalArchivos')::text)`;
+const testedSql = `(coalesce(nullif(g.datos->>'pruebaArchivos',''),'')<>'' AND (proof.test_revision IS NULL OR proof.test_revision=${packageRevisionSql}))`;
+const loadedKdpSql = `(coalesce(nullif(g.datos->>'cargaKdp',''),'')<>'' AND (proof.kdp_revision IS NULL OR proof.kdp_revision=${packageRevisionSql}))`;
+const loadedKindleSql = `(coalesce(nullif(g.datos->>'cargaKindle',''),'')<>'' AND (proof.kindle_revision IS NULL OR proof.kindle_revision=${packageRevisionSql}))`;
 // Mismo SELECT que usa Inicio y Mi trabajo — una sola definición de qué
 // es una fila de trabajo digital, para que ambas pantallas nunca puedan
 // divergir en qué cuenta como preparación/pruebas/carga/completado.
-export const DIGITAL_WORK_ROWS_SQL = `WITH scope AS (${scope}) SELECT w.id,w.proyecto_id,w.business_key,w.estado,w.gate_bloqueante,
+export const DIGITAL_WORK_ROWS_SQL = `WITH scope AS (${scope}), proof AS (
+  SELECT entity_id,
+    (array_agg(detalles->>'materialRevision' ORDER BY created_at DESC,id DESC) FILTER(WHERE detalles->>'kind'='registrarPrueba'))[1] test_revision,
+    (array_agg(detalles->>'materialRevision' ORDER BY created_at DESC,id DESC) FILTER(WHERE detalles->>'kind'='registrarCarga' AND detalles->>'date' IS NOT NULL))[1] kdp_revision,
+    (array_agg(detalles->>'materialRevision' ORDER BY created_at DESC,id DESC) FILTER(WHERE detalles->>'kind'='registrarCarga' AND detalles->>'dateKindle' IS NOT NULL))[1] kindle_revision
+    FROM audit_logs WHERE entity_type='work_item' AND accion='DIGITAL_HITO_REGISTRADO' AND detalles ? 'materialRevision' GROUP BY entity_id
+  ) SELECT w.id,w.proyecto_id,w.business_key,w.estado,w.gate_bloqueante,
+  w.updated_at work_updated_at,f.updated_at control_updated_at,d.updated_at material_updated_at,g.updated_at digital_updated_at,w.fecha_inicio_real::text started_at,
   w.fecha_fin_pautada::text deadline,w.created_at,ps.nombre task_name,p.codigo,p.estado project_state,
   coalesce(nullif(trim(p.titulo_definitivo),''),nullif(trim(p.titulo),''),'Proyecto editorial') title,
   coalesce(au.names,a.nombre) authors,CASE WHEN p.portada_decision_autor='aprobada' THEN p.propuesta_portada_url END cover,
   f.soporte_digital_fecha_activacion::text activation,f.soporte_digital_fecha_envio_formulario::text form_sent,f.digital_estatus digital_status,
   coalesce(d.datos->'paqueteFinalCargado'='true'::jsonb,false) package_available,
-  coalesce(nullif(g.datos->>'pruebaArchivos',''),'')<>'' tested,
-  (coalesce(nullif(g.datos->>'cargaKdp',''),'')<>'' OR coalesce(nullif(g.datos->>'cargaKindle',''),'')<>'') loaded
+  ${packageRevisionSql} material_revision,md5(coalesce(g.datos,'{}'::jsonb)::text) digital_revision,${testedSql} tested,
+  ${loadedKdpSql} loaded_kdp,${loadedKindleSql} loaded_kindle,(${loadedKdpSql} OR ${loadedKindleSql}) loaded
   FROM scope s JOIN proyectos p ON p.id=s.id JOIN work_items w ON w.proyecto_id=p.id AND w.tipo='soporte_digital' AND w.estado<>'cancelado'
   JOIN autores a ON a.id=p.autor_id LEFT JOIN pasos ps ON ps.id=w.paso_id
   LEFT JOIN (SELECT x.proyecto_id,string_agg(a.nombre,', ' ORDER BY a.nombre) names FROM proyectos_autores x JOIN autores a ON a.id=x.autor_id GROUP BY x.proyecto_id) au ON au.proyecto_id=p.id
   LEFT JOIN fichas_trazabilidad f ON f.proyecto_id=p.id
   LEFT JOIN ficha_documental_datos d ON d.proyecto_id=p.id AND d.seccion='diseno'
-  LEFT JOIN ficha_documental_datos g ON g.proyecto_id=p.id AND g.seccion='digital'`;
+  LEFT JOIN ficha_documental_datos g ON g.proyecto_id=p.id AND g.seccion='digital'
+  LEFT JOIN proof ON proof.entity_id=w.id`;
 
 export function digitalDeadline(date: string | null, today: string): DigitalDeadlineState {
   if (!date) return null;

@@ -19,6 +19,7 @@ export const ROLES = [
   'cobranzas',
   'talento_humano',
   'direccion',
+  'admin',
   'autor',
 ] as const;
 
@@ -122,6 +123,7 @@ export interface Usuario {
   email: string;
   nombre: string;
   rol: Rol;
+  adminView?: {active:true;adminName:string};
 }
 
 // GET /api/usuarios — personal interno para los selectores de

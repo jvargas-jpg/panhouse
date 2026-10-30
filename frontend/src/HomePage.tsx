@@ -20,6 +20,7 @@ const EspecialistaInicioPage = lazy(() => import('./especialista/EspecialistaIni
 import { RrppHomePage } from './rrpp/RrppHomePage';
 import { SoporteDigitalHomePage } from './soporteDigital/SoporteDigitalHomePage';
 import { SoporteDigitalMiTrabajo } from './soporteDigital/SoporteDigitalMiTrabajo';
+import { SoporteDigitalMisSolicitudes } from './soporteDigital/SoporteDigitalMisSolicitudes';
 import { SoporteEditorialHomePage } from './soporteEditorial/SoporteEditorialHomePage';
 import { SoporteEditorialMiTrabajo } from './soporteEditorial/SoporteEditorialMiTrabajo';
 import { SoporteEditorialMisSolicitudes } from './soporteEditorial/SoporteEditorialMisSolicitudes';
@@ -30,6 +31,7 @@ import { SoporteEditorialMisSolicitudes } from './soporteEditorial/SoporteEditor
 export function HomePage() {
   const { data: user } = useMe();
   const location = useLocation();
+  if(user?.rol==='admin')return <Navigate to="/admin/inicio" replace/>;
 
   if (user?.rol === 'especialista') {
     const vista = new URLSearchParams(location.search).get('vista') ?? '';
@@ -101,6 +103,7 @@ export function HomePage() {
   if (user?.rol === 'soporte_digital') {
     const vista = new URLSearchParams(location.search).get('vista');
     if (vista === 'mi-trabajo') return <SoporteDigitalMiTrabajo />;
+    if (vista === 'mis-solicitudes') return <SoporteDigitalMisSolicitudes />;
     return <SoporteDigitalHomePage />;
   }
 

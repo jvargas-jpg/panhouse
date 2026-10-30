@@ -32,3 +32,5 @@ export * from './editorialDeliveries.js';
 export * from './editorialBlockers.js';
 export * from './correccionDeliveries.js';
 export * from './correccionBlockers.js';
+export * from './solicitudArchivos.js';
+export * from './administracion.js';

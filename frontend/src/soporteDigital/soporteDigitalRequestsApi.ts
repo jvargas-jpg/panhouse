@@ -1,0 +1,10 @@
+import { apiFetch } from '../lib/api';
+import type { CreateDigitalRequest, DigitalRequestDetail, DigitalRequestEligibility, DigitalRequestList } from '../../../shared/soporteDigitalRequests';
+export const digitalRequestsKey = ['soporte-digital', 'mis-solicitudes'];
+export const fetchDigitalRequests = (q: URLSearchParams) => apiFetch<DigitalRequestList>('/soporte-digital/mis-solicitudes?' + q);
+export const fetchDigitalRequest = (id: string) => apiFetch<DigitalRequestDetail>('/soporte-digital/mis-solicitudes/' + id);
+export const fetchDigitalRequestContexts = (q: URLSearchParams) => apiFetch<DigitalRequestEligibility>('/soporte-digital/mis-solicitudes/contextos?' + q);
+export const createDigitalRequest = (input: CreateDigitalRequest) => apiFetch<{ id: string; reused: boolean }>('/soporte-digital/mis-solicitudes', { method: 'POST', body: JSON.stringify(input) });
+export const answerDigitalRequest = (id: string, expectedVersion: number, questionId: string, text: string) => apiFetch('/soporte-digital/mis-solicitudes/' + id + '/completar', { method: 'POST', body: JSON.stringify({ expectedVersion, questionId, text }) });
+export const cancelDigitalRequest = (id: string, expectedVersion: number, reason: string) => apiFetch('/soporte-digital/mis-solicitudes/' + id + '/cancelar', { method: 'POST', body: JSON.stringify({ expectedVersion, reason }) });
+export const attachDigitalRequest = (id: string, input: { expectedVersion: number; name: string; contentBase64: string; uploadKey: string }) => apiFetch('/soporte-digital/mis-solicitudes/' + id + '/archivos', { method: 'POST', body: JSON.stringify(input) });
