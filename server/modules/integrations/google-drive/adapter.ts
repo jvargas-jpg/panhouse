@@ -6,11 +6,11 @@ import type { ProjectDriveStorageProvider, StorageItem } from './provider.js';
 
 export const FOLDER_MIME='application/vnd.google-apps.folder';
 export const SMOKE_PURPOSE='panhouse_connection_smoke_v1';
-const fields='id,name,mimeType,webViewLink,parents,appProperties,trashed';
+const fields='id,name,mimeType,webViewLink,parents,appProperties,trashed,size';
 const escapeQuery=(s:string)=>s.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 function item(f:drive_v3.Schema$File):StorageItem {
   if(!f.id||!f.name||!f.mimeType)throw new DriveIntegrationError('INVALID_RESPONSE',502);
-  return {trashed:f.trashed??false,providerFileId:f.id,name:f.name,mimeType:f.mimeType,webViewLink:f.webViewLink ?? null,parents:f.parents ?? [],appProperties:f.appProperties ?? {}};
+  return {size:f.size ? Number(f.size) : undefined,trashed:f.trashed??false,providerFileId:f.id,name:f.name,mimeType:f.mimeType,webViewLink:f.webViewLink ?? null,parents:f.parents ?? [],appProperties:f.appProperties ?? {}};
 }
 export class GoogleDriveAdapter implements ProjectDriveStorageProvider {
   private client:drive_v3.Drive;

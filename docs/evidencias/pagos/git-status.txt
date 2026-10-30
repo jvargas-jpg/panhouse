@@ -1,0 +1,43 @@
+ M frontend/src/autores/CrearProyectoModalForm.tsx
+ M frontend/src/cobranzas/AuditoriaPagosPage.tsx
+ M frontend/src/comercial/ComercialSidebarNav.tsx
+ M frontend/src/comercial/QuickActions.tsx
+ M frontend/src/comercial/RegistrarPagoPage.tsx
+ M frontend/src/jefatura/jefaturaApi.ts
+ M frontend/src/trazabilidad/CommercialTraceabilitySummary.tsx
+ M frontend/src/trazabilidad/TraceabilityWorkspace.tsx
+ M server/app.ts
+ M server/db/migrations/meta/_journal.json
+ M server/db/schema/pagos.ts
+ M server/db/schema/proyectos.ts
+ M server/helpers/auditLog.ts
+ M server/helpers/fichaViva.ts
+ M server/helpers/pagosProyecto.ts
+ M server/helpers/projectCommandCenter.ts
+ M server/helpers/proyectos.ts
+ M server/helpers/soporteDigitalActions.ts
+ M server/helpers/trazabilidad.ts
+ M server/modules/integrations/google-drive/adapter.ts
+ M server/modules/integrations/google-drive/provider.ts
+ M server/routes/pagos.routes.ts
+ M server/routes/proyectos.routes.ts
+ M tests/pagosProyecto.routes.test.ts
+ M tests/projectCommandCenter.test.ts
+?? docs/auditoria/38-comercial-pagos.md
+?? docs/evidencias/pagos/
+?? frontend/src/comercial/ContractFinancialFields.tsx
+?? frontend/src/comercial/financialApi.ts
+?? frontend/src/comercial/pagos.css
+?? scripts/pagos-ui-states.mjs
+?? scripts/pagos-visual-qa.ts
+?? scripts/proyecto-monto-qa.ts
+?? server/db/migrations/0096_elite_hercules.sql
+?? server/db/migrations/meta/0096_snapshot.json
+?? server/helpers/estadoFinanciero.ts
+?? server/helpers/financialVisibility.ts
+?? server/helpers/pagosOperaciones.ts
+?? server/helpers/validacionDinero.ts
+?? shared/pagos.ts
+?? tests/financialVisibility.test.ts
+?? tests/pagosOperativos.test.ts
+?? tests/proyectoMontoContractual.routes.test.ts

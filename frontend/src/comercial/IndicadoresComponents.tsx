@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { IndicadoresComerciales } from '../types/api';
 import { IconoKpi } from './ComercialKpis';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { COMERCIAL_FOOTER, COMERCIAL_LOGO, ComercialSidebarNav } from './ComercialSidebarNav';
+import { ComercialSidebarNav } from './ComercialSidebarNav';
 
 export const ICONOS = {
   autor: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
@@ -101,7 +101,7 @@ export function IndicadoresSkeleton() {
 }
 // También preserva el shell durante la descarga inicial del bundle de charts.
 export function IndicadoresLoading() {
-  return <CrmSidebarLayout logo={COMERCIAL_LOGO} footer={COMERCIAL_FOOTER} nav={<ComercialSidebarNav activo="indicadores" />} contentMaxWidth="max-w-[1600px]" contentClassName="px-4 py-5 sm:p-6">
+  return <CrmSidebarLayout   nav={<ComercialSidebarNav activo="indicadores" />} contentMaxWidth="max-w-[1600px]" contentClassName="px-4 py-5 sm:p-6">
     <div className="mb-4"><h1 className="text-2xl font-bold tracking-tight text-gray-900">Indicadores Comerciales</h1><p className="mt-1 text-sm text-gray-500">Analiza el rendimiento del área comercial y el avance de los proyectos hacia RRPP.</p></div>
     <IndicadoresSkeleton />
   </CrmSidebarLayout>;

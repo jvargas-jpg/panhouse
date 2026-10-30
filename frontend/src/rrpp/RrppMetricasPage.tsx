@@ -3,7 +3,7 @@ import { useRef, useState, type KeyboardEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
 import { useMe } from '../auth/useAuth';
-import { RRPP_FOOTER, RRPP_LOGO, RrppSidebarNav } from './RrppSidebarNav';
+import { RrppSidebarNav } from './RrppSidebarNav';
 import { fetchIndicadoresRrpp, hoyIndicadoresRrpp, rangoRrpp, type IndicadoresRrpp, type PresetRrpp } from './rrppIndicadoresApi';
 import { BarrasMensualesRrpp, CardIndicadorRrpp, DonutRrpp, fechaIndicador, KpisRrpp, MiniStatsRrpp, nRrpp, RankingRrpp, TablaRrpp } from './RrppIndicadoresComponents';
 import { SkeletonRrpp } from './RrppIndicadoresLoading';
@@ -27,7 +27,7 @@ export function RrppMetricasPage() {
     setTab(TABS[next]![0]);
     e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=tab]')[next]?.focus();
   }
-  return <CrmSidebarLayout logo={RRPP_LOGO} footer={RRPP_FOOTER} nav={<RrppSidebarNav vista="indicadores" />} contentMaxWidth="max-w-[1680px]" contentClassName="px-4 py-5 sm:px-6 sm:py-5"><div className="rrpp-indicadores">
+  return <CrmSidebarLayout   nav={<RrppSidebarNav vista="indicadores" />} contentMaxWidth="max-w-[1680px]" contentClassName="px-4 py-5 sm:px-6 sm:py-5"><div className="rrpp-indicadores">
     <header className="rrpp-i-header"><div><h1><span aria-hidden="true" />Indicadores</h1><p>Visualiza el impacto y avance de las acciones de RRPP en los proyectos editoriales.</p></div><SelectorPeriodo rango={rango} cambiar={setRango} /></header>
     {!permitido ? <p role="alert">No tienes acceso a Indicadores RRPP.</p> : <><div className="rrpp-i-tabs" role="tablist" aria-label="Análisis de RRPP">{TABS.map(([id, label], i) => <button key={id} type="button" role="tab" id={`rrpp-i-tab-${id}`} aria-controls="rrpp-i-panel" aria-selected={tab === id} tabIndex={tab === id ? 0 : -1} onClick={() => setTab(id)} onKeyDown={e => teclado(e, i)}>{label}</button>)}</div>
     <div role="tabpanel" id="rrpp-i-panel" aria-labelledby={`rrpp-i-tab-${tab}`} className="rrpp-i-panel" aria-busy={query.isFetching}>{query.isLoading && <SkeletonRrpp />}{query.isError && <div role="alert" className="rrpp-i-error"><p>No se pudieron cargar los indicadores de este período.</p><button onClick={() => void query.refetch()}>Reintentar</button></div>}{data && <>

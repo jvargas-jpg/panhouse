@@ -5,9 +5,9 @@
   font-size: 13px;
 }
 .jefatura.ji-page .jf-page-header h1 {
-  font-size: 30px;
-  line-height: 1.2;
-  letter-spacing: -0.6px;
+  font: 700 var(--ph-page-title)/1.3 var(--ph-font);
+  letter-spacing: -.025em;
+  color: var(--ph-ink);
 }
 .ji-page .jf-page-header {
   margin-bottom: 16px;
@@ -46,7 +46,7 @@
   justify-content: center;
   gap: 8px;
   border: 1px solid #dfe3e9;
-  background: #fff;
+  background: var(--ph-surface);
   color: #152640;
   border-radius: 7px;
   padding: 10px 14px;
@@ -89,7 +89,7 @@
 }
 .ji-workspace :is(input, select) {
   border: 1px solid #dce3ed;
-  background: #fff;
+  background: var(--ph-surface);
   border-radius: 7px;
   color: #162840;
   height: 35px;
@@ -124,7 +124,7 @@
 }
 .ji-card {
   min-width: 0;
-  background: #fff;
+  background: var(--ph-surface);
   border: 1px solid #e5e9ef;
   border-radius: 11px;
   padding: 16px;
@@ -202,7 +202,7 @@
   background: #fbf5e7;
 }
 .ji-kpi.success .ji-kpi-icon {
-  color: #244b77;
+  color: var(--ph-success);
   background: #edf8f2;
 }
 .ji-overview-grid {
@@ -422,7 +422,7 @@
 .ji-table td {
   text-align: left;
   padding: 11px 8px;
-  border-bottom: 1px solid #edf0f4;
+  border-bottom: 1px solid var(--ph-line-soft);
   vertical-align: middle;
 }
 .ji-table th {
@@ -738,7 +738,7 @@
   margin-top: 16px;
 }
 .ji-skeleton {
-  background: #eef1f5;
+  background: var(--ph-line-soft);
   border-radius: 10px;
   animation: ji-pulse 1.4s ease-in-out infinite;
 }
@@ -945,7 +945,7 @@
   body.ji-report {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-    background: #fff;
+    background: var(--ph-surface);
   }
   body.ji-report #root,
   body.ji-report #root > div,

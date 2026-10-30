@@ -19,6 +19,8 @@ export function fetchCatalogos() {
 // ahora sale de autores + codigo, generado solo al crear (ver
 // generarCodigoCorto en server/helpers/proyectos.ts).
 export interface DatosNuevoProyecto {
+  montoContractual?: string;
+  monedaContractual?: string;
   autorIds: string[];
   servicioId: string;
   unidadId: string;

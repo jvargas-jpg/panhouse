@@ -1,3 +1,4 @@
+import { SearchInput, Pagination, Skeleton, StatusBadge } from '../design-system/components';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { RrppIcon } from '../rrpp/RrppIcons';
@@ -21,18 +22,12 @@ export function EditorKpis({items}:{items:{label:string;value:number|string;sub:
   })}</div>;
 }
 
-export function EditorSearch({value,onChange,placeholder}:{value:string;onChange:(s:string)=>void;placeholder:string}) {
-  return <label className="eo-search"><span className="sr-only">{placeholder}</span><RrppIcon nombre="buscar"/><input type="search" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/></label>;
-}
+export function EditorSearch({value,onChange,placeholder}:{value:string;onChange:(s:string)=>void;placeholder:string}){return <SearchInput className="eo-search" value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}/>;}
 export function EditorSelect({label,value,onChange,options}:{label:string;value:string;onChange:(s:string)=>void;options:{id:string;name:string}[]}) {
   return <label className="eo-select"><span className="sr-only">{label}</span><select aria-label={label} value={value} onChange={e=>onChange(e.target.value)}><option value="">{label}</option>{options.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}</select></label>;
 }
-export function EditorPagination({data,onPage}:{data:{total:number;pages:number;page:number};onPage:(p:number)=>void}) {
-  return <footer className="eo-pagination"><span>{data.total} resultado{data.total!==1?'s':''}</span><div><button aria-label="Página anterior" disabled={data.page<=1} onClick={()=>onPage(data.page-1)}>‹</button><span>{data.page} / {data.pages}</span><button aria-label="Página siguiente" disabled={data.page>=data.pages} onClick={()=>onPage(data.page+1)}>›</button></div></footer>;
-}
-export function EditorSkeleton({label='Cargando información'}:{label?:string}) {
-  return <div className="eo-skeleton" role="status" aria-label={label}><i/><i/><i/><i/></div>;
-}
+export function EditorPagination({data,onPage}:{data:{total:number;pages:number;page:number};onPage:(p:number)=>void}){return <Pagination {...data} onPage={onPage}/>;}
+export function EditorSkeleton({label='Cargando información'}:{label?:string}){return <Skeleton label={label}/>;}
 
 export function EditorDetail({title,open,onClose,children,modal=false}:{title:string;open:boolean;onClose:()=>void;children:ReactNode;modal?:boolean}) {
   const ref=useRef<HTMLElement>(null);
@@ -57,10 +52,7 @@ export function EditorDetail({title,open,onClose,children,modal=false}:{title:st
   return <><button className={'eo-detail-backdrop'+(open?' is-open':'')} aria-label="Cerrar detalle" tabIndex={-1} onClick={onClose}/><aside ref={ref} tabIndex={-1} role={modal&&open?'dialog':undefined} aria-modal={modal&&open?true:undefined} className={'eo-detail'+(open?' is-open':'')} aria-label={title}><header className="eo-detail-title"><RrppIcon nombre="ingreso"/><h2>{title}</h2><button aria-label="Cerrar detalle" onClick={onClose}>×</button></header>{children}</aside></>;
 }
 
-export function EditorStatus({state}:{state:string}) {
-  const color=/Bloque|Vencid|Devuelta/.test(state)?'red':/autor|Especialista|pausa|Pendiente|Por iniciar/.test(state)?'amber':/Complet|Resuelta/.test(state)?'green':/ajustes/.test(state)?'violet':'blue';
-  return <span className={'ec-status ec-'+color}><i/>{state}</span>;
-}
+export function EditorStatus({state}:{state:string}){return <StatusBadge>{state}</StatusBadge>;}
 export const currentOwner=(i:EditorialIntervention)=>i.waitingOn==='author'?'Autor':i.waitingOn==='specialist'?'Especialista':i.waitingOn==='project_pause'?'Proyecto en pausa':i.state==='Completadas'?'Finalizado':'Tú';
 
 export function activityVisual(text:string):{icon:EditorIcon;color:string} {

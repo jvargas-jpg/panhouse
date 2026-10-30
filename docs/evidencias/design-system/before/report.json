@@ -1,0 +1,1995 @@
+{
+  "baseline": true,
+  "missingRoles": [],
+  "screens": [
+    {
+      "role": "comercial",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "comercial-0-desktop.png",
+      "title": "Bienvenido, Comercial Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 839
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "comercial",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "comercial-0-tablet.png",
+      "title": "Bienvenido, Comercial Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 963
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "comercial",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "comercial-0-mobile.png",
+      "title": "Bienvenido, Comercial Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "comercial",
+      "route": "/proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "comercial-1-desktop.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 839
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "comercial",
+      "route": "/proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "comercial-1-tablet.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 963
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "comercial",
+      "route": "/proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "comercial-1-mobile.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "rrpp",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "rrpp-0-desktop.png",
+      "title": "Bienvenido, RRPP Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "26px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 839
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "rrpp",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "rrpp-0-tablet.png",
+      "title": "Bienvenido, RRPP Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "26px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 963
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "rrpp",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "rrpp-0-mobile.png",
+      "title": "Bienvenido, RRPP Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "26px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "rrpp-1-desktop.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "27px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 41
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 839
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "rrpp-1-tablet.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "27px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 41
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 963
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "rrpp-1-mobile.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "27px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 41
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_area",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_area-0-desktop.png",
+      "title": "Hola, Jefe Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "27px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 34
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 839
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_area",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_area-0-tablet.png",
+      "title": "Hola, Jefe Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "25px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_area",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_area-0-mobile.png",
+      "title": "Hola, Jefe Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 30
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=asignaciones",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_area-1-desktop.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "34px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 39
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 839
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=asignaciones",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_area-1-tablet.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "34px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 39
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=asignaciones",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_area-1-mobile.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "27px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "especialista",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "especialista-0-desktop.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "29px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 36
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 83
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "especialista",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "especialista-0-tablet.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "29px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 36
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 149
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "especialista",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "especialista-0-mobile.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "26px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 33
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 188
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "TABLE",
+          "class": "ei-table"
+        },
+        {
+          "tag": "THEAD",
+          "class": ""
+        },
+        {
+          "tag": "TR",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mis-proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "especialista-1-desktop.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "28px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 35
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "12px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 79
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mis-proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "especialista-1-tablet.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "28px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 35
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "12px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 97
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mis-proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "especialista-1-mobile.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "26px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 33
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "12px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 143
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_edicion-0-desktop.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "36px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 40
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 92
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_edicion-0-tablet.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "32px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 35
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 86
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_edicion-0-mobile.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "33px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 36
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 134
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=asignaciones",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_edicion-1-desktop.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "36px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 40
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 92
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=asignaciones",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_edicion-1-tablet.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "32px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 35
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 86
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=asignaciones",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_edicion-1-mobile.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "33px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 73
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 143
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "role": "editor",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "editor-0-desktop.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 44
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 74
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "editor",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "editor-0-tablet.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "39px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 41
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 71
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "editor",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "editor-0-mobile.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "35px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 37
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 86
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "editor-1-desktop.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 44
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 74
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "editor-1-tablet.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "39px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 41
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 71
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "editor-1-mobile.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "35px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 37
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 86
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "corrector",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "corrector-0-desktop.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 50
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 82
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "corrector",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "corrector-0-tablet.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 50
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 82
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "corrector",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "corrector-0-mobile.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "35px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 42
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 93
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "corrector-1-desktop.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 50
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 82
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "corrector-1-tablet.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 50
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 82
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "corrector-1-mobile.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "35px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 42
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 93
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_editorial-0-desktop.png",
+      "title": "Tu trabajo de hoy",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 50
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 82
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_editorial-0-tablet.png",
+      "title": "Tu trabajo de hoy",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 50
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 82
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_editorial-0-mobile.png",
+      "title": "Tu trabajo de hoy",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "35px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 42
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 93
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_editorial-1-desktop.png",
+      "title": "Mis validaciones",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 50
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 82
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_editorial-1-tablet.png",
+      "title": "Mis validaciones",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "42px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 50
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 82
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_editorial-1-mobile.png",
+      "title": "Mis validaciones",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "35px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 42
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 93
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "lider_creativo-0-desktop.png",
+      "title": "Hola, Editor Dos Demo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "36px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 45
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 99
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "lider_creativo-0-tablet.png",
+      "title": "Hola, Editor Dos Demo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "31px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 39
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 89
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "lider_creativo-0-mobile.png",
+      "title": "Hola, Editor Dos Demo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "29px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 36
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 116
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "lider_creativo-1-desktop.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "36px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 45
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 99
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "lider_creativo-1-tablet.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "31px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 39
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 89
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "lider_creativo-1-mobile.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "Georgia, \"Times New Roman\", serif",
+        "size": "29px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 36
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 88
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": "cw-category-icon RESOURCES"
+        },
+        {
+          "tag": "svg",
+          "class": {}
+        },
+        {
+          "tag": "path",
+          "class": {}
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "STRONG",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": "cw-category-icon COVER_REVIEW"
+        }
+      ]
+    },
+    {
+      "role": "disenador",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "disenador-0-desktop.png",
+      "title": "Mis trabajos de Diseño",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": null,
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "disenador",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "disenador-0-tablet.png",
+      "title": "Mis trabajos de Diseño",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": null,
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "disenador",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "disenador-0-mobile.png",
+      "title": "Mis trabajos de Diseño",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": null,
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_digital-0-desktop.png",
+      "title": "Tu trabajo digital de hoy",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "40px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 48
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 79
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_digital-0-tablet.png",
+      "title": "Tu trabajo digital de hoy",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "40px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 48
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 79
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_digital-0-mobile.png",
+      "title": "Tu trabajo digital de hoy",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "32px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 77
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 128
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_digital-1-desktop.png",
+      "title": "Mis tareas digitales",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "38.88px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 47
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 78
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_digital-1-tablet.png",
+      "title": "Mis tareas digitales",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "30px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 36
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 67
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_digital-1-mobile.png",
+      "title": "Mis tareas digitales",
+      "heading": {
+        "font": "Georgia, serif",
+        "size": "30px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 36
+      },
+      "topbar": {
+        "font": "\"Segoe UI\", Arial, sans-serif",
+        "size": "13px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 87
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(12, 32, 48)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ]
+    },
+    {
+      "role": "direccion",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "direccion-0-desktop.png",
+      "title": "PanHouse",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "20px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 28
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 839
+      },
+      "documentWidth": 1440,
+      "overflowing": []
+    },
+    {
+      "role": "direccion",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "direccion-0-tablet.png",
+      "title": "PanHouse",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "20px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 28
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 61
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 963
+      },
+      "documentWidth": 768,
+      "overflowing": []
+    }
+  ],
+  "errors": []
+}

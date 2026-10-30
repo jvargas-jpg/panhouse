@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { COMERCIAL_FOOTER, COMERCIAL_LOGO, ComercialSidebarNav } from './ComercialSidebarNav';
+import { ComercialSidebarNav } from './ComercialSidebarNav';
 import { IndicadoresCharts } from './IndicadoresCharts';
 import { FlujoComercial, ICONOS, IndicadoresKpis, IndicadoresSkeleton, IndicadorSeccion, numero } from './IndicadoresComponents';
 import { MapaCalorPaises } from './MapaCalorPaises';
@@ -13,7 +13,7 @@ export function MetricasPage() {
   const query = useQuery({ queryKey: ['metricas', 'comercial', 'indicadores', periodo], queryFn: () => fetchIndicadoresComercial(periodo) });
   const data = query.data;
   const maxServicio = data?.services[0]?.cantidad ?? 1;
-  return <CrmSidebarLayout logo={COMERCIAL_LOGO} footer={COMERCIAL_FOOTER} nav={<ComercialSidebarNav activo="indicadores" />} contentMaxWidth="max-w-[1600px]" contentClassName="px-4 py-5 sm:p-6">
+  return <CrmSidebarLayout   nav={<ComercialSidebarNav activo="indicadores" />} contentMaxWidth="max-w-[1600px]" contentClassName="px-4 py-5 sm:p-6">
     <div className="[--indicadores-dorado:theme(colors.dorado)]">
       <header className="mb-4 flex flex-col justify-between gap-3 lg:flex-row lg:items-center">
         <div><h1 className="text-2xl font-bold tracking-tight text-gray-900">Indicadores Comerciales</h1><p className="mt-1 text-sm text-gray-500">Analiza el rendimiento del área comercial y el avance de los proyectos hacia RRPP.</p></div>

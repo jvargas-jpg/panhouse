@@ -4,22 +4,22 @@
    .soporte-digital-layout (soporteDigitalHome.css), para que el detalle,
    los formularios y los botones se vean consistentes con Inicio sin
    heredar la paleta propia de Editor. */
-.soporte-digital-home.editor-shell { --eo-ink: #172b43; --eo-muted: #6c7d93; --eo-line: #e5e9ed; --eo-navy: #0c2030; --eo-gold: #b1914e; }
+.soporte-digital-home.editor-shell { --eo-ink: var(--ph-ink); --eo-muted: var(--ph-muted); --eo-line: var(--ph-line); --eo-navy: var(--ph-navy); --eo-gold: var(--ph-gold-text); }
 .soporte-digital-home .mw-detail-header .sd-cover { width: 38px; height: 54px; }
-.soporte-digital-home .sd-blocker-reason { font-size: 10px; color: #8090a4; display: block; margin-top: 4px; }
+.soporte-digital-home .sd-blocker-reason { font-size: 10px; color: var(--ph-subtle); display: block; margin-top: 4px; }
 
 /* Scoped to Mi trabajo: preserve the approved role shell and Inicio. */
-.sd-work .sd-page-header h1 { font-size: clamp(30px, 2.7vw, 42px); letter-spacing: -.025em; }
+.sd-work .sd-page-header h1 { font: 700 var(--ph-page-title)/1.3 var(--ph-font); letter-spacing: -.025em; color: var(--ph-ink); }
 .sd-work .mw-controls { display: grid; gap: 18px; margin-top: 22px; }
 .sd-work .mw-views { gap: 8px; border-bottom: 1px solid var(--eo-line); padding-bottom: 0; flex-wrap: nowrap; overflow-x: auto; }
 .sd-work .mw-views button { border: 0; border-bottom: 2px solid transparent; border-radius: 6px 6px 0 0; background: transparent; padding: 11px 12px; font-size: 12px; }
 .sd-work .mw-views button[aria-pressed=true] { border-bottom-color: var(--eo-gold); color: #78591f; background: #f7f3e9; }
-.sd-work .mw-views button>span { border-radius: 12px; padding: 1px 5px; background: #edf0f3; }
+.sd-work .mw-views button>span { border-radius: 12px; padding: 1px 5px; background: var(--ph-line-soft); }
 .sd-work .mw-tools { width: 100%; max-width: none; min-width: 0; }
 .sd-work .mw-tools .eo-search { flex: 1; }
 .sd-work .sd-quick-filter { flex: 0 1 185px; min-width: 0; }
 .sd-work .sd-quick-filter .eo-select { display: block; }
-.sd-work .sd-quick-filter select { width: 100%; max-width: none; min-height: 40px; font-size: 12px; border: 1px solid #dce0e5; border-radius: 6px; background: white; padding: 8px 10px; }
+.sd-work .sd-quick-filter select { width: 100%; max-width: none; min-height: 40px; font-size: 12px; border: 1px solid var(--ph-line); border-radius: 6px; background: white; padding: 8px 10px; }
 .sd-work .mw-workspace { grid-template-columns: minmax(0, 1.65fr) minmax(330px, 1fr); gap: 20px; align-items: start; }
 .sd-work .mw-list .eo-table th:nth-child(1) { width: 29%; }
 .sd-work .mw-list .eo-table th:nth-child(2) { width: 14%; }
@@ -65,7 +65,7 @@
   .sd-work .mw-workspace { grid-template-columns: minmax(0,1fr); }
 }
 @media(max-width:767px) {
-  .sd-work .sd-page-header h1 { font-size: 30px; }
+  .sd-work .sd-page-header h1 { font: 700 var(--ph-page-title)/1.3 var(--ph-font); letter-spacing: -.025em; color: var(--ph-ink); }
   .sd-work .mw-controls { gap: 13px; margin-top: 15px; }
   .sd-work .mw-tools { flex-wrap: wrap; }
   .sd-work .mw-tools .eo-search { flex-basis: 100%; }

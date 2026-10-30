@@ -57,7 +57,7 @@ export function QuickActions({ onNuevoProyecto }: { onNuevoProyecto: () => void 
         <div className="my-1 border-t border-gray-100" />
 
         <Link
-          to="/comercial/pagos"
+          to="/comercial/pagos?registrar=1"
           className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-50 hover:text-gray-700 ${FOCO}`}
         >
           <svg className="h-3.5 w-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

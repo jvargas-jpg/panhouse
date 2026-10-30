@@ -1,15 +1,16 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { ActividadFicha, CampoFicha, EquipoFicha } from '../../../../shared/fichaViva';
+import { StatusBadge } from '../../design-system/components';
+import { RrppIcon } from '../../rrpp/RrppIcons';
 
 export function IconFicha({name='document',className=''}:{name?:string;className?:string}){
-  const paths:Record<string,string>={document:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M8 13h8M8 17h5',book:'M12 6c-3-2-6-2-10-1v15c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1zM12 6v15',people:'M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M15 3a4 4 0 010 8M22 21v-2a4 4 0 00-3-3.87M13 7a4 4 0 11-8 0 4 4 0 018 0',clock:'M12 8v4l3 2M22 12a10 10 0 11-20 0 10 10 0 0120 0',arrow:'M5 12h14M14 7l5 5-5 5',grid:'M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z'};
-  return <svg className={className} width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name]??paths.document}/></svg>;
+  const icons:Record<string,Parameters<typeof RrppIcon>[0]['nombre']>={document:'ingreso',book:'libro',people:'equipo',clock:'actividad',arrow:'flecha',grid:'capas'};
+  return <RrppIcon nombre={icons[name]??'ingreso'} className={`h-[19px] w-[19px] ${className}`}/>;
 }
 export function Estado({state}:{state:string}){
-  const tone=/completo|completado|aprobado|listo|asignado/i.test(state)?'green':/bloqueado|rechazado/i.test(state)?'red':/curso|diagnóstico|planificación/i.test(state)?'blue':/pendiente|esperando/i.test(state)?'gold':'gray';
   const label:Record<string,string>={en_proceso:'En proceso',completado:'Completado',stand_by:'Stand by',en_progreso:'En curso',pendiente:'Pendiente',bloqueado:'Bloqueado',cancelado:'Cancelado'};
-  return <span className={'fv-badge fv-'+tone}><span aria-hidden="true"/>{label[state]??state}</span>;
+  return <StatusBadge>{label[state]??state}</StatusBadge>;
 }
 export function Card({title,icon='document',action,children,className=''}:{title:string;icon?:string;action?:ReactNode;children:ReactNode;className?:string}){
   return <section className={'fv-card '+className}><div className="fv-card-head"><h2><IconFicha name={icon}/>{title}</h2>{action}</div>{children}</section>;

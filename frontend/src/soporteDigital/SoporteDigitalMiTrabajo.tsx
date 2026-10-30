@@ -6,12 +6,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { EditorDetail, EditorSearch, EditorSelect, EditorSkeleton, useEditorDesktop, useEditorFilters } from '../editor/EditorUi';
 import { EditorEmpty } from '../editor/EditorParts';
-import { DigitalCover, DigitalMobileNavigation, DigitalNavigation, digitalDate, digitalWorkKey, miTrabajoUrl } from './SoporteDigitalUi';
+import { DigitalCover, DigitalNavigation, digitalDate, digitalWorkKey, miTrabajoUrl } from './SoporteDigitalUi';
 import {
   fetchMiTrabajoDigital, fetchMiTrabajoDigitalArchivos, fetchMiTrabajoDigitalDetalle,
   registrarAccionDigital,
@@ -66,8 +66,8 @@ export function SoporteDigitalMiTrabajo() {
     document.addEventListener('keydown', escape, true);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape, true); };
   }, []);
-  return <CrmSidebarLayout nav={<DigitalNavigation active="mi-trabajo" />} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="soporte-digital-layout" contentClassName="soporte-digital-home editor-shell sd-work" footer={<p className="sd-footer">Historias que conectan.</p>}>
-    <div className="sd-topbar"><div><RrppIcon nombre="libro" /><strong>Soporte Digital</strong></div><TopBar compacto roleLabel="Soporte Digital" /></div><DigitalMobileNavigation active="mi-trabajo" />
+  return <CrmSidebarLayout nav={<DigitalNavigation active="mi-trabajo" />}    contentMaxWidth="max-w-none" shellClassName="soporte-digital-layout" contentClassName="soporte-digital-home editor-shell sd-work" >
+
     <div className="sd-body">
       <nav className="sd-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Digital</span><RrppIcon nombre="flecha" /><strong>Mi trabajo</strong></nav>
       <header className="sd-page-header"><div><h1>Mis tareas digitales</h1><p>Gestiona la preparación, pruebas y cargas digitales de la bandeja compartida.</p></div></header>

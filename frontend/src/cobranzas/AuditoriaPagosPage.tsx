@@ -1,36 +1,21 @@
+import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
+import { RrppIcon } from '../rrpp/RrppIcons';
+import { EmptyState, PageHeader, StatusBadge } from '../design-system/components';
+import { useMe } from '../auth/useAuth';
+import { ROLES_LECTURA_PAGOS } from '../../../shared/pagos';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { formatearFecha } from '../proyectos/campos';
 import { Modal } from '../autores/Modal';
 import { fetchPagos, verificarPago, type DatosVerificacionPago } from '../comercial/pagosApi';
 import type { Pago } from '../types/api';
 
-// Mismo breakout que AutoresPage.tsx/MisProyectosPage.tsx: el layout
-// con sidebar necesita el ancho real de la pantalla.
-const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen -my-6';
-
-// Ver AutoresPage.tsx para la explicación completa: h-full solo deja
-// una franja de 48px sin cubrir en el fondo (resuelve contra la caja de
-// contenido de <main>, ya sin su propio padding py-6). +3rem = ese
-// padding total.
-const ALTO_LLENO_MAIN = 'h-[calc(100%+3rem)]';
-
-const NAV_ACTIVO =
-  'w-full flex items-center gap-3 px-4 py-3 bg-dorado/10 text-dorado rounded-xl font-semibold text-sm border border-dorado/20 transition-all text-left';
-
 type FiltroPagos = 'pendientes' | 'todos';
 
 const PENDIENTE = 'Pendiente de verificación';
 
-function BadgeEstatusPago({ estatus }: { estatus: string }) {
-  if (estatus === 'Verificado') {
-    return <span className="whitespace-nowrap rounded-full bg-green-100 px-2.5 py-1 text-xs font-medium text-green-800">Verificado</span>;
-  }
-  if (estatus === 'Rechazado') {
-    return <span className="whitespace-nowrap rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-800">Rechazado</span>;
-  }
-  return <span className="whitespace-nowrap rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">{estatus}</span>;
-}
+function BadgeEstatusPago({estatus}:{estatus:string}){return <StatusBadge>{estatus}</StatusBadge>;}
 
 function FilaPago({
   pago,
@@ -45,19 +30,19 @@ function FilaPago({
 }) {
   return (
     <tr className="border-b border-gray-100 text-sm text-gray-700 transition-colors last:border-0 hover:bg-gray-50">
-      <td className="whitespace-nowrap px-4 py-3">{formatearFecha(pago.fechaPago)}</td>
-      <td className="px-4 py-3">
+      <td data-label="Fecha" className="whitespace-nowrap px-4 py-3">{formatearFecha(pago.fechaPago)}</td>
+      <td data-label="Proyecto" className="px-4 py-3">
         <p className="font-semibold text-gray-900">{pago.proyecto.titulo ?? pago.proyecto.autorNombre}</p>
         <p className="font-mono text-xs text-gray-400">
           {pago.proyectoId.slice(0, 8)}… · {pago.proyecto.servicioCodigo}
         </p>
       </td>
-      <td className="whitespace-nowrap px-4 py-3 font-semibold text-gray-900">
+      <td data-label="Monto" className="whitespace-nowrap px-4 py-3 font-semibold text-gray-900">
         {pago.moneda} {Number(pago.monto).toLocaleString('es', { minimumFractionDigits: 2 })}
       </td>
-      <td className="whitespace-nowrap px-4 py-3">{pago.metodoPago}</td>
-      <td className="whitespace-nowrap px-4 py-3">{pago.referencia ?? <span className="text-gray-400">—</span>}</td>
-      <td className="whitespace-nowrap px-4 py-3">
+      <td data-label="M?todo" className="whitespace-nowrap px-4 py-3">{pago.metodoPago}</td>
+      <td data-label="Referencia" className="whitespace-nowrap px-4 py-3">{pago.referencia ?? <span className="text-gray-400">—</span>}</td>
+      <td data-label="Comprobante" className="whitespace-nowrap px-4 py-3">
         {pago.comprobanteUrl ? (
           <a href={pago.comprobanteUrl} target="_blank" rel="noreferrer" className="font-medium text-dorado hover:underline">
             Ver ↗
@@ -66,7 +51,7 @@ function FilaPago({
           <span className="text-gray-400">—</span>
         )}
       </td>
-      <td className="whitespace-nowrap px-4 py-3">
+      <td data-label="Estatus" className="whitespace-nowrap px-4 py-3">
         <BadgeEstatusPago estatus={pago.estatus} />
         {pago.estatus === 'Rechazado' && pago.motivoRechazo && (
           <p className="mt-1 max-w-[180px] truncate text-xs text-gray-400" title={pago.motivoRechazo}>
@@ -74,7 +59,7 @@ function FilaPago({
           </p>
         )}
       </td>
-      <td className="whitespace-nowrap px-4 py-3">
+      <td data-label="Acciones" className="whitespace-nowrap px-4 py-3">
         {pago.estatus === PENDIENTE ? (
           <div className="flex items-center gap-3">
             <button
@@ -108,17 +93,20 @@ function FilaPago({
 // vistaActiva/useState de navegación como en MisProyectosPage.tsx
 // porque todavía no hay un segundo módulo con el que alternar.
 export function AuditoriaPagosPage() {
+  const { data: user } = useMe();
+  const authorized = !!user && (ROLES_LECTURA_PAGOS as readonly string[]).includes(user.rol);
   const [filtro, setFiltro] = useState<FiltroPagos>('pendientes');
   const [pagoRechazando, setPagoRechazando] = useState<Pago | null>(null);
   const [motivoRechazo, setMotivoRechazo] = useState('');
 
-  const pagosQuery = useQuery({ queryKey: ['pagos'], queryFn: () => fetchPagos() });
+  const pagosQuery = useQuery({ queryKey: ['pagos'], queryFn: () => fetchPagos(), enabled: authorized });
   const queryClient = useQueryClient();
 
   const mutacionVerificar = useMutation({
     mutationFn: (params: { id: string; datos: DatosVerificacionPago }) => verificarPago(params.id, params.datos),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pagos'] });
+      queryClient.invalidateQueries({ queryKey: ['payments'] });
       setPagoRechazando(null);
       setMotivoRechazo('');
     },
@@ -140,30 +128,13 @@ export function AuditoriaPagosPage() {
 
   const estaProcesando = (pagoId: string) => mutacionVerificar.isPending && mutacionVerificar.variables?.id === pagoId;
 
+  if (!authorized) return <CrmSidebarLayout nav={<Link to="/" aria-current="page"><RrppIcon nombre="ingreso"/>Pagos</Link>} contentMaxWidth="max-w-[1440px]" contentClassName="p-4 sm:p-6"><PageHeader title="Pagos" description="Gestión de los pagos de proyectos editoriales."/><div className="ph-surface"><EmptyState title="La gestión de pagos está a cargo de Comercial">En esta etapa, Comercial registra y confirma los pagos recibidos.</EmptyState></div></CrmSidebarLayout>;
   return (
-    <div className={`${FULL_BLEED} ${ALTO_LLENO_MAIN} flex overflow-hidden bg-[#F8F9FA]`}>
-      <aside className="z-20 hidden h-full w-64 flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl md:flex">
-        <div className="px-6 py-8">
-          <p className="mb-6 text-xs font-bold uppercase tracking-widest text-gray-500">Panel Financiero</p>
-          <nav className="space-y-2">
-            <button type="button" className={NAV_ACTIVO}>
-              <span className="h-1.5 w-1.5 rounded-full bg-dorado" />
-              Auditoría de Pagos
-            </button>
-          </nav>
-        </div>
-      </aside>
-
-      {/* AppLayout.tsx ya envuelve el Outlet en un <main> — mismo criterio
-          que AutoresPage.tsx/MisProyectosPage.tsx: <div>, no <main>.
-          overflow-x-auto (no -hidden, a diferencia de esas dos páginas):
-          la tabla de auditoría es más ancha que el viewport en pantallas
-          angostas y necesita poder desplazarse, no recortarse. */}
-      <div className="flex-1 overflow-y-auto overflow-x-auto bg-[#F4F5F8]">
-        <div className="mx-auto max-w-7xl p-6">
+    <CrmSidebarLayout nav={<Link to="/" aria-current="page"><RrppIcon nombre="ingreso"/>Auditor?a de Pagos</Link>} contentMaxWidth="max-w-[1440px]" contentClassName="p-4 sm:p-6">
           <h2 className="mb-6 flex items-center gap-2 text-2xl font-bold text-gray-900">
             <span className="h-2 w-2 rounded-full bg-dorado" /> Auditoría de Pagos
           </h2>
+          <Link to="/comercial/pagos" className="mb-4 inline-block text-sm font-medium text-amber-700 underline">Ver estado por proyecto y solvencia</Link>
 
           <div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-white p-1 shadow-sm">
             <button
@@ -202,8 +173,8 @@ export function AuditoriaPagosPage() {
           )}
 
           {pagosQuery.data && pagosVisibles.length > 0 && (
-            <div className="min-w-[1100px] overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-              <table className="w-full border-collapse text-left">
+            <div className="ph-legacy-payments overflow-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+              <table className="ph-table w-full border-collapse text-left">
                 <thead className="border-b border-gray-200 bg-gray-50 text-xs font-bold uppercase tracking-wider text-gray-500">
                   <tr>
                     <th className="whitespace-nowrap px-4 py-3">Fecha</th>
@@ -224,8 +195,6 @@ export function AuditoriaPagosPage() {
               </table>
             </div>
           )}
-        </div>
-      </div>
 
       {pagoRechazando && (
         <Modal titulo="Rechazar pago" onClose={() => setPagoRechazando(null)}>
@@ -261,6 +230,6 @@ export function AuditoriaPagosPage() {
           </form>
         </Modal>
       )}
-    </div>
+    </CrmSidebarLayout>
   );
 }

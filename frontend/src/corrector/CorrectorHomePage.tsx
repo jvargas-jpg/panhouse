@@ -2,12 +2,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { apiFetch } from '../lib/api';
 import type { CorrectorDashboard, CorrectorHomeItem } from '../../../shared/correctorHome';
-import { CorrectorCover as Cover, CorrectorMobileNavigation, CorrectorNavigation, correctorDate as date, correctorHomeKey, workUrl as workUrlBase } from './CorrectorUi';
+import { CorrectorCover as Cover, CorrectorNavigation, correctorDate as date, correctorHomeKey, workUrl as workUrlBase } from './CorrectorUi';
 
 export { correctorHomeKey };
 const workUrl = (item?: CorrectorHomeItem) => workUrlBase(item?.workItemId);
@@ -46,8 +46,8 @@ function HomeContent() {
 }
 export function CorrectorHomePage() {
   const today = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-  return <CrmSidebarLayout nav={<CorrectorNavigation active="inicio" />} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="corrector-layout" contentClassName="corrector-home" footer={<p className="coh-footer">Historias que conectan.</p>}>
-    <div className="coh-topbar"><div><RrppIcon nombre="libro" /><strong>Corrector</strong></div><TopBar compacto roleLabel="Corrector" /></div><CorrectorMobileNavigation active="inicio" />
+  return <CrmSidebarLayout nav={<CorrectorNavigation active="inicio" />}    contentMaxWidth="max-w-none" shellClassName="corrector-layout" contentClassName="corrector-home" >
+
     <div className="coh-body"><nav className="coh-breadcrumb" aria-label="Ruta de navegación"><span>Corrector</span><RrppIcon nombre="flecha" /><strong>Inicio</strong></nav><header className="coh-page-header"><div><h1>Inicio</h1><p>Aquí puedes ver tus correcciones activas y lo que necesita tu atención.</p></div><time>{today}</time></header><HomeContent /></div>
   </CrmSidebarLayout>;
 }

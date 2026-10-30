@@ -7,21 +7,7 @@ import { autores, pagos, proyectos, servicios } from '../db/schema/index.js';
 // un solo uso para el autor), un concepto completamente aparte de este
 // historial interno de pagos por proyecto — mismo nombre de dominio,
 // responsabilidades sin relación.
-export interface DatosNuevoPago {
-  proyectoId: string;
-  monto: string;
-  moneda?: string;
-  fechaPago: string;
-  metodoPago: string;
-  referencia?: string | null;
-  comprobanteUrl?: string | null;
-}
 
-export async function registrarPago(datos: DatosNuevoPago) {
-  const [fila] = await db.insert(pagos).values(datos).returning();
-  if (!fila) throw new Error('El insert del pago no devolvió ninguna fila');
-  return fila;
-}
 
 export interface PagoConProyecto {
   id: string;
@@ -48,7 +34,7 @@ export interface PagoConProyecto {
 // proyectoId opcional filtra el historial de un solo proyecto (mismo
 // endpoint que alimenta "Historial Reciente" en RegistrarPagoPage.tsx,
 // con o sin proyecto seleccionado).
-export async function listarPagos(proyectoId?: string): Promise<PagoConProyecto[]> {
+export async function listarPagos(proyectoId?: string, page = 1): Promise<PagoConProyecto[]> {
   const filas = await db
     .select({
       id: pagos.id,
@@ -70,7 +56,7 @@ export async function listarPagos(proyectoId?: string): Promise<PagoConProyecto[
     .innerJoin(autores, eq(proyectos.autorId, autores.id))
     .innerJoin(servicios, eq(proyectos.servicioId, servicios.id))
     .where(proyectoId ? eq(pagos.proyectoId, proyectoId) : undefined)
-    .orderBy(desc(pagos.fechaPago), desc(pagos.createdAt));
+    .orderBy(desc(pagos.fechaPago), desc(pagos.createdAt), desc(pagos.id)).limit(100).offset((page - 1) * 100);
 
   return filas.map((fila) => ({
     id: fila.id,
@@ -80,7 +66,7 @@ export async function listarPagos(proyectoId?: string): Promise<PagoConProyecto[
     fechaPago: fila.fechaPago,
     metodoPago: fila.metodoPago,
     referencia: fila.referencia,
-    comprobanteUrl: fila.comprobanteUrl,
+    comprobanteUrl: fila.comprobanteUrl ? '/api/pagos/'+fila.id+'/comprobante' : null,
     estatus: fila.estatus,
     motivoRechazo: fila.motivoRechazo,
     proyecto: {
@@ -90,28 +76,4 @@ export async function listarPagos(proyectoId?: string): Promise<PagoConProyecto[
       servicioCodigo: fila.servicioCodigo,
     },
   }));
-}
-
-export type EstatusVerificacionPago = 'Verificado' | 'Rechazado';
-
-export interface DatosVerificacionPago {
-  estatus: EstatusVerificacionPago;
-  motivoRechazo?: string | null;
-}
-
-// Único camino para pasar de 'Pendiente de verificación' a un estatus
-// definitivo — cobranzas/jefe_area/dirección (ver pagos.routes.ts).
-// motivoRechazo se limpia a null al aprobar (si un pago fue rechazado,
-// corregido y reenviado, y esta vez se aprueba, no debe arrastrar el
-// motivo del rechazo anterior).
-export async function actualizarEstatusPago(pagoId: string, datos: DatosVerificacionPago) {
-  const [fila] = await db
-    .update(pagos)
-    .set({
-      estatus: datos.estatus,
-      motivoRechazo: datos.estatus === 'Rechazado' ? (datos.motivoRechazo ?? null) : null,
-    })
-    .where(eq(pagos.id, pagoId))
-    .returning();
-  return fila;
 }

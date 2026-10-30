@@ -1,17 +1,7 @@
 import { Link } from 'react-router-dom';
 import { RrppIcon } from './RrppIcons';
-export const RRPP_LOGO = (
-  <img
-    src="/brand/panhouse-logo.webp"
-    alt="PanHouse Casa Editorial"
-    className="h-auto w-[132px] object-contain"
-  />
-);
-export const RRPP_FOOTER = (
-  <div className="border-t border-gray-800/80 px-6 py-5">
-    <p className="text-xs italic text-gray-500">Historias que conectan</p>
-  </div>
-);
+
+
 export type VistaRrpp =
   | 'inicio'
   | 'ingresos'

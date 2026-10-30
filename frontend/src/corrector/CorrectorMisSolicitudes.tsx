@@ -7,15 +7,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { ApiError } from '../lib/api';
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { EditorDetail, EditorSearch, EditorSelect, EditorSkeleton, useEditorFilters, useEditorDesktop } from '../editor/EditorUi';
 import { EditorEmpty } from '../editor/EditorParts';
 import { fechaActividad } from '../rrpp/RrppDashboardCards';
 import { CORRECTOR_REQUEST_LABELS, CORRECTOR_REQUEST_TYPES, type CorrectorRequestType } from '../../../shared/correctorRequests';
-import { CorrectorCover, CorrectorMobileNavigation, CorrectorNavigation, correctorDate } from './CorrectorUi';
+import { CorrectorCover, CorrectorNavigation, correctorDate } from './CorrectorUi';
 import { fetchMiTrabajoCorrector } from './correctorWorkApi';
 import { cancelarSolicitudCorrector, correctorRequestsKey, crearSolicitudCorrector, fetchMiSolicitudCorrectorDetalle, fetchMisSolicitudesCorrector, responderSolicitudCorrector } from './correctorRequestsApi';
 
@@ -51,8 +51,8 @@ export function CorrectorMisSolicitudes() {
   });
   const close = () => setParams(current => { const p = new URLSearchParams(current); for (const k of ['request', 'detailTab', 'create']) p.delete(k); p.set('detailClosed', '1'); return p; });
   const clear = () => { setSearch(''); setParams(p => { for (const k of ['search', ...FILTERS, 'page', 'request', 'detailTab', 'detailClosed']) p.delete(k); return p; }); };
-  return <CrmSidebarLayout nav={<CorrectorNavigation active="mis-solicitudes" />} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="corrector-layout" contentClassName="corrector-home editor-shell" footer={<p className="coh-footer">Historias que conectan.</p>}>
-    <div className="coh-topbar"><div><RrppIcon nombre="libro" /><strong>Corrector</strong></div><TopBar compacto roleLabel="Corrector" /></div><CorrectorMobileNavigation active="mis-solicitudes" />
+  return <CrmSidebarLayout nav={<CorrectorNavigation active="mis-solicitudes" />}    contentMaxWidth="max-w-none" shellClassName="corrector-layout" contentClassName="corrector-home editor-shell" >
+
     <div className="coh-body">
       <nav className="coh-breadcrumb" aria-label="Ruta de navegación"><span>Corrector</span><RrppIcon nombre="flecha" /><strong>Mis solicitudes</strong></nav>
       <header className="coh-page-header"><div><h1>Mis solicitudes</h1><p>Consulta los problemas y solicitudes relacionados con tus correcciones y revisa su estado.</p></div></header>

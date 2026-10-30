@@ -4,10 +4,10 @@ import { Link } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
 import { apiFetch } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
-import { DigitalCover, DigitalMobileNavigation, DigitalNavigation } from './SoporteDigitalUi';
+import { DigitalCover, DigitalNavigation } from './SoporteDigitalUi';
 import { DIGITAL_STAGE_LABELS, type DigitalPriorityTask, type DigitalStage, type DigitalSupportDashboard } from '../../../shared/soporteDigitalHome';
 
 export const digitalHomeKey = ['soporte-digital', 'inicio'] as const;
@@ -52,8 +52,8 @@ export function SoporteDigitalHomePage() {
   const {data:user}=useMe();
   const q=useQuery({queryKey:[...digitalHomeKey,user?.id],queryFn:()=>apiFetch<DigitalSupportDashboard>('/soporte-digital/inicio'),enabled:!!user,staleTime:0,refetchOnMount:'always'});
   const today=q.data?.today??new Intl.DateTimeFormat('en-CA',{timeZone:'America/Caracas',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
-  return <CrmSidebarLayout nav={<DigitalNavigation active="inicio"/>} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="soporte-digital-layout" contentClassName="soporte-digital-home" footer={<p className="sd-footer">Historias que conectan.</p>}>
-    <div className="sd-topbar"><div><RrppIcon nombre="libro"/><strong>Soporte Digital</strong></div><TopBar compacto roleLabel="Soporte Digital"/></div><DigitalMobileNavigation active="inicio"/>
+  return <CrmSidebarLayout nav={<DigitalNavigation active="inicio"/>}    contentMaxWidth="max-w-none" shellClassName="soporte-digital-layout" contentClassName="soporte-digital-home" >
+
     <div className="sd-body"><nav className="sd-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Digital</span><RrppIcon nombre="flecha"/><strong>Inicio</strong></nav>
       <header className="sd-page-header"><div><h1>Tu trabajo digital de hoy</h1><p>{user?.nombre?`Hola, ${user.nombre}. `:''}Aquí tienes tus tareas y el estado del proceso digital.</p></div><time dateTime={today}>{new Intl.DateTimeFormat('es-VE',{timeZone:'America/Caracas',weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date(today+'T12:00:00Z'))}</time></header>
       {q.isPending?<DigitalLoading/>:q.isError?<section className="sd-panel sd-error"><RrppIcon nombre="riesgo"/><h2>No se pudo cargar tu Inicio</h2><p role="alert">No pudimos consultar las tareas de Soporte Digital.</p><button onClick={()=>q.refetch()}>Reintentar</button></section>:<DigitalDashboardContent data={q.data} refresh={()=>q.refetch()}/>}

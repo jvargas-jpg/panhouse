@@ -18,12 +18,11 @@
   margin: 0 0 20px;
 }
 .jac-header h1 {
-  font-size: 34px;
-  line-height: 1.16;
-  letter-spacing: -0.8px;
-  font-weight: 700;
   margin: 6px 0 8px;
   color: #12213c;
+  font: 700 var(--ph-page-title)/1.3 var(--ph-font);
+  letter-spacing: -.025em;
+  color: var(--ph-ink);
 }
 .jac-header > p:last-child {
   font-size: 14px;
@@ -45,7 +44,7 @@
   min-width: 0;
   border: 1px solid #e6eaf0;
   border-radius: 9px;
-  background: #fafbfc;
+  background: var(--ph-bg);
   height: 44px;
   padding: 0 10px;
   font-size: 12px;
@@ -66,7 +65,7 @@
   color: #b74f4f;
 }
 .jac-tabs span {
-  background: #eef1f5;
+  background: var(--ph-line-soft);
   border-radius: 20px;
   padding: 3px 8px;
   font-size: 11px;
@@ -207,7 +206,7 @@
   gap: 14px;
   align-items: center;
   padding: 10px 10px;
-  border-top: 1px solid #edf0f5;
+  border-top: 1px solid var(--ph-line-soft);
   min-height: 98px;
 }
 
@@ -386,7 +385,7 @@
   border: 1px solid #d2a450;
 }
 .jac-pagination {
-  border-top: 1px solid #edf0f4;
+  border-top: 1px solid var(--ph-line-soft);
   padding: 11px 17px;
   display: flex;
   justify-content: space-between;
@@ -405,7 +404,7 @@
   height: 27px;
   border: 1px solid #e2e6ed;
   border-radius: 6px;
-  background: #fff;
+  background: var(--ph-surface);
   color: #233750;
 }
 .jac-pagination button:disabled {
@@ -676,7 +675,9 @@
     grid-template-columns: 1fr;
   }
   .jac-header h1 {
-    font-size: 27px;
+    font: 700 var(--ph-page-title)/1.3 var(--ph-font);
+    letter-spacing: -.025em;
+    color: var(--ph-ink);
   }
   .jac-header > p:last-child {
     font-size: 13px;

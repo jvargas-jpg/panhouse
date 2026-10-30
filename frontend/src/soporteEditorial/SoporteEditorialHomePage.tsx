@@ -2,13 +2,13 @@ import './soporteEditorialHome.css';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { apiFetch } from '../lib/api';
 import { useMe } from '../auth/useAuth';
 import type { SoporteEditorialDashboard, ValidationItem } from '../../../shared/soporteEditorialHome';
-import { SoporteEditorialCover as Cover, SoporteEditorialMobileNavigation, SoporteEditorialNavigation, soporteEditorialDate as date, soporteEditorialHomeKey, openValidationUrl } from './SoporteEditorialUi';
+import { SoporteEditorialCover as Cover, SoporteEditorialNavigation, soporteEditorialDate as date, soporteEditorialHomeKey, openValidationUrl } from './SoporteEditorialUi';
 
 export { soporteEditorialHomeKey };
 
@@ -62,8 +62,8 @@ function HomeContent() {
 export function SoporteEditorialHomePage() {
   const { data: user } = useMe();
   const today = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
-  return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="inicio" />} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home" footer={<p className="se-footer">Historias que conectan.</p>}>
-    <div className="se-topbar"><div><RrppIcon nombre="libro" /><strong>Soporte Editorial</strong></div><TopBar compacto roleLabel="Soporte Editorial" /></div><SoporteEditorialMobileNavigation active="inicio" />
+  return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="inicio" />}    contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home" >
+
     <div className="se-body"><nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Editorial</span><RrppIcon nombre="flecha" /><strong>Inicio</strong></nav>
       <header className="se-page-header"><div><h1>Tu trabajo de hoy</h1>{user?.nombre && <p>Hola, {user.nombre}. Aquí tienes un resumen de la bandeja de Calidad y lo que requiere tu atención.</p>}</div><time>{today}</time></header>
       <HomeContent />

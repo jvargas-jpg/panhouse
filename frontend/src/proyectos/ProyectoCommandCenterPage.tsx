@@ -6,9 +6,9 @@ import type { ProjectCommandCenter, ProcesoProyecto } from '../../../shared/proj
 import { useMe } from '../auth/useAuth';
 import { apiFetch } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { RoleProjectNavigation, retornoProyecto, destinoProyectos, PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
-import { RRPP_FOOTER } from '../rrpp/RrppSidebarNav';
-import { TopBar } from '../layout/TopBar';
+import { RoleProjectNavigation, retornoProyecto, destinoProyectos } from '../layout/RoleProjectNavigation';
+
+
 import { Actividad, Card, dateFicha, Equipo, Estado, ReadFields } from './fichaViva/FichaElements';
 import { ExpedienteDocumental } from './fichaViva/ExpedienteDocumental';
 import { useActividadFicha } from './fichaViva/useFichaViva';
@@ -83,8 +83,8 @@ export function ProyectoCommandCenterPage() {
   const ficha = data?.ficha;
   const fichaEnShell = ficha && { ...ficha, traceability: ficha.traceability.map(a => a.workspace?.href.startsWith('/proyectos/'+id) ? { ...a, workspace: { ...a.workspace, href: to('operacion', {proceso: procesoHash(a.id)}) } } : a) };
   const areaSeleccionada = ficha?.traceability.find(a => a.id === (params.get('area') || location.hash.slice(1) || area))?.id ?? 'proyecto';
-  return <CrmSidebarLayout contexto="fullscreen" sidebarCompact sidebarBreakpoint="lg" nav={<RoleProjectNavigation rol={user?.rol} origen={origen}/>} logo={PRODUCTION_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1480px]" contentClassName="cc-container">
-    <div className="cc-global-bar"><span>Operación editorial</span><TopBar compacto/></div><RoleProjectNavigation rol={user?.rol} origen={origen} mobile/>
+  return <CrmSidebarLayout contexto="fullscreen"   nav={<RoleProjectNavigation rol={user?.rol} origen={origen}/>}   contentMaxWidth="max-w-[1480px]" contentClassName="cc-container">
+
     <div className="cc-body"><nav className="cc-breadcrumb" aria-label="Ubicación"><Link to={back}>← {origenLabel(origen, jefe)}</Link><span>/</span><span>Proyecto editorial</span></nav>
     {query.isPending ? <div className="cc-skeleton" role="status" aria-label="Cargando proyecto"><div/><div/><div/></div> : query.isError ? <Card title="No se pudo abrir el proyecto"><p role="alert">{query.error.message}</p><button className="fv-button" onClick={() => query.refetch()}>Reintentar</button></Card> : ficha && data && <>
       <header className="cc-header"><div><span className="cc-eyebrow">{jefe ? 'JEFATURA · SUPERVISIÓN EDITORIAL' : user?.rol==='rrpp' ? 'RRPP · COORDINACIÓN EDITORIAL' : 'ESPECIALISTA · COORDINACIÓN EDITORIAL'} <span>#{ficha.project.code}</span></span><h1>{ficha.project.title}</h1><p>{ficha.authors.map(a => a.name).join(' · ')}</p><div className="cc-meta"><span>{ficha.project.service}</span><span>{ficha.project.unit}</span><Estado state={ficha.project.macroState}/>{data.salud?.express.estado === 'confirmado' && <span className="cc-express">⚡ Express</span>}</div></div><div className="cc-header-side"><span>Fecha objetivo</span><strong>{dateFicha(data.salud?.fechaObjetivo ?? null)}</strong><small>Actualizado {dateFicha(ficha.project.updatedAt)}</small></div></header>

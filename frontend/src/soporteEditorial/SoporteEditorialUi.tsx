@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { RrppIcon } from '../rrpp/RrppIcons';
 
@@ -33,17 +33,4 @@ export function SoporteEditorialNavigation({ active, close }: { active: SoporteE
     <Link to={miTrabajoUrl()} aria-current={active === 'mi-trabajo' ? 'page' : undefined} onClick={close}><RrppIcon nombre="proceso" />Mi trabajo</Link>
     <Link to="/?vista=mis-solicitudes" aria-current={active === 'mis-solicitudes' ? 'page' : undefined} onClick={close}><RrppIcon nombre="comentarios" />Mis solicitudes</Link>
   </nav>;
-}
-
-export function SoporteEditorialMobileNavigation({ active }: { active: SoporteEditorialActiveRoute }) {
-  const ref = useRef<HTMLDialogElement>(null), [open, setOpen] = useState(false);
-  useEffect(() => { if (open) ref.current?.showModal(); else ref.current?.close(); }, [open]);
-  return <div className="se-mobile-nav">
-    <button onClick={() => setOpen(true)} aria-expanded={open} aria-controls="se-mobile-menu">☰ Menú de Soporte Editorial</button>
-    <dialog ref={ref} id="se-mobile-menu" aria-label="Menú de Soporte Editorial" onCancel={() => setOpen(false)}>
-      <button className="se-close-menu" onClick={() => setOpen(false)} aria-label="Cerrar menú">×</button>
-      <img src="/brand/panhouse-logo.webp" alt="PanHouse Casa Editorial" />
-      <SoporteEditorialNavigation active={active} close={() => setOpen(false)} />
-    </dialog>
-  </div>;
 }

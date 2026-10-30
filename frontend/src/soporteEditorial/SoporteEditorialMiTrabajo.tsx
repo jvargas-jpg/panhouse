@@ -6,13 +6,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { useMe } from '../auth/useAuth';
 import { EditorDetail, EditorSearch, EditorSelect, EditorSkeleton, useEditorDesktop, useEditorFilters } from '../editor/EditorUi';
 import { EditorEmpty } from '../editor/EditorParts';
-import { SoporteEditorialCover, SoporteEditorialMobileNavigation, SoporteEditorialNavigation, miTrabajoUrl, soporteEditorialDate, soporteEditorialWorkKey } from './SoporteEditorialUi';
+import { SoporteEditorialCover, SoporteEditorialNavigation, miTrabajoUrl, soporteEditorialDate, soporteEditorialWorkKey } from './SoporteEditorialUi';
 import { escalarColeccionValidacion, fetchMiTrabajoValidador, fetchMiTrabajoValidadorDetalle, iniciarValidacion, resolverValidacion } from './soporteEditorialWorkApi';
 import type { ValidatorCriterion, ValidatorWorkDetail, ValidatorWorkRow, ValidatorWorkStatus } from '../../../shared/soporteEditorialWork';
 
@@ -61,8 +61,8 @@ export function SoporteEditorialMiTrabajo() {
     document.addEventListener('keydown', escape, true);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape, true); };
   }, []);
-  return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="mi-trabajo" />} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home editor-shell" footer={<p className="se-footer">Historias que conectan.</p>}>
-    <div className="se-topbar"><div><RrppIcon nombre="libro" /><strong>Soporte Editorial</strong></div><TopBar compacto roleLabel="Soporte Editorial" /></div><SoporteEditorialMobileNavigation active="mi-trabajo" />
+  return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="mi-trabajo" />}    contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home editor-shell" >
+
     <div className="se-body">
       <nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Editorial</span><RrppIcon nombre="flecha" /><strong>Mi trabajo</strong></nav>
       <header className="se-page-header"><div><h1>Mis validaciones</h1><p>Revisa las rondas de validación de la bandeja de Calidad, consulta los materiales y registra tus observaciones.</p></div></header>

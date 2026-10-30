@@ -1,4 +1,5 @@
 import { nombreServicioProyecto, proyectarIngreso } from '../../shared/planificacion.js';
+import { assertFinancialGate } from './estadoFinanciero.js';
 import { and, asc, count, desc, eq, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
@@ -579,6 +580,8 @@ export async function guardarDatosDocumentales(id: string, area: string, input: 
         await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, id)).for('update');
         const [before] = await tx.select().from(fichaDocumentalDatos).where(and(eq(fichaDocumentalDatos.proyectoId, id), eq(fichaDocumentalDatos.seccion, area)));
         await verificarAccesoFichaViva(id, actor, tx);
+        if ((area === 'diseno' && (input.paqueteFinalCargado === true || input.paqueteFinalEntrega != null)) ||
+            (area === 'digital' && (input.cargaKdp != null || input.cargaKindle != null))) await assertFinancialGate(tx, id);
         if(area==='impresion'&&actor.rol==='rrpp') {
           const {verificarOperacionImpresion}=await import('./solicitudesArea.js');
           await verificarOperacionImpresion(tx,id,actor);

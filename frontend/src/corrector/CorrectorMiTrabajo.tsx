@@ -6,12 +6,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { EditorDetail, EditorSearch, EditorSelect, EditorSkeleton, useEditorDesktop, useEditorFilters } from '../editor/EditorUi';
 import { EditorEmpty } from '../editor/EditorParts';
-import { CorrectorCover, CorrectorMobileNavigation, CorrectorNavigation, correctorDate, correctorWorkKey } from './CorrectorUi';
+import { CorrectorCover, CorrectorNavigation, correctorDate, correctorWorkKey } from './CorrectorUi';
 import { fetchArchivosCorreccion, fetchMiTrabajoCorrector, fetchMiTrabajoCorrectorDetalle, registrarEntregaCorrector, reportarBloqueoCorrector } from './correctorWorkApi';
 import type { CorrectorWorkDetail, CorrectorWorkRow, CorrectorWorkStatus } from '../../../shared/correctorWork';
 
@@ -58,8 +58,8 @@ export function CorrectorMiTrabajo() {
     document.addEventListener('keydown', escape, true);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape, true); };
   }, []);
-  return <CrmSidebarLayout nav={<CorrectorNavigation active="mi-trabajo" />} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="corrector-layout" contentClassName="corrector-home editor-shell" footer={<p className="coh-footer">Historias que conectan.</p>}>
-    <div className="coh-topbar"><div><RrppIcon nombre="libro" /><strong>Corrector</strong></div><TopBar compacto roleLabel="Corrector" /></div><CorrectorMobileNavigation active="mi-trabajo" />
+  return <CrmSidebarLayout nav={<CorrectorNavigation active="mi-trabajo" />}    contentMaxWidth="max-w-none" shellClassName="corrector-layout" contentClassName="corrector-home editor-shell" >
+
     <div className="coh-body">
       <nav className="coh-breadcrumb" aria-label="Ruta de navegación"><span>Corrector</span><RrppIcon nombre="flecha" /><strong>Mi trabajo</strong></nav>
       <header className="coh-page-header"><div><h1>Mi trabajo</h1><p>Consulta las correcciones que tienes asignadas, revisa su estado y registra tus entregas.</p></div></header>

@@ -673,6 +673,13 @@
       "when": 1793202000000,
       "tag": "0095_administracion",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1793363834420,
+      "tag": "0096_elite_hercules",
+      "breakpoints": true
     }
   ]
 }

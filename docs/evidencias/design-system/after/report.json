@@ -1,0 +1,4688 @@
+{
+  "baseline": false,
+  "missingRoles": [
+    "talento_humano",
+    "autor"
+  ],
+  "screens": [
+    {
+      "role": "public",
+      "route": "/login",
+      "width": 1440,
+      "height": 900,
+      "file": "login-desktop.png",
+      "checks": "passed"
+    },
+    {
+      "role": "public",
+      "route": "/login",
+      "width": 768,
+      "height": 1024,
+      "file": "login-tablet.png",
+      "checks": "passed"
+    },
+    {
+      "role": "public",
+      "route": "/login",
+      "width": 375,
+      "height": 812,
+      "file": "login-mobile.png",
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "comercial-0-desktop.png",
+      "title": "Bienvenido, Comercial Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "comercial-0-tablet.png",
+      "title": "Bienvenido, Comercial Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "comercial-0-mobile.png",
+      "title": "Bienvenido, Comercial Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "comercial-1-desktop.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "comercial-1-tablet.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "comercial-1-mobile.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/comercial/pagos",
+      "width": 1440,
+      "height": 900,
+      "file": "comercial-2-desktop.png",
+      "title": "Pagos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/comercial/pagos",
+      "width": 768,
+      "height": 1024,
+      "file": "comercial-2-tablet.png",
+      "title": "Pagos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "comercial",
+      "route": "/comercial/pagos",
+      "width": 375,
+      "height": 812,
+      "file": "comercial-2-mobile.png",
+      "title": "Pagos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "rrpp-0-desktop.png",
+      "title": "Bienvenido, RRPP Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "26px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "rrpp-0-tablet.png",
+      "title": "Bienvenido, RRPP Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "26px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "rrpp-0-mobile.png",
+      "title": "Bienvenido, RRPP Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "26px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 32
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "rrpp-1-desktop.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "27px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 41
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "rrpp-1-tablet.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "27px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 41
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "rrpp-1-mobile.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "27px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 41
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "rrpp-2-desktop.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "rrpp-2-tablet.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "rrpp",
+      "route": "/rrpp/solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "rrpp-2-mobile.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_area-0-desktop.png",
+      "title": "Hola, Jefe Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_area-0-tablet.png",
+      "title": "Hola, Jefe Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_area-0-mobile.png",
+      "title": "Hola, Jefe Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=asignaciones",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_area-1-desktop.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=asignaciones",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_area-1-tablet.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=asignaciones",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_area-1-mobile.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_area-2-desktop.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_area-2-tablet.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_area-2-mobile.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=decisiones",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_area-3-desktop.png",
+      "title": "Decisiones y escalaciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=decisiones",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_area-3-tablet.png",
+      "title": "Decisiones y escalaciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_area",
+      "route": "/?vista=decisiones",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_area-3-mobile.png",
+      "title": "Decisiones y escalaciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "especialista-0-desktop.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "especialista-0-tablet.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "especialista-0-mobile.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "TABLE",
+          "class": "ei-table"
+        },
+        {
+          "tag": "THEAD",
+          "class": ""
+        },
+        {
+          "tag": "TR",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mis-proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "especialista-1-desktop.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mis-proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "especialista-1-tablet.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        },
+        {
+          "tag": "DIV",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mis-proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "especialista-1-mobile.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "especialista-2-desktop.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "especialista-2-tablet.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "especialista-2-mobile.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "especialista-3-desktop.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "especialista-3-tablet.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "especialista",
+      "route": "/?vista=solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "especialista-3-mobile.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_edicion-0-desktop.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_edicion-0-tablet.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_edicion-0-mobile.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=asignaciones",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_edicion-1-desktop.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=asignaciones",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_edicion-1-tablet.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=asignaciones",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_edicion-1-mobile.png",
+      "title": "Asignaciones y carga",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=proyectos-edicion",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_edicion-2-desktop.png",
+      "title": "Proyectos de edición",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=proyectos-edicion",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_edicion-2-tablet.png",
+      "title": "Proyectos de edición",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=proyectos-edicion",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_edicion-2-mobile.png",
+      "title": "Proyectos de edición",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=solicitudes-edicion",
+      "width": 1440,
+      "height": 900,
+      "file": "jefe_edicion-3-desktop.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=solicitudes-edicion",
+      "width": 768,
+      "height": 1024,
+      "file": "jefe_edicion-3-tablet.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "jefe_edicion",
+      "route": "/?vista=solicitudes-edicion",
+      "width": 375,
+      "height": 812,
+      "file": "jefe_edicion-3-mobile.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "editor-0-desktop.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "editor-0-tablet.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "editor-0-mobile.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "editor-1-desktop.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "editor-1-tablet.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "editor-1-mobile.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mis-proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "editor-2-desktop.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mis-proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "editor-2-tablet.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mis-proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "editor-2-mobile.png",
+      "title": "Mis proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mis-solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "editor-3-desktop.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mis-solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "editor-3-tablet.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "editor",
+      "route": "/?vista=mis-solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "editor-3-mobile.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "corrector-0-desktop.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "corrector-0-tablet.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "corrector-0-mobile.png",
+      "title": "Inicio",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "corrector-1-desktop.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "corrector-1-tablet.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "corrector-1-mobile.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mis-solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "corrector-2-desktop.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mis-solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "corrector-2-tablet.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "corrector",
+      "route": "/?vista=mis-solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "corrector-2-mobile.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_editorial-0-desktop.png",
+      "title": "Tu trabajo de hoy",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_editorial-0-tablet.png",
+      "title": "Tu trabajo de hoy",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_editorial-0-mobile.png",
+      "title": "Tu trabajo de hoy",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_editorial-1-desktop.png",
+      "title": "Mis validaciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_editorial-1-tablet.png",
+      "title": "Mis validaciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_editorial-1-mobile.png",
+      "title": "Mis validaciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mis-solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_editorial-2-desktop.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mis-solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_editorial-2-tablet.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_editorial",
+      "route": "/?vista=mis-solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_editorial-2-mobile.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "lider_creativo-0-desktop.png",
+      "title": "Hola, Editor Dos Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "lider_creativo-0-tablet.png",
+      "title": "Hola, Editor Dos Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "lider_creativo-0-mobile.png",
+      "title": "Hola, Editor Dos Demo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "lider_creativo-1-desktop.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "lider_creativo-1-tablet.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "lider_creativo-1-mobile.png",
+      "title": "Mi trabajo",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": "cw-category-icon RESOURCES"
+        },
+        {
+          "tag": "svg",
+          "class": {}
+        },
+        {
+          "tag": "path",
+          "class": {}
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "STRONG",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": "cw-category-icon COVER_REVIEW"
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=proyectos-creativos",
+      "width": 1440,
+      "height": 900,
+      "file": "lider_creativo-2-desktop.png",
+      "title": "Proyectos creativos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=proyectos-creativos",
+      "width": 768,
+      "height": 1024,
+      "file": "lider_creativo-2-tablet.png",
+      "title": "Proyectos creativos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=proyectos-creativos",
+      "width": 375,
+      "height": 812,
+      "file": "lider_creativo-2-mobile.png",
+      "title": "Proyectos creativos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": "cp-category-icon concepts"
+        },
+        {
+          "tag": "svg",
+          "class": {}
+        },
+        {
+          "tag": "path",
+          "class": {}
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "STRONG",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": "cp-category-icon resources"
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "lider_creativo-3-desktop.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "lider_creativo-3-tablet.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "lider_creativo",
+      "route": "/?vista=solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "lider_creativo-3-mobile.png",
+      "title": "Solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": "cp-category-icon rejected"
+        },
+        {
+          "tag": "svg",
+          "class": {}
+        },
+        {
+          "tag": "path",
+          "class": {}
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "STRONG",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "disenador",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "disenador-0-desktop.png",
+      "title": "Mis trabajos de Diseño",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "disenador",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "disenador-0-tablet.png",
+      "title": "Mis trabajos de Diseño",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "disenador",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "disenador-0-mobile.png",
+      "title": "Mis trabajos de Diseño",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_digital-0-desktop.png",
+      "title": "Tu trabajo digital de hoy",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_digital-0-tablet.png",
+      "title": "Tu trabajo digital de hoy",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_digital-0-mobile.png",
+      "title": "Tu trabajo digital de hoy",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mi-trabajo",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_digital-1-desktop.png",
+      "title": "Mis tareas digitales",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mi-trabajo",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_digital-1-tablet.png",
+      "title": "Mis tareas digitales",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mi-trabajo",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_digital-1-mobile.png",
+      "title": "Mis tareas digitales",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mis-solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "soporte_digital-2-desktop.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mis-solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "soporte_digital-2-tablet.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "soporte_digital",
+      "route": "/?vista=mis-solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "soporte_digital-2-mobile.png",
+      "title": "Mis solicitudes",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "SPAN",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "direccion",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "direccion-0-desktop.png",
+      "heading": null,
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "direccion",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "direccion-0-tablet.png",
+      "heading": null,
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "direccion",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "direccion-0-mobile.png",
+      "heading": null,
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "direccion",
+      "route": "/proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "direccion-1-desktop.png",
+      "heading": null,
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "direccion",
+      "route": "/proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "direccion-1-tablet.png",
+      "heading": null,
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "direccion",
+      "route": "/proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "direccion-1-mobile.png",
+      "heading": null,
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/inicio",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-0-desktop.png",
+      "title": "El pulso de PanHouse",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/inicio",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-0-tablet.png",
+      "title": "El pulso de PanHouse",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/inicio",
+      "width": 375,
+      "height": 812,
+      "file": "admin-0-mobile.png",
+      "title": "El pulso de PanHouse",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/pipeline",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-1-desktop.png",
+      "title": "Pipeline global",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [
+        {
+          "tag": "TABLE",
+          "class": "ad-table ad-pipeline-table"
+        },
+        {
+          "tag": "THEAD",
+          "class": ""
+        },
+        {
+          "tag": "TR",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TH",
+          "class": ""
+        },
+        {
+          "tag": "TBODY",
+          "class": ""
+        },
+        {
+          "tag": "TR",
+          "class": ""
+        }
+      ],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/pipeline",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-1-tablet.png",
+      "title": "Pipeline global",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/pipeline",
+      "width": 375,
+      "height": 812,
+      "file": "admin-1-mobile.png",
+      "title": "Pipeline global",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/proyectos",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-2-desktop.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/proyectos",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-2-tablet.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/proyectos",
+      "width": 375,
+      "height": 812,
+      "file": "admin-2-mobile.png",
+      "title": "Proyectos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/personas",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-3-desktop.png",
+      "title": "Personas y accesos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/personas",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-3-tablet.png",
+      "title": "Personas y accesos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/personas",
+      "width": 375,
+      "height": 812,
+      "file": "admin-3-mobile.png",
+      "title": "Personas y accesos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/actividad",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-4-desktop.png",
+      "title": "Actividad y auditoría",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/actividad",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-4-tablet.png",
+      "title": "Actividad y auditoría",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/actividad",
+      "width": 375,
+      "height": 812,
+      "file": "admin-4-mobile.png",
+      "title": "Actividad y auditoría",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/solicitudes",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-5-desktop.png",
+      "title": "Solicitudes e incidencias",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/solicitudes",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-5-tablet.png",
+      "title": "Solicitudes e incidencias",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/solicitudes",
+      "width": 375,
+      "height": 812,
+      "file": "admin-5-mobile.png",
+      "title": "Solicitudes e incidencias",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/integraciones",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-6-desktop.png",
+      "title": "Integraciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/integraciones",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-6-tablet.png",
+      "title": "Integraciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/integraciones",
+      "width": 375,
+      "height": 812,
+      "file": "admin-6-mobile.png",
+      "title": "Integraciones",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/configuracion",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-7-desktop.png",
+      "title": "Configuración",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/configuracion",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-7-tablet.png",
+      "title": "Configuración",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/configuracion",
+      "width": 375,
+      "height": 812,
+      "file": "admin-7-mobile.png",
+      "title": "Configuración",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        },
+        {
+          "tag": "BUTTON",
+          "class": ""
+        }
+      ],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/salud",
+      "width": 1440,
+      "height": 900,
+      "file": "admin-8-desktop.png",
+      "title": "Salud del sistema",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/salud",
+      "width": 768,
+      "height": 1024,
+      "file": "admin-8-tablet.png",
+      "title": "Salud del sistema",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "admin",
+      "route": "/admin/salud",
+      "width": 375,
+      "height": 812,
+      "file": "admin-8-mobile.png",
+      "title": "Salud del sistema",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "13px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "cobranzas",
+      "route": "/",
+      "width": 1440,
+      "height": 900,
+      "file": "cobranzas-0-desktop.png",
+      "title": "Pagos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 840
+      },
+      "documentWidth": 1440,
+      "overflowing": [],
+      "checks": "passed"
+    },
+    {
+      "role": "cobranzas",
+      "route": "/",
+      "width": 768,
+      "height": 1024,
+      "file": "cobranzas-0-tablet.png",
+      "title": "Pagos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 768,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    },
+    {
+      "role": "cobranzas",
+      "route": "/",
+      "width": 375,
+      "height": 812,
+      "file": "cobranzas-0-mobile.png",
+      "title": "Pagos",
+      "heading": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "24px",
+        "background": "rgba(0, 0, 0, 0)",
+        "height": 31
+      },
+      "topbar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(255, 255, 255)",
+        "height": 60
+      },
+      "sidebar": {
+        "font": "ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif",
+        "size": "16px",
+        "background": "rgb(17, 24, 39)",
+        "height": 0
+      },
+      "documentWidth": 375,
+      "overflowing": [],
+      "navigation": "passed",
+      "checks": "passed"
+    }
+  ],
+  "errors": []
+}

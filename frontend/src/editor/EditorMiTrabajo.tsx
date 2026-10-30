@@ -1,3 +1,4 @@
+import { Dialog } from '../design-system/Dialog';
 import './editor.css';
 import './miTrabajo.css';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
@@ -90,19 +91,7 @@ export function EditorMiTrabajo() {
   </section>;
 }
 
-function WorkDialog({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => { const dialog = ref.current; dialog?.showModal(); return () => dialog?.close(); }, []);
-  return <dialog ref={ref} className="mw-dialog" aria-labelledby="mw-dialog-title" onKeyDown={e => {
-    if (e.key === 'Escape') e.stopPropagation();
-    if (e.key !== 'Tab') return;
-    e.stopPropagation();
-    const controls = Array.from(ref.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href]') ?? []).filter(el => el.getClientRects().length > 0);
-    const first = controls[0], last = controls[controls.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last?.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first?.focus(); }
-  }} onCancel={e => { e.preventDefault(); onClose(); }}><header><h3 id="mw-dialog-title">{title}</h3><button type="button" aria-label="Cerrar formulario" onClick={onClose}>×</button></header>{children}</dialog>;
-}
+function WorkDialog({title,onClose,children}:{title:string;onClose:()=>void;children:ReactNode}){return <Dialog title={title} onClose={onClose} className="mw-dialog">{children}</Dialog>;}
 function MiTrabajoDetail({ id, open, onClose, initialAction }: { id: string; open: boolean; onClose: () => void; initialAction: string | null }) {
   const cache = useQueryClient();
   const desktop = useEditorDesktop();

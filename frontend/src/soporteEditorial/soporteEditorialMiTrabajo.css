@@ -4,7 +4,7 @@
    que ya usa .soporte-editorial-layout (soporteEditorialHome.css), para
    que el detalle, los formularios y los botones se vean consistentes con
    el resto del rol sin heredar el fondo/sidebar de Editor. */
-.soporte-editorial-home.editor-shell { --eo-ink: #172b43; --eo-muted: #6c7d93; --eo-line: #e5e9ed; --eo-navy: #0c2030; --eo-gold: #b38e42; }
+.soporte-editorial-home.editor-shell { --eo-ink: var(--ph-ink); --eo-muted: var(--ph-muted); --eo-line: var(--ph-line); --eo-navy: var(--ph-navy); --eo-gold: var(--ph-gold-text); }
 .soporte-editorial-home .mw-detail-header .se-cover { width: 38px; height: 54px; }
 .soporte-editorial-home .se-soon { color: #ac8537; }
 .soporte-editorial-home .mw-detail-header small { display: block; margin-top: 4px; color: var(--eo-muted); font-size: 11px; }
@@ -32,27 +32,27 @@
 .soporte-editorial-home .se-work-table th:nth-child(5) { width: 13%; }
 .soporte-editorial-home .se-work-table th:nth-child(6) { width: 13%; }
 .soporte-editorial-home .se-work-table th:nth-child(7) { width: 3%; }
-.soporte-editorial-home .mw-list .se-work-table td > small { display: block; margin-top: 3px; color: #8090a4; }
+.soporte-editorial-home .mw-list .se-work-table td > small { display: block; margin-top: 3px; color: var(--ph-subtle); }
 
 /* Checklist real de Calidad (criterios), nunca una taxonomía inventada. */
 .soporte-editorial-home .se-criteria { display: grid; gap: 10px; grid-template-columns: 1fr; margin: 12px 0; }
 .soporte-editorial-home .se-criterion { min-width: 0; border: 1px solid var(--eo-line); border-radius: 6px; padding: 8px; }
 .soporte-editorial-home .se-criterion label { display: block; font-size: 11px; color: #59677b; margin-bottom: 6px; }
-.soporte-editorial-home .se-criterion select, .soporte-editorial-home .se-criterion input { width: 100%; border: 1px solid #dce0e5; border-radius: 5px; padding: 7px; font-size: 12px; color: #24364b; }
+.soporte-editorial-home .se-criterion select, .soporte-editorial-home .se-criterion input { width: 100%; border: 1px solid var(--ph-line); border-radius: 5px; padding: 7px; font-size: 12px; color: #24364b; }
 .soporte-editorial-home .se-criterion input { margin-top: 6px; }
 .soporte-editorial-home .se-criteria-review { margin-top: 14px; font-size: 12px; }
 .soporte-editorial-home .se-criteria-review summary { cursor: pointer; color: #68778d; }
 .soporte-editorial-home .se-criteria-review ul { margin-top: 10px; display: grid; gap: 6px; list-style: none; padding: 0; }
 .soporte-editorial-home .mw-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
 .soporte-editorial-home .mw-field-row label { font-size: 11px; color: #59677b; display: grid; gap: 5px; }
-.soporte-editorial-home .mw-field-row input { border: 1px solid #dce0e5; border-radius: 5px; padding: 8px; font-size: 12px; color: #24364b; }
+.soporte-editorial-home .mw-field-row input { border: 1px solid var(--ph-line); border-radius: 5px; padding: 8px; font-size: 12px; color: #24364b; }
 .soporte-editorial-home .mw-field-row p { font-size: 11px; color: #6a7a90; align-self: end; margin: 0 0 8px; }
 
 /* Escalación a Jefatura por colección inconsistente (criterio logo_coleccion). */
-.soporte-editorial-home .se-escalate { border: 1px solid #f3e7cb; background: #fffaf0; border-radius: 6px; padding: 10px 12px; margin: 14px 0; }
+.soporte-editorial-home .se-escalate { border: 1px solid #f3e7cb; background: var(--ph-gold-soft); border-radius: 6px; padding: 10px 12px; margin: 14px 0; }
 .soporte-editorial-home .se-escalate summary { cursor: pointer; font-size: 12px; color: #8a6a32; font-weight: 500; }
 .soporte-editorial-home .se-escalate-body { margin-top: 10px; display: grid; gap: 10px; }
-.soporte-editorial-home .se-escalate-body textarea { width: 100%; border: 1px solid #dce0e5; border-radius: 5px; padding: 8px; font-size: 12px; min-height: 70px; }
+.soporte-editorial-home .se-escalate-body textarea { width: 100%; border: 1px solid var(--ph-line); border-radius: 5px; padding: 8px; font-size: 12px; min-height: 70px; }
 
 @media (max-width: 767px) {
   .soporte-editorial-home .mw-list .eo-table tbody tr { gap: 10px 12px; padding: 16px 14px; }

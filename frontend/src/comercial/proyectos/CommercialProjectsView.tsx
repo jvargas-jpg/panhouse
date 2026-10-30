@@ -6,7 +6,7 @@ import { eliminarProyecto } from '../../jefatura/jefaturaApi';
 import { CrmSidebarLayout } from '../../layout/CrmSidebarLayout';
 import { fetchProyectosActivos } from '../../proyectos/proyectosApi';
 import type { ProyectoPendienteSeccion1 } from '../../types/api';
-import { COMERCIAL_FOOTER, COMERCIAL_LOGO, ComercialSidebarNav } from '../ComercialSidebarNav';
+import { ComercialSidebarNav } from '../ComercialSidebarNav';
 import { fetchMetricasComercial } from '../metricasApi';
 import { ProjectsKpis } from './ProjectsKpis';
 import { ProjectsList } from './ProjectsList';
@@ -49,7 +49,7 @@ export function CommercialProjectsView() {
     if (window.confirm(`¿Eliminar "${projectName(p)}"? Esta acción no se puede deshacer.`)) borrar.mutate(p.id);
   }
 
-  return <CrmSidebarLayout logo={COMERCIAL_LOGO} footer={COMERCIAL_FOOTER} contentMaxWidth="max-w-[1440px]" nav={<ComercialSidebarNav activo="proyectos" />} overlays={<>
+  return <CrmSidebarLayout   contentMaxWidth="max-w-[1440px]" nav={<ComercialSidebarNav activo="proyectos" />} overlays={<>
     {modal && <ProjectModal onClose={() => setModal(false)} proyectoEnEdicion={edicion} onGuardado={(mensaje) => { setModal(false); invalidar(); setAviso({ mensaje, error: false }); }} />}
     {aviso && <Toast mensaje={aviso.mensaje} variante={aviso.error ? 'error' : undefined} />}
   </>}>

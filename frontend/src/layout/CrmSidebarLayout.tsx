@@ -1,111 +1,26 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { BrandFooter, PanhouseLogo } from '../design-system/Brand';
+import { Dialog } from '../design-system/Dialog';
+import { useShellNavigation } from './AppFrame';
 
-// AppLayout.tsx envuelve toda la app en <TopBar/> + <main className="mx-auto
-// max-w-4xl flex-1 overflow-y-auto px-4 py-6 sm:px-6">. Sin el breakout
-// horizontal (ml/mr negativos + w-screen) el flex del sidebar quedaría
-// atrapado en esa columna angosta de 896px. -my-6 cancela la posición
-// del padding vertical de ese <main> (py-6 = 24px arriba y abajo)
-// empujando el elemento hacia arriba — pero SOLO la posición, no el
-// alto: el alto real (ver ALTO_LLENO_MAIN más abajo) necesita su propio
-// ajuste aparte.
-const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen -my-6';
+export const NAV_ACTIVO = 'ph-nav-item ph-nav-active';
+export const NAV_INACTIVO = 'ph-nav-item';
 
-// h-full por sí solo deja una franja de 48px de bg-crema sin cubrir en
-// el fondo (bug real, confirmado midiendo con Playwright): h-full
-// resuelve contra la CAJA DE CONTENIDO de <main> (ya descontado su
-// propio padding, py-6 = 24px arriba + 24px abajo = 48px), pero -my-6
-// de arriba solo corrige la POSICIÓN (empuja hacia arriba 24px) — un
-// margin-bottom negativo no puede "devolver" esos mismos 24px como
-// ALTO del elemento, solo afecta a hermanos que vengan después (acá no
-// hay ninguno). +3rem (48px) es exactamente ese padding total de
-// <main> — si su py-6 cambia alguna vez, este valor cambia con él.
-const ALTO_LLENO_MAIN = 'h-[calc(100%+3rem)]';
-
-export const NAV_ACTIVO =
-  'w-full flex items-center gap-3 px-4 py-3 bg-dorado/10 text-dorado rounded-xl font-semibold text-sm border border-dorado/20 transition-all text-left';
-export const NAV_INACTIVO =
-  'w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-white hover:bg-gray-800 rounded-xl font-medium text-sm transition-all text-left';
-
-// Barra de navegación principal oscura y global (logo PanHouse + menú),
-// extraída de AutoresPage.tsx (donde nació, exclusiva de comercial/
-// dirección) para que cualquier rol con una pantalla "estilo CRM" la
-// comparta — hoy además rrpp (RrppHomePage.tsx). Mismo patrón sidebar
-// fijo + panel de contenido que ya documentaba AppLayout.tsx para
-// MisProyectosPage/AuditoriaPagosPage/PanelJefaturaPage, pero esas tres
-// no se tocaron: siguen con su propia copia hasta que alguien las migre
-// a este componente compartido, no es parte de este cambio.
-//
-// nav: contenido de <nav> (los botones de navegación, con estilo
-// NAV_ACTIVO/NAV_INACTIVO de arriba) — cada página decide sus propios
-// enlaces. children: panel de contenido a la derecha, con scroll propio
-// y un ancho máximo configurable (default max-w-5xl, el que ya usaba
-// AutoresPage.tsx). overlays (opcional): modales/toasts — siblings del
-// panel de contenido, no adentro (para no quedar recortados por su
-// overflow).
-//
-// logo/contentMaxWidth/footer: los tres opcionales, con default =
-// exactamente el comportamiento que ya tenía este componente antes de
-// agregarlos — AutoresPage.tsx/RrppHomePage.tsx/RrppMetricasPage.tsx (los
-// tres consumidores existentes) no los pasan, así que no cambian ni un
-// píxel. Se agregaron para que ComercialDashboardPage.tsx pudiera
-// reutilizar este mismo shell (logo real en vez del wordmark de texto,
-// más ancho de contenido, un pie de página) sin duplicar el sidebar.
-export function CrmSidebarLayout({
-  nav,
-  children,
-  overlays,
-  logo,
-  contentMaxWidth = 'max-w-5xl',
-  footer,
-  contexto = 'app',
-  contentClassName = 'px-6 py-10',
-  sidebarBreakpoint = 'md',
-  sidebarCompact = false,
-  sidebarWidth,
-  shellClassName = '',
+/** Shared visual shell; navigation and content keep each role's information architecture. */
+export function CrmSidebarLayout({ nav, children, overlays, contentMaxWidth = 'max-w-5xl', contexto = 'app',
+  contentClassName = 'px-6 py-10', shellClassName = '',
 }: {
-  nav: ReactNode;
-  children: ReactNode;
-  overlays?: ReactNode;
-  logo?: ReactNode;
-  contentMaxWidth?: string;
-  footer?: ReactNode;
-  contexto?: 'app' | 'fullscreen';
-  contentClassName?: string;
-  sidebarBreakpoint?: 'md' | 'lg';
-  sidebarCompact?: boolean;
-  sidebarWidth?: number;
+  nav: ReactNode; children: ReactNode; overlays?: ReactNode;
+  contentMaxWidth?: string; contexto?: 'app' | 'fullscreen'; contentClassName?: string;
   shellClassName?: string;
 }) {
-  return (
-    <div className={`${contexto === 'fullscreen' ? 'h-full w-full' : `${FULL_BLEED} ${ALTO_LLENO_MAIN}`} flex overflow-hidden bg-[#F8F9FA] ${shellClassName}`}>
-      <aside style={sidebarWidth ? { width: sidebarWidth } : undefined} className={`z-20 hidden h-full ${sidebarCompact ? 'w-56' : 'w-64'} flex-shrink-0 flex-col border-r border-gray-800 bg-gray-900 shadow-xl ${sidebarBreakpoint === 'lg' ? 'lg:flex' : 'md:flex'}`}>
-        <div className="flex h-20 items-center border-b border-gray-800 px-6">
-          {logo ?? (
-            <h1 className="text-xl font-light uppercase tracking-widest text-white">
-              Pan<span className="font-bold text-dorado">House</span>
-            </h1>
-          )}
-        </div>
-
-        <nav className="flex-1 space-y-2 px-4 py-8">{nav}</nav>
-
-        {footer}
-      </aside>
-
-      {/* AppLayout.tsx ya envuelve el Outlet en un <main> — dos <main>
-          anidados no son válidos (landmark duplicado), así que este
-          contenedor de scroll independiente es un <div> con las mismas
-          clases. Es la ÚNICA región que scrollea acá adentro: el <div>
-          raíz de arriba llena exacto el <main> de AppLayout.tsx (ver
-          ALTO_LLENO_MAIN, ya acotado a la pantalla) y es
-          overflow-hidden, así que <main> nunca ve contenido de sobra y
-          nunca muestra su propio scrollbar. */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className={`mx-auto w-full ${contentMaxWidth} ${contentClassName}`}>{children}</div>
-      </div>
-
-      {overlays}
-    </div>
-  );
+  const { open, setOpen, setAvailable } = useShellNavigation();
+  useEffect(() => { setAvailable(true); return () => setAvailable(false); }, [setAvailable]);
+  const navigation = <div className="ph-sidebar-navigation">{nav}</div>;
+  return <div className={`ph-shell ${contexto === 'fullscreen' ? 'h-full w-full' : 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen -my-6 h-[calc(100%+3rem)]'} flex overflow-hidden ${shellClassName}`}>
+    <aside className="ph-sidebar"><div className="ph-brand"><PanhouseLogo /></div>{navigation}<BrandFooter /></aside>
+    <div className="ph-content-scroll flex-1 overflow-y-auto overflow-x-hidden"><div className={`ph-content mx-auto w-full ${contentMaxWidth} ${contentClassName}`}>{children}</div></div>
+    {overlays}
+    {open && <Dialog title="Navegación de PanHouse" variant="navigation" onClose={() => setOpen(false)}><div id="ph-mobile-navigation" className="ph-navigation-body"><div className="ph-brand"><PanhouseLogo /></div><div onClick={e => { if ((e.target as HTMLElement).closest('a,button')) setOpen(false); }}>{navigation}</div><BrandFooter /></div></Dialog>}
+  </div>;
 }

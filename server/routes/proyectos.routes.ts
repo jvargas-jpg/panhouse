@@ -35,6 +35,7 @@ import {
 } from '../helpers/proyectos.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
+import { montoDineroSchema, monedaDineroSchema } from '../helpers/validacionDinero.js';
 
 const idParamSchema = z.object({ id: z.string().uuid() });
 
@@ -52,7 +53,9 @@ const crearProyectoSchema = z.object({
   fechaProgramadaInicio: z.string(),
   fechaRealInicio: z.string().optional(),
   fechaDeseadaAutor: z.string().optional(),
-});
+  montoContractual:montoDineroSchema.optional(),
+  monedaContractual:monedaDineroSchema.optional(),
+}).refine(v => (v.montoContractual == null) === (v.monedaContractual == null), 'Indica el monto total y su moneda juntos');
 
 // Corregir los parámetros comerciales de un proyecto ya creado —
 // coautoría (autorIds; ver reasignarProyecto en helpers/proyectos.ts,
@@ -191,7 +194,7 @@ export async function proyectosRoutes(app: FastifyInstance) {
     const body = parseOrReply(crearProyectoSchema, request.body, reply);
     if (!body) return;
 
-    const resultado = await crearProyecto(body);
+    const resultado = await crearProyecto(body, request.user!);
     if (!resultado.ok) {
       return reply.code(resultado.status).send({ error: resultado.error });
     }

@@ -1,0 +1,187 @@
+{
+  "checks": [
+    {
+      "role": "comercial",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "admin",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "admin",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "admin",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "lider_creativo",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "lider_creativo",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    }
+  ],
+  "errors": [
+    {
+      "role": "comercial",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "error": "Tab queda dentro del menú\n\nfalse !== true\n"
+    },
+    {
+      "role": "comercial",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "error": "Tab queda dentro del menú\n\nfalse !== true\n"
+    },
+    {
+      "role": "admin",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "error": "Tab queda dentro del menú\n\nfalse !== true\n"
+    },
+    {
+      "role": "admin",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "error": "Tab queda dentro del menú\n\nfalse !== true\n"
+    },
+    {
+      "role": "editor",
+      "name": "panel",
+      "size": "desktop",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Ver detalle', exact: true }).first()\u001b[22m\n"
+    },
+    {
+      "role": "editor",
+      "name": "panel",
+      "size": "tablet",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Ver detalle', exact: true }).first()\u001b[22m\n"
+    },
+    {
+      "role": "editor",
+      "name": "panel",
+      "size": "mobile",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Ver detalle', exact: true }).first()\u001b[22m\n"
+    },
+    {
+      "role": "lider_creativo",
+      "name": "panel",
+      "size": "desktop",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Preparar brief', exact: true }).first()\u001b[22m\n"
+    },
+    {
+      "role": "lider_creativo",
+      "name": "panel",
+      "size": "tablet",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Preparar brief', exact: true }).first()\u001b[22m\n"
+    },
+    {
+      "role": "lider_creativo",
+      "name": "panel",
+      "size": "mobile",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Preparar brief', exact: true }).first()\u001b[22m\n"
+    },
+    {
+      "role": "soporte_digital",
+      "name": "panel",
+      "size": "desktop",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Ver detalle', exact: true }).first()\u001b[22m\n"
+    },
+    {
+      "role": "soporte_digital",
+      "name": "panel",
+      "size": "tablet",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Ver detalle', exact: true }).first()\u001b[22m\n"
+    },
+    {
+      "role": "soporte_digital",
+      "name": "panel",
+      "size": "mobile",
+      "error": "locator.click: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Ver detalle', exact: true }).first()\u001b[22m\n"
+    }
+  ],
+  "preventedWrites": []
+}

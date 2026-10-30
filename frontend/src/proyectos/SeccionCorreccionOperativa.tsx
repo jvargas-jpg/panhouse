@@ -418,7 +418,7 @@ function TarjetaCorreccion({ correccion, proyectoId, puedeOperar }: { correccion
       </div>
 
       {correccion.requiereRevisionPrevia && !correccion.revisionPreviaConfirmada && (
-        <p className="mt-2 text-xs font-medium text-amber-700">⚠ Supera 120 páginas — requiere revisión previa antes de asignar.</p>
+        <p className="mt-2 text-xs font-medium text-amber-700">Supera 120 páginas — requiere revisión previa antes de asignar.</p>
       )}
 
       {tieneCorrector && (

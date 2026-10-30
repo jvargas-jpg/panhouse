@@ -8,12 +8,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
 import { ApiError } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { EditorDetail, EditorSearch, EditorSelect, EditorSkeleton, useEditorDesktop, useEditorFilters } from '../editor/EditorUi';
 import { EditorEmpty } from '../editor/EditorParts';
 import { RrppIcon } from '../rrpp/RrppIcons';
-import { SoporteEditorialCover, SoporteEditorialMobileNavigation, SoporteEditorialNavigation, miTrabajoUrl, soporteEditorialDate } from './SoporteEditorialUi';
+import { SoporteEditorialCover, SoporteEditorialNavigation, miTrabajoUrl, soporteEditorialDate } from './SoporteEditorialUi';
 import { QUALITY_REQUEST_LABELS, QUALITY_REQUEST_STATUS_LABELS, QUALITY_REQUEST_TYPES, QUALITY_REQUEST_STATUSES, type QualityRequestContext, type QualityRequestDetail, type QualityRequestType } from '../../../shared/soporteEditorialRequests';
 import { answerQualityRequest, cancelQualityRequest, createQualityRequest, fetchQualityRequestContexts, fetchQualityRequestDetail, fetchQualityRequests, qualityRequestsKey } from './soporteEditorialRequestsApi';
 
@@ -69,8 +69,8 @@ export function SoporteEditorialMisSolicitudes() {
     document.addEventListener('pointerdown', outside); document.addEventListener('keydown', escape, true);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape, true); };
   }, []);
-  return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="mis-solicitudes" />} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home editor-shell se-requests" footer={<p className="se-footer">Historias que conectan.</p>}>
-    <div className="se-topbar"><div><RrppIcon nombre="libro" /><strong>Soporte Editorial</strong></div><TopBar compacto roleLabel="Soporte Editorial" /></div><SoporteEditorialMobileNavigation active="mis-solicitudes" />
+  return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="mis-solicitudes" />}    contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home editor-shell se-requests" >
+
     <div className="se-body">
       <nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Editorial</span><RrppIcon nombre="flecha" /><strong>Mis solicitudes</strong></nav>
       <header className="se-page-header"><div><h1>Mis solicitudes</h1><p>Consulta las solicitudes que has enviado relacionadas con tus validaciones y revisa su estado.</p></div><button type="button" className="ec-primary" onClick={() => change('create', '1')}><RrppIcon nombre="ingreso" />Nueva solicitud</button></header>

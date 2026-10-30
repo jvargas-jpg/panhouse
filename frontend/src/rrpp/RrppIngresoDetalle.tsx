@@ -409,7 +409,7 @@ export function RrppIngresoDetalle({
               >
                 {i.preparacion.listoParaJefatura
                   ? '✓ Pendientes resueltos'
-                  : '⚠ Pendientes para completar'}
+                  : 'Pendientes para completar'}
               </h4>
               <p className="mt-2 text-[11px] leading-5 text-slate-500">
                 {i.estado === 'enviado'

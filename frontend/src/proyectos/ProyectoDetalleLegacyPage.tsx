@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
 import { RoleProjectNavigation, destinoProyectos, retornoProyecto } from '../layout/RoleProjectNavigation';
-import { RRPP_FOOTER, RRPP_LOGO } from '../rrpp/RrppSidebarNav';
+
 import { useMe } from '../auth/useAuth';
 import { EstadoBadge } from './EstadoBadge';
 import { EstadoTraspasoBadge } from './EstadoTraspasoBadge';
@@ -34,17 +34,17 @@ function FaseIngresoPointer({ proyectoId }: { proyectoId: string }) {
   const [params] = useSearchParams();
   const origen = retornoProyecto(params.get('volver'));
   return (
-    <div className="flex w-full flex-col items-start gap-4 rounded-xl border-2 border-purple-300 bg-purple-50/40 p-6 sm:flex-row sm:items-center sm:justify-between">
+    <div className="ph-surface flex w-full flex-col items-start gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <span className="rounded-full bg-purple-600 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wide text-white">RRPP</span>
-        <h2 className="mt-2 text-base font-bold text-purple-900">Ficha de Trazabilidad</h2>
-        <p className="mt-1 text-sm text-purple-900/70">
+        <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">RRPP</span>
+        <h2 className="mt-2 text-base font-semibold text-gray-900">Ficha de Trazabilidad</h2>
+        <p className="mt-1 text-sm text-gray-500">
           Perfil del Autor, Ficha Editorial, Matriz de Ingreso y Lanzamiento y Promoción se completan desde su propia pantalla.
         </p>
       </div>
       <Link
         to={`/proyectos/${proyectoId}/ficha-trazabilidad${origen ? '?volver=' + encodeURIComponent(origen) : ''}`}
-        className="shrink-0 rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-purple-700"
+        className="ph-button ph-button-primary shrink-0"
       >
         Ver Ficha de Trazabilidad completa →
       </Link>
@@ -92,15 +92,14 @@ const FASES = [
 // no requiere modificar AppLayout.tsx (fuera del alcance de esta
 // página) ni queda scroll horizontal extra (a diferencia de un w-screen
 // suelto).
-const FULL_BLEED = 'ml-[calc(-50vw+50%)] mr-[calc(-50vw+50%)] w-screen';
+
 
 export function ProyectoDetalleLegacyPage() {
   const { data: usuario } = useMe();
   const [params] = useSearchParams();
   const origen = retornoProyecto(params.get('volver'));
-  if (usuario?.rol !== 'jefe_area') return <ProyectoDetalleContent />;
-  return <CrmSidebarLayout contexto="fullscreen" sidebarBreakpoint="lg" nav={<RoleProjectNavigation rol={usuario.rol} origen={origen}/>} logo={RRPP_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1480px]" contentClassName="p-4 sm:p-7">
-    <RoleProjectNavigation rol={usuario.rol} origen={origen} mobile/>
+  return <CrmSidebarLayout contexto="fullscreen"  nav={<RoleProjectNavigation rol={usuario?.rol} origen={origen}/>}   contentMaxWidth="max-w-[1480px]" contentClassName="p-4 sm:p-7">
+
     <ProyectoDetalleContent />
   </CrmSidebarLayout>;
 }
@@ -112,7 +111,7 @@ function ProyectoDetalleContent() {
   const rol = usuario?.rol;
   const [params] = useSearchParams();
   const origen = retornoProyecto(params.get('volver'));
-  const fullBleed = rol === 'jefe_area' ? 'w-full' : FULL_BLEED;
+  const fullBleed = 'w-full';
 
   const [pasoActivo, setPasoActivo] = useState(1);
   const { hash } = useLocation();
@@ -140,7 +139,7 @@ function ProyectoDetalleContent() {
   const faseActual = FASES.find((f) => f.id === pasoActivo);
 
   return (
-    <div className="flex min-h-screen w-full flex-col bg-crema/10">
+    <div className="flex min-h-full w-full flex-col">
       {proyectoQuery.isLoading && <p className="p-6 text-tinta/70">Cargando proyecto…</p>}
       {proyectoQuery.isError && (
         <p role="alert" className="p-6 text-red-600">
@@ -156,13 +155,13 @@ function ProyectoDetalleContent() {
           centrado debajo). */}
       {proyectoQuery.data && (
         <div
-          className={`${fullBleed} relative overflow-hidden bg-gradient-to-b from-gray-900 to-black px-6 py-8 text-white shadow-lg md:px-16`}
+          className={`${fullBleed} relative border-b border-gray-200 bg-white px-4 py-6 text-gray-900 sm:px-6`}
         >
-          <Link to={origen ?? destinoProyectos(rol)} className="text-sm text-white/60 hover:text-white hover:underline">
+          <Link to={origen ?? destinoProyectos(rol)} className="text-sm text-gray-500 hover:text-gray-900 hover:underline">
             ← {origen?.includes('vista=asignaciones') ? 'Asignaciones y carga' : 'Mis proyectos'}
           </Link>
 
-          <div className="flex flex-col items-center text-center">
+          <div className="flex flex-col items-start text-left">
             {/* Ya no hay título manual (el negocio lo retiró, ver el
                 comentario de la columna en server/db/schema/proyectos.ts)
                 — el identificador principal ahora se genera solo:
@@ -171,14 +170,14 @@ function ProyectoDetalleContent() {
                 artístico, a pedido explícito del negocio: ver el mismo
                 criterio en TarjetaPerfilAutores en SeccionProyectoPerfil.tsx)
                 + el codigo único asignado al crear el proyecto. */}
-            <h1 className="mb-1 mt-4 text-3xl font-light text-white">
+            <h1 className="mb-1 mt-4 text-2xl font-bold tracking-tight text-gray-900">
               {proyectoQuery.data.proyecto.autores.map((autor) => autor.nombre).join(', ') || 'Sin autor asignado'}{' '}
               — #{proyectoQuery.data.proyecto.codigo}
             </h1>
-            <p className="text-sm text-white/70">
+            <p className="text-sm text-gray-500">
               {proyectoQuery.data.proyecto.servicio.codigo} — {proyectoQuery.data.proyecto.servicio.nombre}
             </p>
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <EstadoBadge estado={proyectoQuery.data.proyecto.estado} />
               {/* Estado del traspaso Comercial → RRPP → Jefatura — derivado
                   de notificadoRrpp/notificadoJefatura (ya existían para la
@@ -208,11 +207,11 @@ function ProyectoDetalleContent() {
               pantallas dejan de ser necesarias del todo, revisar también
               esos guards). */}
           {puedeVerFicha && rol !== 'comercial' && rol !== 'rrpp' && (
-            <div className="mb-6 mt-8">
-              <span className="text-sm font-bold uppercase tracking-[0.2em] text-dorado">
+            <div className="mt-6">
+              <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Sección de consulta
               </span>
-              <h2 className="mt-2 text-4xl font-light tracking-tight text-white md:text-5xl">{faseActual?.label}</h2>
+              <h2 className="mt-2 text-lg font-semibold text-gray-900">{faseActual?.label}</h2>
             </div>
           )}
         </div>
@@ -234,7 +233,7 @@ function ProyectoDetalleContent() {
           adentro) con su propio FULL_BLEED — mismo criterio que el
           hero de arriba para llegar de borde a borde de la pantalla. */}
       {proyectoQuery.data && puedeVerFicha && rol !== 'comercial' && rol !== 'rrpp' && (
-        <div className={`${fullBleed} bg-crema px-6 pb-4 pt-5 shadow-lg md:px-16`}>
+        <div className={`${fullBleed} overflow-x-auto border-b border-gray-200 bg-white px-4 pb-4 pt-5 sm:px-6`}>
           <div className="mx-auto max-w-7xl">
             <div className="mb-4 flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-400">
@@ -245,7 +244,7 @@ function ProyectoDetalleContent() {
             <div className="relative">
               <div className="absolute h-0.5 bg-gray-200" style={{ top: '14px', left: '5.5%', right: '5.5%' }} />
 
-              <div className="relative z-10 flex">
+              <div className="relative z-10 flex min-w-[760px]">
                 {FASES.map((fase) => {
                   const hecha = false;
                   const actual = fase.id === pasoActivo;

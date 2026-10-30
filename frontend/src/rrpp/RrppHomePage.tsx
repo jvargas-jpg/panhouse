@@ -8,12 +8,7 @@ import {
   iniciarDiagnostico,
   type ConceptosRrpp,
 } from './rrppDashboardApi';
-import {
-  RRPP_FOOTER,
-  RRPP_LOGO,
-  RrppSidebarNav,
-  type VistaRrpp,
-} from './RrppSidebarNav';
+import { RrppSidebarNav, type VistaRrpp } from './RrppSidebarNav';
 import {
   ActivityPanel,
   ErrorRrpp,
@@ -106,8 +101,8 @@ export function RrppHomePage() {
   return (
     <CrmSidebarLayout
       nav={<RrppSidebarNav vista={vista} />}
-      logo={RRPP_LOGO}
-      footer={RRPP_FOOTER}
+
+
       contentMaxWidth="max-w-[1600px]"
       contentClassName="px-4 py-8 sm:px-7"
       overlays={

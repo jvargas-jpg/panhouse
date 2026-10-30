@@ -8,12 +8,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
 import { ApiError } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { EditorDetail, EditorSearch, EditorSelect, EditorSkeleton, useEditorDesktop, useEditorFilters } from '../editor/EditorUi';
 import { EditorEmpty } from '../editor/EditorParts';
-import { DigitalCover, DigitalMobileNavigation, DigitalNavigation, digitalDate, digitalWorkKey, miTrabajoUrl } from './SoporteDigitalUi';
+import { DigitalCover, DigitalNavigation, digitalDate, digitalWorkKey, miTrabajoUrl } from './SoporteDigitalUi';
 import { DIGITAL_STAGE_LABELS } from '../../../shared/soporteDigitalHome';
 import { DIGITAL_REQUEST_LABELS, DIGITAL_REQUEST_STATUSES, DIGITAL_REQUEST_STATUS_LABELS, DIGITAL_REQUEST_TYPES, type DigitalRequestStatus, type DigitalRequestType } from '../../../shared/soporteDigitalRequests';
 import { answerDigitalRequest, attachDigitalRequest, cancelDigitalRequest, createDigitalRequest, digitalRequestsKey, fetchDigitalRequest, fetchDigitalRequestContexts, fetchDigitalRequests } from './soporteDigitalRequestsApi';
@@ -62,8 +62,8 @@ export function SoporteDigitalMisSolicitudes() {
     document.addEventListener('pointerdown',outside); document.addEventListener('keydown',escape,true);
     return () => { document.removeEventListener('pointerdown',outside); document.removeEventListener('keydown',escape,true); };
   },[]);
-  return <CrmSidebarLayout nav={<DigitalNavigation active="mis-solicitudes" />} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="soporte-digital-layout" contentClassName="soporte-digital-home editor-shell sd-requests" footer={<p className="sd-footer">Historias que conectan.</p>}>
-    <div className="sd-topbar"><div><RrppIcon nombre="libro" /><strong>Soporte Digital</strong></div><TopBar compacto roleLabel="Soporte Digital" /></div><DigitalMobileNavigation active="mis-solicitudes" />
+  return <CrmSidebarLayout nav={<DigitalNavigation active="mis-solicitudes" />}    contentMaxWidth="max-w-none" shellClassName="soporte-digital-layout" contentClassName="soporte-digital-home editor-shell sd-requests" >
+
     <div className="sd-body dr-workspace"><div className="dr-main"><nav className="sd-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Digital</span><RrppIcon nombre="flecha" /><strong>Mis solicitudes</strong></nav>
       <header className="sd-page-header"><div><h1>Mis solicitudes</h1><p>Consulta las solicitudes que has enviado sobre tus tareas digitales y revisa su estado.</p></div><button className="ec-primary" type="button" onClick={() => change('create','1')}><RrppIcon nombre="ingreso" />Nueva solicitud</button></header>
       {notice && <p className="dr-notice" role="status">{notice}<button aria-label="Cerrar aviso" onClick={() => setNotice('')}>×</button></p>}

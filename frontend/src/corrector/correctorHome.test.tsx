@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StaticRouter } from 'react-router-dom/server';
 import { describe, it, expect, vi } from 'vitest';
 import { CorrectorHomePage } from './CorrectorHomePage';
+import { AppFrame } from '../layout/AppFrame';
 import type { CorrectorDashboard, CorrectorHomeItem } from '../../../shared/correctorHome';
 vi.stubGlobal('React',React);
 const item:CorrectorHomeItem={correctionId:'correction-1',workItemId:'work-1',projectId:'project-1',title:'Proyecto editorial de prueba',authors:'Autor de prueba',code:'QA-COH',coverUrl:null,intervention:'Tripa completa',state:'inProgress',stateLabel:'En corrección',deadline:'2026-10-28T10:30:00Z',deadlineState:'proximo_a_vencer',blocker:null,actionable:true,completedAt:null,cta:'Continuar'};
@@ -12,7 +13,7 @@ function render({data=dashboard,error=false,pending=false}:{data?:CorrectorDashb
  const cache=new QueryClient({defaultOptions:{queries:{retry:false,retryOnMount:false,staleTime:Infinity,gcTime:Infinity}}});cache.setQueryData(['auth','me'],{id:'corrector-1',rol:'corrector',nombre:'Corrector de prueba',email:'corrector@qa.test'});
  if(!pending)cache.setQueryData(['corrector','inicio'],data);
  if(error)cache.getQueryCache().build(cache,{queryKey:['corrector','inicio']}).setState({status:'error',error:Error('QA error'),fetchStatus:'idle'});
- const html=renderToStaticMarkup(<QueryClientProvider client={cache}><StaticRouter location="/"><CorrectorHomePage/></StaticRouter></QueryClientProvider>);cache.clear();return html;
+ const html=renderToStaticMarkup(<QueryClientProvider client={cache}><StaticRouter location="/"><AppFrame constrained><CorrectorHomePage/></AppFrame></StaticRouter></QueryClientProvider>);cache.clear();return html;
 }
 describe('Corrector · Inicio · interfaz',()=>{
  it('usa shell PanHouse, logo oficial, título Inicio y navegación mínima real',()=>{const h=render();expect(h).toContain('/brand/panhouse-logo.webp');expect(h).toContain('Navegación del Corrector');expect(h).toContain('Historias que conectan.');expect(h).toContain('>Inicio<');expect(h).toContain('Corrector de prueba');expect(h).toContain('Mis solicitudes');for(const text of ['Mis proyectos','Asignaciones y carga','Productividad','Rating'])expect(h).not.toContain(text);});

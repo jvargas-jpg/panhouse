@@ -1,4 +1,5 @@
 import { obtenerColaTrabajoEspecialista } from './especialistaMiTrabajo.js';
+import { getProjectFinancialStatus } from './estadoFinanciero.js';
 import { editorialInterventions } from './editorialChief.js';
 import { and, asc, desc, eq, isNull, ne } from 'drizzle-orm';
 import { db } from '../db/client.js';
@@ -31,6 +32,7 @@ export function agruparProcesos(trabajos: TrabajoProyecto[]): ProcesoProyecto[] 
 
 export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promise<ProjectCommandCenter> {
   const p = await accesoCommandCenter(id, actor);
+  const financial = await getProjectFinancialStatus(id);
   const [ficha, snapshot, rows, assignments, configuracion, paymentStates, cases, preparaciones, activaciones, control, editorial] = await Promise.all([
     resumenFichaViva(id, actor),
     obtenerDashboardJefatura(new Date(), { historico: true, incluirRetirados: true, proyectoId: id }),
@@ -149,7 +151,8 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       { key: 'contratoFirmado', label: 'Contrato firmado', value: p.contratoFirmado, source: 'proyectos.contratoFirmado', editable: false },
       { key: 'pagosRegistrados', label: 'Abonos registrados', value: paymentStates.length, source: 'pagos', editable: false },
       { key: 'pagosVerificados', label: 'Abonos verificados', value: paymentStates.filter(a => a.estado === 'Verificado').length, source: 'pagos.estatus', editable: false },
-      { key: 'solvencia', label: 'Solvencia', value: 'Sin confirmación de Cobranzas', source: 'Comercial / Cobranzas; no inferida de los abonos', editable: false },
+      { key: 'solvencia', label: 'Solvencia', value: !financial || financial.solvencyStatus === 'Pendiente' ? 'Sin confirmación de Comercial' : financial.solvencyStatus, source: 'Comercial; aprobación explícita', editable: false },
+      { key: 'gateFinanciero', label: 'Gate de solvencia', value: financial?.financialGateStatus ?? 'No aplicable', source: 'Estado financiero central', editable: false },
       ...ficha.overview.filter(f => ['budget', 'ingresoServicioPresupuesto', 'ingresoServicioAlianza', 'capitulosPactados', 'paginasPactadas'].includes(f.key)).map(f => ({ ...f, editable: false })),
     ],
   };

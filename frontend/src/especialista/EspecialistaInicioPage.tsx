@@ -4,9 +4,9 @@ import { useQuery } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
 import { apiFetch } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { PRODUCTION_LOGO, SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
-import { TopBar } from '../layout/TopBar';
-import { RRPP_FOOTER } from '../rrpp/RrppSidebarNav';
+import { SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import type { EspecialistaInicio, ActividadInicio } from '../../../shared/especialistaInicio';
 import type { MiTrabajo } from '../../../shared/especialistaMiTrabajo';
@@ -51,9 +51,9 @@ export function EspecialistaInicioPage() {
   const tiposProcesos=(p:ProyectoJefatura)=>[...new Map(p.procesos.map(t=>[t.tipo,t])).values()];
   const porEstado=Object.entries(colores).map(([estado,color])=>({estado,color,cantidad:proyectos.filter(p=>p.estado===estado).length}));
   let acumulado=0;const stops=porEstado.filter(p=>p.cantidad).map(p=>{const desde=acumulado;acumulado+=p.cantidad;return `${p.color} ${data?.kpis.activos?desde/data.kpis.activos*100:0}% ${data?.kpis.activos?acumulado/data.kpis.activos*100:0}%`;});
-  return <CrmSidebarLayout nav={<SpecialistSidebarNav/>} logo={PRODUCTION_LOGO} footer={RRPP_FOOTER} sidebarCompact sidebarBreakpoint="lg" contentMaxWidth="max-w-[1600px]" contentClassName="ei-container">
-    <header className="ei-header"><div><span className="ei-eyebrow">ESPECIALISTA · OPERACIÓN EDITORIAL</span><h1>{nombres[vista] ?? 'Inicio'}</h1><p>{subtitulos[vista] ?? subtitulos.inicio}</p></div><div className="ei-header-tools"><form role="search" onSubmit={e=>{e.preventDefault();navigate('/?'+new URLSearchParams({vista:'mis-proyectos',q:busqueda}));}}><RrppIcon nombre="buscar" className="h-4 w-4"/><input aria-label="Buscar proyecto, autor o código" placeholder="Buscar proyecto, autor o código…" value={busqueda} onChange={e=>setBusqueda(e.target.value)}/><button type="submit" aria-label="Buscar">↵</button></form><TopBar compacto/></div></header>
-    <SpecialistSidebarNav mobile/>
+  return <CrmSidebarLayout nav={<SpecialistSidebarNav/>}     contentMaxWidth="max-w-[1600px]" contentClassName="ei-container">
+    <header className="ei-header"><div><span className="ei-eyebrow">ESPECIALISTA · OPERACIÓN EDITORIAL</span><h1>{nombres[vista] ?? 'Inicio'}</h1><p>{subtitulos[vista] ?? subtitulos.inicio}</p></div><div className="ei-header-tools"><form role="search" onSubmit={e=>{e.preventDefault();navigate('/?'+new URLSearchParams({vista:'mis-proyectos',q:busqueda}));}}><RrppIcon nombre="buscar" className="h-4 w-4"/><input aria-label="Buscar proyecto, autor o código" placeholder="Buscar proyecto, autor o código…" value={busqueda} onChange={e=>setBusqueda(e.target.value)}/><button type="submit" aria-label="Buscar">↵</button></form></div></header>
+
     {query.isPending?<div className="ei-loading" role="status" aria-label="Cargando cartera"><div className="ei-skeleton"/><div className="ei-skeleton"/><div className="ei-skeleton"/></div>:query.isError?<Panel title="No se pudo consultar tu cartera"><Vacio><span role="alert">{query.error.message}</span> <button onClick={()=>query.refetch()}>Reintentar</button></Vacio></Panel>:data&&<>
       {vista==='inicio'&&<><div className="ei-kpis">{cards.map(c=><Link to={c.label==='Requieren tu acción'?'/?vista=mi-trabajo&tab=pendientes':c.label==='Próximos vencimientos'?'/?vista=mi-trabajo&tab=proximas':c.label==='Express activos'?'/?vista=mis-proyectos&tab=express':c.label==='Cerrados este mes'?'/?vista=mis-proyectos&tab=cerrados':'/?vista=mis-proyectos'} className="ei-kpi" key={c.label}><span className={'ei-kpi-icon '+c.color}><RrppIcon nombre={c.icon} className="h-6 w-6"/></span><div><strong>{c.value ?? '—'}</strong><span>{c.label}</span><small>{c.meta}</small></div></Link>)}</div>
         <div className="ei-dashboard-grid">

@@ -8,9 +8,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        dorado: '#EEBA2A',
-        tinta: '#1B1B1B',
-        crema: '#FAF9F5',
+        dorado: 'rgb(var(--ph-gold-rgb) / <alpha-value>)',
+        tinta: 'rgb(var(--ph-tinta-rgb) / <alpha-value>)',
+        crema: 'rgb(var(--ph-bg-rgb) / <alpha-value>)',
       },
       keyframes: {
         fadeIn: {

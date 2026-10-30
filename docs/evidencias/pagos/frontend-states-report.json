@@ -1,0 +1,20 @@
+{
+  "checks": [
+    "Estado de carga visible y datos del backend",
+    "Historial: pendiente, confirmado y anulado",
+    "Referencia y responsables del historial",
+    "Comercial puede confirmar pendientes anteriores",
+    "Detalle seleccionado sin monto ni porcentaje",
+    "Sobrepago: porcentaje real y barra limitada",
+    "Registro envía proyecto, importe decimal e idempotencia",
+    "Comercial confirma mediante el endpoint canónico",
+    "Anulación conserva motivo en la solicitud",
+    "Solvencia envía revisión vigente y aprobación explícita",
+    "Cambiar el monto total actualiza el porcentaje sin recargar",
+    "Error de lista y recuperación",
+    "Error del detalle y recuperación",
+    "Tabs consumen los resultados filtrados del servidor",
+    "Sin errores JavaScript"
+  ],
+  "errors": []
+}

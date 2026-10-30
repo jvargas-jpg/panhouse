@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { RRPP_FOOTER, RRPP_LOGO, RrppSidebarNav } from './RrppSidebarNav';
+import { RrppSidebarNav } from './RrppSidebarNav';
 import { ErrorIngreso } from './RrppIngresosPage';
 import { RrppIcon } from './RrppIcons';
 import { fechaActividad } from './RrppDashboardCards';
@@ -93,8 +93,8 @@ export function RrppProyectosPage() {
   return (
     <CrmSidebarLayout
       nav={<RrppSidebarNav vista="proyectos" />}
-      logo={RRPP_LOGO}
-      footer={RRPP_FOOTER}
+
+
       contentMaxWidth="max-w-[1800px]"
       contentClassName="px-4 py-7 sm:px-6 min-[1200px]:px-7"
     >

@@ -8,8 +8,8 @@ import {CreativeWorkInbox} from './CreativeWorkInbox';
 import {Link,useNavigate,useSearchParams} from 'react-router-dom';
 import {useMe} from '../auth/useAuth';
 import {CrmSidebarLayout} from '../layout/CrmSidebarLayout';
-import {TopBar} from '../layout/TopBar';
-import {PRODUCTION_LOGO,retornoProyecto} from '../layout/RoleProjectNavigation';
+
+import { retornoProyecto } from '../layout/RoleProjectNavigation';
 import {Card} from '../proyectos/fichaViva/FichaElements';
 import {CreativeSidebarNav} from './CreativeSidebarNav';
 import {CreativeActivityList,CreativeAttentionList,CreativeDeadlines,CreativeEmpty,CreativeKpis,creativeDate} from './CreativeDashboardParts';
@@ -30,10 +30,10 @@ export function CreativeLeaderDashboardPage(){
   const names:Record<string,string>={inicio:'Hola, '+(user?.nombre??'Líder Creativo'),'mi-trabajo':'Mi trabajo','proyectos-creativos':'Proyectos creativos',solicitudes:'Solicitudes'};
   const subtitles:Record<string,string>={inicio:'Aquí tienes el estado de tu trabajo creativo.','mi-trabajo':'Todas tus tareas creativas, organizadas por estado y prioridad.','proyectos-creativos':'Contexto, entregas y próximos pasos de tus intervenciones.',solicitudes:'Solicitudes creativas disponibles para recibir y comenzar.'};
   const close=()=>{const target=retornoProyecto(params.get('volver'));if(target)navigate(target);else setParams(p=>{for(const key of ['trabajo','accion','concepto','proyecto','workItem'])p.delete(key);return p;});};
-  return <CrmSidebarLayout nav={<CreativeSidebarNav active={vista} actions={actions} requests={requests}/>} logo={PRODUCTION_LOGO} sidebarWidth={244} sidebarBreakpoint="lg"
-    contentMaxWidth="max-w-[1700px]" contentClassName="cl-shell" footer={<div className="cl-sidebar-footer"><span>{user?.nombre}</span><strong>Líder Creativo</strong><small>Dirección Creativa</small><p>Historias que conectan</p></div>}>
-    <div className="cl-account-bar"><span>Dirección Creativa</span><TopBar compacto/></div>
-    <CreativeSidebarNav active={vista} actions={actions} requests={requests} mobile/>
+  return <CrmSidebarLayout nav={<CreativeSidebarNav active={vista} actions={actions} requests={requests}/>}
+    contentMaxWidth="max-w-[1700px]" contentClassName="cl-shell" >
+
+
     <div className="cl-body">{!['proyectos-creativos','solicitudes','indicadores'].includes(vista)&&<header className="cl-header"><div><span className="cl-eyebrow">DIRECCIÓN CREATIVA</span><h1>{names[vista]}</h1><p>{subtitles[vista]}</p></div>{vista!=='mi-trabajo'&&<time dateTime={new Date().toISOString()}>{creativeDate(new Date().toISOString(),{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</time>}</header>}
       {vista==='indicadores'?<CreativeIndicadoresPage/>:vista==='solicitudes'?<CreativeRequestsPage/>:vista==='proyectos-creativos'?<CreativePortfolioPage/>:vista==='mi-trabajo'?<CreativeWorkInbox/>:query.isPending?<DashboardSkeleton/>:query.isError?<Card title="No se pudo consultar tu trabajo creativo"><CreativeEmpty><p role="alert">{query.error.message}</p><button className="fv-button" onClick={()=>query.refetch()}>Reintentar</button></CreativeEmpty></Card>:data&&<>
         {vista==='inicio'&&<><CreativeKpis data={data}/><div className="cl-dashboard-grid">

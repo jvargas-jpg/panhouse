@@ -30,7 +30,7 @@ import { DecisionesPage } from './DecisionesPage';
 import './jefatura.css';
 import { AsignacionesCargaPage } from './AsignacionesCargaPage';
 import { ProyectosJefaturaPage } from './ProyectosJefaturaPage';
-import { TopBar } from '../layout/TopBar';
+
 import type { ProyectoJefatura } from '../../../shared/jefatura';
 import { MonthlyGoalsPage } from '../objetivos/MonthlyGoalsPage';
 
@@ -130,26 +130,12 @@ export function PanelJefaturaPage() {
   return (
     <CrmSidebarLayout
       nav={<JefaturaSidebar vista={vista} />}
-      logo={
-        <img
-          src="/brand/panhouse-logo.webp"
-          alt="PanHouse Casa Editorial"
-          className="h-auto w-[176px] object-contain"
-        />
-      }
-      footer={
-        <div className="border-t border-gray-800/80 px-6 py-5">
-          <p
-            className={`${vista === 'asignaciones' ? 'text-sm' : 'text-xs'} italic text-gray-500`}
-          >
-            Historias que conectan
-          </p>
-        </div>
-      }
+
+
       contentMaxWidth="max-w-[1760px]"
       contentClassName={vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' || vista === 'indicadores' ? 'p-4 sm:px-6 sm:py-4' : 'p-4 sm:p-7'}
-      sidebarBreakpoint="lg"
-      sidebarCompact
+
+
       overlays={
         <>
           {proyecto && (
@@ -170,7 +156,7 @@ export function PanelJefaturaPage() {
       }
     >
       <div className={`jefatura ${vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' || vista === 'indicadores' ? 'jp-page' : ''} ${vista === 'seguimiento' ? 'js-page' : ''} ${vista === 'decisiones' ? 'jd-page' : ''} ${vista === 'indicadores' ? 'ji-page' : ''}`}>
-        <JefaturaSidebar vista={vista} mobile />
+
         {vista !== 'asignaciones' && !monthlyGoalsView && (
           <header className="jf-page-header">
             <div>
@@ -188,7 +174,7 @@ export function PanelJefaturaPage() {
                 Estado actual
               </span>
             )}
-            {(vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' || vista === 'indicadores') && <TopBar compacto />}
+            {(vista === 'proyectos' || vista === 'seguimiento' || vista === 'decisiones' || vista === 'indicadores') && null}
           </header>
         )}
         {vista === 'asignaciones' ? (

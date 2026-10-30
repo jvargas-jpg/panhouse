@@ -117,6 +117,9 @@ describe('Project Command Center: verdad compartida y permisos', () => {
     const p = await fixture(); await db.insert(pagos).values({ proyectoId: p.id, monto: '100', fechaPago: '2026-10-11', metodoPago: 'Transferencia', estatus: 'Verificado' });
     const data = (await get(p.id)).json(); expect(data.administracion.find((p: { key: string }) => p.key === 'pagosVerificados').value).toBe(1);
     expect(data.administracion.find((p: { key: string }) => p.key === 'solvencia').value).toContain('Sin confirmación');
+      await db.update(proyectos).set({ solvenciaEstado:'Solvente' }).where(eq(proyectos.id,p.id));
+      const approved = (await get(p.id)).json();
+      expect(approved.administracion.find((p: { key: string }) => p.key === 'solvencia').value).toBe('Solvente');
     expect(data.administracion.every((p: { editable: boolean }) => p.editable === false)).toBe(true);
   });
   it('número de consultas constante al crecer las intervenciones; no N+1', async () => {

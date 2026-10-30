@@ -34,7 +34,7 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
       await app.close();
     });
 
-    it('nace siempre con estatus "Pendiente de verificación", sin importar lo que mande el cliente', async () => {
+    it('Comercial registra confirmado y el cliente no puede imponer otro estado', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
@@ -48,15 +48,17 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
           monto: '500.00',
           fechaPago: '2026-01-15',
           metodoPago: 'Zelle',
-          estatus: 'Verificado', // no está en el schema — se ignora
+          estatus: 'Rechazado', // no está en el schema — se ignora
         });
 
       expect(respuesta.status).toBe(201);
-      expect(respuesta.body.pago.estatus).toBe('Pendiente de verificación');
+      expect(respuesta.body.pago.estatus).toBe('Verificado');
+      expect(respuesta.body.pago.confirmadoPorId).toBeTruthy();
+      expect(respuesta.body.pago.confirmadoEn).toBeTruthy();
       await app.close();
     });
 
-    it.each(['rrpp', 'cobranzas', 'jefe_area'] as const)('permite a %s registrar un pago', async (rol) => {
+    it.each(['rrpp', 'cobranzas', 'jefe_area'] as const)('rechaza a %s al registrar un pago', async (rol) => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
@@ -67,7 +69,7 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
         .set('Cookie', cookie)
         .send({ proyectoId: proyecto.id, monto: '100.00', fechaPago: '2026-01-15', metodoPago: 'Tarjeta' });
 
-      expect(respuesta.status).toBe(201);
+      expect(respuesta.status).toBe(403);
       await app.close();
     });
 
@@ -189,12 +191,12 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
   });
 
   describe('PATCH /api/pagos/:id/verificar', () => {
-    it('permite a cobranzas aprobar un pago pendiente', async () => {
+    it('permite a comercial aprobar un pago pendiente', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
       const pago = await crearPagoDePrueba({ proyectoId: proyecto.id });
-      const cookie = await registrarYLoguear(app, 'cobranzas');
+      const cookie = await registrarYLoguear(app, 'comercial');
 
       const respuesta = await request(app.server).patch(`/api/pagos/${pago.id}/verificar`).set('Cookie', cookie).send({
         estatus: 'Verificado',
@@ -206,12 +208,12 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
       await app.close();
     });
 
-    it('permite a cobranzas rechazar un pago con motivoRechazo', async () => {
+    it('permite a comercial rechazar un pago con motivoRechazo', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
       const pago = await crearPagoDePrueba({ proyectoId: proyecto.id });
-      const cookie = await registrarYLoguear(app, 'cobranzas');
+      const cookie = await registrarYLoguear(app, 'comercial');
 
       const respuesta = await request(app.server)
         .patch(`/api/pagos/${pago.id}/verificar`)
@@ -229,7 +231,7 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
       const pago = await crearPagoDePrueba({ proyectoId: proyecto.id });
-      const cookie = await registrarYLoguear(app, 'cobranzas');
+      const cookie = await registrarYLoguear(app, 'comercial');
 
       const respuesta = await request(app.server).patch(`/api/pagos/${pago.id}/verificar`).set('Cookie', cookie).send({
         estatus: 'Rechazado',
@@ -239,7 +241,7 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
       await app.close();
     });
 
-    it.each(['jefe_area', 'direccion'] as const)('permite a %s verificar un pago', async (rol) => {
+    it.each(['jefe_area', 'direccion'] as const)('rechaza a %s al verificar un pago', async (rol) => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
@@ -250,16 +252,16 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
         estatus: 'Verificado',
       });
 
-      expect(respuesta.status).toBe(200);
+      expect(respuesta.status).toBe(403);
       await app.close();
     });
 
-    it('rechaza a comercial (quien registra el pago no puede autoverificarlo)', async () => {
+    it('Cobranzas no decide pagos en esta etapa', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoDePrueba();
       const pago = await crearPagoDePrueba({ proyectoId: proyecto.id });
-      const cookie = await registrarYLoguear(app, 'comercial');
+      const cookie = await registrarYLoguear(app, 'cobranzas');
 
       const respuesta = await request(app.server).patch(`/api/pagos/${pago.id}/verificar`).set('Cookie', cookie).send({
         estatus: 'Verificado',
@@ -284,7 +286,7 @@ describe('rutas de pagos (módulo financiero de Comercial)', () => {
     it('devuelve 404 si el pago no existe', async () => {
       const app = crearAppDePrueba();
       await app.ready();
-      const cookie = await registrarYLoguear(app, 'cobranzas');
+      const cookie = await registrarYLoguear(app, 'comercial');
 
       const respuesta = await request(app.server)
         .patch('/api/pagos/00000000-0000-0000-0000-000000000000/verificar')

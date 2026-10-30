@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { RRPP_FOOTER, RRPP_LOGO, RrppSidebarNav } from './RrppSidebarNav';
+import { RrppSidebarNav } from './RrppSidebarNav';
 import { fechaActividad } from './RrppDashboardCards';
 import { RrppIcon } from './RrppIcons';
 import {
@@ -113,7 +113,7 @@ function CardIngreso({
         {i.estado === 'enviado'
           ? 'Envío registrado'
           : i.preparacion.faltantes.length
-            ? `⚠ ${i.preparacion.faltantes.length} pendientes`
+            ? `${i.preparacion.faltantes.length} pendientes`
             : '✓ Pendientes resueltos'}
       </p>
       {i.estado !== 'enviado' && i.preparacion.faltantes.length > 0 && (
@@ -213,8 +213,8 @@ export function RrppIngresosPage() {
   return (
     <CrmSidebarLayout
       nav={<RrppSidebarNav vista="ingresos" />}
-      logo={RRPP_LOGO}
-      footer={RRPP_FOOTER}
+
+
       contentMaxWidth="max-w-[1800px]"
       contentClassName="px-4 py-6 sm:px-7 sm:py-7"
     >

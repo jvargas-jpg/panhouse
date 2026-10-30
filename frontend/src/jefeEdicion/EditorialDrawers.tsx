@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { Dialog } from '../design-system/Dialog';
+import { useRef, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { editorialKey, fetchEditorialCandidates, fetchEditorialIntervention, fetchEditorialList, decideEditor } from './jefeEdicionApi';
 import { EditorialCover, EditorialEmpty, editorialDate } from './EditorialParts';
@@ -6,11 +7,7 @@ import type { EditorialIntervention } from '../../../shared/editorialChief';
 import {ApiError} from '../lib/api';
 import {EditorialRowsSkeleton} from './EditorialAssignments';
 import {Link} from 'react-router-dom';
-export function EditorialDrawer({title,onClose,children,className=''}:{title:string;onClose:()=>void;children:ReactNode;className?:string}){
-  const ref=useRef<HTMLDialogElement>(null);
-  useEffect(()=>{const previous=document.activeElement as HTMLElement|null;ref.current?.showModal();return()=>{ref.current?.close();previous?.focus();};},[]);
-  return <dialog ref={ref} className={'ec-drawer '+className} onCancel={e=>{e.preventDefault();onClose();}} aria-label={title}><header><div><small>ÁREA DE EDICIÓN</small><h2>{title}</h2></div><button aria-label="Cerrar panel" onClick={onClose}>×</button></header><div className="ec-drawer-body">{children}</div></dialog>;
-}
+export function EditorialDrawer({title,onClose,children,className=''}:{title:string;onClose:()=>void;children:ReactNode;className?:string}){return <Dialog title={title} onClose={onClose} variant="drawer" className={'ec-drawer '+className}><div className="ec-drawer-body">{children}</div></Dialog>;}
 export function useInvalidateEditorial(){
   const client=useQueryClient();
   return ()=>Promise.all([editorialKey,['editor'],['editores'],['capitulos'],['proyectos'],['proyecto'],['especialista-inicio'],['especialista-solicitudes'],['especialista-cartera'],['solicitudes'],['solicitud'],['mi-trabajo'],['project-workspace'],['ficha'],['ficha-viva'],['project-command-center'],['notificaciones']].map(queryKey=>client.invalidateQueries({queryKey})));
@@ -26,7 +23,7 @@ export function AsignarEditorCard({item,onAssigned,onCancel=()=>{},onConflict=()
   return <form className="ec-assign-form ea-assign-form" onSubmit={e=>{e.preventDefault();if(!submitting.current&&selected){submitting.current=true;mutation.mutate();}}}>
     <div className="ea-selector-header"><h3>Selecciona un Editor</h3><label>Ordenar por<select value={sort} onChange={e=>setSort(e.target.value)}><option value="load">Menor carga accionable</option><option value="overdue">Menos vencidas</option><option value="name">Nombre</option></select></label></div>
     {team.isPending?<EditorialRowsSkeleton label="Cargando candidatos"/>:team.isError?<p role="alert">No se pudo cargar el equipo. <button type="button" onClick={()=>team.refetch()}>Reintentar candidatos</button></p>:candidates.length?<fieldset><legend className="sr-only">Editores elegibles</legend>{candidates.map((e,n)=><label className={'ec-editor-choice '+(editor===e.id?'selected':'')} key={e.id}><input type="radio" required name="editor" value={e.id} checked={editor===e.id} disabled={mutation.isPending||e.id===item.editorId} onChange={()=>setEditor(e.id)}/><i className={'ec-avatar ec-avatar-'+n%4}>{e.name.split(/\s+/).slice(0,2).map(w=>w[0]).join('')}</i><span><strong>{e.name}{e.id===item.editorId&&<em> · Editor actual</em>}</strong><small>{e.actionableNow} accionables · {e.dueThisWeek} esta semana · <b className={e.overdue?'ec-deadline-overdue':''}>{e.overdue} vencidas</b></small><small>{e.activeAssigned} asignadas · {e.waitingThirdParty} en espera</small></span></label>)}</fieldset>:<EditorialEmpty>No hay Editores elegibles.</EditorialEmpty>}
-    {team.data&&<aside className="ea-recommendation"><small>✧ Recomendación del sistema</small>{recommended.length?<><h4>{recommended.map(e=>e.name).join(' / ')}</h4><p>{recommended.length>1?'Empate según los datos disponibles.':'Menor carga accionable según los datos disponibles.'}</p><ul>{recommended[0]!.reasons.map(r=><li key={r}>{r}</li>)}</ul></>:<p>No hay una recomendación automática con los datos disponibles.</p>}<details><summary>Cómo se compara</summary><p>{team.data.explanation}</p><p>{team.data.limitations}</p></details></aside>}
+    {team.data&&<aside className="ea-recommendation"><small>Recomendación del sistema</small>{recommended.length?<><h4>{recommended.map(e=>e.name).join(' / ')}</h4><p>{recommended.length>1?'Empate según los datos disponibles.':'Menor carga accionable según los datos disponibles.'}</p><ul>{recommended[0]!.reasons.map(r=><li key={r}>{r}</li>)}</ul></>:<p>No hay una recomendación automática con los datos disponibles.</p>}<details><summary>Cómo se compara</summary><p>{team.data.explanation}</p><p>{team.data.limitations}</p></details></aside>}
     {item.editorId&&<label className="ec-reason">Motivo de reasignación<textarea name="motivo" required minLength={5} maxLength={1000} value={reason} onChange={e=>setReason(e.target.value)}/></label>}
     {selected&&team.data&&!team.data.recommendedIds.includes(selected.id)&&<p className="ea-manual-choice">Has elegido a {selected.name}. Puedes confirmar esta decisión aunque la sugerencia sea otra.</p>}
     {mutation.isError&&<p role="alert">{mutation.error.message}{mutation.error instanceof ApiError&&mutation.error.status===409?' El contexto se actualizó; revisa la asignación vigente.':''}</p>}

@@ -1,0 +1,159 @@
+ M frontend/src/admin/AdminApp.tsx
+ M frontend/src/admin/AdminConfiguration.tsx
+ M frontend/src/admin/AdminOperations.tsx
+ M frontend/src/admin/AdminPeople.tsx
+ M frontend/src/admin/AdminProjects.tsx
+ M frontend/src/admin/AdminUi.tsx
+ M frontend/src/admin/admin.css
+ M frontend/src/admin/admin.test.tsx
+ M frontend/src/auth/LoginPage.tsx
+ M frontend/src/auth/adminViewAs.css
+ M frontend/src/autores/AutoresPage.tsx
+ M frontend/src/autores/CrearProyectoModalForm.tsx
+ M frontend/src/autores/Modal.tsx
+ M frontend/src/cobranzas/AuditoriaPagosPage.tsx
+ M frontend/src/comercial/ComercialDashboardPage.tsx
+ M frontend/src/comercial/ComercialSidebarNav.tsx
+ M frontend/src/comercial/IndicadoresComponents.tsx
+ M frontend/src/comercial/MetricasPage.tsx
+ M frontend/src/comercial/QuickActions.tsx
+ M frontend/src/comercial/RegistrarPagoPage.tsx
+ M frontend/src/comercial/autores/CommercialAuthorsView.tsx
+ M frontend/src/comercial/proyectos/CommercialProjectsView.tsx
+ M frontend/src/corrector/CorrectorHomePage.tsx
+ M frontend/src/corrector/CorrectorMiTrabajo.tsx
+ M frontend/src/corrector/CorrectorMisSolicitudes.tsx
+ M frontend/src/corrector/CorrectorUi.tsx
+ M frontend/src/corrector/correctorHome.css
+ M frontend/src/corrector/correctorHome.test.tsx
+ M frontend/src/corrector/correctorMiTrabajo.css
+ M frontend/src/disenador/MisTrabajosDisenoPage.tsx
+ M frontend/src/editor/EditorHomePage.tsx
+ M frontend/src/editor/EditorIncomingClarifications.tsx
+ M frontend/src/editor/EditorMiTrabajo.tsx
+ M frontend/src/editor/EditorParts.tsx
+ M frontend/src/editor/EditorUi.tsx
+ M frontend/src/editor/editor.css
+ M frontend/src/editor/miTrabajo.css
+ M frontend/src/editor/misProyectos.css
+ M frontend/src/editor/misSolicitudes.css
+ M frontend/src/especialista/EspecialistaInicioPage.tsx
+ M frontend/src/especialista/MiTrabajoPage.tsx
+ M frontend/src/especialista/SolicitudesPage.tsx
+ M frontend/src/especialista/especialistaInicio.css
+ M frontend/src/especialista/miTrabajo.css
+ M frontend/src/especialista/solicitudes.css
+ M frontend/src/index.css
+ M frontend/src/jefatura/PanelJefaturaPage.tsx
+ M frontend/src/jefatura/asignaciones.css
+ M frontend/src/jefatura/decisiones.css
+ M frontend/src/jefatura/indicadores.css
+ M frontend/src/jefatura/jefatura.css
+ M frontend/src/jefatura/jefaturaApi.ts
+ M frontend/src/jefatura/portafolio.css
+ M frontend/src/jefatura/seguimiento.css
+ M frontend/src/jefeEdicion/EditorialDrawers.tsx
+ M frontend/src/jefeEdicion/EditorialParts.tsx
+ M frontend/src/jefeEdicion/JefeEdicionHomePage.tsx
+ M frontend/src/jefeEdicion/editorialAssignments.css
+ M frontend/src/jefeEdicion/editorialChief.css
+ M frontend/src/jefeEdicion/editorialIndicadores.css
+ M frontend/src/jefeEdicion/editorialProjects.css
+ M frontend/src/jefeEdicion/editorialRequests.css
+ M frontend/src/jefeEdicion/editorialTracking.css
+ M frontend/src/layout/AppLayout.tsx
+ M frontend/src/layout/CrmSidebarLayout.tsx
+ M frontend/src/layout/FullscreenLayout.tsx
+ M frontend/src/layout/RoleProjectNavigation.tsx
+ M frontend/src/layout/TopBar.tsx
+ M frontend/src/liderCreativo/CreativeLeaderDashboardPage.tsx
+ M frontend/src/liderCreativo/CreativeSidebarNav.tsx
+ M frontend/src/liderCreativo/CreativeWorkDialog.tsx
+ M frontend/src/liderCreativo/creativeIndicadores.css
+ M frontend/src/liderCreativo/creativeLeader.css
+ M frontend/src/liderCreativo/creativePortfolio.css
+ M frontend/src/liderCreativo/creativeRequests.css
+ M frontend/src/liderCreativo/creativeWork.css
+ M frontend/src/objetivos/MonthlyGoalsPage.tsx
+ M frontend/src/objetivos/monthlyGoals.css
+ M frontend/src/portalAutor/AutorLayout.tsx
+ M frontend/src/portalAutor/TarjetaPropuestaPortada.tsx
+ M frontend/src/proyectos/MisProyectosPage.tsx
+ M frontend/src/proyectos/ProyectoCommandCenterPage.tsx
+ M frontend/src/proyectos/ProyectoDetalleLegacyPage.tsx
+ M frontend/src/proyectos/SeccionCorreccionOperativa.tsx
+ M frontend/src/proyectos/SeccionDisenoOperativa.tsx
+ M frontend/src/proyectos/commandCenter.css
+ M frontend/src/proyectos/fichaViva/FichaElements.tsx
+ M frontend/src/proyectos/fichaViva/FichaVivaPage.tsx
+ M frontend/src/proyectos/fichaViva/fichaViva.css
+ M frontend/src/proyectos/misProyectos.css
+ M frontend/src/rrpp/RrppHomePage.tsx
+ M frontend/src/rrpp/RrppIcons.tsx
+ M frontend/src/rrpp/RrppIndicadoresLoading.tsx
+ M frontend/src/rrpp/RrppIngresoDetalle.tsx
+ M frontend/src/rrpp/RrppIngresosPage.tsx
+ M frontend/src/rrpp/RrppLanzamientosPage.tsx
+ M frontend/src/rrpp/RrppMetricasPage.tsx
+ M frontend/src/rrpp/RrppProyectosPage.tsx
+ M frontend/src/rrpp/RrppSidebarNav.tsx
+ M frontend/src/rrpp/rrppIndicadores.css
+ M frontend/src/soporteDigital/SoporteDigitalHomePage.tsx
+ M frontend/src/soporteDigital/SoporteDigitalMiTrabajo.tsx
+ M frontend/src/soporteDigital/SoporteDigitalMisSolicitudes.tsx
+ M frontend/src/soporteDigital/SoporteDigitalUi.tsx
+ M frontend/src/soporteDigital/soporteDigitalHome.css
+ M frontend/src/soporteDigital/soporteDigitalMiTrabajo.css
+ M frontend/src/soporteDigital/soporteDigitalMisSolicitudes.css
+ M frontend/src/soporteEditorial/SoporteEditorialHomePage.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialMiTrabajo.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialMisSolicitudes.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialUi.tsx
+ M frontend/src/soporteEditorial/soporteEditorialHome.css
+ M frontend/src/soporteEditorial/soporteEditorialMiTrabajo.css
+ M frontend/src/soporteEditorial/soporteEditorialMisSolicitudes.css
+ M frontend/src/trazabilidad/CommercialTraceabilitySummary.tsx
+ M frontend/src/trazabilidad/TraceabilityWorkspace.tsx
+ M frontend/tailwind.config.ts
+ M server/app.ts
+ M server/db/migrations/meta/_journal.json
+ M server/db/schema/pagos.ts
+ M server/db/schema/proyectos.ts
+ M server/helpers/auditLog.ts
+ M server/helpers/fichaViva.ts
+ M server/helpers/pagosProyecto.ts
+ M server/helpers/projectCommandCenter.ts
+ M server/helpers/proyectos.ts
+ M server/helpers/soporteDigitalActions.ts
+ M server/helpers/trazabilidad.ts
+ M server/modules/integrations/google-drive/adapter.ts
+ M server/modules/integrations/google-drive/provider.ts
+ M server/routes/pagos.routes.ts
+ M server/routes/proyectos.routes.ts
+ M tests/pagosProyecto.routes.test.ts
+ M tests/projectCommandCenter.test.ts
+?? docs/auditoria/38-comercial-pagos.md
+?? docs/auditoria/39-panhouse-design-system.md
+?? docs/evidencias/design-system/
+?? docs/evidencias/pagos/
+?? frontend/src/comercial/ContractFinancialFields.tsx
+?? frontend/src/comercial/financialApi.ts
+?? frontend/src/comercial/pagos.css
+?? frontend/src/design-system/
+?? frontend/src/layout/AppFrame.tsx
+?? scripts/design-system-interactions-qa.ts
+?? scripts/design-system-qa.ts
+?? scripts/migrate-panhouse-ui.mjs
+?? scripts/pagos-ui-states.mjs
+?? scripts/pagos-visual-qa.ts
+?? scripts/proyecto-monto-qa.ts
+?? server/db/migrations/0096_elite_hercules.sql
+?? server/db/migrations/meta/0096_snapshot.json
+?? server/helpers/estadoFinanciero.ts
+?? server/helpers/financialVisibility.ts
+?? server/helpers/pagosOperaciones.ts
+?? server/helpers/validacionDinero.ts
+?? shared/pagos.ts
+?? tests/financialVisibility.test.ts
+?? tests/pagosOperativos.test.ts
+?? tests/proyectoMontoContractual.routes.test.ts

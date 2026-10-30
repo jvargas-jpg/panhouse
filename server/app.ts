@@ -1,4 +1,5 @@
 import { disenoRoutes } from './routes/diseno.routes.js';
+import { financialResponseForRole } from './helpers/financialVisibility.js';
 import { calidadRoutes } from './routes/calidad.routes.js';
 import { soporteDigitalHomeRoutes } from './routes/soporteDigitalHome.routes.js';
 import { soporteDigitalWorkRoutes } from './routes/soporteDigitalWork.routes.js';
@@ -55,6 +56,7 @@ export function buildApp() {
 
   app.register(cookie);
   app.addHook('preHandler',enforceSessionContext);
+  app.addHook('preSerialization', (request, _reply, payload, done) => { done(null,financialResponseForRole(request, payload)); });
   app.register(adminRoutes,{prefix:'/api/admin'});
   app.register(googleDriveRoutes, { prefix: '/api' });
   app.register(projectWorkspaceRoutes, { prefix: '/api' });

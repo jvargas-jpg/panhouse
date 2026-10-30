@@ -4,6 +4,6 @@
    que ya usa .corrector-layout (correctorHome.css), para que el detalle,
    los formularios y los botones se vean consistentes con el resto del
    rol sin heredar el fondo/sidebar de Editor. */
-.corrector-home.editor-shell { --eo-ink: #172b43; --eo-muted: #6c7d93; --eo-line: #e5e9ed; --eo-navy: #0c2030; --eo-gold: #b38e42; }
+.corrector-home.editor-shell { --eo-ink: var(--ph-ink); --eo-muted: var(--ph-muted); --eo-line: var(--ph-line); --eo-navy: var(--ph-navy); --eo-gold: var(--ph-gold-text); }
 .corrector-home .mw-detail-header .coh-cover { width: 38px; height: 54px; }
-.corrector-home .coh-blocker-reason { font-size: 10px; color: #8090a4; display: block; margin-top: 4px; }
+.corrector-home .coh-blocker-reason { font-size: 10px; color: var(--ph-subtle); display: block; margin-top: 4px; }

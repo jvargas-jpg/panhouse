@@ -6,9 +6,9 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
 import { apiFetch } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { SpecialistSidebarNav, PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
-import { TopBar } from '../layout/TopBar';
-import { RRPP_FOOTER, RrppSidebarNav } from '../rrpp/RrppSidebarNav';
+import { SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
+
+import { RrppSidebarNav } from '../rrpp/RrppSidebarNav';
 import { RrppIcon } from '../rrpp/RrppIcons';
 import type { DetalleSolicitud, SolicitudesEspecialista } from '../../../shared/especialistaSolicitudes';
 import './solicitudes.css';
@@ -82,9 +82,9 @@ export function SolicitudesPage() {
   const filters=['tipo','destino','estado','proyecto','desde','hasta','search'].filter(k=>params.has(k));
   const summary=data?[{label:'Abiertas',value:data.resumen.abiertas,tab:'abiertas',tone:'gold',icon:'ingreso'},{label:'En revisión',value:data.resumen.revision,tab:'abiertas',estado:'en_revision',tone:'blue',icon:'proceso'},{label:'Requieren información',value:data.resumen.informacion,tab:'informacion',tone:'red',icon:'actividad'},{label:'Resueltas',value:data.resumen.resueltas,tab:'resueltas',tone:'green',icon:'check'}] as const:[];
   const clear=()=>{setSearch('');setParams({vista:'solicitudes'});};
-  return <CrmSidebarLayout sidebarCompact sidebarWidth={216} sidebarBreakpoint="lg" nav={rrpp?<RrppSidebarNav vista="solicitudes"/>:talento?<Link className="sr-talent-nav" to="/?vista=solicitudes">Contratos de Corrección</Link>:<SpecialistSidebarNav/>} logo={PRODUCTION_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1760px]" contentClassName="sr-page">
-    <header className="sr-header"><div><span className="sr-kicker">{rrpp?'RRPP · SOLICITUDES RECIBIDAS':talento?'TALENTO HUMANO · CONTRATOS':'ESPECIALISTA · OPERACIÓN EDITORIAL'}</span><h1>Solicitudes</h1><p>{rrpp?'Recibe las solicitudes de Lanzamiento e Impresión y activa su coordinación.':talento?'Revisa contratos de Corrección y coordina la información necesaria.':'Da seguimiento a las solicitudes que has enviado a otras áreas y revisa las que requieren información adicional.'}</p></div><TopBar compacto/></header>
-    {!talento&&<SpecialistSidebarNav mobile/>}
+  return <CrmSidebarLayout    nav={rrpp?<RrppSidebarNav vista="solicitudes"/>:talento?<Link className="sr-talent-nav" to="/?vista=solicitudes">Contratos de Corrección</Link>:<SpecialistSidebarNav/>}   contentMaxWidth="max-w-[1760px]" contentClassName="sr-page">
+    <header className="sr-header"><div><span className="sr-kicker">{rrpp?'RRPP · SOLICITUDES RECIBIDAS':talento?'TALENTO HUMANO · CONTRATOS':'ESPECIALISTA · OPERACIÓN EDITORIAL'}</span><h1>Solicitudes</h1><p>{rrpp?'Recibe las solicitudes de Lanzamiento e Impresión y activa su coordinación.':talento?'Revisa contratos de Corrección y coordina la información necesaria.':'Da seguimiento a las solicitudes que has enviado a otras áreas y revisa las que requieren información adicional.'}</p></div></header>
+    {!talento&&null}
     {query.isPending?<div className="sr-loading" role="status" aria-label="Cargando solicitudes"><div className="sr-summary">{[0,1,2,3].map(i=><div key={i} className="sr-skeleton"/>)}</div>{[0,1,2,3,4].map(i=><div key={i} className="sr-skeleton sr-skeleton-row"/>)}</div>:query.isError?<section className="sr-empty" role="alert"><h2>No se pudieron consultar las solicitudes</h2><p>{query.error.message}</p><button className="sr-button" onClick={()=>query.refetch()}>Reintentar</button></section>:data&&<>
       <section className="sr-summary" aria-label="Resumen de solicitudes">{summary.map(s=><button key={s.label} className={'sr-summary-card sr-tone-'+s.tone} onClick={()=>update({tab:s.tab,estado:'estado'in s?s.estado:''})}><span className="sr-summary-icon"><RrppIcon nombre={s.icon} className="h-5 w-5"/></span><span><strong>{s.value}</strong><small>{s.label}</small></span><span aria-hidden="true">›</span></button>)}</section>
       <div className={'sr-split '+(params.has('request')?'sr-show-detail':'')}>

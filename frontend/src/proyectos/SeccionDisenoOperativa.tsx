@@ -1,3 +1,4 @@
+import { StatusBadge } from '../design-system/components';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { useMe } from '../auth/useAuth';
@@ -6,7 +7,7 @@ import { fetchCorreccionesDeProyecto } from './correccionesApi';
 import { asignarDiseno, coordinarDiseno, entregarDiseno, fetchDisenos, revisarCubierta, solicitarDiseno, type TrabajoDiseno, type TipoDiseno } from './disenoApi';
 const etiquetas = { muestra_diagramacion: 'Muestra de diagramación', diagramacion: 'Diagramación completa', cubierta_extendida: 'Cubierta extendida' };
 const campo = 'min-w-0 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-tinta';
-const boton = 'rounded-lg bg-tinta px-3 py-2 text-sm font-medium text-white disabled:opacity-50';
+const boton = 'ph-button ph-button-primary disabled:opacity-50';
 export const fechaHora = (s: string | null) => s ? new Date(s).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' }) : 'Sin pautar';
 function ErrorAccion({ error }: { error: unknown }) { return error ? <p role="alert" className="text-sm text-red-700">{error instanceof Error ? error.message : 'No se pudo guardar'}</p> : null; }
 export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: TrabajoDiseno; modo?: 'operativo' | 'creativa' | 'interna' }) {
@@ -28,7 +29,7 @@ export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: Tra
   return <article className="min-w-0 rounded-xl border border-tinta/10 bg-white p-4 shadow-sm sm:p-5">
     <header className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0"><h3 className="break-words font-semibold text-tinta">{etiquetas[t.tipo]} · {t.autorNombre}</h3><p className="break-words text-xs text-gray-500">#{t.proyectoCodigo} · {t.servicioCodigo}{t.modalidad ? ` / ${t.modalidad}` : ''} · {t.tituloDefinitivo}</p></div>
-      <span className={`rounded-full px-3 py-1 text-xs ${t.cerradoEn ? 'bg-green-100 text-green-800' : t.plazo === 'vencido' ? 'bg-red-100 text-red-800' : 'bg-dorado/15 text-tinta'}`}>{t.cerradoEn ? 'Entregado / aprobado' : v?.feedbackEn ? 'Necesita ajustes' : t.estado.replaceAll('_', ' ')}</span>
+      <StatusBadge tone={t.plazo === 'vencido' && !t.cerradoEn ? 'danger' : undefined}>{t.cerradoEn ? 'Entregado / aprobado' : v?.feedbackEn ? 'Necesita ajustes' : t.estado.replaceAll('_', ' ')}</StatusBadge>
     </header>
     <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3"><div><dt className="text-xs text-gray-500">Vencimiento pautado</dt><dd>{fechaHora(t.dueAt)}</dd></div><div><dt className="text-xs text-gray-500">Referencia del Manual</dt><dd>{t.diasReferencia ? `${t.diasReferencia} días` : 'Requiere definición'} · calendario por confirmar</dd></div><div><dt className="text-xs text-gray-500">Versión activa</dt><dd>{v ? `V${v.numero} · ${fechaHora(v.entregadoEn)}` : 'Pendiente de entrega'}</dd></div></dl>
     <p className="mt-3 text-sm text-gray-600">Diseñador: {t.disenadorNombre ?? 'Pendiente de asignación'}</p>

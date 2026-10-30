@@ -1,0 +1,102 @@
+{
+  "date": "2026-10-30",
+  "initialFullRegression": {
+    "files": 121,
+    "tests": 2078,
+    "passed": 2068,
+    "failed": 10,
+    "failedFiles": 2,
+    "allFailuresResolvedAndRevalidated": true
+  },
+  "finalRelatedRegression": {
+    "files": 16,
+    "passed": 418,
+    "failed": 0,
+    "durationSeconds": 162.07
+  },
+  "newDomainTests": 25,
+  "newFieldSecurityTests": 3,
+  "frontendAcceptanceChecks": 15,
+  "realUIResolutions": [
+    [
+      1440,
+      900
+    ],
+    [
+      768,
+      1024
+    ],
+    [
+      375,
+      812
+    ]
+  ],
+  "typecheck": {
+    "backend": "passed",
+    "frontend": "passed"
+  },
+  "build": {
+    "backend": "passed",
+    "frontend": "passed",
+    "warning": "Vite large chunks"
+  },
+  "migration": "applied",
+  "schemaCheck": "no changes",
+  "gitDiffCheck": "passed",
+  "productionFinancialDataAdded": false,
+  "realUIAcceptanceChecks": 8,
+  "realUILinks": "Project and contract links passed",
+  "closingDataSnapshot": {
+    "projects": 138,
+    "projectsWithContractAmount": 0,
+    "pendingPayments": 1,
+    "preserved": true
+  },
+  "commercialAuthorityUpdate": {
+    "authority": "comercial",
+    "adminOverrideWithReason": true,
+    "collectionsActive": false,
+    "newPayments": "Verificado",
+    "existingPendingPayments": "Preserved; Commercial can review",
+    "tests": {
+      "files": 4,
+      "passed": 67,
+      "failed": 0
+    },
+    "frontendChecks": 14,
+    "realUIChecks": 8,
+    "backendBuild": "passed",
+    "frontendBuild": "passed",
+    "newMigrationRequired": false
+  },
+  "projectTotalUpdate": {
+    "initialAmountAtCreation": true,
+    "directEditingInPayments": true,
+    "existingContractsPreserved": true,
+    "serverCalculationExamples": [
+      {
+        "contract": "1000.00",
+        "confirmedPaid": "350.00",
+        "paidPercentage": "35.00"
+      },
+      {
+        "contract": "2000.00",
+        "confirmedPaid": "350.00",
+        "paidPercentage": "17.50"
+      }
+    ],
+    "tests": {
+      "files": 6,
+      "passed": 195,
+      "failed": 0
+    },
+    "frontendChecks": 15,
+    "realFormChecks": 6,
+    "realPaymentsUIChecks": 8,
+    "backendBuild": "passed",
+    "frontendBuild": "passed",
+    "newMigrationRequired": false,
+    "realProjectWrites": 0,
+    "gitDiffCheck": "passed"
+  }
+}

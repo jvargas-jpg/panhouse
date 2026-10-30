@@ -1,0 +1,26 @@
+ frontend/src/autores/CrearProyectoModalForm.tsx    |   9 +-
+ frontend/src/cobranzas/AuditoriaPagosPage.tsx      |   3 +
+ frontend/src/comercial/ComercialSidebarNav.tsx     |  17 +-
+ frontend/src/comercial/QuickActions.tsx            |   2 +-
+ frontend/src/comercial/RegistrarPagoPage.tsx       | 432 +++++++--------------
+ frontend/src/jefatura/jefaturaApi.ts               |   4 +-
+ .../trazabilidad/CommercialTraceabilitySummary.tsx |   4 +-
+ .../src/trazabilidad/TraceabilityWorkspace.tsx     |   6 +-
+ server/app.ts                                      |   2 +
+ server/db/migrations/meta/_journal.json            |   9 +-
+ server/db/schema/pagos.ts                          |  30 +-
+ server/db/schema/proyectos.ts                      |  10 +-
+ server/helpers/auditLog.ts                         |   4 +-
+ server/helpers/fichaViva.ts                        |   3 +
+ server/helpers/pagosProyecto.ts                    |  44 +--
+ server/helpers/projectCommandCenter.ts             |   5 +-
+ server/helpers/proyectos.ts                        |  19 +-
+ server/helpers/soporteDigitalActions.ts            |   2 +
+ server/helpers/trazabilidad.ts                     |  13 +-
+ .../modules/integrations/google-drive/adapter.ts   |   4 +-
+ .../modules/integrations/google-drive/provider.ts  |   1 +
+ server/routes/pagos.routes.ts                      | 156 ++++----
+ server/routes/proyectos.routes.ts                  |   7 +-
+ tests/pagosProyecto.routes.test.ts                 |  32 +-
+ tests/projectCommandCenter.test.ts                 |   3 +
+ 25 files changed, 379 insertions(+), 442 deletions(-)

@@ -4,11 +4,7 @@ import { RrppIcon } from '../rrpp/RrppIcons';
 import type { EditorialDashboard, EditorialIntervention, EditorialState } from '../../../shared/editorialChief';
 export const EDITORIAL_NAV=[['inicio','Inicio','inicio'],['asignaciones','Asignaciones y carga','equipo'],['proyectos-edicion','Proyectos de edición','proyectos'],['seguimiento-edicion','Seguimiento','proceso'],['solicitudes-edicion','Solicitudes','ingreso'],['indicadores-edicion','Indicadores','indicadores']] as const;
 export const editorialDate=(value:string|null,full=false)=>value?new Intl.DateTimeFormat('es-VE',{timeZone:'America/Caracas',day:'numeric',month:full?'long':'short',...(full?{year:'numeric' as const}:{})}).format(new Date(value.length===10?value+'T12:00:00Z':value)):'Sin fecha';
-export function EditorialNav({active,pending=0,mobile=false}:{active:string;pending?:number;mobile?:boolean}){
-  const [open,setOpen]=useState(false);
-  const nav=<nav aria-label="Navegación de Edición" className="ec-nav">{EDITORIAL_NAV.map(([id,label,icon])=><Link key={id} to={id==='inicio'?'/':'/?vista='+id} aria-current={active===id?'page':undefined} onClick={()=>setOpen(false)}><RrppIcon nombre={icon}/><span>{label}</span>{id==='solicitudes-edicion'&&pending>0&&<small>{pending}</small>}</Link>)}</nav>;
-  return mobile?<div className="ec-mobile-nav"><button aria-expanded={open} aria-controls="ec-mobile-menu" onClick={()=>setOpen(!open)}>☰ <span>Área de Edición</span></button>{open&&<div id="ec-mobile-menu">{nav}</div>}</div>:nav;
-}
+export function EditorialNav({active,pending=0}:{active:string;pending?:number}){return <nav aria-label="Navegación de Edición">{EDITORIAL_NAV.map(([id,label,icon])=><Link key={id} to={id==='inicio'?'/':'/?vista='+id} aria-current={active===id?'page':undefined}><RrppIcon nombre={icon}/><span>{label}</span>{id==='solicitudes-edicion'&&pending>0&&<small>{pending}</small>}</Link>)}</nav>;}
 export function EditorialPanel({title,icon,action,children,className=''}:{title:string;icon?:Parameters<typeof RrppIcon>[0]['nombre'];action?:ReactNode;children:ReactNode;className?:string}){
   return <section className={'ec-panel '+className}><header>{icon&&<RrppIcon nombre={icon}/>}<h2>{title}</h2>{action}</header>{children}</section>;
 }

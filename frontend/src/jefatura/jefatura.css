@@ -1,5 +1,5 @@
 .jefatura {
-  color: #182335;
+  color: var(--ph-ink);
   font-size: 14px;
   min-width: 0;
 }
@@ -65,14 +65,13 @@
   margin: 0 0 24px;
 }
 .jf-page-header h1 {
-  font-size: 27px;
-  line-height: 1.25;
-  font-weight: 700;
-  letter-spacing: -0.6px;
   margin: 5px 0 9px;
+  font: 700 var(--ph-page-title)/1.3 var(--ph-font);
+  letter-spacing: -.025em;
+  color: var(--ph-ink);
 }
 .jf-page-header p:not(.jf-eyebrow) {
-  color: #687587;
+  color: var(--ph-muted);
   font-size: 14px;
   line-height: 1.6;
   max-width: 800px;
@@ -99,43 +98,6 @@
   border-radius: 50%;
   background: #5a9176;
 }
-.jf-nav a {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-  margin-bottom: 7px;
-  color: #9da7b5;
-  font-size: 13px;
-  border: 1px solid transparent;
-  border-radius: 9px;
-}
-.jf-nav a:hover {
-  background: #ffffff08;
-  color: white;
-}
-.jf-nav a.jf-nav-active {
-  color: #d4af37;
-  background: #d4af3715;
-  border-color: #d4af372c;
-  font-weight: 600;
-}
-.jf-nav .jf-nav-divider {
-  margin-top: 28px;
-  position: relative;
-}
-.jf-nav .jf-nav-divider:before {
-  content: '';
-  height: 1px;
-  background: #293241;
-  position: absolute;
-  top: -15px;
-  left: 0;
-  right: 0;
-}
-.jf-mobile-nav {
-  display: none;
-}
 .jf-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -145,7 +107,7 @@
 .jf-kpi {
   text-align: left;
   background: white;
-  border: 1px solid #e4e7eb;
+  border: 1px solid var(--ph-line);
   border-radius: 12px;
   padding: 17px 20px;
   box-shadow: 0 2px 3px #13203103;
@@ -193,7 +155,7 @@
 }
 .jf-card {
   min-width: 0;
-  border: 1px solid #e4e7eb;
+  border: 1px solid var(--ph-line);
   border-radius: 13px;
   background: white;
   box-shadow: 0 2px 4px #19263103;
@@ -289,19 +251,19 @@
   text-align: left;
 }
 .jf-table th {
-  background: #fafbfc;
+  background: var(--ph-bg);
   font-size: 8px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #8b95a3;
   font-weight: 600;
   padding: 10px 9px;
-  border-block: 1px solid #eef0f2;
+  border-block: 1px solid var(--ph-line-soft);
   white-space: nowrap;
 }
 .jf-table td {
   padding: 12px 9px;
-  border-bottom: 1px solid #eef0f3;
+  border-bottom: 1px solid var(--ph-line-soft);
   font-size: 11px;
   vertical-align: middle;
 }
@@ -447,7 +409,7 @@
 }
 .jf-capacity-person {
   padding: 13px 0;
-  border-bottom: 1px solid #edf0f3;
+  border-bottom: 1px solid var(--ph-line-soft);
 }
 .jf-capacity-person:last-child {
   border-bottom: 0;
@@ -511,7 +473,7 @@
 }
 .jf-card-footer {
   padding: 13px 20px 18px;
-  border-top: 1px solid #edf0f3;
+  border-top: 1px solid var(--ph-line-soft);
 }
 .jf-card-footer p {
   font-size: 10px;
@@ -569,7 +531,7 @@
   display: flex;
   gap: 11px;
   padding: 15px 0;
-  border-bottom: 1px solid #edf0f3;
+  border-bottom: 1px solid var(--ph-line-soft);
 }
 .jf-requests li:last-child {
   border: 0;
@@ -944,7 +906,7 @@
   justify-content: space-between;
   gap: 15px;
   padding: 15px 0;
-  border-top: 1px solid #edf0f3;
+  border-top: 1px solid var(--ph-line-soft);
 }
 .jf-project-list li > div {
   font-size: 11px;
@@ -1022,37 +984,13 @@
   }
 }
 @media (max-width: 1023px) {
-  .jf-mobile-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding-bottom: 17px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #e4e8ed;
-  }
-  .jf-mobile-nav a {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 7px 9px;
-    border-radius: 6px;
-    color: #7f8b9d;
-    font-size: 11px;
-  }
-  .jf-mobile-nav .jf-nav-active {
-    color: #957627;
-    background: #f4ecd8;
-    font-weight: 600;
-  }
-  .jf-mobile-nav svg {
-    width: 14px;
-    height: 14px;
-  }
   .jf-kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .jf-page-header h1 {
-    font-size: 25px;
+    font: 700 var(--ph-page-title)/1.3 var(--ph-font);
+    letter-spacing: -.025em;
+    color: var(--ph-ink);
   }
   .jf-capacity-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1064,7 +1002,9 @@
     gap: 0;
   }
   .jf-page-header h1 {
-    font-size: 24px;
+    font: 700 var(--ph-page-title)/1.3 var(--ph-font);
+    letter-spacing: -.025em;
+    color: var(--ph-ink);
   }
   .jf-page-header p:not(.jf-eyebrow) {
     font-size: 12px;
@@ -1124,7 +1064,7 @@
     grid-template-columns: 1fr 1fr;
     gap: 11px 12px;
     padding: 17px 16px;
-    border-bottom: 1px solid #eef0f3;
+    border-bottom: 1px solid var(--ph-line-soft);
   }
   .jf-table td {
     display: block;

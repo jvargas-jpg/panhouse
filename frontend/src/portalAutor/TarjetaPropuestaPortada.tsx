@@ -1,3 +1,4 @@
+import { Dialog } from '../design-system/Dialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import type { LibroAutor } from '../types/api';
@@ -96,18 +97,8 @@ export function TarjetaPropuestaPortada({ libro }: { libro: LibroAutor }) {
       </div>
 
       {modalAbierto && (
-        <div className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-gray-900/40 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-            <button
-              type="button"
-              onClick={() => setModalAbierto(false)}
-              aria-label="Cerrar"
-              className="absolute right-4 top-4 text-gray-400 transition-colors hover:text-gray-600"
-            >
-              ✕
-            </button>
-            <h3 className="mb-4 border-b border-gray-100 pb-4 text-lg font-semibold text-gray-900">Solicitar Cambios</h3>
-            <form onSubmit={handleEnviarRechazo} className="flex flex-col gap-4">
+        <Dialog title="Solicitar cambios" onClose={() => setModalAbierto(false)} busy={mutacion.isPending}>
+            <form onSubmit={handleEnviarRechazo} className="flex flex-col gap-4 p-6">
               <div>
                 <label htmlFor="portada-motivo" className="mb-1.5 block text-[11px] font-bold uppercase tracking-wide text-gray-500">
                   ¿Qué te gustaría cambiar?
@@ -129,8 +120,7 @@ export function TarjetaPropuestaPortada({ libro }: { libro: LibroAutor }) {
                 {mutacion.isPending ? 'Enviando…' : 'Enviar'}
               </button>
             </form>
-          </div>
-        </div>
+        </Dialog>
       )}
     </div>
   );

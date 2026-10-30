@@ -1,0 +1,63 @@
+{
+  "date": "2026-10-30",
+  "canon": "Comercial",
+  "frontendTests": {
+    "files": 24,
+    "passed": 257,
+    "failed": 0
+  },
+  "typecheck": "passed",
+  "build": "passed",
+  "buildWarning": "Existing Vite chunks greater than 500 kB",
+  "realUI": {
+    "screens": 147,
+    "internalRoles": [
+      "comercial",
+      "rrpp",
+      "jefe_area",
+      "especialista",
+      "jefe_edicion",
+      "editor",
+      "corrector",
+      "soporte_editorial",
+      "lider_creativo",
+      "disenador",
+      "soporte_digital",
+      "direccion",
+      "admin",
+      "cobranzas"
+    ],
+    "resolutions": [
+      [
+        1440,
+        900
+      ],
+      [
+        768,
+        1024
+      ],
+      [
+        375,
+        812
+      ]
+    ],
+    "errors": [],
+    "missingLiveAccounts": [
+      "talento_humano",
+      "autor"
+    ]
+  },
+  "interactions": {
+    "passed": 39,
+    "errors": [],
+    "preventedWrites": []
+  },
+  "paymentsRegressionChecks": 15,
+  "projectTotalRegressionChecks": 6,
+  "backendAndBackendTestsPreserved": true,
+  "newDatabaseMigrationsForDesignSystem": 0,
+  "newOperationalData": false,
+  "gitDiffCheck": true,
+  "committed": false,
+  "pushed": false
+}

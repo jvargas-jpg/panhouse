@@ -9,7 +9,7 @@ import { fetchProyectosPendientesContrato } from '../proyectos/proyectosPendient
 import { fetchProyectosActivos } from '../proyectos/proyectosApi';
 import { AttentionProjects } from './AttentionProjects';
 import { ComercialKpis } from './ComercialKpis';
-import { COMERCIAL_FOOTER, COMERCIAL_LOGO, ComercialSidebarNav } from './ComercialSidebarNav';
+import { ComercialSidebarNav } from './ComercialSidebarNav';
 import { fetchMetricasComercial } from './metricasApi';
 import { QuickActions } from './QuickActions';
 import { RecentAuthors } from './RecentAuthors';
@@ -46,8 +46,8 @@ export function ComercialDashboardPage() {
 
   return (
     <CrmSidebarLayout
-      logo={COMERCIAL_LOGO}
-      footer={COMERCIAL_FOOTER}
+
+
       contentMaxWidth="max-w-[1440px]"
       nav={<ComercialSidebarNav activo="inicio" />}
       overlays={

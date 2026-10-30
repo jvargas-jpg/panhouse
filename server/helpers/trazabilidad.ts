@@ -646,6 +646,10 @@ export interface DatosSeccionSoporteDigital {
 export async function actualizarSeccionSoporteDigital(proyectoId: string, datos: DatosSeccionSoporteDigital, actorId?: string) {
   return db.transaction(async tx => {
   await tx.select({id:proyectos.id}).from(proyectos).where(eq(proyectos.id,proyectoId)).for('update');
+  if (datos.soporteDigitalFechaActivacion) {
+    const { assertFinancialGate } = await import('./estadoFinanciero.js');
+    await assertFinancialGate(tx, proyectoId);
+  }
   const [fila] = await tx
     .update(fichasTrazabilidad)
     .set(datos)
@@ -676,13 +680,20 @@ export interface DatosSeccionDigitalControl {
 }
 
 export async function actualizarSeccionDigitalControl(proyectoId: string, datos: DatosSeccionDigitalControl) {
-  const [fila] = await db
+  return db.transaction(async tx => {
+  await tx.select({id:proyectos.id}).from(proyectos).where(eq(proyectos.id,proyectoId)).for('update');
+  if (datos.digitalFechaEntrega || /complet|publicad|finaliz/i.test(datos.digitalEstatus ?? '')) {
+    const { assertFinancialGate } = await import('./estadoFinanciero.js');
+    await assertFinancialGate(tx, proyectoId);
+  }
+  const [fila] = await tx
     .update(fichasTrazabilidad)
     .set(datos)
     .where(eq(fichasTrazabilidad.proyectoId, proyectoId))
     .returning();
   if (!fila) throw new Error(`Ficha de trazabilidad no encontrada para el proyecto: ${proyectoId}`);
   return fila;
+  });
 }
 
 // Sección 7 (parte general) — a diferencia de las reuniones (varias

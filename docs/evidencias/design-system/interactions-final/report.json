@@ -1,0 +1,240 @@
+{
+  "checks": [
+    {
+      "role": "comercial",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "proyecto-relacionado",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "proyecto-relacionado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "proyecto-relacionado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "comercial",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "admin",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "admin",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "admin",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "admin",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "admin",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "proyecto-relacionado",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "proyecto-relacionado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "proyecto-relacionado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "editor",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "jefe_area",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "lider_creativo",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "lider_creativo",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "lider_creativo",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "lider_creativo",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "lider_creativo",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "panel",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "proyecto-relacionado",
+      "size": "desktop",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "panel",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "proyecto-relacionado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "navegacion-teclado",
+      "size": "tablet",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "panel",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "proyecto-relacionado",
+      "size": "mobile",
+      "passed": true
+    },
+    {
+      "role": "soporte_digital",
+      "name": "navegacion-teclado",
+      "size": "mobile",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "preventedWrites": []
+}

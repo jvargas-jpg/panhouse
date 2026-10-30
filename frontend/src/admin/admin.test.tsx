@@ -23,7 +23,7 @@ function render(url='/admin/inicio',seed?:Seed,role='admin'){
 }
 describe('Administración · presentación y estados de consulta',()=>{
  it.each(ADMIN_SECTIONS)('monta la sección %s dentro del shell oficial',section=>{
-  const html=render('/admin/'+section);expect(html).toContain('/brand/panhouse-logo.webp');expect(html).toContain('Historias que conectan.');expect(html).toContain('aria-current="page"');expect(html).toContain('Abrir navegación administrativa');expect(html).not.toContain('href="#"');
+  const html=render('/admin/'+section);expect(html).toContain('/brand/panhouse-logo.webp');expect(html).toContain('Historias que conectan.');expect(html).toContain('aria-current="page"');expect(html).toContain('ph-topbar');expect(html).toContain('Navegación administrativa');expect(html).not.toContain('href="#"');
  });
  it('Dirección no obtiene acceso por reutilizar la navegación administrativa',()=>{const html=render('/admin/inicio',undefined,'direccion');expect(html).toContain('Acceso restringido');expect(html).not.toContain('admin-shell');});
  it('Inicio no presenta ceros inventados mientras carga ni presencia en línea',()=>{const html=render();expect(html).toContain('—');expect(html).toContain('no es presencia en línea');expect(html).toContain('role="status"');});

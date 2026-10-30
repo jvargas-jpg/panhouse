@@ -14,6 +14,8 @@ export const rrppEnviadoAtSql = sql<string | null>`(select min(evento.created_at
 // Mantener este tipo sincronizado es responsabilidad de quien agrega un
 // evento nuevo; no es una validación de runtime.
 export type AccionAuditoria =
+  | 'PAYMENT_REGISTERED' | 'PAYMENT_CONFIRMED' | 'PAYMENT_REJECTED' | 'PAYMENT_VOIDED' | 'PAYMENT_OVERPAYMENT'
+  | 'SOLVENCY_CHANGED' | 'FINANCIAL_GATE_CHANGED' | 'CONTRACT_AMOUNT_CHANGED'
   | 'ADMIN_USER_CREATED' | 'ADMIN_USER_UPDATED' | 'ADMIN_SESSION_REVOKED' | 'ADMIN_ASSIGNMENT_REFERENCE_REPAIRED' | 'ADMIN_REASSIGN' | 'ADMIN_REOPEN_WORK_ITEM'
   | 'ADMIN_REQUEST_CANCELLED' | 'ADMIN_REQUEST_TARGET_REPAIRED' | 'ADMIN_WORKSPACE_REPAIR' | 'ADMIN_SERVICE_AVAILABILITY'
   | 'ADMIN_VIEW_AS_STARTED' | 'ADMIN_VIEW_AS_STOPPED' | 'ADMIN_INTEGRATION_ACTION'
@@ -91,7 +93,7 @@ export type AccionAuditoria =
 export interface RegistrarEventoInput {
   actorId: string | null;
   accion: AccionAuditoria;
-  entityType: 'usuario' | 'sesion' | 'admin_operation' | 'servicio' | 'external_integration' | 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision' | 'solicitud' | 'monthly_goal' | 'capitulo';
+  entityType: 'pago' | 'usuario' | 'sesion' | 'admin_operation' | 'servicio' | 'external_integration' | 'proyecto' | 'project_assignment' | 'work_item' | 'evento_rrpp' | 'publicacion_rrpp' | 'reunion_lanzamiento' | 'decision' | 'solicitud' | 'monthly_goal' | 'capitulo';
   entityId: string;
   proyectoId?: string | null;
   detalles?: Record<string, unknown>;

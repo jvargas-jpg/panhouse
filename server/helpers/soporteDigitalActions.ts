@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import { assertFinancialGate } from './estadoFinanciero.js';
 import { and, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
@@ -47,6 +48,7 @@ export async function registrarAccionDigital(workItemId: string, input: DigitalW
     const today = diaCaracas(new Date());
     if ([input.date, input.dateKindle].some(d => d && d > today)) throw digitalWorkError('La fecha de un hito realizado no puede estar en el futuro', 400);
     const projectId = r.proyecto_id;
+    if (['registrarActivacion','registrarCarga','marcarCompletado'].includes(input.kind)) await assertFinancialGate(tx, projectId);
     const date = input.date!;
     if (input.kind !== 'iniciarTarea' && !r.control_updated_at) throw digitalWorkError('El proyecto todavía no tiene ficha digital', 409);
     let campos: string[] = [];

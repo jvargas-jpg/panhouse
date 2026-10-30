@@ -4,8 +4,8 @@
 .er-kpi-pending{min-width:250px;text-align:left;background:white}
 .er-kpi-pending .ec-kpi-icon{background:#fff3de;color:#d18415}
 .er-kpi-pending>svg{margin-left:auto;width:18px;height:18px;border:1px solid #e9edf3;border-radius:50%;padding:3px}
-.er-guide{max-width:360px;z-index:3;font-size:12px;color:#526989;background:#fff;border:1px solid #e2e8f1;border-radius:6px}
-.er-guide summary{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;color:#142b46;list-style:none}
+.er-guide{max-width:360px;z-index:3;font-size:12px;color:#526989;background:var(--ph-surface);border:1px solid #e2e8f1;border-radius:6px}
+.er-guide summary{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;color:var(--ph-ink);list-style:none}
 .er-guide summary svg{width:17px;height:17px}
 .er-guide p{padding:0 14px 14px;line-height:1.7}
 .er-module .ea-filterbar{background:white;border:1px solid #e9edf3;border-radius:8px;gap:12px;flex-wrap:wrap;padding:12px}
@@ -34,7 +34,7 @@
 .er-table tbody tr:hover{background:#fcfaf5}
 .er-table tbody tr.is-selected{background:#fff6e6;box-shadow:inset 3px 0 #dba735}
 .er-table tr:focus-visible{outline:2px solid #bb8d35;outline-offset:-2px}
-.er-table .ec-secondary{padding:7px 8px;font-size:10px;background:#fff;white-space:nowrap}
+.er-table .ec-secondary{padding:7px 8px;font-size:10px;background:var(--ph-surface);white-space:nowrap}
 .er-table .ec-project{gap:8px}
 .er-table .ec-project strong{font-size:11px;line-height:1.4}
 .er-table .ec-project small{font-size:10px}
@@ -65,8 +65,8 @@
 .er-detail .ep-tabs button{padding:13px 4px;font-size:11px}
 .er-detail .ep-tabs button[aria-selected=true]{border-bottom-color:#152c4a}
 .er-detail .ep-tab-body{padding:10px}
-.er-info{border:1px solid #edf0f5;border-radius:7px;padding:12px 10px}
-.er-info h4,.er-next h4,.er-recommendation h4,.er-result h4{font:700 15px/1.4 Georgia,serif;color:#122b4c;margin-bottom:10px}
+.er-info{border:1px solid var(--ph-line-soft);border-radius:7px;padding:12px 10px}
+.er-info h4,.er-next h4,.er-recommendation h4,.er-result h4{font:700 15px/1.4 var(--ph-font);color:#122b4c;margin-bottom:10px}
 .er-summary .er-info .ec-detail-grid{background:none;padding:0;margin:0;display:grid;gap:12px}
 .er-summary .er-info .ec-detail-grid>div{display:grid;grid-template-columns:116px minmax(0,1fr);align-items:start;gap:8px;grid-column:1/-1}
 .er-info .ec-detail-grid dt{font-size:11px;line-height:1.6;margin:0;color:#7282a0}
@@ -77,7 +77,7 @@
 .er-recommendation strong{font-size:12px}
 .er-recommendation p{font-size:11px;line-height:1.7;margin-top:7px}
 .er-recommendation small{display:block;font-size:10px;margin-top:3px;line-height:1.6}
-.er-recommendation .ec-secondary{margin-top:12px;width:100%;font-size:11px;background:#fff;border-color:#dbe5f5;padding:8px}
+.er-recommendation .ec-secondary{margin-top:12px;width:100%;font-size:11px;background:var(--ph-surface);border-color:#dbe5f5;padding:8px}
 .er-next{padding:12px;border:1px solid #e9edf3;border-radius:7px;margin-top:9px}
 .er-next p,.er-result p{font-size:11px;line-height:1.7;color:#647a98;margin-bottom:9px}
 .er-next .ec-primary{width:100%;display:flex;justify-content:center;align-items:center;gap:8px;padding:12px 6px;font-size:11px}
@@ -91,9 +91,9 @@
 .er-result{margin-top:9px;background:#f4f9f5;border:1px solid #e0eee4;border-radius:6px;padding:12px}
 .er-result small{font-size:10px;color:#617897}
 .er-result .ea-link{font-size:11px}
-.er-project-link{display:flex;width:100%;align-items:center;justify-content:center;gap:9px;margin-top:10px;font-size:11px;background:#fff;border-color:#e1e6ef}
+.er-project-link{display:flex;width:100%;align-items:center;justify-content:center;gap:9px;margin-top:10px;font-size:11px;background:var(--ph-surface);border-color:#e1e6ef}
 .er-project-link svg{width:17px;height:17px}
-.er-files li{display:flex;gap:10px;border-bottom:1px solid #edf0f5;padding:13px 4px;font-size:12px}
+.er-files li{display:flex;gap:10px;border-bottom:1px solid var(--ph-line-soft);padding:13px 4px;font-size:12px}
 .er-files svg{width:18px;height:18px}
 .er-files a{display:flex;justify-content:space-between;gap:10px;color:#3f6da6}
 .er-mutation-error{font-size:12px;padding:10px;color:#ae3547}

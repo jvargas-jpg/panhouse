@@ -5,8 +5,8 @@
 .et-responsible-editor{color:#346cb8;background:#eaf2ff}
 .et-responsible-autor{color:#a66b12;background:#fff5dc}
 .et-responsible-especialista{color:#7452c7;background:#f2edfd}
-.et-responsible-none{color:#6b7a8f;background:#eef1f5}
-.et-siblings{margin-top:16px;border-top:1px solid #edf0f5;padding-top:14px}
+.et-responsible-none{color:#6b7a8f;background:var(--ph-line-soft)}
+.et-siblings{margin-top:16px;border-top:1px solid var(--ph-line-soft);padding-top:14px}
 .et-siblings h4{font-size:11px;font-weight:600;color:#59708f;margin-bottom:8px}
 .et-siblings ul{display:grid;gap:2px;margin-bottom:8px}
 .et-siblings li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:7px 0;border-top:1px solid #f3f5f8;font-size:11px}

@@ -4,7 +4,7 @@ import type { AreaFicha, ResumenFichaViva } from '../../../../shared/fichaViva';
 import { useMe } from '../../auth/useAuth';
 import { CrmSidebarLayout } from '../../layout/CrmSidebarLayout';
 import { RoleProjectNavigation, retornoProyecto, destinoProyectos } from '../../layout/RoleProjectNavigation';
-import { RRPP_FOOTER, RRPP_LOGO } from '../../rrpp/RrppSidebarNav';
+
 import { Actividad, Card, dateFicha, Equipo, Estado, FichaSkeleton, IconFicha, ReadFields, WorkspaceLink } from './FichaElements';
 import { ExpedienteDocumental, HistorialCompleto } from './ExpedienteDocumental';
 import { useFichaViva } from './useFichaViva';
@@ -45,8 +45,8 @@ function FichaVivaLegacyPage(){
   const origen=retornoProyecto(params.get('volver'));
   const nav=<RoleProjectNavigation rol={user?.rol} origen={origen}/>;
   const back=origen??destinoProyectos(user?.rol);
-  return <CrmSidebarLayout contexto="fullscreen" sidebarBreakpoint="lg" nav={nav} logo={RRPP_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1480px]" contentClassName="fv-container">
-    <RoleProjectNavigation rol={user?.rol} origen={origen} mobile/>
+  return <CrmSidebarLayout contexto="fullscreen"  nav={nav}   contentMaxWidth="max-w-[1480px]" contentClassName="fv-container">
+
     {query.isPending?<FichaSkeleton/>:query.isError?<div className="fv-page-error" role="alert"><IconFicha/><h1>No se pudo abrir la ficha</h1><p>{query.error.message}</p><button className="fv-button" onClick={()=>query.refetch()}>Reintentar</button><Link to={back}>Volver a proyectos</Link></div>:<>
       <nav className="fv-breadcrumb" aria-label="Ubicación"><Link to={back}>{origen?.includes('vista=asignaciones')?'Asignaciones y carga':'Proyectos'}</Link><span aria-hidden="true">/</span><Link to={`/proyectos/${id}${origen?'?volver='+encodeURIComponent(origen):''}`}>{query.data.project.title}</Link><span aria-hidden="true">/</span><span>Ficha de trazabilidad</span></nav>
       <nav className="fv-project-navigation" aria-label="Vistas del proyecto"><Link to={`/proyectos/${id}${origen?'?volver='+encodeURIComponent(origen):''}`}>Resumen del proyecto</Link><span aria-current="page">Ficha de trazabilidad</span></nav>

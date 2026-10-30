@@ -5,9 +5,9 @@ import type { GoalCatalog, GoalHistory, GoalInput, GoalList, GoalSummary, Monthl
 import { useMe } from '../auth/useAuth';
 import { apiFetch } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { PRODUCTION_LOGO, SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
-import { TopBar } from '../layout/TopBar';
-import { RRPP_FOOTER } from '../rrpp/RrppSidebarNav';
+import { SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import './monthlyGoals.css';
 
@@ -134,8 +134,8 @@ export function MonthlyGoalsPage({team=false}:{team?:boolean}) {
   useEffect(()=>{if(!notice)return;const id=setTimeout(()=>setNotice(''),5000);return()=>clearTimeout(id);},[notice]);
   const saved=async()=>{await Promise.all([cache.invalidateQueries({queryKey:['monthly-goals']}),cache.invalidateQueries({queryKey:['notificaciones']})]);setNotice('El compromiso quedó registrado.');};
   const content=<div className="mg-page">
-    {!team&&<SpecialistSidebarNav mobile/>}
-    <header className="mg-header"><div><span className="mg-kicker">{team?'JEFATURA · SEGUIMIENTO':'ESPECIALISTA · OPERACIÓN EDITORIAL'}</span><h1>Objetivos del mes{team&&<span> · Equipo</span>}</h1><p>{team?'Define y da seguimiento a los compromisos mensuales del equipo editorial.':'Tus compromisos para este mes y el seguimiento de su avance.'}</p></div><div className="mg-header-right"><TopBar compacto/><MonthSelector period={period} onChange={p=>update({periodo:p,goalTab:'',goalStatus:''})}/></div></header>
+    {!team&&null}
+    <header className="mg-header"><div><span className="mg-kicker">{team?'JEFATURA · SEGUIMIENTO':'ESPECIALISTA · OPERACIÓN EDITORIAL'}</span><h1>Objetivos del mes{team&&<span> · Equipo</span>}</h1><p>{team?'Define y da seguimiento a los compromisos mensuales del equipo editorial.':'Tus compromisos para este mes y el seguimiento de su avance.'}</p></div><div className="mg-header-right"><MonthSelector period={period} onChange={p=>update({periodo:p,goalTab:'',goalStatus:''})}/></div></header>
     {team&&<nav className="mg-subnav" aria-label="Vistas de Seguimiento"><Link to="/?vista=seguimiento">Visión general</Link><Link aria-current="page" to={'/?'+new URLSearchParams({vista:'seguimiento',subvista:'objetivos',periodo:period})}>Objetivos del mes</Link></nav>}
     {readOnly&&<p className="mg-history-banner"><RrppIcon nombre="actividad" className="h-4 w-4"/>Periodo histórico · Consulta los compromisos y resultados registrados.</p>}
     {(team?teamQuery:ownSummary).isPending?<Skeleton summary/>:(team?teamQuery:ownSummary).isError?<ErrorBlock error={(team?teamQuery:ownSummary).error!} retry={()=>{if(team)void teamQuery.refetch();else void ownSummary.refetch();}}/>:summary&&<Summary data={summary} team={team}/>}
@@ -159,7 +159,7 @@ export function MonthlyGoalsPage({team=false}:{team?:boolean}) {
     {notice&&<p className="mg-toast" role="status">{notice}</p>}
   </div>;
   if(!allowed)return <p role="alert">No tienes acceso a esta vista de objetivos.</p>;
-  return team?content:<CrmSidebarLayout sidebarCompact sidebarWidth={216} sidebarBreakpoint="lg" nav={<SpecialistSidebarNav/>} logo={PRODUCTION_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1600px]" contentClassName="mg-container">{content}</CrmSidebarLayout>;
+  return team?content:<CrmSidebarLayout    nav={<SpecialistSidebarNav/>}   contentMaxWidth="max-w-[1600px]" contentClassName="mg-container">{content}</CrmSidebarLayout>;
 }
 
 export function MonthlyGoalsHomeSummary() {

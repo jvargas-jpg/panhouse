@@ -4,9 +4,9 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
 import { apiFetch } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { SpecialistSidebarNav, PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
-import { TopBar } from '../layout/TopBar';
-import { RRPP_FOOTER } from '../rrpp/RrppSidebarNav';
+import { SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { MetricasEspecialista } from './MetricasEspecialista';
 import { actualizarUrlCartera } from './carteraUrlState';
@@ -76,10 +76,10 @@ export function MisProyectosPage() {
   const toProject=(p:ProyectoCartera) => '/proyectos/'+p.id+'?'+new URLSearchParams({volver:origin});
   const toAction=(p:ProyectoCartera) => p.proximaAccion?.href ? p.proximaAccion.href+(p.proximaAccion.href.includes('?') ? '&' : '?')+new URLSearchParams({volver:origin}) : '/proyectos/'+p.id+(p.proximaAccion?.editarContexto ? '' : '/operacion')+'?'+new URLSearchParams({volver:origin,...(p.proximaAccion?.editarContexto ? {modo:'titulos'} : {proceso:p.proximaAccion?.proceso ?? ''})});
   const summary=[{key:'asignados',label:'Proyectos asignados',icon:'proyectos',tab:'todos',tone:'navy'}, {key:'ejecucion',label:'En ejecución',icon:'proceso',tone:'blue'}, {key:'atencion',label:'Requieren atención',icon:'actividad',tab:'accion',tone:'amber'}, {key:'riesgo',label:'En riesgo',icon:'actividad',tab:'riesgo',tone:'red'}, {key:'express',label:'Express',icon:'calendario',tab:'express',tone:'gold'}] as const;
-  return <CrmSidebarLayout sidebarCompact sidebarWidth={216} sidebarBreakpoint="lg" nav={<SpecialistSidebarNav/>} logo={PRODUCTION_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1760px]" contentClassName="pc-page">
+  return <CrmSidebarLayout    nav={<SpecialistSidebarNav/>}   contentMaxWidth="max-w-[1760px]" contentClassName="pc-page">
     {params.get('vista')==='metricas' ? <MetricasEspecialista/> : <>
-      <header className="pc-header"><div><span className="pc-kicker">ESPECIALISTA · OPERACIÓN EDITORIAL</span><h1>Mis proyectos</h1><p>Consulta todos los proyectos que tienes asignados, su situación operativa y próximos hitos.</p></div><TopBar compacto/></header>
-      <SpecialistSidebarNav mobile/>
+      <header className="pc-header"><div><span className="pc-kicker">ESPECIALISTA · OPERACIÓN EDITORIAL</span><h1>Mis proyectos</h1><p>Consulta todos los proyectos que tienes asignados, su situación operativa y próximos hitos.</p></div></header>
+
       {query.isPending ? <Skeleton/> : <>
         {data && <section className="pc-summary" aria-label="Resumen de cartera">{summary.map(s => <button key={s.key} className={'pc-summary-item pc-tone-'+s.tone} disabled={!('tab' in s)} onClick={() => 'tab' in s && update({tab:s.tab})}><span className="pc-summary-label">{s.label}</span><div><strong>{data.resumen[s.key]}</strong><span className="pc-summary-icon"><RrppIcon nombre={s.icon} className="h-[18px] w-[18px]"/></span></div></button>)}</section>}
         <section className="pc-panel" aria-label="Cartera de proyectos" aria-busy={query.isFetching}>

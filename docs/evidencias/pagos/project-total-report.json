@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "El alta requiere monto total en la interfaz",
+    "El formulario envía el monto total y la moneda al crear",
+    "desktop: alta y edición del monto accesibles, sin desbordamiento",
+    "tablet: alta y edición del monto accesibles, sin desbordamiento",
+    "mobile: alta y edición del monto accesibles, sin desbordamiento",
+    "Sin errores JavaScript ni proyectos de prueba guardados en la base real"
+  ],
+  "errors": [],
+  "interceptedCreateRequests": 1,
+  "realProjectWrites": 0
+}

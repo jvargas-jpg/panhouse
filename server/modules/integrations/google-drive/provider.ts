@@ -1,4 +1,5 @@
 export interface StorageItem {
+  size?: number;
   trashed?:boolean;providerFileId:string;name:string;mimeType:string;webViewLink:string|null;parents:string[];appProperties:Record<string,string>;
 }
 export interface DriveStorageProvider {

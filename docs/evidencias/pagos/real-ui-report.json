@@ -1,0 +1,36 @@
+{
+  "checks": [
+    "desktop: selección, detalle, registro, Escape y ancho correcto",
+    "tablet: selección, detalle, registro, Escape y ancho correcto",
+    "mobile: selección, detalle, registro, Escape y ancho correcto",
+    "Quick Action de Inicio abre el registro",
+    "Búsqueda por código y filtro de pagos pendientes reales",
+    "Paginación server-side",
+    "Ver proyecto abre el proyecto real seleccionado",
+    "Ficha contractual accesible; edición y cancelación sin guardar dinero de prueba"
+  ],
+  "screens": [
+    {
+      "label": "desktop",
+      "width": 1440,
+      "height": 900,
+      "scrollWidth": 1440,
+      "tableOverflow": 0
+    },
+    {
+      "label": "tablet",
+      "width": 768,
+      "height": 1024,
+      "scrollWidth": 768,
+      "tableOverflow": 0
+    },
+    {
+      "label": "mobile",
+      "width": 375,
+      "height": 812,
+      "scrollWidth": 375,
+      "tableOverflow": 0
+    }
+  ],
+  "errors": []
+}

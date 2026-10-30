@@ -1,4 +1,4 @@
-import { boolean, date, pgTable, primaryKey, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, date, numeric, pgTable, primaryKey, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { autores } from './autores.js';
 import { colecciones, presupuestos, unidades } from './catalogos.js';
 import { categoriaStandByEnum, estadoProyectoEnum } from './enums.js';
@@ -125,6 +125,14 @@ export const proyectos = pgTable('proyectos', {
 
   // --- CONTROL ADMINISTRATIVO (Alineados a Matriz IA) ---
   contratoFirmado: boolean('contrato_firmado').default(false),
+  // Datos explícitos del contrato; nunca inferidos del presupuesto ni de cuotas.
+  montoContractual: numeric('monto_contractual', { precision: 12, scale: 2 }),
+  monedaContractual: text('moneda_contractual'),
+  solvenciaEstado: text('solvencia_estado').notNull().default('Pendiente'),
+  solvenciaPorId: uuid('solvencia_por_id').references(() => users.id, { onDelete: 'set null' }),
+  solvenciaEn: timestamp('solvencia_en', { withTimezone: true }),
+  solvenciaMotivo: text('solvencia_motivo'),
+  gateFinancieroRequerido: boolean('gate_financiero_requerido').notNull().default(false),
 
   // Cascada de Fase 1 (Inicio): comercial llena los datos de venta y
   // notifica a rrpp (notificadoRrpp) → rrpp completa la ficha de

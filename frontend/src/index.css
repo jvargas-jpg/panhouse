@@ -1,3 +1,7 @@
+@import './design-system/tokens.css';
+@import './design-system/patterns.css';
+@import './design-system/role-patterns.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

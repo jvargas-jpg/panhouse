@@ -217,7 +217,7 @@ function LegacyAutoresPage({ vistaInicial }: { vistaInicial?: Vista }) {
                 setProyectoEnEdicion(null);
                 setModalProyectoOpen(true);
               }}
-              className="w-full rounded-lg bg-tinta px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-gray-800 sm:w-auto"
+              className="ph-button ph-button-primary w-full sm:w-auto"
             >
               + Nuevo Proyecto
             </button>
@@ -227,7 +227,7 @@ function LegacyAutoresPage({ vistaInicial }: { vistaInicial?: Vista }) {
                 setAutorEnEdicion(null);
                 setModalAutorOpen(true);
               }}
-              className="w-full rounded-lg bg-tinta px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-gray-800 sm:w-auto"
+              className="ph-button ph-button-primary w-full sm:w-auto"
             >
               + Nuevo Cliente
             </button>

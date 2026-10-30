@@ -2,9 +2,9 @@ import '../jefeEdicion/editorialChief.css';
 import './editor.css';
 import { useSearchParams } from 'react-router-dom';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { TopBar } from '../layout/TopBar';
+
 import { RrppIcon } from '../rrpp/RrppIcons';
-import { PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
+
 import { EDITOR_NAV, EditorNav } from './EditorParts';
 import { EditorInicio } from './EditorInicio';
 import { EditorMiTrabajo } from './EditorMiTrabajo';
@@ -22,10 +22,10 @@ export function EditorHomePage(){
  const active=EDITOR_NAV.find(n=>n[0]===params.get('vista'))?.[0]??'inicio';
  const title=EDITOR_NAV.find(n=>n[0]===active)![1];
  const today=new Intl.DateTimeFormat('es-VE',{timeZone:'America/Caracas',weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(new Date());
- return <CrmSidebarLayout nav={<EditorNav active={active}/>} logo={PRODUCTION_LOGO} sidebarWidth={224} sidebarBreakpoint="lg" contentMaxWidth="max-w-none" shellClassName="editor-layout" contentClassName="ec-shell editor-shell"
- footer={<div className="eo-sidebar-footer"><p>Historias que conectan.</p></div>}>
-  <div className="ec-topbar"><div className="eo-top-context"><RrppIcon nombre="libro"/><strong>Editor</strong></div><TopBar compacto roleLabel="Editor"/></div>
-  <EditorNav active={active} mobile/>
+ return <CrmSidebarLayout nav={<EditorNav active={active}/>}    contentMaxWidth="max-w-none" shellClassName="editor-layout" contentClassName="ec-shell editor-shell"
+ >
+
+
   <div className="ec-body"><nav className="eo-breadcrumb" aria-label="Ruta de navegación"><span>Editor</span><RrppIcon nombre="flecha"/><strong>{title}</strong></nav>
    <header className="ec-page-header"><div><h1>{title}</h1><p>{DESCRIPTIONS[active]}</p></div><div className="eo-dateline"><time>{today}</time></div></header>
    {active==='mi-trabajo'?<EditorMiTrabajo/>:active==='mis-proyectos'?<EditorMisProyectos/>:active==='mis-solicitudes'?<EditorMisSolicitudes/>:<EditorInicio/>}

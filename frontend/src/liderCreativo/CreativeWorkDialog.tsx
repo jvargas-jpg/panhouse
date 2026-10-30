@@ -1,4 +1,5 @@
-import {useEffect,useRef,useState} from 'react';
+import { Dialog } from '../design-system/Dialog';
+import { useState } from 'react';
 import type {CreativeTask,CreativeWorkDetail} from '../../../shared/creativeLeader';
 import {useCreativeCommand,useCreativeDetail} from './creativeApi';
 import {creativeDate} from './CreativeDashboardParts';
@@ -66,7 +67,6 @@ function WorkContent({data,actionType,conceptId}:{data:CreativeWorkDetail;action
   </>;
 }
 export function CreativeWorkDialog({id,actionType,conceptId,onClose}:{id:string;actionType?:string|null;conceptId?:string|null;onClose:()=>void}){
-  const ref=useRef<HTMLDialogElement>(null),query=useCreativeDetail(id);
-  useEffect(()=>{const previous=document.activeElement as HTMLElement|null;ref.current?.showModal();return()=>{ref.current?.close();previous?.focus();};},[]);
-  return <dialog ref={ref} className="cl-work-dialog" aria-label="Trabajo creativo" onCancel={onClose}><header><div><span>DIRECCIÓN CREATIVA</span><h2>Trabajo creativo</h2></div><button className="cl-close" aria-label="Cerrar trabajo creativo" onClick={onClose}>×</button></header><div className="cl-work-dialog-body">{query.isPending?<p role="status">Consultando trabajo…</p>:query.isError?<div role="alert"><p>{query.error.message}</p><button className="fv-button" onClick={()=>query.refetch()}>Reintentar consulta</button></div>:<WorkContent data={query.data} actionType={actionType} conceptId={conceptId}/>}</div></dialog>;
+ const query=useCreativeDetail(id);
+ return <Dialog title="Trabajo creativo" onClose={onClose} className="ph-dialog-wide cl-work-dialog"><div className="cl-work-dialog-body">{query.isPending?<p role="status">Consultando trabajo…</p>:query.isError?<div role="alert"><p>{query.error.message}</p><button className="fv-button" onClick={()=>query.refetch()}>Reintentar consulta</button></div>:<WorkContent data={query.data} actionType={actionType} conceptId={conceptId}/>}</div></Dialog>;
 }

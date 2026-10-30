@@ -1,4 +1,5 @@
 import { dispatchProjectWorkspace } from '../modules/project-workspaces/dispatch.js';
+import { contratoInicialSchema } from './validacionDinero.js';
 import {hasCreativeProjectAccess} from './creativeAccess.js';
 import { auditarCambioComercial, camposModificados, type ActorFicha } from './intakeRrpp.js';
 import { randomUUID } from 'node:crypto';
@@ -6,7 +7,7 @@ import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
 import type { CategoriaStandBy, EstadoProyecto, Rol } from '../db/schema/index.js';
-import { auditLogs, autores, capitulos, fichasTrazabilidad, monthlyGoals, notificaciones, pausas, projectAssignments, proyectos, proyectosAutores, servicios, solicitudesArea, users, workItems } from '../db/schema/index.js';
+import { auditLogs, autores, capitulos, fichasTrazabilidad, monthlyGoals, notificaciones, pagos, pausas, projectAssignments, proyectos, proyectosAutores, servicios, solicitudesArea, users, workItems } from '../db/schema/index.js';
 import { registrarEvento, rrppEnviadoAtSql } from './auditLog.js';
 import { asignarConHistorial } from './assignments.js';
 import { evaluarPreparacionComercial, type PreparacionComercial } from './preparacionComercial.js';
@@ -23,6 +24,8 @@ import { projectDriveWorkspaces } from '../db/schema/projectDriveWorkspaces.js';
 export { listarProyectosEditor, listarProyectosEspecialista } from './alertas.js';
 
 export interface DatosNuevoProyecto {
+  montoContractual?: string;
+  monedaContractual?: string;
   autorIds: string[];
   servicioId: string;
   unidadId: string;
@@ -89,7 +92,10 @@ export type ResultadoCrearProyecto =
   | { ok: true; proyecto: Awaited<ReturnType<typeof crearProyectoConCodigo>> }
   | { ok: false; status: 400; error: string };
 
-export async function crearProyecto(datos: DatosNuevoProyecto): Promise<ResultadoCrearProyecto> {
+export async function crearProyecto(datos: DatosNuevoProyecto, actor?: ActorFicha): Promise<ResultadoCrearProyecto> {
+  const contract=contratoInicialSchema.safeParse(datos);
+  if (!contract.success) return { ok:false,status:400,error:'Indica un monto total positivo y una moneda válida juntos' };
+  if (contract.data.montoContractual && !actor) return { ok:false,status:400,error:'El monto contractual requiere un responsable para su auditoría' };
   const { autorIds, ...datosProyecto } = datos;
   // crearProyectoSchema ya exige al menos un id (.min(1)) — este guard
   // es solo para que TS sepa que autorPrincipal no es undefined, no una
@@ -112,7 +118,7 @@ export async function crearProyecto(datos: DatosNuevoProyecto): Promise<Resultad
 
   for (let intento = 1; intento <= INTENTOS_CODIGO_UNICO; intento++) {
     try {
-      const proyecto = await crearProyectoConCodigo(datosProyecto, autorPrincipal, autorIds);
+      const proyecto = await crearProyectoConCodigo({ ...datosProyecto,...contract.data }, autorPrincipal, autorIds,actor);
       return { ok: true, proyecto };
     } catch (error) {
       if (!esColisionDeCodigo(error) || intento === INTENTOS_CODIGO_UNICO) throw error;
@@ -127,6 +133,7 @@ async function crearProyectoConCodigo(
   datosProyecto: Omit<DatosNuevoProyecto, 'autorIds'>,
   autorPrincipal: string,
   autorIds: string[],
+  actor?: ActorFicha,
 ) {
   return db.transaction(async (tx) => {
     const [currentService]=await tx.select({active:servicios.activo}).from(servicios).where(eq(servicios.id,datosProyecto.servicioId)).for('share');
@@ -143,6 +150,10 @@ async function crearProyectoConCodigo(
       .values({ ...datosProyecto, autorId: autorPrincipal, codigo: generarCodigoCorto() })
       .returning();
     if (!proyecto) throw new Error('El insert del proyecto no devolvió ninguna fila');
+    if (proyecto.montoContractual && actor) await registrarEvento(tx, {
+      actorId:actor.id,accion:'CONTRACT_AMOUNT_CHANGED',entityType:'proyecto',entityId:proyecto.id,proyectoId:proyecto.id,
+      detalles:{ before:null,after:{ amount:proyecto.montoContractual,currency:proyecto.monedaContractual },reason:'Monto total registrado al crear el proyecto' },
+    });
 
     // ingresoFechaIngreso arranca igual a fechaProgramadaInicio (misma
     // fecha, dos lugares donde se ve: acá en el alta de Comercial, y
@@ -532,6 +543,8 @@ export async function eliminarProyecto(proyectoId: string) {
   return db.transaction(async tx => {
     const [p] = await tx.select({ id: proyectos.id }).from(proyectos).where(eq(proyectos.id, proyectoId)).for('update');
     if (!p) return undefined;
+    const [payment] = await tx.select({ id: pagos.id }).from(pagos).where(eq(pagos.proyectoId, proyectoId)).limit(1);
+    if (payment) throw Object.assign(new Error('El proyecto conserva abonos. Retíralo para preservar su historial.'), { statusCode: 409 });
     const [goal] = await tx.select({ id: monthlyGoals.id }).from(monthlyGoals).where(eq(monthlyGoals.projectId, proyectoId)).limit(1);
     if (goal) throw Object.assign(new Error('El proyecto conserva objetivos mensuales. Retíralo para preservar su historial.'), { statusCode: 409 });
     const [workspace] = await tx.select({id:projectDriveWorkspaces.id}).from(projectDriveWorkspaces).where(eq(projectDriveWorkspaces.projectId,proyectoId)).limit(1);

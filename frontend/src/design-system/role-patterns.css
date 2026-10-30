@@ -1,0 +1,62 @@
+/* Compatibility adapters for existing role components. Layout and data stay local.
+   New screens should use design-system/components rather than add another adapter. */
+.ph-app-frame :is(button, a).bg-tinta { background: var(--ph-gold); color: var(--ph-ink); border-color: transparent; border-radius: var(--ph-control-radius); min-height: 40px; box-shadow: none; }
+.ph-app-frame :is(button, a).bg-tinta:hover { background: var(--ph-gold-hover); color: var(--ph-ink); }
+.ph-app-frame .ph-shell .fv-primary { background: var(--ph-gold); color: var(--ph-ink); border-color: transparent; min-height: 40px; border-radius: var(--ph-control-radius); }
+.ph-app-frame .ph-shell .fv-primary:hover { background: var(--ph-gold-hover); }
+.ph-app-frame .ph-shell .cl-work-dialog-body { background: white; }
+.ph-app-frame .ph-shell .ei-quick a:first-child { background: var(--ph-gold); color: var(--ph-ink); border-color: var(--ph-gold); }
+.ph-app-frame .ph-shell .ei-quick a:first-child :is(svg, small, strong) { color: var(--ph-ink); }
+.ph-app-frame .ph-shell .eo-select select { min-height: 40px; border-radius: var(--ph-control-radius); border-color: var(--ph-line); }
+.ph-app-frame .ph-shell :is(.coh-quick, .se-error > button, .sd-error > button, .coh-error > button) { background: var(--ph-gold); color: var(--ph-ink); border-radius: var(--ph-control-radius); }
+.ph-app-frame .ph-shell .coh-quick :is(svg, span) { color: var(--ph-ink); }
+.ph-app-frame .ph-shell :is(.ad-button, .ec-primary, .jd-btn-primary, .jd-confirm-primary, .jf-button, .ji-button.gold, .js-primary, .sr-primary, .mg-primary, .pc-button-primary, .cr-primary, .cp-primary-action, .fv-button-primary, .mt-cta-button, .cl-cta) {
+  background: var(--ph-gold); color: var(--ph-ink); border: 1px solid transparent; border-radius: var(--ph-control-radius);
+  font-family: var(--ph-font); font-weight: 600; font-size: 13px; min-height: 40px; padding: 9px 14px; box-shadow: none;
+}
+.ph-app-frame .ph-shell :is(.ad-button, .ec-primary, .jd-btn-primary, .jf-button, .js-primary, .sr-primary, .mg-primary, .pc-button-primary, .cr-primary, .cp-primary-action, .cl-cta):hover {
+  background: var(--ph-gold-hover); color: var(--ph-ink);
+}
+.ph-app-frame .ph-shell :is(.ad-button.secondary, .ec-secondary, .jd-btn-secondary, .jf-button-secondary, .js-secondary, .sr-button:not(.sr-primary), .mg-secondary, .pc-button:not(.pc-button-primary), .cr-secondary, .ei-secondary, .ji-button:not(.gold)) {
+  background: white; color: var(--ph-ink); border: 1px solid var(--ph-line); border-radius: var(--ph-control-radius);
+  font-family: var(--ph-font); font-weight: 500; font-size: 13px; min-height: 40px; padding: 9px 14px; box-shadow: none;
+}
+.ph-app-frame .ph-shell :is(.ad-button.secondary, .ec-secondary, .jd-btn-secondary, .jf-button-secondary, .js-secondary, .mg-secondary, .pc-button:not(.pc-button-primary)):hover { background: var(--ph-neutral-bg); }
+.ph-app-frame .ph-shell .ad-button.danger { color: white; background: var(--ph-danger); border-color: var(--ph-danger); }
+.ph-app-frame .ph-shell .ad-button.danger-text { color: var(--ph-danger); background: white; border-color: #fecaca; }
+.ph-app-frame .ph-shell :is(.ad-button.compact, .jf-button-small) { min-height: 32px; padding: 6px 10px; font-size: 11px; }
+.ph-app-frame :is(.ph-content, .ph-dialog) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), select, textarea) { font-family: var(--ph-font); font-size: 13px; border-radius: var(--ph-control-radius); }
+.ph-app-frame :is(.ph-content, .ph-dialog) :is(input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]), select) { min-height: var(--ph-control-height); }
+.ph-app-frame .ph-shell :is(.ad-search, .eo-search, .ei-search, .mt-search, .sr-search, .jac-search, .jd-search, .jf-queue-search, .jp-search, .js-search, .pc-search, .cp-search, .cw-search, .ji-team-search) {
+  min-height: 40px; border: 1px solid var(--ph-line); border-radius: var(--ph-control-radius); background: white; color: var(--ph-muted);
+}
+.ph-app-frame .ph-shell :is(.ad-search, .eo-search, .mt-search, .sr-search, .jac-search, .jd-search, .jf-queue-search, .jp-search, .pc-search, .cp-search, .cw-search) input { background: transparent; border: 0; outline: 0; box-shadow: none; }
+.ph-app-frame .ph-shell :is(.ad-search, .eo-search, .mt-search, .sr-search, .jac-search, .jd-search, .jf-queue-search, .jp-search, .pc-search, .cp-search, .cw-search):focus-within { outline: 2px solid var(--ph-gold-text); outline-offset: 2px; }
+.ph-app-frame .ph-shell :is(.ad-panel, .ec-panel, .coh-panel, .se-panel, .sd-panel, .ei-panel, .pc-panel, .fv-card, .jf-card) { background: white; border-color: var(--ph-line-soft); border-radius: var(--ph-radius); box-shadow: var(--ph-shadow); }
+.ph-app-frame .ph-shell :is(.ad-panel, .ec-panel, .coh-panel, .se-panel, .sd-panel, .ei-panel, .fv-card, .jf-card) > header h2 { font: 600 var(--ph-section-title)/1.4 var(--ph-font); color: var(--ph-ink); }
+.ph-app-frame .ph-shell :is(.ad-stat, .ec-kpi, .ei-kpi, .jf-kpi, .ji-kpi, .cl-kpi, .eci-kpi, .ci-kpi, .mg-kpi, .coh-summary-card, .se-summary-card, .sd-summary-card) { background: white; border: 1px solid var(--ph-line-soft); border-radius: var(--ph-radius); box-shadow: var(--ph-shadow); }
+.ph-app-frame .ph-shell :is(.ad-stat, .ec-kpi, .ei-kpi, .jf-kpi, .ji-kpi, .cl-kpi, .eci-kpi, .ci-kpi, .mg-kpi, .coh-summary-card, .se-summary-card, .sd-summary-card) strong { font-family: var(--ph-font); font-weight: 700; }
+.ph-app-frame .ph-shell :is(.ec-kpi-icon, .ei-kpi-icon, .jf-kpi-icon, .ji-kpi-icon, .cl-kpi-icon, .eci-kpi-icon, .ci-kpi-icon) { background: var(--ph-gold-soft); color: var(--ph-gold-text); border-radius: 8px; }
+.ph-app-frame .ph-shell :is(.ec-status, .coh-status, .se-status, .sd-badge, .ei-badge, .mt-chip, .sr-badge, .jac-badge, .jd-badge, .jp-badge, .js-badge, .mg-status, .cw-status, .cr-status, .rrpp-i-badge) { font-family: var(--ph-font); border-radius: 6px; font-size: 11px; font-weight: 500; }
+.ph-app-frame .ph-shell :is(.ec-status.ec-green, .coh-status.coh-green, .se-status.se-green, .sd-badge.sd-green, .jac-badge-assigned, .mg-status-cumplido, .cw-status.done, .cr-status.accepted, .rrpp-i-badge-green) { background: var(--ph-success-bg); color: var(--ph-success); }
+.ph-app-frame .ph-shell :is(.ec-status.ec-red, .coh-status.coh-red, .se-status.se-red, .sd-badge.sd-red, .jac-badge-risk, .mg-status-no_cumplido, .cr-status.rejected) { background: var(--ph-danger-bg); color: var(--ph-danger); }
+.ph-app-frame .ph-shell :is(.ec-status.ec-amber, .coh-status.coh-amber, .se-status.se-amber, .sd-badge.sd-amber, .jac-badge-pending, .jd-status-pendiente, .jd-status-informacion_solicitada, .mg-status-en_riesgo, .cw-status.waiting, .cw-status.pending, .cr-status.pending, .rrpp-i-badge-amber) { background: var(--ph-warning-bg); color: var(--ph-warning); }
+.ph-app-frame .ph-shell :is(.ec-status.ec-blue, .ec-status.ec-violet, .sd-badge.sd-blue, .jd-status-en_revision, .mg-status-activo, .cw-status.progress, .cw-status.adjust) { background: var(--ph-info-bg); color: var(--ph-info); }
+.ph-app-frame .ph-shell :is(.ad-table, .eo-table, .ec-table, .mp-project-table, .ms-table) thead { background: white; }
+.ph-app-frame .ph-shell :is(.ad-table, .eo-table, .ec-table, .mp-project-table, .ms-table) th { color: var(--ph-muted); font-family: var(--ph-font); }
+.ph-app-frame .ph-shell :is(.ad-table, .eo-table, .ec-table, .mp-project-table, .ms-table) tbody tr:hover { background: #f9fafb; }
+.ph-app-frame .ph-shell :is(.ad-table, .eo-table, .ec-table, .mp-project-table, .ms-table) tr:is(.selected, .is-selected, [aria-selected=true]) { background: var(--ph-gold-soft); }
+.ph-app-frame .ph-shell :is(.ec-page-header, .coh-page-header, .se-page-header, .sd-page-header, .jf-page-header, .ei-header, .mt-header, .sr-header, .pc-header, .cl-header, .cp-header, .cr-header, .mg-header) h1 { font: 700 var(--ph-page-title)/1.3 var(--ph-font); color: var(--ph-ink); letter-spacing: -.025em; }
+.ph-app-frame .ph-shell :is(.ec-page-header, .coh-page-header, .se-page-header, .sd-page-header, .jf-page-header, .ei-header, .mt-header, .sr-header, .pc-header, .cl-header, .cp-header, .cr-header, .mg-header) > div > p { font-family: var(--ph-font); font-size: 14px; color: var(--ph-muted); line-height: 1.6; }
+.ph-app-frame .ph-shell :is(.eo-detail-title h2, .mw-detail-header h3, .mp-detail-header h3, .ms-detail-header h3) { font: 600 18px/1.4 var(--ph-font); }
+.ph-app-frame .ph-shell :is(.eo-detail, .ep-detail, .cp-detail, .cr-detail) { background: white; border-color: var(--ph-line); border-radius: 12px; box-shadow: var(--ph-shadow); }
+.ph-app-frame .ph-shell :is(.ec-shell, .editor-shell, .corrector-home, .soporte-editorial-home, .soporte-digital-home, .ei-container, .mt-page, .sr-page, .pc-page, .mg-container) { background: var(--ph-bg); }
+.ph-app-frame .ph-shell :is(.eo-breadcrumb, .coh-breadcrumb, .se-breadcrumb, .sd-breadcrumb) { display: none; }
+@media (max-width: 639px) {
+  .ph-app-frame .ph-shell :is(.ec-body, .coh-body, .se-body, .sd-body, .cl-body) { padding: 20px 16px 24px; }
+  .ph-app-frame .ph-shell :is(.eo-detail.is-open, .ep-detail, .cp-detail, .cr-detail) { border-radius: 0; }
+}
+@media (min-width: 1300px) {
+  .ph-app-frame .ph-shell .ec-upcoming { grid-row: 1 / 3; }
+  .ph-app-frame .ph-shell .ec-activity { grid-row: 3; }
+}

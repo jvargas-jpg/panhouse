@@ -7,7 +7,7 @@ import { eliminarAutor, fetchAutores } from '../../autores/autoresApi';
 import { CrmSidebarLayout } from '../../layout/CrmSidebarLayout';
 import { fetchProyectosActivos } from '../../proyectos/proyectosApi';
 import type { Autor } from '../../types/api';
-import { COMERCIAL_FOOTER, COMERCIAL_LOGO, ComercialSidebarNav } from '../ComercialSidebarNav';
+import { ComercialSidebarNav } from '../ComercialSidebarNav';
 import { AuthorsList, type OrdenAutores } from './AuthorsList';
 import { AuthorsToolbar, type FiltroCategoria } from './AuthorsToolbar';
 
@@ -113,8 +113,8 @@ export function CommercialAuthorsView() {
 
   return (
     <CrmSidebarLayout
-      logo={COMERCIAL_LOGO}
-      footer={COMERCIAL_FOOTER}
+
+
       contentMaxWidth="max-w-[1440px]"
       nav={<ComercialSidebarNav activo="autores" />}
       overlays={

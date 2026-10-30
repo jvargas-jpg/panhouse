@@ -4,9 +4,9 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useMe } from '../auth/useAuth';
 import { apiFetch } from '../lib/api';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
-import { SpecialistSidebarNav, PRODUCTION_LOGO } from '../layout/RoleProjectNavigation';
-import { TopBar } from '../layout/TopBar';
-import { RRPP_FOOTER } from '../rrpp/RrppSidebarNav';
+import { SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
+
+
 import { RrppIcon } from '../rrpp/RrppIcons';
 import type { ItemTrabajoEspecialista, MiTrabajo, TabMiTrabajo } from '../../../shared/especialistaMiTrabajo';
 import './miTrabajo.css';
@@ -103,9 +103,9 @@ export function MiTrabajoPage() {
   const grouped = tab === 'hoy' && data ? { vencidas: data.items.filter(i => i.estado === 'vencida'), hoy: data.items.filter(i => i.estado === 'hoy') } : null;
   const vacio = EMPTY[tab];
 
-  return <CrmSidebarLayout sidebarCompact sidebarWidth={216} sidebarBreakpoint="lg" nav={<SpecialistSidebarNav/>} logo={PRODUCTION_LOGO} footer={RRPP_FOOTER} contentMaxWidth="max-w-[1760px]" contentClassName="mt-page">
-    <header className="mt-header"><div><span className="mt-kicker">ESPECIALISTA · OPERACIÓN EDITORIAL</span><h1>Mi trabajo</h1><p>Acciones, entregas y seguimientos que requieren tu intervención directa.</p></div><TopBar compacto/></header>
-    <SpecialistSidebarNav mobile/>
+  return <CrmSidebarLayout    nav={<SpecialistSidebarNav/>}   contentMaxWidth="max-w-[1760px]" contentClassName="mt-page">
+    <header className="mt-header"><div><span className="mt-kicker">ESPECIALISTA · OPERACIÓN EDITORIAL</span><h1>Mi trabajo</h1><p>Acciones, entregas y seguimientos que requieren tu intervención directa.</p></div></header>
+
     {query.isPending ? <Skeleton/> : query.isError ? <div className="mt-main"><div className="mt-empty"><h2>No se pudo consultar tu trabajo</h2><p>{(query.error as Error).message}</p><button className="mt-cta-button" onClick={() => query.refetch()}>Reintentar</button></div></div> : data && <>
       <section className="mt-summary" aria-label="Resumen de trabajo">{summary.map(s => <button key={s.key} className={'mt-summary-item '+s.tone} aria-current={tab === s.tab ? 'page' : undefined} onClick={() => update({ tab: s.tab })}><span className="mt-summary-label">{s.label}</span><div><strong>{s.value}</strong></div></button>)}</section>
       <div className="mt-panel">
