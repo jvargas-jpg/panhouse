@@ -399,7 +399,7 @@ describe('Explorador RRPP: consulta canónica, paginación y etapas honestas', (
       d.stages.find((s: { key: string }) => s.key === 'creativa'),
     ).toMatchObject({ estado: 'en_progreso', responsables: [creativo.nombre] });
   });
-  it('producción solo expone resumen útil de capítulos, no contenido/documentos', async () => {
+  it('producción editorial (Edición/Corrección/Diseño/Calidad) ya no tiene pestaña ni contenido/documentos propios para RRPP — solo un hito resumido', async () => {
     const { p } = await preparado();
     await db.insert(capitulos).values([
       {
@@ -411,10 +411,8 @@ describe('Explorador RRPP: consulta canónica, paginación y etapas honestas', (
       { proyectoId: p.id, numero: 2 },
     ]);
     const res = await detalle(p.id);
-    expect(res.body.produccion.capitulos).toEqual({
-      cantidad: 2,
-      entregados: 1,
-    });
+    expect(res.body.produccion).toBeUndefined();
+    expect(res.body).toHaveProperty('produccionHito');
     expect(JSON.stringify(res.body)).not.toContain('NO_EXPONER');
     expect(
       (

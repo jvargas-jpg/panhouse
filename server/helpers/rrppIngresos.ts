@@ -39,7 +39,6 @@ export const ingresoRrppSchema = seccionFichaEditorialSchema
   .extend({
     ingresoServicioSubtipoCrudo: z.enum(SUBTIPOS_CRUDO).nullable().optional(),
     fechaDeseadaCulminacion: fecha,
-    matrizFechaReunionCreativa: fecha,
   })
   .strict()
   .refine(

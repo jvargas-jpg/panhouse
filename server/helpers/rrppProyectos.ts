@@ -3,7 +3,6 @@ import { db } from '../db/client.js';
 import {
   auditLogs,
   autores,
-  capitulos,
   correcciones,
   direccionesCreativas,
   disenos,
@@ -256,7 +255,6 @@ export async function resumenProyectoRrpp(id: string) {
     correccion,
     diseno,
     calidad,
-    capitulosResumen,
     reuniones,
   ] = await Promise.all([
     db.select().from(workItems).where(eq(workItems.proyectoId, id)),
@@ -281,6 +279,9 @@ export async function resumenProyectoRrpp(id: string) {
         tipo: direccionesCreativas.tipo,
         workItemId: direccionesCreativas.workItemId,
         fechaReunion: direccionesCreativas.fechaReunion,
+        reunionRealizada: direccionesCreativas.reunionRealizada,
+        fechaBriefEnviadoAutor: direccionesCreativas.fechaBriefEnviadoAutor,
+        fechaBriefAprobadoAutor: direccionesCreativas.fechaBriefAprobadoAutor,
         fechaCierre: direccionesCreativas.fechaCierre,
         resultado: direccionesCreativas.resultadoFinal,
       })
@@ -323,16 +324,6 @@ export async function resumenProyectoRrpp(id: string) {
           .from(fichaCalidadFases)
           .where(eq(fichaCalidadFases.fichaId, ficha.id))
       : [],
-    db
-      .select({
-        cantidad: count(),
-        entregados:
-          sql<number>`count(*) filter (where ${capitulos.fechaEntregaEditor} is not null)`.mapWith(
-            Number,
-          ),
-      })
-      .from(capitulos)
-      .where(eq(capitulos.proyectoId, id)),
     ficha
       ? db
           .select({
@@ -455,6 +446,28 @@ export async function resumenProyectoRrpp(id: string) {
     (s) => s.activas > 0 && s.estado !== 'en_progreso',
   );
   const responsablesActuales = activas.length ? activas : pendientes;
+  // RRPP no opera Producción Editorial — ya no tiene una pestaña propia
+  // (ver RrppProyectoDetalle.tsx). Este es el único hito derivado que
+  // conserva: el mismo estado por etapa de arriba, colapsado a una sola
+  // etiqueta, para habilitar Lanzamiento sin exponer un seguimiento
+  // completo de Edición/Corrección/Diseño/Calidad.
+  const etapasProduccion = stages.filter((s) =>
+    ['edicion', 'correccion', 'diseno', 'calidad'].includes(s.key),
+  );
+  const produccionActiva = etapasProduccion.filter(
+    (s) => s.estado === 'en_progreso',
+  );
+  const produccionPendiente = etapasProduccion.filter(
+    (s) => s.activas > 0 && s.estado !== 'en_progreso',
+  );
+  const produccionHito = produccionActiva.length
+    ? `Actualmente en ${produccionActiva.map((s) => s.label).join(' y ')}`
+    : produccionPendiente.length
+      ? `Pendiente de iniciar en ${produccionPendiente.map((s) => s.label).join(' y ')}`
+      : etapasProduccion.length &&
+          etapasProduccion.every((s) => s.estado === 'completado')
+        ? 'Producción editorial completada'
+        : null;
   const revision = creativas
     .filter(
       (d) =>
@@ -479,6 +492,7 @@ export async function resumenProyectoRrpp(id: string) {
     ...resumen!,
     subtipoCrudo: ficha?.ingresoServicioSubtipoCrudo ?? null,
     stages,
+    produccionHito,
     responsableActual:
       responsablesActuales.length > 1
         ? `${responsablesActuales.length} áreas con trabajo ${activas.length ? 'en curso' : 'pendiente'}`
@@ -493,6 +507,7 @@ export async function resumenProyectoRrpp(id: string) {
         .filter((a) => a.id !== p!.autorId)
         .map((a) => a.nombre),
       titulo: p!.tituloDefinitivo ?? p!.titulo,
+      subtitulo: p!.subtituloDefinitivo,
       coleccion: ficha?.coleccionPanhouse ?? null,
       tema: ficha?.temaGeneral ?? null,
       publico: ficha?.publicoPerfil ?? null,
@@ -523,10 +538,15 @@ export async function resumenProyectoRrpp(id: string) {
     },
     eventos: historial.eventos.slice(0, 6),
     creativa: {
+      liderCreativo:
+        stages.find((s) => s.key === 'creativa')?.responsables ?? [],
       intervenciones: creativas.map((d) => ({
         id: d.id,
         tipo: d.tipo,
         fechaReunion: d.fechaReunion,
+        reunionRealizada: d.reunionRealizada,
+        fechaBriefEnviadoAutor: d.fechaBriefEnviadoAutor,
+        fechaBriefAprobadoAutor: d.fechaBriefAprobadoAutor,
         fechaCierre: d.fechaCierre,
         resultado: d.resultado,
         estado: items.find((i) => i.id === d.workItemId)?.estado ?? null,
@@ -536,9 +556,6 @@ export async function resumenProyectoRrpp(id: string) {
         fecha: fecha.toISOString(),
       })),
       revision,
-    },
-    produccion: {
-      capitulos: capitulosResumen[0] ?? { cantidad: 0, entregados: 0 },
     },
     lanzamiento: ficha
       ? {

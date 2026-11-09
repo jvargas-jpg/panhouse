@@ -37,7 +37,11 @@ export const seccionMatrizIngresoSchema = z
     matrizDiagnosticoGenerado: z.boolean().optional(),
     matrizLinkDiagnostico: z.string().nullable().optional(),
     matrizIngresoGenerado: z.boolean().optional(),
-    matrizFechaReunionCreativa: z.string().nullable().optional(),
+    // La fecha/gestión de la reunión creativa vive en el flujo real de
+    // Dirección Creativa (gate título/subtítulo + solicitud del
+    // Especialista, ver evaluarGateMomentoReunionCreativa en
+    // server/helpers/gates.ts y createCreativeMeetingRequest en
+    // server/helpers/creativeRequests.ts) — no en el ingreso de RRPP.
     // Array de texto libre — mismo criterio que objetivoComercial arriba.
     matrizVentaCruzada: z.array(z.string()).nullable().optional(),
     matrizObservacionesComerciales: z.string().nullable().optional(),

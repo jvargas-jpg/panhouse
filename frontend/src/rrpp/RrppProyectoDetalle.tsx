@@ -16,12 +16,18 @@ import {
 } from './rrppProyectosApi';
 import './rrppProyectos.css';
 
+// "Producción" (Edición/Corrección/Diseño/Calidad) dejó de ser pestaña
+// propia de RRPP — esos procesos los opera el Especialista/Jefatura/
+// Admin. Su único rastro acá es el hito resumido en Resumen
+// (p.produccionHito). "Creativa" se reemplaza por "Conceptos de
+// portada": RRPP no hace la reunión creativa ni el brief (eso es del
+// Líder Creativo), solo aprueba o devuelve los conceptos antes del
+// autor (GATE-05, ver server/helpers/gates.ts).
 const TABS = [
   ['resumen', 'Resumen'],
   ['comercial', 'Contexto comercial'],
   ['diagnostico', 'Diagnóstico RRPP'],
-  ['creativa', 'Creativa'],
-  ['produccion', 'Producción'],
+  ['conceptos', 'Conceptos de portada'],
   ['lanzamiento', 'Lanzamiento'],
   ['historial', 'Historial'],
 ] as const;
@@ -110,17 +116,6 @@ function fecha(valor?: string | null) {
         year: 'numeric',
       })
     : '—';
-}
-function vencimiento(valor: string | null) {
-  return valor && valor.length > 10
-    ? new Date(valor).toLocaleString('es-VE', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      })
-    : fecha(valor);
 }
 function Datos({ filas }: { filas: [string, ReactNode][] }) {
   return (
@@ -249,6 +244,8 @@ export function RrppProyectoDetalle({
     });
   }
   const p = query.data;
+  const conceptosPendientes =
+    p?.creativa.revision.reduce((n, g) => n + g.propuestas.length, 0) ?? 0;
   const fichaHref = `/proyectos/${id}/ficha-trazabilidad`;
   const ingresoHref = `/rrpp/ingresos?proyecto=${id}`;
   return (
@@ -407,6 +404,11 @@ export function RrppProyectoDetalle({
                   className={`shrink-0 border-b-2 px-2.5 py-3.5 text-[11px] ${tab === key ? 'border-dorado font-semibold text-slate-900' : 'border-transparent text-slate-600 hover:text-slate-900'}`}
                 >
                   {label}
+                  {key === 'conceptos' && conceptosPendientes > 0 && (
+                    <span className="ml-1.5 inline-flex min-w-[1.1rem] items-center justify-center rounded-full bg-amber-100 px-1 text-[10px] font-semibold text-amber-800">
+                      {conceptosPendientes}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -462,53 +464,75 @@ export function RrppProyectoDetalle({
                   <div className="grid gap-3">
                     <Card titulo="Progreso por etapa" icono="proceso">
                       <div className="space-y-1.5">
-                        {p.stages.map((s) => (
-                          <div
-                            key={s.key}
-                            className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-2 text-[11px]"
-                          >
-                            <span className="text-slate-500">{s.label}</span>
-                            {s.progress !== null ? (
-                              <div className="flex items-center gap-2">
-                                <div
-                                  role="progressbar"
-                                  aria-label="Completitud de ingreso RRPP"
-                                  aria-valuenow={s.progress}
-                                  aria-valuemin={0}
-                                  aria-valuemax={100}
-                                  title="Requisitos obligatorios completos / requisitos aplicables"
-                                  className="h-1.5 min-w-8 flex-1 overflow-hidden rounded bg-slate-100"
-                                >
+                        {p.stages
+                          .filter(
+                            (s) =>
+                              ![
+                                'edicion',
+                                'correccion',
+                                'diseno',
+                                'calidad',
+                              ].includes(s.key),
+                          )
+                          .map((s) => (
+                            <div
+                              key={s.key}
+                              className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-2 text-[11px]"
+                            >
+                              <span className="text-slate-500">
+                                {s.label}
+                              </span>
+                              {s.progress !== null ? (
+                                <div className="flex items-center gap-2">
                                   <div
-                                    className={`h-full rounded ${s.progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
-                                    style={{ width: `${s.progress}%` }}
-                                  />
+                                    role="progressbar"
+                                    aria-label="Completitud de ingreso RRPP"
+                                    aria-valuenow={s.progress}
+                                    aria-valuemin={0}
+                                    aria-valuemax={100}
+                                    title="Requisitos obligatorios completos / requisitos aplicables"
+                                    className="h-1.5 min-w-8 flex-1 overflow-hidden rounded bg-slate-100"
+                                  >
+                                    <div
+                                      className={`h-full rounded ${s.progress === 100 ? 'bg-emerald-500' : 'bg-blue-500'}`}
+                                      style={{ width: `${s.progress}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] text-slate-700">
+                                    {s.progress}%
+                                  </span>
                                 </div>
-                                <span className="text-[10px] text-slate-700">
-                                  {s.progress}%
-                                </span>
-                              </div>
-                            ) : (
-                              <div>
-                                <BadgeConsulta estado={s.estado} compacto>
-                                  {s.registrado && !s.instancias
-                                    ? s.registrado
-                                    : ESTADOS_ETAPA[s.estado]}
-                                </BadgeConsulta>
-                                {s.bloqueadas > 0 &&
-                                  s.estado === 'en_progreso' && (
-                                    <span className="ml-1 text-[9px] text-amber-700">
-                                      {s.bloqueadas} bloqueada(s)
-                                    </span>
-                                  )}
-                              </div>
-                            )}
+                              ) : (
+                                <div>
+                                  <BadgeConsulta estado={s.estado} compacto>
+                                    {s.registrado && !s.instancias
+                                      ? s.registrado
+                                      : ESTADOS_ETAPA[s.estado]}
+                                  </BadgeConsulta>
+                                  {s.bloqueadas > 0 &&
+                                    s.estado === 'en_progreso' && (
+                                      <span className="ml-1 text-[9px] text-amber-700">
+                                        {s.bloqueadas} bloqueada(s)
+                                      </span>
+                                    )}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        {p.produccionHito && (
+                          <div className="grid grid-cols-[92px_minmax(0,1fr)] items-center gap-2 text-[11px]">
+                            <span className="text-slate-500">Producción</span>
+                            <span className="text-slate-700">
+                              {p.produccionHito}
+                            </span>
                           </div>
-                        ))}
+                        )}
                       </div>
                       <p className="mt-3 text-[9px] leading-3 text-slate-400">
                         Las etapas pueden avanzar en paralelo. El porcentaje
-                        corresponde a los requisitos del ingreso.
+                        corresponde a los requisitos del ingreso. Edición,
+                        Corrección, Diseño y Calidad las opera el equipo
+                        editorial — acá solo se resumen.
                       </p>
                     </Card>
                     <Card titulo="Fechas clave" icono="calendario">
@@ -685,68 +709,103 @@ export function RrppProyectoDetalle({
                   )}
                 </Card>
               )}
-              {tab === 'creativa' && (
+              {tab === 'conceptos' && (
                 <div className="grid gap-3">
-                  <Card titulo="Dirección Creativa" icono="conceptos">
-                    {p.creativa.intervenciones.length ? (
-                      p.creativa.intervenciones.map((d) => (
-                        <div key={d.id} className="mb-4 last:mb-0">
-                          <Datos
-                            filas={[
-                              [
-                                'Intervención',
-                                d.tipo === 'concepto_portada'
-                                  ? 'Concepto de portada'
-                                  : d.tipo === 'revision_cubierta'
-                                    ? 'Revisión de cubierta'
-                                    : d.tipo,
-                              ],
-                              [
-                                'Estado',
-                                ESTADOS_ETAPA[d.estado ?? ''] ??
-                                  'Sin estado registrado',
-                              ],
-                              ['Reunión creativa', fecha(d.fechaReunion)],
-                              ['Fecha de cierre', fecha(d.fechaCierre)],
-                              ['Resultado', d.resultado],
-                            ]}
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-slate-500">
-                        No hay intervenciones creativas registradas.
-                      </p>
-                    )}
-                  </Card>
-                  {p.creativa.revision.map((g) => (
-                    <button
-                      key={g.direccionId}
-                      onClick={() =>
-                        setRevision({
-                          ...g,
-                          actualizadoAt: p.actualizadoAt ?? '',
-                          proyecto: {
-                            id: p.id,
-                            codigo: p.codigo,
-                            nombre: p.nombre,
-                            autores: [
-                              { nombre: p.informacion.autorPrincipal },
-                              ...p.informacion.coautores.map((nombre) => ({
-                                nombre,
-                              })),
-                            ],
-                            servicio: p.servicio,
-                            subtipoCrudo: p.subtipoCrudo,
-                          },
-                        })
-                      }
-                      className={`${boton} !border-dorado !bg-amber-50 !text-amber-800`}
-                    >
-                      Revisar conceptos · {g.propuestas.length} pendiente(s)
-                    </button>
-                  ))}
+                  {p.creativa.revision.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {p.creativa.revision.map((g) => (
+                        <button
+                          key={g.direccionId}
+                          onClick={() =>
+                            setRevision({
+                              ...g,
+                              actualizadoAt: p.actualizadoAt ?? '',
+                              proyecto: {
+                                id: p.id,
+                                codigo: p.codigo,
+                                nombre: p.nombre,
+                                autores: [
+                                  { nombre: p.informacion.autorPrincipal },
+                                  ...p.informacion.coautores.map((nombre) => ({
+                                    nombre,
+                                  })),
+                                ],
+                                servicio: p.servicio,
+                                subtipoCrudo: p.subtipoCrudo,
+                              },
+                            })
+                          }
+                          className={`${boton} !border-dorado !bg-amber-50 !text-amber-800`}
+                        >
+                          Revisar conceptos · {g.propuestas.length} pendiente(s)
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <Card titulo="Conceptos de portada" icono="conceptos">
+                    <p className="mb-4 text-xs text-slate-500">
+                      RRPP revisa y aprueba los conceptos entregados por el
+                      Líder Creativo antes de enviarlos al autor. La reunión
+                      creativa, el brief y la elaboración de conceptos son
+                      responsabilidad del Líder Creativo.
+                    </p>
+                    <Datos
+                      filas={[
+                        [
+                          'Líder Creativo responsable',
+                          p.creativa.liderCreativo.length
+                            ? p.creativa.liderCreativo.join(', ')
+                            : 'Sin asignar',
+                        ],
+                        ['Título definitivo', p.informacion.titulo],
+                        ['Subtítulo definitivo', p.informacion.subtitulo],
+                      ]}
+                    />
+                  </Card>
+                  {p.creativa.intervenciones.length ? (
+                    p.creativa.intervenciones.map((d) => (
+                      <Card
+                        key={d.id}
+                        titulo="Estado del brief"
+                        icono="conceptos"
+                      >
+                        <Datos
+                          filas={[
+                            [
+                              'Reunión creativa',
+                              d.reunionRealizada
+                                ? `Realizada${d.fechaReunion ? ' · ' + fecha(d.fechaReunion) : ''}`
+                                : 'Pendiente de realizar',
+                            ],
+                            [
+                              'Brief enviado al autor',
+                              fecha(d.fechaBriefEnviadoAutor),
+                            ],
+                            [
+                              'Brief aprobado por el autor',
+                              fecha(d.fechaBriefAprobadoAutor),
+                            ],
+                            ...(d.fechaCierre
+                              ? [
+                                  [
+                                    'Cierre de esta intervención',
+                                    `${fecha(d.fechaCierre)}${d.resultado ? ' · ' + d.resultado : ''}`,
+                                  ] as [string, ReactNode],
+                                ]
+                              : []),
+                          ]}
+                        />
+                      </Card>
+                    ))
+                  ) : (
+                    <Card titulo="Estado del brief" icono="conceptos">
+                      <p className="text-xs text-slate-500">
+                        Dirección Creativa todavía no se ha activado para
+                        este proyecto.
+                      </p>
+                    </Card>
+                  )}
+                  <Card titulo="Conceptos entregados" icono="conceptos">
                     {p.creativa.propuestas.length ? (
                       <div className="space-y-4">
                         {p.creativa.propuestas.map((pr, i) => (
@@ -786,60 +845,6 @@ export function RrppProyectoDetalle({
                       </p>
                     )}
                   </Card>
-                </div>
-              )}
-              {tab === 'produccion' && (
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {p.stages
-                    .filter((s) =>
-                      ['edicion', 'correccion', 'diseno', 'calidad'].includes(
-                        s.key,
-                      ),
-                    )
-                    .map((s) => (
-                      <Card key={s.key} titulo={s.label} icono="proceso">
-                        <Datos
-                          filas={[
-                            [
-                              'Estado',
-                              <BadgeConsulta estado={s.estado}>
-                                {s.registrado && !s.instancias
-                                  ? s.registrado
-                                  : ESTADOS_ETAPA[s.estado]}
-                              </BadgeConsulta>,
-                            ],
-                            [
-                              'Responsable',
-                              s.responsables.length
-                                ? s.responsables.join(', ')
-                                : s.key === 'calidad' && s.activas
-                                  ? 'Equipo de soporte editorial'
-                                  : 'Sin asignación registrada',
-                            ],
-                            ['Trabajo abierto', s.activas],
-                            ['Vencimiento', vencimiento(s.dueAt)],
-                            [
-                              'Última actividad',
-                              s.ultimaActividad
-                                ? fechaActividad(s.ultimaActividad)
-                                : 'Sin registro',
-                            ],
-                            ...(s.key === 'edicion'
-                              ? [
-                                  [
-                                    'Capítulos registrados',
-                                    p.produccion.capitulos.cantidad,
-                                  ] as [string, ReactNode],
-                                  [
-                                    'Entregados por editor',
-                                    p.produccion.capitulos.entregados,
-                                  ] as [string, ReactNode],
-                                ]
-                              : []),
-                          ]}
-                        />
-                      </Card>
-                    ))}
                 </div>
               )}
               {tab === 'lanzamiento' && (

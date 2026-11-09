@@ -81,7 +81,6 @@ export function SeccionMatrizIngreso({
   const [diagnosticoGenerado, setDiagnosticoGenerado] = useState(ficha.matrizDiagnosticoGenerado);
   const [linkDiagnostico, setLinkDiagnostico] = useState(ficha.matrizLinkDiagnostico ?? '');
   const [ingresoGenerado, setIngresoGenerado] = useState(ficha.matrizIngresoGenerado);
-  const [fechaReunionCreativa, setFechaReunionCreativa] = useState(ficha.matrizFechaReunionCreativa ?? '');
   const [ventaCruzada, setVentaCruzada] = useState<string[]>(ficha.matrizVentaCruzada ?? []);
   const [observacionesComerciales, setObservacionesComerciales] = useState(ficha.matrizObservacionesComerciales ?? '');
   const queryClient = useQueryClient();
@@ -98,7 +97,6 @@ export function SeccionMatrizIngreso({
         matrizDiagnosticoGenerado: diagnosticoGenerado,
         matrizLinkDiagnostico: linkDiagnostico || null,
         matrizIngresoGenerado: ingresoGenerado,
-        matrizFechaReunionCreativa: fechaReunionCreativa || null,
         matrizVentaCruzada: ventaCruzada.length > 0 ? ventaCruzada : null,
         matrizObservacionesComerciales: observacionesComerciales || null,
       }),
@@ -157,7 +155,6 @@ export function SeccionMatrizIngreso({
       { etiqueta: 'Diagnóstico generado', valor: ficha.matrizDiagnosticoGenerado ? 'Sí' : 'No' },
       { etiqueta: 'Documento diagnóstico', valor: ficha.matrizLinkDiagnostico },
       { etiqueta: 'Ingreso generado', valor: ficha.matrizIngresoGenerado ? 'Sí' : 'No' },
-      { etiqueta: 'Fecha reunión creativa', valor: formatearFechaONull(ficha.matrizFechaReunionCreativa) },
       {
         etiqueta: 'Venta cruzada',
         valor: ficha.matrizVentaCruzada && ficha.matrizVentaCruzada.length > 0 ? ficha.matrizVentaCruzada.join(', ') : null,
@@ -249,21 +246,6 @@ export function SeccionMatrizIngreso({
                 </option>
               ))}
             </select>
-          </div>
-          <div className="md:col-span-4">
-            <label htmlFor="matriz-ingreso-fecha-reunion-creativa" className={LABEL_CLASS}>
-              Fecha reunión creativa
-            </label>
-            <input
-              id="matriz-ingreso-fecha-reunion-creativa"
-              type="date"
-              value={fechaReunionCreativa}
-              onChange={(event) => {
-                setFechaReunionCreativa(event.target.value);
-                mutacion.reset();
-              }}
-              className={INPUT_CLASS}
-            />
           </div>
         </div>
       </div>

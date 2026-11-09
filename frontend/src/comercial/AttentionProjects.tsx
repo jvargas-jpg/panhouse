@@ -18,7 +18,7 @@ function FilaMobile({ proyecto, onEnviado }: { proyecto: ProyectoResumen; onEnvi
         {proyecto.listoParaRrpp ? 'Listo para RRPP' : resumenFaltantes(proyecto.faltantesComercial)}
       </p>
       {proyecto.listoParaRrpp ? <div className="mt-3"><RrppHandoffAction proyectoId={proyecto.id} onEnviado={onEnviado} /></div> : <Link
-        to={`/proyectos/${proyecto.id}/ficha-trazabilidad`}
+        to={`/proyectos/${proyecto.id}/ingreso-comercial`}
         className="mt-3 flex items-center justify-center rounded-lg border border-dorado/40 bg-dorado/5 px-3 py-2 text-xs font-semibold text-dorado transition-colors hover:bg-dorado/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dorado/40"
       >
         Continuar ficha
@@ -115,7 +115,7 @@ export function AttentionProjects({
                     <td className="px-5 py-3.5 text-gray-500">{proyecto.listoParaRrpp ? <span className="rounded-md bg-green-50 px-2.5 py-1.5 text-xs font-medium text-green-800">Listo para RRPP</span> : resumenFaltantes(proyecto.faltantesComercial)}</td>
                     <td className="px-5 py-3.5 text-right sm:pr-6">
                       {proyecto.listoParaRrpp ? <RrppHandoffAction proyectoId={proyecto.id} onEnviado={onEnviado} /> : <Link
-                        to={`/proyectos/${proyecto.id}/ficha-trazabilidad`}
+                        to={`/proyectos/${proyecto.id}/ingreso-comercial`}
                         className="inline-flex items-center gap-1 rounded-lg border border-dorado/40 bg-dorado/5 px-3 py-1.5 text-xs font-semibold text-dorado transition-colors hover:bg-dorado/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dorado/40"
                       >
                         Continuar ficha

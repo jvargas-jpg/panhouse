@@ -49,10 +49,12 @@ export interface ResumenProyectoConsulta extends ProyectoConsulta {
   responsableActual: string;
   areasActuales: { area: string; personas: string[] }[];
   stages: EtapaConsulta[];
+  produccionHito: string | null;
   informacion: {
     autorPrincipal: string;
     coautores: string[];
     titulo: string | null;
+    subtitulo: string | null;
     coleccion: string | null;
     tema: string | null;
     publico: string | null;
@@ -71,10 +73,14 @@ export interface ResumenProyectoConsulta extends ProyectoConsulta {
   };
   eventos: EventoConsulta[];
   creativa: {
+    liderCreativo: string[];
     intervenciones: {
       id: string;
       tipo: string;
       fechaReunion: string | null;
+      reunionRealizada: boolean;
+      fechaBriefEnviadoAutor: string | null;
+      fechaBriefAprobadoAutor: string | null;
       fechaCierre: string | null;
       resultado: string | null;
       estado: string | null;
@@ -98,7 +104,6 @@ export interface ResumenProyectoConsulta extends ProyectoConsulta {
       }[];
     }[];
   };
-  produccion: { capitulos: { cantidad: number; entregados: number } };
   lanzamiento: {
     reuniones: {
       id: string;

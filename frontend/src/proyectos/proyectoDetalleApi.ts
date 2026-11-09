@@ -155,7 +155,6 @@ export interface DatosSeccionMatrizIngreso {
   matrizDiagnosticoGenerado?: boolean;
   matrizLinkDiagnostico?: string | null;
   matrizIngresoGenerado?: boolean;
-  matrizFechaReunionCreativa?: string | null;
   matrizVentaCruzada?: string[] | null;
   matrizObservacionesComerciales?: string | null;
 }

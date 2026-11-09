@@ -6,6 +6,7 @@ import { crearProyecto, eliminarProyecto, fetchCatalogos, reasignarProyecto } fr
 import { fetchAutores } from './autoresApi';
 import { SelectorMultipleAutores } from './SelectorMultipleAutores';
 import { Link } from 'react-router-dom';
+import { MONEDAS, MONEDA_POR_DEFECTO } from '../shared/monedas';
 
 const LABEL_CLASS = 'mb-1.5 block text-xs font-medium text-gray-600';
 const INPUT_CLASS =
@@ -67,7 +68,7 @@ export function CrearProyectoModalForm({
   const [presupuestoId, setPresupuestoId] = useState('');
   const [fechaProgramadaInicio, setFechaProgramadaInicio] = useState(hoyISO());
   const [montoContractual,setMontoContractual]=useState('');
-  const [monedaContractual,setMonedaContractual]=useState('USD');
+  const [monedaContractual,setMonedaContractual]=useState(MONEDA_POR_DEFECTO);
 
   useEffect(() => {
     setAutorIds(proyectoEnEdicion?.autores.map((autor) => autor.id) ?? []);
@@ -264,7 +265,7 @@ export function CrearProyectoModalForm({
 
           </div>
         </div>
-        {!proyectoEnEdicion ? <section className="border-t border-gray-100 pt-4" aria-labelledby="project-total-title"><h4 id="project-total-title" className="mb-2 text-sm font-semibold text-gray-900">Monto total del proyecto</h4><p className="mb-4 text-xs text-gray-500">Importe acordado por el servicio completo. Los abonos confirmados se compararán con este total para calcular el porcentaje pagado.</p><div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><label className={LABEL_CLASS} htmlFor="proyecto-monto-total">Monto total<input id="proyecto-monto-total" className={INPUT_CLASS} required type="number" min="0.01" max="9999999999.99" step="0.01" inputMode="decimal" value={montoContractual} onChange={e=>setMontoContractual(e.target.value)}/></label><label className={LABEL_CLASS} htmlFor="proyecto-moneda-total">Moneda del proyecto<input id="proyecto-moneda-total" className={INPUT_CLASS} required minLength={3} maxLength={3} pattern="[A-Z]{3}" value={monedaContractual} onChange={e=>setMonedaContractual(e.target.value.toUpperCase())}/></label></div></section> : <Link className="block rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 underline" to={`/comercial/pagos?project=${proyectoEnEdicion.id}&contrato=1`}>Definir o actualizar monto total y consultar pagos</Link>}
+        {!proyectoEnEdicion ? <section className="border-t border-gray-100 pt-4" aria-labelledby="project-total-title"><h4 id="project-total-title" className="mb-2 text-sm font-semibold text-gray-900">Monto total del proyecto</h4><p className="mb-4 text-xs text-gray-500">Importe acordado por el servicio completo. Los abonos confirmados se compararán con este total para calcular el porcentaje pagado.</p><div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><label className={LABEL_CLASS} htmlFor="proyecto-monto-total">Monto total<input id="proyecto-monto-total" className={INPUT_CLASS} required type="number" min="0.01" max="9999999999.99" step="0.01" inputMode="decimal" value={montoContractual} onChange={e=>setMontoContractual(e.target.value)}/></label><label className={LABEL_CLASS} htmlFor="proyecto-moneda-total">Moneda del proyecto<select id="proyecto-moneda-total" className={INPUT_CLASS} required value={monedaContractual} onChange={e=>setMonedaContractual(e.target.value)}>{MONEDAS.map(m=><option key={m.code} value={m.code}>{m.label}</option>)}</select></label></div></section> : <Link className="block rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 underline" to={`/comercial/pagos?project=${proyectoEnEdicion.id}&contrato=1`}>Definir o actualizar monto total y consultar pagos</Link>}
         {proyectoEnEdicion && <details className="text-xs text-gray-500"><summary className="cursor-pointer">Más opciones</summary><button type="button" onClick={handleEliminar} disabled={mutacionEliminar.isPending} className="mt-2 rounded-lg px-3 py-2 text-red-700 hover:bg-red-50">{mutacionEliminar.isPending ? 'Eliminando…' : 'Eliminar proyecto'}</button></details>}
       </div>
       <footer className="shrink-0 border-t border-gray-100 bg-white px-6 py-4">

@@ -29,6 +29,9 @@ function Operativa({data,onArea,onHistory}:{data:ResumenFichaViva;onArea:(id:Are
 export function FichaVivaPage(){
   const {id}=useParams(), {data:user}=useMe(), location=useLocation();
   if(user && ['especialista','jefe_area'].includes(user.rol)) return <Navigate to={'/proyectos/'+id+'/ficha'+location.search+location.hash} replace/>;
+  // Comercial trabaja sobre su parte comercial del proyecto, no sobre el
+  // expediente editorial completo de 9 áreas — ver TraceabilityWorkspace.tsx.
+  if(user?.rol==='comercial') return <Navigate to={'/proyectos/'+id+'/ingreso-comercial'+location.search+location.hash} replace/>;
   return <FichaVivaLegacyPage/>;
 }
 function FichaVivaLegacyPage(){

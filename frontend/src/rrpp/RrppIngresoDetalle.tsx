@@ -33,11 +33,14 @@ const TEXTOS = [
   ['tonoEstilo', 'Tono y estilo', 'Cercano, académico, divulgativo…'],
   ['posibleTituloLibro', 'Posible título', 'Ingresa un posible título'],
 ] as const;
+// La reunión creativa no se agenda desde el ingreso de RRPP: la activa
+// el Especialista cuando título y subtítulo quedan definitivos (y, en
+// Crudo/Ghost, junto con el feedback de tripa completa), ver
+// createCreativeMeetingRequest en server/helpers/creativeRequests.ts.
 const ADICIONALES = [
   ['matrizCiudadResidencia', 'Ciudad de residencia', 'text'],
   ['matrizLinkResumen', 'Enlace al resumen / minuta', 'text'],
   ['matrizLinkDiagnostico', 'Enlace al diagnóstico', 'text'],
-  ['matrizFechaReunionCreativa', 'Fecha de reunión creativa', 'date'],
 ] as const;
 export function RrppIngresoDetalle({
   id,

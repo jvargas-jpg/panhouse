@@ -2,7 +2,7 @@ import { proyectarIngreso } from '../../../../shared/planificacion';
 import { useMe } from '../../auth/useAuth';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState, type FormEvent } from 'react';
-import type { AutorConPerfil, CondicionEspecial, EjecucionServicio, FichaCompleta, PresupuestoServicio, SubtipoCrudo } from '../../types/api';
+import type { AutorConPerfil, CondicionEspecial, EjecucionServicio, EstadoProyecto, FichaCompleta, PresupuestoServicio, SubtipoCrudo } from '../../types/api';
 import { actualizarSeccionProyectoContrato, actualizarSeccionProyectoPerfil } from '../../proyectos/proyectoDetalleApi';
 import { fetchCatalogos, reasignarProyecto } from '../../jefatura/jefaturaApi';
 
@@ -46,6 +46,12 @@ export type ProjectIntakeProps = {
   notificadoRrpp: boolean;
   rrppEnviadoAt?: string | null;
   actualizando?: boolean;
+  // Solo para el bloque mínimo "Estado actual" post-handoff (ver
+  // ProjectIntakeSection.tsx) — no se usan en useProjectIntake, se
+  // reenvían tal cual desde TraceabilityWorkspace.tsx.
+  notificadoJefatura?: boolean;
+  especialistaAsignado?: boolean;
+  estado?: EstadoProyecto;
 };
 
 // One form state and the original mutation/permission logic for both presentations.

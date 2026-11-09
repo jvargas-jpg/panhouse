@@ -6,6 +6,22 @@ import { AuthorActionsMenu } from './AuthorActionsMenu';
 const ICONO_EMAIL = 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z';
 const ICONO_TELEFONO =
   'M3 5a2 2 0 012-2h2.28a1 1 0 01.98.8l.7 3.5a1 1 0 01-.5 1.09l-1.6.8a11.2 11.2 0 005.6 5.6l.8-1.6a1 1 0 011.09-.5l3.5.7a1 1 0 01.8.98V19a2 2 0 01-2 2h-1C7.82 21 3 16.18 3 10.5V5z';
+const ICONO_EDITAR = 'M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z';
+
+function BotonEditar({ onEditar }: { onEditar: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onEditar}
+      className="flex shrink-0 items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition-colors hover:border-dorado hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dorado/40"
+    >
+      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={ICONO_EDITAR} />
+      </svg>
+      Editar
+    </button>
+  );
+}
 
 // Iniciales sobre datos ya reales: 2 palabras → primera letra de cada
 // una ("Juan Perez" → "JP"); 1 sola palabra → sus 2 primeras letras
@@ -98,7 +114,8 @@ export function AuthorRow({
           <p className="mt-0.5 text-sm text-gray-700">{formatearFecha(autor.createdAt)}</p>
         </div>
 
-        <AuthorActionsMenu onEditar={onEditar} onEliminar={onEliminar} />
+        <BotonEditar onEditar={onEditar} />
+        <AuthorActionsMenu onEliminar={onEliminar} />
       </div>
 
       {/* Mobile */}
@@ -108,7 +125,8 @@ export function AuthorRow({
           <div className="min-w-0 flex-1">
             <BloqueIdentidad autor={autor} />
           </div>
-          <AuthorActionsMenu onEditar={onEditar} onEliminar={onEliminar} />
+          <BotonEditar onEditar={onEditar} />
+          <AuthorActionsMenu onEliminar={onEliminar} />
         </div>
         <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pl-14 text-xs text-gray-500">
           <span>{autor.pais ?? 'Sin país'}</span>
