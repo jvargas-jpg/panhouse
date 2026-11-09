@@ -11,12 +11,13 @@ import { contextosActivacion } from './solicitudesArea.js';
 import { ErrorFichaViva, resumenFichaViva, verificarAccesoFichaViva } from './fichaViva.js';
 import { NOMBRES_PROCESO, obtenerDashboardJefatura } from './jefatura.js';
 import { registrarEvento } from './auditLog.js';
+import { evaluarGateTituloAprobado } from './gates.js';
 import type { ActorFicha } from './intakeRrpp.js';
 import type { ProjectCommandCenter, ProcesoProyecto, TrabajoProyecto } from '../../shared/projectCommandCenter.js';
 
 const activos = ['en_proceso', 'retrasado', 'stand_by', 'pausado'];
 export async function accesoCommandCenter(id: string, actor: ActorFicha) {
-  if (!['especialista', 'jefe_area', 'rrpp'].includes(actor.rol)) throw new ErrorFichaViva(403, 'No autorizado para el centro del proyecto');
+  if (!['especialista', 'jefe_area', 'rrpp', 'admin'].includes(actor.rol)) throw new ErrorFichaViva(403, 'No autorizado para el centro del proyecto');
   return verificarAccesoFichaViva(id, actor);
 }
 
@@ -106,6 +107,7 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       else if (ctx.activo) proceso.estado = proceso.tipo === 'lanzamiento' ? control[0]?.asesoriaFase ?? 'En planificación' : control[0]?.impresionEstatus ?? 'En coordinación';
       else proceso.estado = ctx.gate.desbloqueado ? 'Disponible para solicitar' : 'Aún no habilitado';
       proceso.detalle = ctx.solicitud && !ctx.activo ? 'Solicitud enviada; RRPP recibe y coordina' : ctx.activo ? 'Proceso operado por RRPP; consulta y seguimiento del Especialista' : ctx.gate.motivo;
+      if (!ctx.activo && !ctx.solicitud) proceso.motivoNoIniciado = ctx.gate.desbloqueado ? 'Disponible para que RRPP lo active' : ctx.gate.motivo;
       proceso.action = ctx.solicitud && !ctx.activo ? actor.rol === 'jefe_area' ? { label: 'Ver seguimiento', kind: 'seguimiento' } : { label: ctx.solicitud.estado === 'requiere_informacion' && actor.rol === 'especialista' ? 'Responder solicitud' : 'Ver solicitud', kind: 'solicitud', href: `/${actor.rol === 'rrpp' ? 'rrpp/solicitudes' : ''}?${actor.rol === 'rrpp' ? '' : 'vista=solicitudes&'}request=${ctx.solicitud.id}` }
         : ctx.activo ? { label: 'Ver seguimiento', kind: 'seguimiento' }
         : ctx.gate.desbloqueado && actor.rol === 'especialista' && activos.includes(p.estado) ? { label: proceso.tipo === 'lanzamiento' ? 'Solicitar activación' : 'Solicitar impresión', kind: 'solicitar' } : null;
@@ -113,6 +115,27 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
     else if (proceso.estado === 'No aplica') proceso.action = null;
     else {
       proceso.action = owner ? { label: actor.rol === 'especialista' && proceso.trabajos.some(t => t.estado === 'pendiente') ? 'Continuar coordinación' : 'Ver seguimiento', kind: 'abrir' } : null;
+    }
+    // "Lo siguiente" con motivo real, no "No iniciado" sin explicación —
+    // solo para procesos sin ctx propio (lanzamiento/impresión ya se
+    // resuelven arriba) y sin ninguna intervención registrada todavía.
+    // Confirmado en código, no inferido: calidad se crea al entregar la
+    // primera versión de diseño (diseno.ts, crearWorkItemSiNoExiste tipo
+    // 'calidad' businessKey 'diseno-version:…'); soporte_digital se
+    // habilita en la primera fase de Calidad (diseno.ts, numeroFase===1
+    // → habilitarActivacionAmazon). Diseño/Corrección se solicitan por el
+    // Especialista con condiciones específicas por subtipo — no se
+    // resumen en una sola frase para no inventar una regla única.
+    if (!ctx && !proceso.trabajos.length) {
+      if (proceso.tipo === 'direccion_creativa') {
+        const gate = evaluarGateTituloAprobado(p);
+        proceso.motivoNoIniciado = gate.motivo ?? 'Disponible para iniciar';
+      } else if (proceso.tipo === 'calidad') proceso.motivoNoIniciado = 'Se habilita con la primera versión diagramada de Diseño';
+      else if (proceso.tipo === 'soporte_digital') proceso.motivoNoIniciado = 'Se activa en la primera validación de Calidad';
+      else if (proceso.tipo === 'diseno') {
+        const gate = evaluarGateTituloAprobado(p);
+        proceso.motivoNoIniciado = gate.desbloqueado ? 'Disponible para que el Especialista lo solicite' : gate.motivo;
+      } else if (proceso.tipo === 'correccion') proceso.motivoNoIniciado = 'Disponible para que el Especialista lo solicite';
     }
   }
   const atencion: ProjectCommandCenter['atencion'] = [];
@@ -130,6 +153,17 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       });
       atencion.push(...cola.items.map(i=>({id:i.id,titulo:i.accion,detalle:i.detalle,proceso:i.proceso,href:i.href,editarContexto:i.editarContexto})));
     }
+  }
+  // Contradicción determinística real: GATE-03 (evaluarGateAsignacionFormal,
+  // gates.ts) dice explícitamente que "el proyecto no activa subpipelines
+  // hasta que Jefatura asigna especialista" — si de todos modos hay
+  // trabajo registrado en otro proceso sin especialista asignado, es un
+  // dato inconsistente, no un simple checklist administrativo pendiente
+  // (eso sí es normal y NO se marca como inconsistencia — confirmado:
+  // completar primer contacto/reunión operativa no es un gate de ningún
+  // otro proceso). Misma fuente para ambos roles.
+  if (activos.includes(p.estado) && !p.especialistaId && procesos.some(pr => pr.tipo !== 'preparacion_inicial' && pr.trabajos.length > 0)) {
+    atencion.push({ id: 'inconsistencia-asignacion', titulo: 'Inconsistencia: hay trabajo registrado sin Especialista asignado', detalle: 'GATE-03 exige un Especialista asignado antes de activar subprocesos; revisar la asignación del proyecto' });
   }
   for(const proceso of procesos) {
     if(proceso.activacion || proceso.tipo==='preparacion_inicial')continue;

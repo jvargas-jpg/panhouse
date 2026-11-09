@@ -146,4 +146,72 @@ describe('Project Command Center: verdad compartida y permisos', () => {
     await actualizarSeccionSoporteDigital(p.id,{soporteDigitalFechaActivacion:'2026-10-11'},spec);
     expect((await listarProyectosPendientesSoporteDigital()).some(x=>x.id===p.id)).toBe(false);
   });
+  describe('Admin: misma verdad transversal, sin acciones del Especialista', () => {
+    it('lee el centro del proyecto sin estar asignado, idéntico a lo que ve Jefatura', async () => {
+      const p = await fixture({ especialistaId: other });
+      const admin = await user('admin'); const adminCookie = 'panhouse_sid='+await createSession(admin);
+      const a = (await get(p.id, adminCookie)), b = (await get(p.id, jefeCookie));
+      expect(a.statusCode).toBe(200);
+      expect(a.json().ficha.team).toEqual(b.json().ficha.team);
+      expect(a.json().ficha.project).toEqual(b.json().ficha.project);
+    });
+    it('no puede registrar avance ni editar títulos del Especialista', async () => {
+      const p = await fixture(); const admin = await user('admin'); const adminCookie = 'panhouse_sid='+await createSession(admin);
+      expect((await post(p.id, { texto: 'Admin no suplanta al Especialista' }, adminCookie)).statusCode).toBe(403);
+      const req = app.inject({ method: 'PATCH', url: '/api/proyectos/'+p.id+'/datos-editoriales', headers: { cookie: adminCookie }, payload: { titulo: 'x', subtitulo: 'y' } });
+      expect((await req).statusCode).toBe(403);
+    });
+    it('un rol sin visión transversal sigue en 403 (sin regresión de IDOR)', async () => {
+      const p = await fixture(); const editor = await user('editor');
+      expect((await get(p.id, 'panhouse_sid='+await createSession(editor))).statusCode).toBe(403);
+    });
+  });
+  describe('Operación: motivos reales en vez de "No iniciado", mismos para ambos roles', () => {
+    it('Dirección creativa sin título muestra el motivo real de GATE-04', async () => {
+      const p = await fixture();
+      const a = (await get(p.id)).json(), b = (await get(p.id, jefeCookie)).json();
+      const dc = a.procesos.find((x: { tipo: string }) => x.tipo === 'direccion_creativa');
+      expect(dc.motivoNoIniciado).toBe('El título y subtítulo definitivos todavía no están cerrados');
+      expect(dc.motivoNoIniciado).toBe(b.procesos.find((x: { tipo: string }) => x.tipo === 'direccion_creativa').motivoNoIniciado);
+    });
+    it('Dirección creativa con título cerrado ya no muestra motivo de bloqueo', async () => {
+      const p = await fixture({ tituloDefinitivo: 'Título cerrado', subtituloDefinitivo: 'Subtítulo cerrado' });
+      const dc = (await get(p.id)).json().procesos.find((x: { tipo: string }) => x.tipo === 'direccion_creativa');
+      expect(dc.motivoNoIniciado).toBe('Disponible para iniciar');
+    });
+    it('Calidad explica que se habilita con la primera versión de Diseño, y deja de ser "lo siguiente" al existir trabajo real', async () => {
+      const p = await fixture();
+      const antes = (await get(p.id)).json().procesos.find((x: { tipo: string }) => x.tipo === 'calidad');
+      expect(antes.motivoNoIniciado).toBe('Se habilita con la primera versión diagramada de Diseño');
+      await db.insert(workItems).values({ proyectoId: p.id, tipo: 'calidad', businessKey: 'diseno-version:fixture', estado: 'pendiente' });
+      const despues = (await get(p.id)).json().procesos.find((x: { tipo: string }) => x.tipo === 'calidad');
+      expect(despues.motivoNoIniciado).toBeUndefined();
+      expect(despues.trabajos.length).toBeGreaterThan(0);
+    });
+    it('Soporte digital explica que se activa en la primera validación de Calidad', async () => {
+      const p = await fixture();
+      const sd = (await get(p.id)).json().procesos.find((x: { tipo: string }) => x.tipo === 'soporte_digital');
+      expect(sd.motivoNoIniciado).toBe('Se activa en la primera validación de Calidad');
+    });
+    it('Diseño y Corrección sin gate conocido quedan disponibles para solicitar, no "No iniciado" sin explicación', async () => {
+      const p = await fixture({ tituloDefinitivo: 'Título cerrado', subtituloDefinitivo: 'Subtítulo cerrado' });
+      const data = (await get(p.id)).json();
+      expect(data.procesos.find((x: { tipo: string }) => x.tipo === 'diseno').motivoNoIniciado).toBe('Disponible para que el Especialista lo solicite');
+      expect(data.procesos.find((x: { tipo: string }) => x.tipo === 'correccion').motivoNoIniciado).toBe('Disponible para que el Especialista lo solicite');
+    });
+    it('detecta la inconsistencia real: trabajo registrado sin Especialista asignado (GATE-03)', async () => {
+      const p = await crearProyectoDePrueba({ jefeAreaId: jefe });
+      await db.update(proyectos).set({ notificadoJefatura: true }).where(eq(proyectos.id, p.id));
+      await db.insert(fichasTrazabilidad).values({ proyectoId: p.id });
+      await db.insert(workItems).values({ proyectoId: p.id, tipo: 'correccion', estado: 'pendiente' });
+      const data = (await get(p.id, jefeCookie)).json();
+      expect(data.atencion.some((a: { id: string }) => a.id === 'inconsistencia-asignacion')).toBe(true);
+    });
+    it('no marca inconsistencia cuando el checklist de preparación simplemente sigue abierto (no es un gate de otro proceso)', async () => {
+      const p = await fixture();
+      await db.insert(workItems).values({ proyectoId: p.id, tipo: 'correccion', estado: 'pendiente' });
+      const data = (await get(p.id)).json();
+      expect(data.atencion.some((a: { id: string }) => a.id === 'inconsistencia-asignacion')).toBe(false);
+    });
+  });
 });

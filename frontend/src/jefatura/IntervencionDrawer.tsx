@@ -289,11 +289,6 @@ export function IntervencionDrawer({
             >
               Ver proyecto 360°
             </Link>
-            <Link
-              to={`/proyectos/${d.proyecto.id}/ficha-trazabilidad?volver=${encodeURIComponent(volver)}`}
-            >
-              Ver ficha completa
-            </Link>
           </>
         )
       }

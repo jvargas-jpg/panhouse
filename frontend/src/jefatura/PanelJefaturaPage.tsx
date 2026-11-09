@@ -288,7 +288,7 @@ export function PanelJefaturaPage() {
                               <p>
                                 <strong>{a.actor}</strong> {a.texto}{' '}
                                 <Link
-                                  to={`/proyectos/${a.proyectoId}/ficha-trazabilidad`}
+                                  to={`/proyectos/${a.proyectoId}/ficha`}
                                 >
                                   #{a.codigo}
                                 </Link>

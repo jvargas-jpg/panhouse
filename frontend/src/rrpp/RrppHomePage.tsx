@@ -181,7 +181,7 @@ export function RrppHomePage() {
                 {query.data.actividad.map((a) => (
                   <li key={a.id} className="py-3">
                     <Link
-                      to={`/proyectos/${a.proyecto.id}/ficha-trazabilidad`}
+                      to={`/proyectos/${a.proyecto.id}/ficha`}
                       className="text-sm font-semibold text-gray-900 hover:underline"
                     >
                       {a.titulo}

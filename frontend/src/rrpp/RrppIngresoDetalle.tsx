@@ -543,7 +543,7 @@ export function RrppIngresoDetalle({
           </p>
         )}
         <Link
-          to={`/proyectos/${id}/ficha-trazabilidad`}
+          to={`/proyectos/${id}/ficha`}
           className="mt-4 inline-block text-xs text-slate-500 underline"
         >
           Consultar ficha completa

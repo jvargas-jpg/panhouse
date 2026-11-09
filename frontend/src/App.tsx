@@ -71,7 +71,7 @@ export function App() {
             mismo TopBar, layout hermano, no una página sin autenticar. */}
         <Route element={<FullscreenLayout />}>
           <Route path="/proyectos/:id" element={<ProyectoDetallePage />} />
-          {['operacion', 'equipo', 'ficha', 'actividad'].map(tab => <Route key={tab} path={'/proyectos/:id/'+tab} element={<Suspense fallback={<p role="status">Abriendo proyecto…</p>}><ProyectoCommandCenterPage /></Suspense>} />)}
+          {['operacion', 'equipo', 'ficha', 'actividad', 'archivos', 'auditoria'].map(tab => <Route key={tab} path={'/proyectos/:id/'+tab} element={<Suspense fallback={<p role="status">Abriendo proyecto…</p>}><ProyectoCommandCenterPage /></Suspense>} />)}
           {/* "Ficha de Trazabilidad": módulo independiente, fuera de la
               vista unificada del proyecto — ver el comentario completo en
               FichaTrazabilidadPage.tsx (antes Fase 1 del stepper, y antes

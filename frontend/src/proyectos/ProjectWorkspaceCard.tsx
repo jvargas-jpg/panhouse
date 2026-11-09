@@ -22,13 +22,17 @@ export function ProjectWorkspaceCard({id,editable,initial,compact=false,structur
     onError:()=>{void cache.invalidateQueries({queryKey:query.queryKey});invalidarOperacion(cache,id);}});
   const pending=recovery.isPending||['PENDING','PROVISIONING'].includes(data?.status??''),ready=data?.status==='READY'&&!data.contextChanged;
   const failed=data?.status==='ERROR'||data?.contextChanged;
+  // No llamar "Configurado" (success) a un espacio que todavía tiene una
+  // dependencia real pendiente (acceso de Drive sin otorgar) — mismo dato,
+  // dos hechos distintos: el espacio (carpetas) y el acceso (permisos).
+  const accesoPendiente=ready&&data.sharingStatus!=='GRANTED';
   return <section className={'cc-workspace'+(compact?' cc-workspace-compact':'')} aria-label="Espacio documental">
     <div className="cc-workspace-head"><div><span className="cc-eyebrow">ESPACIO DOCUMENTAL</span><h3>Google Drive</h3></div>
-      <span className={'cc-workspace-state '+(ready?'ready':failed?'error':'')}>{pending?'Preparando automáticamente…':ready?'✓ Configurado':failed?'Configuración incompleta':'No configurado'}</span></div>
+      <span className={'cc-workspace-state '+(ready&&!accesoPendiente?'ready':accesoPendiente?'warning':failed?'error':'')}>{pending?'Preparando automáticamente…':accesoPendiente?'Espacio creado':ready?'✓ Configurado':failed?'Configuración incompleta':'No configurado'}</span></div>
     {query.isPending?<p role="status">Consultando espacio documental…</p>:pending?<div className="cc-workspace-progress" role="status"><span aria-hidden="true">◌</span><div><strong>Preparando automáticamente…</strong><p>PanHouse está creando la estructura documental del proyecto.</p></div></div>:ready&&!compact?<>
       <p className="cc-workspace-name">{data.rootName}</p><p className="cc-caption">Creada {fechaSolicitud(data.readyAt??data.createdAt,true)} · {data.folderCount} carpetas</p>
     </>:!ready&&<p className="cc-caption">{data?.message??(data?.legacy?'Este proyecto anterior aún no tiene espacio documental configurado.':'El espacio se preparará al confirmar la asignación del Especialista.')}</p>}
-    {ready&&data.sharingStatus!=='GRANTED'&&<p className="cc-workspace-sharing">{data.sharingStatus==='REASSIGNMENT_REVIEW'?'Acceso de Drive pendiente de revisión por reasignación.':'Espacio creado. Acceso de Drive pendiente.'}</p>}
+    {accesoPendiente&&<p className="cc-workspace-sharing">{data.sharingStatus==='REASSIGNMENT_REVIEW'?'Acceso a Google Drive: pendiente de revisión por reasignación.':'Acceso a Google Drive: pendiente de autorización.'}</p>}
     {query.isError&&<p role="alert">No se pudo consultar el espacio documental. <button onClick={()=>query.refetch()}>Reintentar consulta</button></p>}
     {recovery.isError&&!pending&&<p className="cc-workspace-error" role="alert">{recovery.error.message}</p>}
     <div className="cc-workspace-actions">

@@ -50,7 +50,7 @@ function MenuFila({ proyecto }: { proyecto: ProyectoRrpp }) {
       {abierto && (
         <div className="absolute right-0 top-8 z-10 w-40 rounded-lg border border-gray-200 bg-white py-1 text-xs shadow-lg">
           <Link
-            to={`/proyectos/${proyecto.id}/ficha-trazabilidad`}
+            to={`/proyectos/${proyecto.id}/ficha`}
             className="block px-3 py-2 hover:bg-gray-50"
           >
             Ver ficha
@@ -81,7 +81,7 @@ function Fila({
 }) {
   const p = tarea.proyecto;
   const destino =
-    tarea.lanzamiento?.href ?? (tarea.ingreso ? `/rrpp/ingresos?proyecto=${p.id}` : `/proyectos/${p.id}/ficha-trazabilidad`);
+    tarea.lanzamiento?.href ?? (tarea.ingreso ? `/rrpp/ingresos?proyecto=${p.id}` : `/proyectos/${p.id}/ficha`);
   const boton =
     'whitespace-nowrap rounded-lg border border-amber-400/70 px-2.5 py-2 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-50 disabled:opacity-60';
   return (

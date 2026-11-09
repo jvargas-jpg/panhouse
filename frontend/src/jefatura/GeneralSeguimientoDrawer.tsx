@@ -62,11 +62,6 @@ export function GeneralSeguimientoDrawer({
             <Link to={`/proyectos/${id}?volver=${encodeURIComponent(volver)}`}>
               Ver proyecto 360°
             </Link>
-            <Link
-              to={`/proyectos/${id}/ficha-trazabilidad?volver=${encodeURIComponent(volver)}`}
-            >
-              Ver ficha completa
-            </Link>
           </>
         )
       }
@@ -175,7 +170,7 @@ export function GeneralSeguimientoDrawer({
                   )}
                   {r.decisionId && <p>{r.tipo==='correccion'?'Bloqueado por decisión':'Escalación pendiente'}. <Link to={`/?vista=decisiones&decision=${r.decisionId}`}>Ver decisión</Link></p>}
                   <Link
-                    to={`/proyectos/${id}/ficha-trazabilidad?volver=${encodeURIComponent(volver)}`}
+                    to={`/proyectos/${id}/ficha?volver=${encodeURIComponent(volver)}`}
                   >
                     Abrir proceso en Proyecto 360°
                   </Link>

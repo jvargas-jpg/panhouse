@@ -246,7 +246,7 @@ export function RrppProyectoDetalle({
   const p = query.data;
   const conceptosPendientes =
     p?.creativa.revision.reduce((n, g) => n + g.propuestas.length, 0) ?? 0;
-  const fichaHref = `/proyectos/${id}/ficha-trazabilidad`;
+  const fichaHref = `/proyectos/${id}/ficha`;
   const ingresoHref = `/rrpp/ingresos?proyecto=${id}`;
   return (
     <article

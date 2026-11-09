@@ -203,7 +203,7 @@ export function ProyectoQuickView({
   const d = query.data;
   const p = d?.proyecto;
   const returnUrl = `/?${params}`;
-  const fichaHref = `/proyectos/${id}/ficha-trazabilidad?volver=${encodeURIComponent(returnUrl)}`;
+  const fichaHref = `/proyectos/${id}/ficha?volver=${encodeURIComponent(returnUrl)}`;
   const detalleHref = `/proyectos/${id}?volver=${encodeURIComponent(returnUrl)}`;
   const asignarHref = `/?vista=asignaciones&proyecto=${id}&decision=candidatos`;
   const panel = (
@@ -677,10 +677,9 @@ export function ProyectoQuickView({
                 </Link>
               )}
             <div>
-              <Link to={detalleHref}>Abrir proyecto 360°</Link>
-              <Link to={fichaHref}>
+              <Link to={detalleHref}>
                 <RrppIcon nombre="ingreso" className="h-4 w-4" />
-                Ver ficha completa
+                Abrir proyecto 360°
               </Link>
             </div>
           </footer>

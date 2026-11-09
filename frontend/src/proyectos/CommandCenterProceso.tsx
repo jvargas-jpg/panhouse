@@ -14,14 +14,14 @@ const Digital = lazy(() => import('./SeccionSoporteDigital').then(m => ({ defaul
 const Impresion = lazy(() => import('./SeccionImpresion').then(m => ({ default: m.SeccionImpresion })));
 const Distribucion = lazy(() => import('./SeccionDistribucion').then(m => ({ default: m.SeccionDistribucion })));
 
-export function CommandCenterProceso({ id, tipo, especialista, rrpp, data, proceso }: { id: string; tipo: string; especialista: boolean; rrpp: boolean; data: ProjectCommandCenter; proceso: ProcesoProyecto }) {
+export function CommandCenterProceso({ id, tipo, especialista, rrpp, data, proceso, historico }: { id: string; tipo: string; especialista: boolean; rrpp: boolean; data: ProjectCommandCenter; proceso: ProcesoProyecto; historico?: { pasoActualNombre: string } }) {
   const requiresFicha = ['edicion', 'soporte_digital', 'lanzamiento', 'impresion', 'distribucion'].includes(tipo);
   const ficha = useQuery({ queryKey: ['ficha', id], queryFn: () => fetchFicha(id), enabled: requiresFicha });
   const proyecto = useQuery({ queryKey: ['proyecto', id], queryFn: () => fetchProyecto(id), enabled: tipo === 'edicion' });
   if (requiresFicha && ficha.isPending || tipo === 'edicion' && proyecto.isPending) return <p role="status">Consultando el proceso…</p>;
   if (requiresFicha && ficha.isError || tipo === 'edicion' && proyecto.isError) return <p role="alert">No se pudo abrir el proceso. <button onClick={() => { ficha.refetch(); if (tipo === 'edicion') proyecto.refetch(); }}>Reintentar</button></p>;
   return <Suspense fallback={<p role="status">Abriendo gestión…</p>}>
-    {tipo === 'preparacion_inicial' && <CommandCenterPreparacion id={id} data={data.preparacion}/>}
+    {tipo === 'preparacion_inicial' && <CommandCenterPreparacion id={id} data={data.preparacion} historico={historico} responsable={data.salud?.especialista?.nombre ?? null}/>}
     {tipo === 'edicion' && ficha.data && proyecto.data && <><CommandCenterEdicion id={id} canEdit={especialista} editorId={proyecto.data.proyecto.editorId}/><details><summary>Control documental y cierre de Edición</summary><Edicion proyectoId={id} ficha={ficha.data.ficha} puedeEditar={especialista} editorId={proyecto.data.proyecto.editorId} fechaFeedbackTripa={proyecto.data.proyecto.fechaFeedbackTripa} /></details></>}
     {tipo === 'correccion' && <Correccion proyectoId={id} puedeOperar={especialista} />}
     {tipo === 'direccion_creativa' && <Creativa proyectoId={id} puedeOperar={especialista} />}

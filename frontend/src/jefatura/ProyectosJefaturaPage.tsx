@@ -136,8 +136,8 @@ export function ProyectosJefaturaPage() {
   }
   const data = query.data;
   const retorno = `/?${params}`;
-  const href = (p: ProyectoJefatura, ficha = false) =>
-    `/proyectos/${p.id}${ficha ? '/ficha-trazabilidad' : ''}?volver=${encodeURIComponent(retorno)}`;
+  const href = (p: ProyectoJefatura) =>
+    `/proyectos/${p.id}?volver=${encodeURIComponent(retorno)}`;
   return (
     <div className={`jp-explorer ${seleccionado ? 'jp-has-selection' : ''}`}>
       <div className="jp-list-column">
@@ -372,7 +372,6 @@ export function ProyectosJefaturaPage() {
                             onClick={(e) => e.stopPropagation()}
                           >
                             <Link to={href(p)}>Abrir proyecto 360°</Link>
-                            <Link to={href(p, true)}>Ver ficha completa</Link>
                             {p.porAsignar && (
                               <Link
                                 to={`/?vista=asignaciones&proyecto=${p.id}&decision=candidatos`}

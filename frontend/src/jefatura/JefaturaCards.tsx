@@ -394,7 +394,7 @@ export function DecisionQueue({
                         ) : (
                           <Link
                             className="jf-link-button"
-                            to={`/proyectos/${p.id}/ficha-trazabilidad`}
+                            to={`/proyectos/${p.id}/ficha`}
                           >
                             Supervisar
                             <RrppIcon nombre="flecha" className="h-3.5 w-3.5" />
@@ -590,7 +590,7 @@ export function PriorityTracking({
                     <Link
                       aria-label={`Supervisar proyecto ${p.codigo}`}
                       className="jf-link-button"
-                      to={`/proyectos/${p.id}/ficha-trazabilidad`}
+                      to={`/proyectos/${p.id}/ficha`}
                     >
                       Abrir
                       <RrppIcon nombre="externo" className="h-3.5 w-3.5" />
@@ -712,7 +712,7 @@ function RequestPreview({ request: r }: { request: SolicitudJefatura }) {
         )}
         <Link
           className="jf-link-button"
-          to={`/proyectos/${r.proyectoId}/ficha-trazabilidad`}
+          to={`/proyectos/${r.proyectoId}/ficha`}
         >
           {r.requiereJefatura ? 'Consultar expediente' : 'Ver para supervisión'}
           <RrppIcon nombre="externo" className="h-3 w-3" />

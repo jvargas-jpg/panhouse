@@ -59,6 +59,12 @@ describe('RRPP · Proyectos · detalle', () => {
     expect(html).not.toMatch(/role="progressbar"[^>]*aria-label="Completitud de ingreso RRPP"[^>]*>[\s\S]{0,400}Diseño/);
   });
 
+  it('"Ver ficha" entra a la tab Ficha del Project 360 unificado, no a la pantalla standalone', () => {
+    const html = render(baseProyecto());
+    expect(html).toContain('href="/proyectos/project-1/ficha"');
+    expect(html).not.toContain('ficha-trazabilidad');
+  });
+
   it('sin trabajo de producción activo ni pendiente no inventa un hito', () => {
     const html = render(baseProyecto({ produccionHito: null }));
     expect(html).toContain('Progreso por etapa');

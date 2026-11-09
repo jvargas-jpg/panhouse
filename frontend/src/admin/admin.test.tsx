@@ -32,7 +32,10 @@ describe('Administración · presentación y estados de consulta',()=>{
   expect(html).toContain(project.title);expect(html).toContain('Responsable pendiente o inactivo');expect(html).toContain('Diagnóstico no disponible');expect(html).toContain('Reintentar');
  });
  it('Pipeline muestra procesos paralelos y conserva las tareas del mismo tipo',()=>{
-  const html=render('/admin/pipeline?page=2&pageSize=10',(_,put)=>put('/pipeline?page=2&pageSize=10',page));expect(html).toContain('Dirección creativa');expect(html).toContain('2 tareas');expect(html).toContain('1 tarea');expect(html).toContain('31 resultados');expect(html).toContain('2 / 4');expect(html).toContain('back=');expect(html).not.toContain('100%');
+  // Abrir un proyecto desde el pipeline entra al Project 360 unificado
+  // (/proyectos/:id), no a la vista admin aparte; "volver" reusa el mismo
+  // mecanismo de retorno que ya usa ProyectoCommandCenterPage.
+  const html=render('/admin/pipeline?page=2&pageSize=10',(_,put)=>put('/pipeline?page=2&pageSize=10',page));expect(html).toContain('Dirección creativa');expect(html).toContain('2 tareas');expect(html).toContain('1 tarea');expect(html).toContain('31 resultados');expect(html).toContain('2 / 4');expect(html).toContain('href="/proyectos/project-qa?volver=');expect(html).not.toContain('100%');
  });
  it('lista de proyectos vacía explica el resultado sin inventar proyectos',()=>{
   const html=render('/admin/proyectos',(_,put)=>put('/proyectos?',{...page,items:[],total:0,page:1,pages:1}));expect(html).toContain('No hay proyectos registrados');expect(html).not.toContain(project.title);

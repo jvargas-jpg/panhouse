@@ -17,6 +17,10 @@ export interface ProcesoProyecto {
   action?: { label: string; kind: 'abrir' | 'solicitar' | 'solicitud' | 'seguimiento'; href?: string } | null;
   activacion?: ContextoActivacion;
   seguimiento?: CampoFicha[];
+  // Por qué un proceso sin intervención todavía no empezó — proyección de
+  // gates reales (server/helpers/gates.ts) o de la condición de disparo
+  // confirmada en código, nunca una regla inventada en el frontend.
+  motivoNoIniciado?: string;
 }
 export interface ProjectCommandCenter {
   preparacion: PreparacionProyecto;

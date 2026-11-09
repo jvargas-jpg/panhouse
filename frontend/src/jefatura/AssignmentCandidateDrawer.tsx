@@ -401,7 +401,6 @@ export function AssignmentCandidateDrawer({
         <footer className="jf-drawer-footer">
           <nav className="jf-decision-links" aria-label="Consulta del proyecto">
             <Link to={`/proyectos/${proyecto.id}?volver=${encodeURIComponent(retorno)}`}>Ver proyecto</Link>
-            <Link to={`/proyectos/${proyecto.id}/ficha-trazabilidad?volver=${encodeURIComponent(retorno)}`}>Ver ficha de trazabilidad</Link>
           </nav>
           <p>
             {elegido ? (

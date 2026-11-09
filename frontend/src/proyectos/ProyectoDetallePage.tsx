@@ -5,5 +5,5 @@ const Legacy=lazy(()=>import('./ProyectoDetalleLegacyPage').then(m=>({default:m.
 export function ProyectoDetallePage(){
   const {data:user,isPending}=useMe();
   if(isPending)return <p role="status">Consultando sesión…</p>;
-  return <Suspense fallback={<p role="status">Abriendo proyecto…</p>}>{user&&['especialista','jefe_area'].includes(user.rol)?<CommandCenter/>:<Legacy/>}</Suspense>;
+  return <Suspense fallback={<p role="status">Abriendo proyecto…</p>}>{user&&['especialista','jefe_area','rrpp','admin'].includes(user.rol)?<CommandCenter/>:<Legacy/>}</Suspense>;
 }

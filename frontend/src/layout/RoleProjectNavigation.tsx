@@ -17,7 +17,7 @@ export function retornoProyecto(value: string | null): string | null {
   return value && value.startsWith('/') && !value.startsWith('//') && !value.includes('\\') ? value : null;
 }
 export function destinoProyectos(rol?: string) {
-  return rol === 'especialista' ? '/?vista=mis-proyectos' : rol === 'jefe_area' ? '/?vista=proyectos' : rol === 'rrpp' ? '/rrpp/proyectos' : rol === 'comercial' || rol === 'direccion' ? '/proyectos' : '/';
+  return rol === 'especialista' ? '/?vista=mis-proyectos' : rol === 'jefe_area' ? '/?vista=proyectos' : rol === 'rrpp' ? '/rrpp/proyectos' : rol === 'admin' ? '/admin/proyectos' : rol === 'comercial' || rol === 'direccion' ? '/proyectos' : '/';
 }
 export function SpecialistSidebarNav({ origen, mobile = false }: { origen?: string | null; mobile?: boolean }) {
   const location = useLocation();
@@ -38,6 +38,7 @@ export function RoleProjectNavigation({ rol, origen, mobile = false }: { rol?: s
   if (rol === 'soporte_editorial') return <SoporteEditorialNavigation active="mi-trabajo"/>;
   if (rol === 'soporte_digital') return <DigitalNavigation active="mi-trabajo"/>;
   if (rol === 'lider_creativo') return <CreativeSidebarNav active="proyectos-creativos"/>;
+  if (rol === 'admin') return <Link to="/admin/proyectos" className={NAV_INACTIVO}>Proyectos (Admin)</Link>;
   const nav = rol === 'rrpp' ? <RrppSidebarNav vista="proyectos" /> : rol === 'comercial' || rol === 'direccion' ? <ComercialSidebarNav activo="proyectos" /> : <Link to="/" className={NAV_INACTIVO}>{({editor:'Mi espacio de Edición',jefe_edicion:'Jefatura de Edición',corrector:'Mis correcciones',disenador:'Mis trabajos de Diseño',lider_creativo:'Dirección creativa',soporte_editorial:'Soporte editorial',soporte_digital:'Soporte digital',impresion:'Impresión',distribucion:'Distribución'} as Record<string,string>)[rol ?? ''] ?? 'Inicio'}</Link>;
   return mobile ? <nav className="rp-mobile-nav" aria-label="Navegación del rol">{nav}</nav> : nav;
 }

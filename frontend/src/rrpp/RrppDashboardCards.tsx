@@ -252,7 +252,7 @@ export function ActivityPanel({
                 className={`absolute -left-[4.5px] top-1.5 h-2 w-2 rounded-full ${item.contexto === 'conceptos' ? 'bg-violet-400' : item.titulo.includes('Comercial') ? 'bg-slate-500' : 'bg-blue-500'}`}
               />
               <Link
-                to={`/proyectos/${item.proyecto.id}/ficha-trazabilidad`}
+                to={`/proyectos/${item.proyecto.id}/ficha`}
                 className="block text-xs font-semibold leading-5 text-gray-900 hover:underline"
               >
                 {item.titulo}

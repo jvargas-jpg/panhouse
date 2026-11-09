@@ -668,7 +668,7 @@ export function RrppLanzamientoDetalle({
           <div className="flex items-center gap-2">
             <Link
               className={botonLaunch}
-              to={`/proyectos/${id}/ficha-trazabilidad#lanzamiento`}
+              to={`/proyectos/${id}/ficha#lanzamiento`}
             >
               <RrppIcon nombre="externo" className="h-3.5 w-3.5" />
               Ver ficha completa
