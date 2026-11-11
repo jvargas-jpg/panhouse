@@ -1,3 +1,4 @@
+import { requestAuthorFinalReview } from './authorFinalReview.js';
 import { and, desc, eq, isNotNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { autores, colecciones, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, fichasTrazabilidad, notificaciones, proyectos, users, workItems, type Rol } from '../db/schema/index.js';
@@ -158,14 +159,7 @@ export async function coordinarCalidad(id: string, datos: CoordinacionCalidad, a
       exigir(v.aprobadaAutorEn && !v.feedbackEn, 'Revisión final requiere aprobación del autor');
       const [retry] = await tx.select().from(fichaCalidadFases).where(and(eq(fichaCalidadFases.disenoVersionId, v.id), eq(fichaCalidadFases.numeroFase, 3)));
       if (retry) { exigir(retry.numerosLegalesUrl === (datos.numerosLegalesUrl ?? null), 'La revisión final ya tiene otra evidencia legal'); return { ok: true }; }
-      const anteriores = await tx.select().from(fichaCalidadFases).where(and(eq(fichaCalidadFases.fichaId, q.fichaId), eq(fichaCalidadFases.numeroFase, 3)));
-      const wi = await crearWorkItemSiNoExiste(tx, { proyectoId: p.id, tipo: 'calidad', businessKey: `revision-final:${v.id}` });
-      const [final] = await tx.insert(fichaCalidadFases).values({ fichaId: q.fichaId, numeroFase: 3, ronda: Math.max(0, ...anteriores.map(x => x.ronda)) + 1,
-        pdfUrl: v.enlace, pdfVersion: `V${v.numero}`, fecha: ahora.toISOString().slice(0, 10), workItemId: wi, disenoVersionId: v.id, solicitadoEn: ahora, numerosLegalesUrl: datos.numerosLegalesUrl ?? null,
-      }).returning();
-      exigir(final, 'No se pudo solicitar revisión final');
-      await tx.update(disenoVersiones).set({ calidadWorkItemId: wi, calidadFaseId: final.id }).where(eq(disenoVersiones.id, v.id));
-      await aviso(tx, p.id, 'soporte_editorial', null, 'Versión aprobada por autor lista para revisión final. Verifique números legales adjuntos o indique su incorporación en comentarios.');
+      await requestAuthorFinalReview(tx, q, v, p.id, datos.numerosLegalesUrl);
     }
     await evento(tx, q, p.id, actor.id, ({ enviar_autor: 'CALIDAD_ENVIADA_AUTOR', feedback_autor: 'CALIDAD_FEEDBACK_AUTOR', aprobar_autor: 'CALIDAD_APROBADA_AUTOR', revision_final: 'CALIDAD_REVISION_FINAL_SOLICITADA' } as const)[datos.accion]);
     return { ok: true };

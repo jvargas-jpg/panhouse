@@ -1,4 +1,5 @@
-import { boolean, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, pgTable, text, timestamp, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { autores } from './autores.js';
 import { rolEnum } from './enums.js';
 
@@ -20,4 +21,4 @@ export const users = pgTable('usuarios', {
   autorId: uuid('autor_id').references(() => autores.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
-});
+},t=>({authorAccount:uniqueIndex('usuarios_autor_cuenta_unique').on(t.autorId).where(sql`${t.rol}='autor' AND ${t.autorId} IS NOT NULL`)}));

@@ -10,6 +10,8 @@ export interface DriveStorageProvider {
   deleteFileOrFolder(id:string):Promise<void>;
 }
 export interface ProjectDriveStorageProvider extends DriveStorageProvider {
+  pinAuthorRevision?(fileId:string):Promise<{revisionId:string;mimeType:string}>;
+  readAuthorRevision?(fileId:string,revisionId:string):Promise<Buffer>;
   uploadFile?(input:{name:string;mimeType:string;parentFolderId:string;content:Buffer}):Promise<StorageItem>;
   listFiles?(input:{parentFolderId:string;pageToken?:string}):Promise<{items:StorageItem[];nextPageToken:string|null}>;
   allocateFolderIds(count:number):Promise<string[]>;

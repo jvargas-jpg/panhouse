@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { proyectos } from './proyectos.js';
 import { users } from './users.js';
 import { workItems } from './workItems.js';
+import { pausas } from './pausas.js';
 import { editorialBlockers } from './editorialBlockers.js';
 
 // Preparación posterior a la asignación. Las fechas de RRPP no se reutilizan.
@@ -39,7 +40,10 @@ export const solicitudesArea = pgTable('solicitudes_area', {
   // coordinador (ver docs/arquitectura/35-corrector-mis-solicitudes.md).
   // calidad_*: el Validador reporta una necesidad sobre una ronda real;
   // se conserva workItemId y de allí su identidad única en Calidad.
-  tipo: text('tipo').$type<'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion' | 'corrector_material' | 'corrector_aclaracion' | 'corrector_tecnico' | 'calidad_material' | 'calidad_aclaracion' | 'calidad_tecnico' | 'digital_material' | 'digital_aclaracion' | 'digital_tecnico'>().notNull(),
+  tipo: text('tipo').$type<'autor_pausa' | 'lanzamiento' | 'impresion' | 'creativa' | 'editor' | 'editor_apoyo' | 'editor_reasignacion' | 'editor_aclaracion' | 'corrector_material' | 'corrector_aclaracion' | 'corrector_tecnico' | 'calidad_material' | 'calidad_aclaracion' | 'calidad_tecnico' | 'digital_material' | 'digital_aclaracion' | 'digital_tecnico'>().notNull(),
+  desiredStart: timestamp('desired_start', { withTimezone: true }),
+  expectedReturn: timestamp('expected_return', { withTimezone: true }),
+  pausaId: uuid('pausa_id').references(() => pausas.id),
   blockerId: uuid('blocker_id').references(() => editorialBlockers.id, { onDelete: 'set null' }),
   businessKey: text('business_key').notNull(),
   // Null only for imported creative history whose originating actor was never recorded.
@@ -67,7 +71,7 @@ export const solicitudesArea = pgTable('solicitudes_area', {
     .where(sql`${t.tipo} IN ('digital_material','digital_aclaracion','digital_tecnico')`),
   digitalRequester: index('solicitudes_digital_requester_idx').on(t.requestedById, t.requestedAt.desc())
     .where(sql`${t.tipo} IN ('digital_material','digital_aclaracion','digital_tecnico')`),
-  conversion: check('solicitudes_area_conversion_valid',sql`(${t.tipo}='creativa' or (${t.workItemId} is not null and ${t.requestedById} is not null)) and (${t.tipo}<>'creativa' or ${t.estado}<>'resuelta' or ${t.workItemId} is not null)`),
+  conversion: check('solicitudes_area_conversion_valid',sql`(${t.tipo} IN ('creativa','autor_pausa') or (${t.workItemId} is not null and ${t.requestedById} is not null)) and (${t.tipo}<>'creativa' or ${t.estado}<>'resuelta' or ${t.workItemId} is not null)`),
 }));
 
 export const informacionSolicitudArea = pgTable('informacion_solicitud_area', {

@@ -15,6 +15,16 @@ function item(f:drive_v3.Schema$File):StorageItem {
 export class GoogleDriveAdapter implements ProjectDriveStorageProvider {
   private client:drive_v3.Drive;
   constructor(auth:OAuth2Client) { this.client=drive({version:'v3',auth,timeout:15000,retry:false}); }
+  async pinAuthorRevision(fileId:string){
+    const file=(await this.client.files.get({fileId,supportsAllDrives:true,fields:'headRevisionId,mimeType,trashed,size'})).data;
+    if(file.trashed||!file.headRevisionId||!['application/pdf','image/png','image/jpeg'].includes(file.mimeType??'')||Number(file.size??0)>50*1024*1024)throw new Error('Comparte un PDF o imagen de hasta 50 MB para conservar una revisión exacta.');
+    await this.client.revisions.update({fileId,revisionId:file.headRevisionId,requestBody:{keepForever:true}});
+    return {revisionId:file.headRevisionId,mimeType:file.mimeType!};
+  }
+  async readAuthorRevision(fileId:string,revisionId:string){
+    const response=await this.client.revisions.get({fileId,revisionId,alt:'media'},{responseType:'arraybuffer'});
+    return Buffer.from(response.data as unknown as ArrayBuffer);
+  }
   async validateConnection() {
     try {const r=await this.client.about.get({fields:'user(emailAddress,permissionId)'});return {accountEmail:r.data.user?.emailAddress ?? null,accountId:r.data.user?.permissionId ?? null};}
     catch(e){throw safeDriveError(e);}

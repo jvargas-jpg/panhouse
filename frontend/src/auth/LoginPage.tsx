@@ -1,24 +1,27 @@
 import { PanhouseLogo } from '../design-system/Brand';
 import { useState, type FormEvent } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { useLogin, useMe } from './useAuth';
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
+  const location=useLocation();
+  const requested=(location.state as {returnTo?:string}|null)?.returnTo;
+  const destination=requested?.startsWith('/')&&!requested.startsWith('//')?requested:'/';
   const { data: user } = useMe();
   const login = useLogin();
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={destination} replace />;
   }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     login.mutate(
       { email, password },
-      { onSuccess: () => navigate('/', { replace: true }) },
+      { onSuccess: () => navigate(destination, { replace: true }) },
     );
   }
 
@@ -79,6 +82,7 @@ export function LoginPage() {
             {login.isPending ? 'Entrando…' : 'Entrar'}
           </button>
         </form>
+        <Link to="/autor/recuperar" className="block px-6 pb-6 text-sm underline">Recuperar acceso de Autor</Link>
       </div>
     </div>
   );

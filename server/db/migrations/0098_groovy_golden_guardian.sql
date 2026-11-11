@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "usuarios_autor_cuenta_unique" ON "usuarios" USING btree ("autor_id") WHERE "usuarios"."rol"='autor' AND "usuarios"."autor_id" IS NOT NULL;

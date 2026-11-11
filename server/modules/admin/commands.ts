@@ -11,6 +11,7 @@ import {dispatchProjectWorkspace} from '../project-workspaces/dispatch.js';
 import {evaluateProjectGoals} from '../../helpers/monthlyGoalEvaluation.js';
 import type {Tx} from '../../helpers/tx.js';
 import {adminAssert,safeAdminData} from './policy.js';
+import {authorCredentialTokens,authorMailOutbox} from '../../db/schema/index.js';
 export interface Command {reason:string;requestKey:string}
 export interface AdminActor{id:string;rol:string}
 export async function adminCommand(actor:AdminActor,action:string,input:Command & object,work:(tx:Tx)=>Promise<Record<string,unknown>>):Promise<Record<string,unknown>&{reused:boolean}>{
@@ -39,7 +40,7 @@ const sameVersion=(actual:Date,expected:string)=>actual.toISOString()===new Date
 async function notify(tx:Tx,userId:string,projectId:string|undefined,message:string){const [u]=await tx.select({role:users.rol}).from(users).where(eq(users.id,userId));if(u)await tx.insert(notificaciones).values({proyectoId:projectId??null,usuarioDestinoId:userId,rolDestino:u.role,mensaje:message});}
 export async function createAdminUser(actor:AdminActor,input:Command & {name:string;email:string;role:Rol;accountType:'internal'|'external';password:string;authorId?:string}){
  return adminCommand(actor,'create_user',input,async tx=>{
-  adminAssert(input.accountType!=='external'||input.role==='corrector','Las cuentas externas reutilizables solo corresponden a Corrector',400);
+  adminAssert(input.accountType!=='external'||['corrector','autor'].includes(input.role),'Las cuentas externas corresponden a Corrector o Autor',400);
   adminAssert(input.role!=='autor'||!!input.authorId,'Una cuenta de Autor necesita su autor vinculado',400);
   const email=input.email.trim().toLowerCase();const [existing]=await tx.select({id:users.id}).from(users).where(eq(users.email,email));adminAssert(!existing,'Ya existe una cuenta con ese correo');
   const [u]=await tx.insert(users).values({nombre:input.name.trim(),email,rol:input.role,accountType:input.accountType,passwordHash:await hashPassword(input.password),autorId:input.role==='autor'?input.authorId:null}).returning({id:users.id,nombre:users.nombre,email:users.email,rol:users.rol,accountType:users.accountType,autorId:users.autorId});
@@ -52,11 +53,16 @@ export async function updateAdminUser(actor:AdminActor,id:string,input:Command &
   const [u]=await tx.select({id:users.id,active:users.activo,role:users.rol,version:users.updatedAt,accountType:users.accountType,authorId:users.autorId}).from(users).where(eq(users.id,id)).for('update');
   adminAssert(u,'Usuario no encontrado',404);adminAssert(sameVersion(u.version,input.expectedVersion),'La cuenta cambió; actualiza antes de confirmar');
   const active=input.active??u.active,role=input.role??u.role;
-  adminAssert(u.accountType!=='external'||role==='corrector','No se puede conceder un rol interno a una cuenta externa',400);
+  adminAssert(u.accountType!=='external'||['corrector','autor'].includes(role),'No se puede conceder un rol interno a una cuenta externa',400);
   adminAssert(role!=='autor'||u.authorId,'La cuenta no tiene un autor vinculado',400);
   if(u.role==='admin'&&(!active||role!=='admin')){
    const remaining=await tx.select({id:users.id}).from(users).where(and(eq(users.rol,'admin'),eq(users.activo,true)));
    adminAssert(remaining.some(a=>a.id!==id),'No se puede retirar el último administrador activo');
+  }
+  if(!active||u.role!==role){
+   const revoked=await tx.update(authorCredentialTokens).set({consumedAt:new Date()}).where(and(eq(authorCredentialTokens.userId,id),isNull(authorCredentialTokens.consumedAt))).returning({hash:authorCredentialTokens.hash});
+   await tx.delete(authorMailOutbox).where(and(eq(authorMailOutbox.userId,id),isNull(authorMailOutbox.sentAt),sql`${authorMailOutbox.key} LIKE 'credential:%'`));
+   if(revoked.length)await tx.insert(auditLogs).values({actorId:actor.id,accion:'AUTOR_CREDENCIALES_PENDIENTES_REVOCADAS',entityType:'usuario',entityId:id,detalles:{reason:input.reason}});
   }
   if(u.active===active&&u.role===role)return {ok:true,id,unchanged:true};
   await tx.update(users).set({activo:active,rol:role,updatedAt:new Date()}).where(eq(users.id,id));

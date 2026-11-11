@@ -1,3 +1,4 @@
+import { AuthorWorkflowPanel } from '../portalAutor/AuthorWorkflowPanel';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, Navigate, useLocation, useParams, useSearchParams } from 'react-router-dom';
@@ -157,6 +158,7 @@ export function ProyectoCommandCenterPage() {
           <Card title="Actividad reciente" icon="clock" action={<Link to={to('actividad')}>Ver historial</Link>}><Actividad items={ficha.recentActivity}/></Card>
         </>;
       })()}
+      {(tab === '' || tab === 'operacion') && user && ['especialista','jefe_area'].includes(user.rol) && <AuthorWorkflowPanel projectId={id}/>}
       {tab === 'operacion' && (() => {
         const { causasReales, gateBloqueado } = derivarAtencion(data);
         const { paralelos } = linea!;

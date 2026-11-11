@@ -9,9 +9,9 @@ import { IndicadoresLoading } from './comercial/IndicadoresComponents';
 import { HomePage } from './HomePage';
 import { AppLayout } from './layout/AppLayout';
 import { FullscreenLayout } from './layout/FullscreenLayout';
-import { AutorHomePage } from './portalAutor/AutorHomePage';
 import { AutorLayout } from './portalAutor/AutorLayout';
-import { LibroDetalleAutorPage } from './portalAutor/LibroDetalleAutorPage';
+import { AuthorHome,AuthorProjects,AuthorProjectDetail,AuthorApprovals,AuthorApprovalDetail,AuthorDocuments,AuthorRequests,AuthorNotifications } from './portalAutor/AuthorPortalViews';
+import { AuthorCredentials } from './portalAutor/AuthorCredentials';
 import { FichaTrazabilidadPage } from './proyectos/FichaTrazabilidadPage';
 import { CommercialIntakePage } from './trazabilidad/CommercialIntakePage';
 import { ProyectoDetallePage } from './proyectos/ProyectoDetallePage';
@@ -32,6 +32,8 @@ export function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/autor/activar" element={<AuthorCredentials/>}/>
+      <Route path="/autor/recuperar" element={<AuthorCredentials reset/>}/>
 
       <Route element={<RequireAuth />}>
         <Route path="/admin/*" element={<Suspense fallback={<p role="status">Abriendo Administración…</p>}><AdminApp/></Suspense>}/>
@@ -85,8 +87,16 @@ export function App() {
         {/* Portal del Autor: layout propio (top bar clara), no AppLayout
             (sidebar oscuro interno) — rama hermana bajo el mismo RequireAuth. */}
         <Route element={<AutorLayout />}>
-          <Route path="/mis-libros" element={<AutorHomePage />} />
-          <Route path="/mis-libros/:id" element={<LibroDetalleAutorPage />} />
+          <Route path="/mis-libros" element={<Navigate to="/autor" replace/>} />
+          <Route path="/mis-libros/:id" element={<AuthorProjectDetail />} />
+          <Route path="/autor" element={<AuthorHome/>}/>
+          <Route path="/autor/proyectos" element={<AuthorProjects/>}/>
+          <Route path="/autor/proyectos/:id" element={<AuthorProjectDetail/>}/>
+          <Route path="/autor/aprobaciones" element={<AuthorApprovals/>}/>
+          <Route path="/autor/aprobaciones/:id" element={<AuthorApprovalDetail/>}/>
+          <Route path="/autor/documentos" element={<AuthorDocuments/>}/>
+          <Route path="/autor/solicitudes" element={<AuthorRequests/>}/>
+          <Route path="/autor/notificaciones" element={<AuthorNotifications/>}/>
         </Route>
       </Route>
 

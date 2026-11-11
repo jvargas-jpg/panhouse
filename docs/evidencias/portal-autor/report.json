@@ -1,0 +1,30 @@
+{
+  "screens": [
+    "inicio-desktop",
+    "aprobacion-desktop",
+    "confirmacion-desktop",
+    "proyecto-desktop",
+    "inicio-tablet",
+    "aprobacion-tablet",
+    "confirmacion-tablet",
+    "proyecto-tablet",
+    "inicio-mobile",
+    "aprobacion-mobile",
+    "confirmacion-mobile",
+    "proyecto-mobile",
+    "mis-proyectos-mobile",
+    "documentos-mobile",
+    "solicitudes-mobile",
+    "notificaciones-mobile",
+    "decision-registrada-mobile",
+    "especialista-desktop"
+  ],
+  "checks": [
+    "1440x900, 768x1024, 375x812: no page overflow; actions accessible; changes require comment",
+    "Approval deep-link restored after login",
+    "Overdue approval resolved through mobile UI, feedback preserved",
+    "Pause request submitted without changing project state",
+    "Specialist view uses the same decisions and pause requests"
+  ],
+  "errors": []
+}

@@ -42,6 +42,9 @@ export async function enforceSessionContext(request:FastifyRequest,reply:Fastify
  const c=await sessionContext(token);request.authChecked=true;if(!c)return;
  request.user=c.user;request.realAdmin=c.realAdmin;request.sessionPublicId=c.publicId;
  const path=request.url.split('?')[0];
+ if(c.user.rol==='autor'&&!(c.realAdmin&&path==='/api/admin/view-as/stop')&&!path?.startsWith('/api/autor/')&&!['/api/autor','/api/auth/me','/api/auth/logout','/api/auth/login'].includes(path!)){
+  await reply.code(403).send({error:'Accede a esta información desde el Portal del Autor'});return;
+ }
  if(c.realAdmin&&((!['GET','HEAD','OPTIONS'].includes(request.method)&&!['/api/admin/view-as/stop','/api/auth/logout'].includes(path!))||path==='/api/auth/google/callback'))await reply.code(403).send({error:'Modo administrador solo lectura: sal de Ver como usuario para realizar cambios'});
 }
 

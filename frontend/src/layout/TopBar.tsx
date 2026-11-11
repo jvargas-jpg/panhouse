@@ -11,7 +11,7 @@ export function TopBar({ compacto = false, tools }: { compacto?: boolean; roleLa
   const navigation = useShellNavigation();
   const account = <div className="ph-account flex shrink-0 items-center gap-2 sm:gap-3">
     {user?.rol === 'direccion' && <Link to="/configuracion/integraciones/google-drive" className="hidden rounded-md px-2 py-1.5 text-xs font-medium text-tinta hover:bg-tinta/5 md:inline">Integraciones</Link>}
-    <NotificacionesCampana />
+    {user?.rol==='autor'?<Link to="/autor/notificaciones" className="ph-icon-button" aria-label="Notificaciones">◉</Link>:<NotificacionesCampana />}
     <span className="hidden text-sm text-tinta/70 sm:inline">{user?.nombre}</span>
     <button type="button" onClick={() => logout.mutate(undefined, { onSuccess: () => navigate('/login', { replace: true }) })} disabled={logout.isPending}
       className="shrink-0 whitespace-nowrap rounded-md border border-tinta/20 px-3 py-1.5 text-xs font-medium text-tinta transition hover:bg-tinta/5 disabled:opacity-60 sm:text-sm">Cerrar sesión</button>

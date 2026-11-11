@@ -34,3 +34,4 @@ export * from './correccionDeliveries.js';
 export * from './correccionBlockers.js';
 export * from './solicitudArchivos.js';
 export * from './administracion.js';
+export * from './authorPortal.js';

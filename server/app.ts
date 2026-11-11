@@ -44,6 +44,8 @@ import { safeRequestUrl } from './modules/integrations/google-drive/logging.js';
 import { projectWorkspaceRoutes } from './modules/project-workspaces/routes.js';
 import {enforceSessionContext} from './middleware/auth.middleware.js';
 import {adminRoutes} from './modules/admin/routes.js';
+import {authorPortalRoutes} from './routes/authorPortal.routes.js';
+import {guardLegacyAuthorDecision} from './helpers/authorLegacyGuard.js';
 
 export function buildApp() {
   const app = Fastify({
@@ -55,7 +57,9 @@ export function buildApp() {
   });
 
   app.register(cookie);
+  app.register(authorPortalRoutes,{prefix:'/api/autor'});
   app.addHook('preHandler',enforceSessionContext);
+  app.addHook('preHandler',guardLegacyAuthorDecision);
   app.addHook('preSerialization', (request, _reply, payload, done) => { done(null,financialResponseForRole(request, payload)); });
   app.register(adminRoutes,{prefix:'/api/admin'});
   app.register(googleDriveRoutes, { prefix: '/api' });
