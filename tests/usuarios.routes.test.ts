@@ -10,7 +10,7 @@ describe('GET /api/usuarios', () => {
     await limpiarBaseDeDatos();
   });
 
-  it.each(['jefe_area', 'especialista', 'rrpp', 'disenador', 'lider_creativo', 'soporte_editorial', 'soporte_digital'] as const)(
+  it.each(['jefe_area', 'especialista', 'rrpp', 'disenador', 'lider_creativo', 'validador', 'soporte_digital'] as const)(
     'permite a %s listar el personal activo, sin incluir autores',
     async (rol) => {
       const app = crearAppDePrueba();

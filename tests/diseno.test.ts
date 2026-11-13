@@ -142,7 +142,7 @@ describe('5D Diseño — workflow y aislamiento de roles', () => {
     const qs = await db.select().from(fichaCalidadFases); expect(qs).toHaveLength(1); expect(qs[0]).toMatchObject({ numeroFase: 1, ronda: 1, pdfUrl: 'https://drive.google.com/v1', pdfVersion: 'V1' });
     const [vv] = await db.select().from(disenoVersiones).where(eq(disenoVersiones.id, v.body.id)); expect(vv?.calidadFaseId).toBe(qs[0]!.id);
     expect(await db.select().from(workItems).where(eq(workItems.tipo, 'calidad'))).toHaveLength(1);
-    expect(await db.select().from(notificaciones).where(eq(notificaciones.rolDestino, 'soporte_editorial'))).toHaveLength(1);
+    expect(await db.select().from(notificaciones).where(eq(notificaciones.rolDestino, 'validador'))).toHaveLength(1);
     expect(await db.select().from(auditLogs).where(eq(auditLogs.accion, 'DISENO_HANDOFF_CALIDAD'))).toHaveLength(1);
     const [handoff] = await db.select().from(workItems).where(eq(workItems.id, vv!.calidadWorkItemId!));
     expect(JSON.parse(handoff!.observaciones!)).toMatchObject({ disenoId: d.body.id, versionId: v.body.id, fuenteUrl: 'https://drive.google.com/fuente', correccionId });

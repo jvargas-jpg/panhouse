@@ -1,0 +1,78 @@
+﻿ M .env.example
+ M docs/arquitectura/11-fase2-modelo-canonico.md
+ M docs/arquitectura/13-fase5-diseno.md
+ M docs/arquitectura/14-fase5-calidad.md
+ M frontend/src/HomePage.tsx
+ M frontend/src/admin/AdminUi.tsx
+ M frontend/src/jefatura/DecisionesPage.tsx
+ M frontend/src/jefatura/IntervencionDrawer.tsx
+ M frontend/src/jefatura/PanelJefaturaPage.tsx
+ M frontend/src/layout/RoleProjectNavigation.tsx
+ M frontend/src/proyectos/ProyectoCommandCenterPage.tsx
+ M frontend/src/proyectos/ProyectoDetallePage.tsx
+ M frontend/src/proyectos/SeccionCalidadOperativa.tsx
+ M frontend/src/proyectos/SeccionDisenoOperativa.tsx
+ M frontend/src/proyectos/disenoApi.ts
+ M frontend/src/soporteEditorial/QualityIncomingRequests.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialHomePage.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialMiTrabajo.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialMisSolicitudes.tsx
+ M frontend/src/soporteEditorial/SoporteEditorialUi.tsx
+ M server/app.ts
+ M server/db/createUser.ts
+ M server/db/migrations/meta/_journal.json
+ M server/db/schema/diseno.ts
+ M server/db/schema/index.ts
+ M server/db/schema/trazabilidad.ts
+ M server/helpers/auditLog.ts
+ M server/helpers/authorFinalReview.ts
+ M server/helpers/authorPortal.ts
+ M server/helpers/calidad.ts
+ M server/helpers/diseno.ts
+ M server/helpers/especialistaMiTrabajo.ts
+ M server/helpers/especialistaSolicitudes.ts
+ M server/helpers/fichaViva.ts
+ M server/helpers/notificaciones.ts
+ M server/helpers/projectCommandCenter.ts
+ M server/middleware/auth.middleware.ts
+ M server/modules/admin/commands.ts
+ M server/modules/integrations/google-drive/adapter.ts
+ M server/modules/integrations/google-drive/config.ts
+ M server/modules/integrations/google-drive/oauth.ts
+ M server/modules/integrations/google-drive/provider.ts
+ M server/modules/integrations/google-drive/service.ts
+ M server/routes/auth.routes.ts
+ M server/routes/especialistaSolicitudes.routes.ts
+ M server/worker.ts
+ M shared/operacionEspecialista.ts
+ M tests/googleDrive.security.test.ts
+?? docs/auditoria/38-validadores.md
+?? docs/evidencias/validadores/archivos-nuevos.txt
+?? docs/evidencias/validadores/backend-build.txt
+?? docs/evidencias/validadores/diff-check.txt
+?? docs/evidencias/validadores/domain-final.txt
+?? docs/evidencias/validadores/frontend-build.txt
+?? docs/evidencias/validadores/git-diff-stat.txt
+?? docs/evidencias/validadores/git-status.txt
+?? docs/evidencias/validadores/http-qa.txt
+?? docs/evidencias/validadores/migration-qa.txt
+?? docs/evidencias/validadores/tests.txt
+?? docs/evidencias/validadores/verification.json
+?? frontend/src/validaciones/ValidacionesPage.tsx
+?? frontend/src/validaciones/ValidationManagement.tsx
+?? frontend/src/validaciones/validaciones.css
+?? frontend/src/validaciones/validaciones.test.tsx
+?? scripts/validadores-migration-qa.ts
+?? scripts/validadores-qa-check.mjs
+?? scripts/validadores-qa-server.ts
+?? server/db/migrations/0101_noisy_raider.sql
+?? server/db/migrations/0102_big_dust.sql
+?? server/db/migrations/meta/0101_snapshot.json
+?? server/db/migrations/meta/0102_snapshot.json
+?? server/db/schema/validationDelivery.ts
+?? server/helpers/designExternalMail.ts
+?? server/helpers/validaciones.ts
+?? server/helpers/validationDrive.ts
+?? server/queue/validations.worker.ts
+?? server/routes/validaciones.routes.ts
+?? tests/validaciones.test.ts

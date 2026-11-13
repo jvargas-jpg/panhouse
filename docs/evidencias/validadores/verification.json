@@ -1,0 +1,83 @@
+{
+  "date": "2026-11-12",
+  "workspace": "panhouse",
+  "focusedTests": {
+    "passed": 73,
+    "failed": 0
+  },
+  "finalDomainTests": {
+    "passed": 10,
+    "failed": 0
+  },
+  "builds": {
+    "backendExitCode": 0,
+    "frontendExitCode": 0,
+    "frontendWarning": "Chunks superiores a 500 kB; build completado."
+  },
+  "httpQa": {
+    "result": "PASS",
+    "events": 31,
+    "cycles": [
+      "Calidad V0 -> V1 -> V2",
+      "Revision Final V2 -> V3 -> V4"
+    ],
+    "transport": "HTTP y PostgreSQL reales",
+    "drive": "simulado",
+    "externalMail": "simulado"
+  },
+  "migrationQa": {
+    "result": "PASS",
+    "from": "0100",
+    "to": "0102",
+    "postgres": "18.6",
+    "historicalDataPreserved": true,
+    "validatorAssignmentsInferred": false
+  },
+  "liveDriveVerified": false,
+  "realMailSent": false,
+  "visualQa": {
+    "status": "blocked",
+    "reason": "Host de navegador no disponible; Computer Use no pudo verificar URL de Chrome."
+  },
+  "qaServicesStopped": true,
+  "targetEnvironmentMigrationsApplied": false,
+  "commitCreated": false,
+  "stagingPerformed": false,
+  "roleContextAudit": {
+    "date": "2026-11-12",
+    "initialImplementationExact": false,
+    "publicAndDomainRole": "validador",
+    "contexts": [
+      "CALIDAD",
+      "SOPORTE_EDITORIAL"
+    ],
+    "mixedInboxVerified": true,
+    "singleAuthenticatedUserThreeProjectsVerified": true,
+    "publicRoleContractVerified": true,
+    "historicalRolePreservedOnlyInStorage": true,
+    "newMigrations": 0,
+    "focusedTests": {
+      "passed": 18,
+      "failed": 0
+    },
+    "finalCoverAndUiRerun": {
+      "passed": 7,
+      "failed": 0,
+      "otherTestsSkipped": 11
+    },
+    "qualityAndCoverV0ApprovalBlocked": true,
+    "coverReassignmentAndPinnedPreviousCommentsVerified": true,
+    "existingCreativeAndInternalApprovalsPreserved": true,
+    "backendBuildExitCode": 0,
+    "frontendProductionBuildExitCode": 0,
+    "finalFrontendTypecheckExitCode": 0,
+    "realDrive": false,
+    "realMail": false,
+    "logs": [
+      "role-context-tests.txt",
+      "role-context-final-cover.txt",
+      "role-context-backend-build.txt",
+      "role-context-frontend-typecheck.txt"
+    ]
+  }
+}

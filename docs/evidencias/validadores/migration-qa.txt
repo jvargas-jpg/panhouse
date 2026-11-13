@@ -1,0 +1,10 @@
+{
+  "result": "PASS",
+  "upgrade": "0100 → 0102",
+  "historicalRoundPreserved": true,
+  "noInferredValidatorAssignments": true,
+  "externalAccountsDisabledAndSessionsRevoked": true,
+  "providerBackfilled": true,
+  "historicalVersionAndForeignKeyRetained": true,
+  "postgres": "18.6"
+}

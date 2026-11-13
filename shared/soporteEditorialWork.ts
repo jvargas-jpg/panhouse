@@ -1,13 +1,5 @@
-// Mi trabajo del Validador (Soporte Editorial): UNA FILA = UNA RONDA DE
-// VALIDACIÓN (ficha_calidad_fases.id), nunca un proyecto. Reutiliza el
-// dominio real de Calidad (listarCalidad/resolverCalidad/iniciarCalidad en
-// server/helpers/calidad.ts) -- este archivo solo declara la forma de la
-// bandeja/detalle de "Mi trabajo", no un modelo paralelo de validación.
-// soporte_editorial es acceso por ROL, no asignación individual (ver
-// fichaCalidadFases.nombreQuienRecibe en server/db/schema/trazabilidad.ts):
-// por eso no hay "asignada a mí" -- toda ronda activa está disponible para
-// cualquier Validador, y por eso no existe un status "asignada" propio
-// (reemplazado por "Nueva ronda", ver §33 del master prompt).
+// Legacy shared-inbox DTO, retained only for historical compatibility.
+// The active Validador inbox uses individual assignments and shared/validationWork.
 export type EstadoPlazoCalidad = 'en_tiempo' | 'proximo_a_vencer' | 'vencido';
 export type ValidatorWorkTab = 'active' | 'waiting' | 'completed' | 'all';
 export type ValidatorWorkStatus = 'new_round' | 'in_review' | 'waiting_design' | 'completed';

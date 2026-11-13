@@ -70,7 +70,7 @@ export async function obtenerInicioEspecialista(actorId: string, ahora = new Dat
   acciones.sort((a,b) => Number(b.prioridad === 'vencida')-Number(a.prioridad === 'vencida') || (a.fecha ?? '9999').localeCompare(b.fecha ?? '9999') || a.id.localeCompare(b.id));
   const claveFecha = (v: VencimientoEspecialista) => v.precision === 'dia' ? v.fecha+'T23:59:59' : diaCaracas(new Date(v.fecha))+'T'+new Intl.DateTimeFormat('en-GB',{timeZone:'America/Caracas',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).format(new Date(v.fecha));
   vencimientos.sort((a,b) => claveFecha(a).localeCompare(claveFecha(b)) || a.id.localeCompare(b.id));
-  const destino: Record<string,string> = { edicion: 'Jefatura de Edición', direccion_creativa: 'Jefatura / Creativa', correccion: 'Corrector', diseno: 'Diseño', calidad: 'Soporte editorial', soporte_digital: 'Soporte digital', lanzamiento: 'RRPP' };
+  const destino: Record<string,string> = { edicion: 'Jefatura de Edición', direccion_creativa: 'Jefatura / Creativa', correccion: 'Corrector', diseno: 'Diseño', calidad: 'Validador', soporte_digital: 'Soporte digital', lanzamiento: 'RRPP' };
   return {
     actualizadoEn: ahora.toISOString(), mes,
     kpis: { activos: activos.length, acciones: fallos.has('acciones') ? null : acciones.length, proximos: fallos.has('vencimientos') ? null : vencimientos.filter(v => v.proximo).length,

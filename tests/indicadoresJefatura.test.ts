@@ -202,7 +202,7 @@ describe('Indicadores: fuentes nativas, filtros y exportación', () => {
       for (const rol of [
         'especialista',
         'direccion',
-        'soporte_editorial',
+        'validador',
       ] as const) {
         const id = await usuario(rol);
         expect(

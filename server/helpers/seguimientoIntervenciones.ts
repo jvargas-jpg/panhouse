@@ -263,7 +263,7 @@ export function proyectarIntervencion(
     if (!r.analista_id && !r.externo)
       alertas.push(
         r.origen === 'calidad'
-          ? 'Pendiente en bandeja de Soporte Editorial'
+          ? 'Pendiente en bandeja de Validadores'
           : 'Sin analista',
       );
   }
@@ -324,7 +324,7 @@ export function proyectarIntervencion(
         : r.origen === 'calidad'
           ? {
               id: null,
-              nombre: 'Bandeja de Soporte Editorial',
+              nombre: 'Bandeja de Validadores',
               tipo: 'bandeja',
             }
           : null,
@@ -649,7 +649,7 @@ export async function guardarSupervision(
           (origen === 'legacy'
             ? actual!.estado === 'entregado'
             : c?.fechaEntrega),
-        'Comentarios de Calidad pertenecen a Soporte Editorial o la intervención aún no fue entregada',
+        'Comentarios de Calidad pertenecen al Validador o la intervención aún no fue entregada',
       );
     if ('observacionesF1' in datos)
       exigir(

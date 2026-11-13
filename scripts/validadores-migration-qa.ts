@@ -1,0 +1,45 @@
+/** Verify upgrade from 0100 using historical users, sessions and a decided round. */
+import 'dotenv/config';
+import { mkdtemp, mkdir, readFile, writeFile, copyFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { randomUUID } from 'node:crypto';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
+const target = new URL(process.env.DATABASE_URL!);
+if (!['localhost', '127.0.0.1'].includes(target.hostname) || !target.pathname.endsWith('_validation_migration')) throw Error('Use an empty local *_validation_migration database');
+process.env.NODE_ENV = 'development';
+const { db, pool } = await import('../server/db/client.js');
+if ((await pool.query("select 1 from information_schema.tables where table_name='usuarios'")).rowCount) throw Error('Migration QA requires an empty disposable database');
+const base = './server/db/migrations', journal = JSON.parse(await readFile(join(base, 'meta/_journal.json'), 'utf8'));
+journal.entries = journal.entries.filter((entry: { idx: number }) => entry.idx <= 100);
+const old = await mkdtemp(join(tmpdir(), 'panhouse-validation-migration-')); await mkdir(join(old, 'meta'));
+await writeFile(join(old, 'meta/_journal.json'), JSON.stringify(journal));
+for (const entry of journal.entries) await copyFile(join(base, entry.tag + '.sql'), join(old, entry.tag + '.sql'));
+await migrate(db, { migrationsFolder: old });
+const ids = { validator: randomUUID(), designer: randomUUID(), corrector: randomUUID() };
+for (const [key, role] of [['validator', 'soporte_editorial'], ['designer', 'disenador'], ['corrector', 'corrector']] as const) {
+ await pool.query('insert into usuarios(id,email,nombre,password_hash,rol) values($1,$2,$3,$4,$5)', [ids[key], `${key}@migration.qa.test`, key, 'unusable-qa-hash', role]);
+ await pool.query("insert into sesiones(id,user_id,expires_at) values($1,$2,now()+interval '1 day')", [key.repeat(12), ids[key]]);
+}
+const { crearProyectoDePrueba } = await import('../tests/helpers/fixtures.js');
+const p = await crearProyectoDePrueba({ disenadorId: ids.designer });
+const { rows: [cw] } = await pool.query("insert into work_items(proyecto_id,tipo) values($1,'direccion_creativa') returning id", [p.id]);
+const { rows: [creative] } = await pool.query("insert into direcciones_creativas(proyecto_id,work_item_id,tipo) values($1,$2,'concepto_portada') returning id", [p.id, cw.id]);
+const { rows: [dw] } = await pool.query("insert into work_items(proyecto_id,tipo) values($1,'diseno') returning id", [p.id]);
+const { rows: [design] } = await pool.query("insert into disenos(proyecto_id,work_item_id,direccion_creativa_id,tipo,solicitud_key,fuente_url) values($1,$2,$3,'diagramacion',$4,'https://drive.google.com/file/d/historical-source/view') returning id", [p.id, dw.id, creative.id, randomUUID()]);
+const { rows: [v] } = await pool.query("insert into diseno_versiones(diseno_id,numero,entrega_key,enlace,entregado_por_id) values($1,7,$2,'https://drive.google.com/file/d/historical-version/view',$3) returning id", [design.id, randomUUID(), ids.designer]);
+const { rows: [f] } = await pool.query('insert into fichas_trazabilidad(proyecto_id) values($1) returning id', [p.id]);
+const { rows: [q] } = await pool.query("insert into ficha_calidad_fases(ficha_id,numero_fase,ronda,pdf_version,aprobado,nombre_quien_recibe,revisado_por_id,revisado_en) values($1,2,3,'V7',true,'Historical validator',$2,now()) returning id", [f.id, ids.validator]);
+const fields = 'id,numero_fase,ronda,pdf_version,aprobado,nombre_quien_recibe,revisado_por_id,revisado_en';
+const before = (await pool.query(`select ${fields} from ficha_calidad_fases where id=$1`, [q.id])).rows[0];
+await migrate(db, { migrationsFolder: base });
+const after = (await pool.query(`select ${fields} from ficha_calidad_fases where id=$1`, [q.id])).rows[0];
+const users = (await pool.query('select rol,activo from usuarios order by rol')).rows;
+const sessions = (await pool.query('select u.rol,s.revoked_at is not null revoked from sesiones s join usuarios u on u.id=s.user_id order by u.rol')).rows;
+const provider = (await pool.query('select external_provider_name,external_provider_email from disenos where id=$1', [design.id])).rows[0];
+const { rows: [count] } = await pool.query("select count(*)::int n from project_assignments where tipo='validador'");
+const preserved = JSON.stringify(before) === JSON.stringify(after);
+const retainedVersion = (await pool.query('select numero,entregado_por_id from diseno_versiones where id=$1', [v.id])).rows[0];
+const ok = preserved && count.n === 0 && users.every(u => u.activo === (u.rol === 'soporte_editorial')) && sessions.every(s => s.revoked === (s.rol !== 'soporte_editorial')) && provider.external_provider_email === 'designer@migration.qa.test' && retainedVersion.numero === 7 && retainedVersion.entregado_por_id === ids.designer;
+console.log(JSON.stringify({ result: ok ? 'PASS' : 'FAIL', upgrade: '0100 → 0102', historicalRoundPreserved: preserved, noInferredValidatorAssignments: count.n === 0, externalAccountsDisabledAndSessionsRevoked: ok, providerBackfilled: provider.external_provider_email === 'designer@migration.qa.test', historicalVersionAndForeignKeyRetained: retainedVersion.entregado_por_id === ids.designer, postgres: (await pool.query('show server_version')).rows[0].server_version }, null, 2));
+await pool.end(); if (!ok) process.exitCode = 1;

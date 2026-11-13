@@ -64,7 +64,7 @@ beforeEach(async () => {
   [jefe, especialista, corrector, soporte] = (await db
     .insert(users)
     .values(
-      ['jefe_area', 'especialista', 'corrector', 'soporte_editorial'].map(
+      ['jefe_area', 'especialista', 'corrector', 'validador'].map(
         (rol, i) => ({
           rol: rol as typeof users.$inferInsert.rol,
           email: `tracking-${i}@test.local`,

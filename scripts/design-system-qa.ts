@@ -23,7 +23,7 @@ const routes: Record<string, string[]> = {
   jefe_edicion: ['/', '/?vista=asignaciones', '/?vista=proyectos-edicion', '/?vista=solicitudes-edicion'],
   editor: ['/', '/?vista=mi-trabajo', '/?vista=mis-proyectos', '/?vista=mis-solicitudes'],
   corrector: ['/', '/?vista=mi-trabajo', '/?vista=mis-solicitudes'],
-  soporte_editorial: ['/', '/?vista=mi-trabajo', '/?vista=mis-solicitudes'],
+  validador: ['/', '/?vista=mi-trabajo', '/?vista=mis-solicitudes'],
   lider_creativo: ['/', '/?vista=mi-trabajo', '/?vista=proyectos-creativos', '/?vista=solicitudes'],
   disenador: ['/'], soporte_digital: ['/', '/?vista=mi-trabajo', '/?vista=mis-solicitudes'],
   direccion: ['/', '/proyectos'], admin: ['/admin/inicio', '/admin/pipeline', '/admin/proyectos', '/admin/personas', '/admin/actividad', '/admin/solicitudes', '/admin/integraciones', '/admin/configuracion', '/admin/salud'],

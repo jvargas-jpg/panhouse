@@ -1,0 +1,82 @@
+
+ RUN  v2.1.9 C:/Users/Jhose/OneDrive/Documentos/panhouse
+
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > QA completo: V0 → V1 con errores → V2 aprobada; repite en Revisión Final sin avanzar proceso global 12487ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > RBAC/IDOR: solo asignado, Jefatura asigna, no Ficha/usuarios/proyectos/rutas legacy ni mutaciones globales 7168ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > reasignación invalida la sesión abierta y el upload anterior; cierre concurrente tiene un único resultado 9305ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > carga valida contenido/tamaño, renombra y conserva extensión, retries no duplican archivos ni sobrescriben 6485ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > Drive ignora metadata, carpetas/archivo ajeno, versión incorrecta, proveedor equivocado y entregas ambiguas 7547ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > notificaciones son dirigidas y solo accionables; SMTP fallido conserva outbox para reintento 7178ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > colección inconsistente conserva la escalación real a Jefatura dentro de la asignación 6445ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > reasignación durante upload descarta el archivo nuevo y no permite registrar comentarios del anterior 5899ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > muestras/cubiertas externas conservan gates creativos e internos y nunca requieren login de Diseño 9219ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > entrega concurrente de Drive genera una sola ronda y aviso; requiere scope para archivos externos 7184ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > status inicial no inventa conexión ni filtra secretos 2604ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > faltan env: error claro, app viva 1794ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > requiere autenticación y Dirección en todas las capacidades 2338ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > rechaza origen ajeno y payload arbitrario 3585ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > state seguro solo persiste hash, PKCE cifrado y sesión original 2220ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > state correcto conecta, verifica offline y solo persiste refresh cifrado 2363ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > state incorrecto, ausente, expirado y reutilizado no intercambian credenciales 2750ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > otra sesión y otro usuario no pueden consumir state 1996ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > denegación consume state y redirige solo al frontend fijo 2158ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > intercambio fallido consume state y no filtra error SDK 2785ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > scope rechazado no persiste conexión 1916ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > sin refresh en primera conexión no guarda integración inútil 1963ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > reutiliza refresh previo exclusivamente de la misma cuenta y cliente 2482ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > desconexión invalida intentos anteriores y elimina credencial aunque falle revocación 2058ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > prueba crea raíz y subcarpeta, verifica listado/metadata y confirma limpieza 2107ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > fallo parcial limpia raíz y registra resultado fallido sin rollback 2139ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > fallo de subcarpeta limpia la raíz ya creada 1901ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > cleanup fallido queda persistido y la siguiente prueba recupera solo raíces etiquetadas 5910ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > credencial revocada degrada salud y solicita reconexión 2041ms
+ ✓ tests/googleDrive.routes.test.ts > Google Drive · rutas, persistencia y proveedor aislado de Internet > limita intentos OAuth por usuario 2054ms
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > valida cuenta mediante llamada liviana a about.get sin ampliar scope
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > crea carpeta con MIME, padre y metadata explícita
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > lista todas las páginas y escapa padre en query
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > selección contextual lista archivos de una sola carpeta, sin carpetas ni papelera y con paginación
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > carga un documento como archivo de la app en la carpeta autorizada usando el adaptador existente
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > recupera únicamente carpetas de smoke etiquetadas por la app
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > metadata y eliminación usan IDs propios; respuesta incompleta no se inventa
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > errores SDK no filtran credenciales
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > reserva IDs oficiales y los usa al crear carpetas idempotentes
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > rechaza reservas vacías, duplicadas e inválidas
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > sharing preparado concede writer sobre un solo ID sin enviar notificación
+ ✓ tests/googleDrive.adapter.test.ts > Google Drive · adapter oficial mockeado > consulta permisos mínimos para una validación posterior de sharing
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > cifra con IV aleatorio y autentica contenido, clave y propósito
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > exige clave canónica de 32 bytes
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > config incompleta falla con mensaje seguro sin impedir construir la aplicación
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > admite únicamente scopes configurados para app o entregas externas y rechaza redirects inseguros
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > URL oficial pide solo drive.file, offline, state y PKCE; no entrega secretos
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza invalid_grant sin filtrar respuestas SDK
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza invalid_client sin filtrar respuestas SDK
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza redirect_uri_mismatch sin filtrar respuestas SDK
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza access_denied sin filtrar respuestas SDK
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza HTTP 401
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza HTTP 403
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza HTTP 404
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza HTTP 429
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > normaliza HTTP 503
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > quita code/state/error de logs automáticos del callback
+ ✓ tests/googleDrive.security.test.ts > Google Drive · seguridad sin Internet > cleanup confirma 404 después de metadata temporalmente visible, sin éxito falso
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > EF/null tiene el árbol exacto y condiciones exclusivas
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > CR/Capítulo tiene el árbol exacto y condiciones exclusivas
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > CR/Tripa tiene el árbol exacto y condiciones exclusivas
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > Sello excluye toda Edición y mantiene Corrección/Diseño/paquete final
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > las siglas documentales EEC/EET no se convierten en servicios nuevos
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > Crudo sin subtipo canónico null queda bloqueado
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > Crudo sin subtipo canónico  queda bloqueado
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > Crudo sin subtipo canónico inventado queda bloqueado
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > solo incluye ilustraciones/gráficos si hay condiciones canónicas
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > Editables tripa es hijo de Paquete final; mockup/JPG no son carpetas
+ ✓ tests/projectWorkspace.templates.test.ts > Templates del manual completo del Especialista > nombres deterministas legibles, acentos, espacios y longitud acotada
+ ✓ frontend/src/validaciones/validaciones.test.tsx > Bandeja enfocada de Validadores > V0 muestra ambas decisiones bloqueadas y sus explicaciones
+ ✓ frontend/src/validaciones/validaciones.test.tsx > Bandeja enfocada de Validadores > comentarios se habilita solo con upload confirmado, V1 permite cierre sin upload
+ ✓ frontend/src/validaciones/validaciones.test.tsx > Bandeja enfocada de Validadores > la navegación ofrece una sola área operativa
+ ✓ frontend/src/validaciones/validaciones.test.tsx > Bandeja enfocada de Validadores > Revisión Final reutiliza revisión y archivos sin datos comerciales o historial
+
+ Test Files  6 passed (6)
+      Tests  73 passed (73)
+   Start at  20:24:26
+   Duration  195.50s (transform 12.32s, setup 20.66s, collect 27.93s, tests 129.41s, environment 6ms, prepare 4.21s)
+

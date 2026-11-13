@@ -23,7 +23,7 @@ import { evaluarGateMomentoReunionCreativa, evaluarGateRevisionPreviaCorreccion 
 import type { FiltrosMiTrabajo, ItemTrabajoEspecialista, MiTrabajo, TabMiTrabajo } from '../../shared/especialistaMiTrabajo.js';
 import { TABS_MI_TRABAJO } from '../../shared/especialistaMiTrabajo.js';
 const texto=(s:string)=>s.normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase('es');
-const DESTINOS:Record<string,{tipo:string;nombre:string}>={edicion:{tipo:'editor',nombre:'Editor'},correccion:{tipo:'corrector',nombre:'Corrector'},direccion_creativa:{tipo:'lider_creativo',nombre:'Líder Creativo'},diseno:{tipo:'disenador',nombre:'Diseño'},calidad:{tipo:'soporte_editorial',nombre:'Soporte Editorial'},soporte_digital:{tipo:'soporte_digital',nombre:'Soporte Digital'},lanzamiento:{tipo:'rrpp',nombre:'RRPP'}};
+const DESTINOS:Record<string,{tipo:string;nombre:string}>={edicion:{tipo:'editor',nombre:'Editor'},correccion:{tipo:'corrector',nombre:'Corrector'},direccion_creativa:{tipo:'lider_creativo',nombre:'Líder Creativo'},diseno:{tipo:'disenador',nombre:'Diseño'},calidad:{tipo:'validador',nombre:'Validador'},soporte_digital:{tipo:'soporte_digital',nombre:'Soporte Digital'},lanzamiento:{tipo:'rrpp',nombre:'RRPP'}};
 const dia=(s:string)=>s.length===10?s:diaCaracas(new Date(s));
 export async function obtenerColaTrabajoEspecialista(actorId:string,f:FiltrosMiTrabajo,ahora=new Date(),proyectoScope?:string,snapshotProporcionado?:Awaited<ReturnType<typeof obtenerDashboardJefatura>>,precargada?:ColaPrecargada):Promise<MiTrabajo> {
   const snapshot=snapshotProporcionado ?? await obtenerDashboardJefatura(ahora,{especialistaId:actorId,...(proyectoScope?{proyectoId:proyectoScope}:{})});

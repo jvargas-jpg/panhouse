@@ -1,3 +1,6 @@
+import { createCoverValidation } from './coverValidation.js';
+import { randomUUID } from 'node:crypto';
+import { queueExternalDesignNotice } from './designExternalMail.js';
 import { habilitarActivacionAmazon } from './activacionAmazon.js';
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
@@ -37,7 +40,7 @@ async function conDiseno<T>(id: string, actor: Actor, rol: Rol, fn: (tx: Tx, d: 
     return fn(tx, actual, p);
   });
 }
-async function evento(tx: Tx, d: typeof disenos.$inferSelect, actorId: string, accion: AccionAuditoria, detalles?: Record<string, unknown>) {
+async function evento(tx: Tx, d: typeof disenos.$inferSelect, actorId: string | null, accion: AccionAuditoria, detalles?: Record<string, unknown>) {
   await registrarEvento(tx, { actorId, accion, entityType: 'work_item', entityId: d.workItemId, proyectoId: d.proyectoId, detalles });
 }
 async function aviso(tx: Tx, proyectoId: string, rolDestino: string, usuarioDestinoId: string | null, mensaje: string) {
@@ -91,35 +94,12 @@ export async function solicitarDiseno(proyectoId: string, datos: SolicitudDiseno
       correccionId: datos.correccionId, aprobacionEdicionUrl: datos.aprobacionEdicionUrl,
       diasReferencia: diasReferenciaDiseno(datos.tipo, f?.condicionesEspeciales ?? null), dueAt: datos.dueAt ? new Date(datos.dueAt) : null }).returning();
     exigir(d, 'No se pudo crear Diseño');
-    if (p.disenadorId) {
-      const [disenador] = await tx.select().from(users).where(and(eq(users.id, p.disenadorId), eq(users.rol, 'disenador'), eq(users.activo, true)));
-      exigir(disenador, 'El diseñador del proyecto debe estar activo y tener rol de diseñador', 400);
-      await asignarConHistorial(tx, { proyectoId, tipo: 'disenador', usuarioId: p.disenadorId, asignadoPorId: actor.id });
-      await transicionarWorkItemPorId(tx, wi, 'en_progreso');
-      await aviso(tx, proyectoId, 'disenador', p.disenadorId, `Nuevo trabajo: ${datos.tipo.replaceAll('_', ' ')}.`);
-    }
     await evento(tx, d, actor.id, 'DISENO_SOLICITADO', { tipo: d.tipo, dueAt: d.dueAt, diasReferencia: d.diasReferencia });
     return { id: d.id, nueva: true };
   });
 }
 export async function asignarDiseno(id: string, datos: { disenadorId: string; dueAt?: string }, actor: Actor) {
-  return conDiseno(id, actor, 'especialista', async (tx, d, p) => {
-    exigir(!d.cerradoEn, 'Diseño cerrado');
-    const [u] = await tx.select().from(users).where(and(eq(users.id, datos.disenadorId), eq(users.rol, 'disenador'), eq(users.activo, true)));
-    exigir(u, 'Diseñador activo no encontrado', 400);
-    const a = await asignarConHistorial(tx, { proyectoId: p.id, tipo: 'disenador', usuarioId: u.id, asignadoPorId: actor.id });
-    await tx.update(proyectos).set({ disenadorId: u.id }).where(eq(proyectos.id, p.id));
-    if (datos.dueAt) {
-      const v = await versionActual(tx, d.id);
-      exigir(!v || d.dueAt?.getTime() === new Date(datos.dueAt).getTime(), 'El plazo histórico no puede cambiar después de la entrega');
-      await tx.update(disenos).set({ dueAt: new Date(datos.dueAt) }).where(eq(disenos.id, d.id));
-    }
-    await tx.update(workItems).set({ estado: 'en_progreso' }).where(and(eq(workItems.proyectoId, p.id), eq(workItems.tipo, 'diseno'), eq(workItems.estado, 'pendiente')));
-    if (!a.cambio) return { ok: true };
-    await evento(tx, d, actor.id, a.anteriorUsuarioId ? 'DISENADOR_REASIGNADO' : 'DISENADOR_ASIGNADO', { anterior: a.anteriorUsuarioId, nuevo: u.id });
-    await aviso(tx, p.id, 'disenador', u.id, 'Tienes trabajos de Diseño asignados.');
-    return { ok: true };
-  });
+  throw new ErrorDiseno(410, 'Configura el servicio externo de Diseño desde el proyecto');
 }
 export async function entregarDiseno(id: string, datos: { enlace: string; entregaKey: string }, actor: Actor) {
   return conDiseno(id, actor, 'disenador', async (tx, d, p) => {
@@ -131,23 +111,46 @@ export async function entregarDiseno(id: string, datos: { enlace: string; entreg
     const [v] = await tx.insert(disenoVersiones).values({ disenoId: id, numero: (previa?.numero ?? 0) + 1, enlace: datos.enlace, entregaKey: datos.entregaKey, entregadoPorId: actor.id }).returning();
     exigir(v, 'No se pudo guardar la versión');
     await transicionarWorkItemPorId(tx, d.workItemId, 'bloqueado');
+    await crearRevisionesCubierta(tx, d, p, v, actor.id);
+    await evento(tx, d, actor.id, 'DISENO_VERSION_ENTREGADA', { versionId: v.id, numero: v.numero, tipo: d.tipo });
+    await aviso(tx, p.id, 'especialista', p.especialistaId, 'Nueva versión de Diseño entregada.');
+    return { id: v.id, nueva: true };
+  });
+}
+async function crearRevisionesCubierta(tx: Tx, d: typeof disenos.$inferSelect, p: typeof proyectos.$inferSelect, v: typeof disenoVersiones.$inferSelect, actorId: string | null) {
     if (d.tipo === 'cubierta_extendida') {
       const wi = await crearWorkItemSiNoExiste(tx, { proyectoId: p.id, tipo: 'direccion_creativa', businessKey: `revision_cubierta:${v.id}` });
       const [dc] = await tx.insert(direccionesCreativas).values({ proyectoId: p.id, workItemId: wi, tipo: 'revision_cubierta', fechaSolicitud: new Date().toISOString().slice(0, 10) }).returning();
       exigir(dc, 'No se pudo solicitar revisión creativa');
       const [a] = await tx.select().from(projectAssignments).innerJoin(direccionesCreativas, eq(projectAssignments.workItemId, direccionesCreativas.workItemId))
         .where(and(eq(direccionesCreativas.id, d.direccionCreativaId), eq(projectAssignments.tipo, 'lider_creativo'), isNull(projectAssignments.finalizadoEn)));
-      if (a) await asignarConHistorial(tx, { proyectoId: p.id, workItemId: wi, tipo: 'lider_creativo', usuarioId: a.project_assignments.usuarioId, asignadoPorId: actor.id });
+      if (a) await asignarConHistorial(tx, { proyectoId: p.id, workItemId: wi, tipo: 'lider_creativo', usuarioId: a.project_assignments.usuarioId, asignadoPorId: actorId });
       const interna = await crearWorkItemSiNoExiste(tx, { proyectoId: p.id, tipo: 'revision_interna_cubierta', businessKey: v.id });
       await tx.update(disenoVersiones).set({ revisionCreativaId: dc.id, revisionInternaWorkItemId: interna }).where(eq(disenoVersiones.id, v.id));
-      await evento(tx, d, actor.id, 'REVISION_CUBIERTA_SOLICITADA', { versionId: v.id, revisionCreativaId: dc.id });
+      await evento(tx, d, actorId, 'REVISION_CUBIERTA_SOLICITADA', { versionId: v.id, revisionCreativaId: dc.id });
       await aviso(tx, p.id, 'lider_creativo', a?.project_assignments.usuarioId ?? null, 'Cubierta extendida pendiente de verificación creativa.');
       await aviso(tx, p.id, 'jefe_edicion', null, 'Cubierta extendida pendiente de corrección interna y validación de identidad.');
     }
-    await evento(tx, d, actor.id, 'DISENO_VERSION_ENTREGADA', { versionId: v.id, numero: v.numero, tipo: d.tipo });
-    await aviso(tx, p.id, 'especialista', p.especialistaId, 'Nueva versión de Diseño entregada.');
-    return { id: v.id, nueva: true };
-  });
+}
+// External sample/cover deliveries preserve the same creative/internal gates.
+// Only the Drive detector calls this command; no public arbitrary-status API.
+export async function recibirDisenoExterno(id: string, file: { id: string; revisionId: string; numero: number; providerEmail: string }) {
+ return db.transaction(async tx => {
+  const [d] = await tx.select().from(disenos).where(eq(disenos.id, id)); exigir(d && d.tipo !== 'diagramacion', 'Trabajo externo no encontrado', 404);
+  const p = await proyectoBloqueado(tx, d.proyectoId);
+  exigir(!['pausado','stand_by','retirado','culminado'].includes(p.estado), 'Proyecto no operativo');
+  exigir(d.externalProviderEmail === file.providerEmail, 'El proveedor cambió');
+  const latest = await versionActual(tx, d.id);
+  if ((await tx.select().from(disenoVersiones).where(eq(disenoVersiones.driveFileId, file.id)))[0]) return false;
+  if ((latest && !latest.feedbackEn) || (latest ? latest.numero + 1 : 0) !== file.numero) return false;
+  const [v] = await tx.insert(disenoVersiones).values({ disenoId: d.id, numero: file.numero, enlace: `https://drive.google.com/file/d/${file.id}/view`, entregaKey: randomUUID(), driveFileId: file.id, driveRevisionId: file.revisionId }).returning();
+  await transicionarWorkItemPorId(tx, d.workItemId, 'bloqueado');
+  await crearRevisionesCubierta(tx, d, p, v!, null);
+  if (d.tipo === 'cubierta_extendida') await createCoverValidation(tx, d, p, v!, latest);
+  await evento(tx, d, null, 'DISENO_VERSION_ENTREGADA', { versionId: v!.id, numero: v!.numero, tipo: d.tipo, driveFileId: file.id, provider: d.externalProviderName });
+  await aviso(tx, p.id, 'especialista', await obtenerEspecialistaActual(p.id, p.especialistaId, tx), `Diseño externo entregó ${d.tipo.replaceAll('_',' ')} V${file.numero}.`);
+  return true;
+ });
 }
 // Los IDs de versión deben pertenecer al trabajo y ser la versión activa.
 async function versionParaAccion(tx: Tx, d: typeof disenos.$inferSelect, versionId: string) {
@@ -164,6 +167,7 @@ export async function coordinarVersion(id: string, versionId: string, datos: { a
       await tx.update(disenoVersiones).set({ feedback: datos.feedback, feedbackEn: ahora, cantidadComentarios: datos.cantidadComentarios }).where(eq(disenoVersiones.id, v.id));
       await transicionarWorkItemPorId(tx, d.workItemId, 'en_progreso');
       await aviso(tx, p.id, 'disenador', p.disenadorId, 'Tu versión necesita ajustes: revisa el feedback.');
+      await queueExternalDesignNotice(tx, d, v, p.tituloDefinitivo ?? p.codigo, datos.feedback!);
     } else if (datos.accion === 'enviar_autor') {
       if (v.enviadaAutorEn) return { ok: true };
       exigir(d.tipo !== 'diagramacion', 'La tripa diagramada se envía primero a Calidad');
@@ -205,7 +209,7 @@ export async function coordinarVersion(id: string, versionId: string, datos: { a
       await tx.update(disenoVersiones).set({ handoffEn: ahora, calidadWorkItemId: wi, calidadFaseId: q.id }).where(eq(disenoVersiones.id, v.id));
       await tx.update(disenos).set({ cerradoEn: ahora }).where(eq(disenos.id, d.id));
       await transicionarWorkItemPorId(tx, d.workItemId, 'completado');
-      await aviso(tx, p.id, 'soporte_editorial', null, 'Versión diagramada lista para Calidad, con fuente y contexto en Diseño.');
+      await aviso(tx, p.id, 'validador', null, 'Versión diagramada lista para Calidad, con fuente y contexto en Diseño.');
     }
     await evento(tx, d, actor.id, ({ enviar_autor: 'DISENO_ENVIAR_AUTOR', feedback: 'DISENO_FEEDBACK', aprobar_autor: 'DISENO_APROBAR_AUTOR', handoff_calidad: 'DISENO_HANDOFF_CALIDAD' } as const)[datos.accion], { versionId: v.id, feedback: datos.feedback });
     return { ok: true };
@@ -238,6 +242,7 @@ export async function revisarCubierta(id: string, versionId: string, datos: { ap
       const [otra] = await tx.select().from(workItems).where(eq(workItems.id, otraId));
       if (otra && otra.estado !== 'completado') await transicionarWorkItemPorId(tx, otraId, 'cancelado');
       await aviso(tx, p.id, 'disenador', p.disenadorId, 'Cubierta devuelta: aplica las correcciones de revisión.');
+      await queueExternalDesignNotice(tx, d, v, p.tituloDefinitivo ?? p.codigo, datos.feedback!);
     }
     if (interna) {
       if (datos.aprobar) await tx.update(disenoVersiones).set({ aprobadaInternaEn: new Date() }).where(eq(disenoVersiones.id, v.id));
@@ -255,7 +260,7 @@ export async function listarDisenos(actor: Actor, proyectoId?: string, revisione
   const condiciones = proyectoId ? [eq(proyectos.id, proyectoId)] : [];
   if (actor.rol === 'especialista') condiciones.push(eq(especialistaActualSql, actor.id));
   else if (actor.rol === 'disenador') condiciones.push(eq(proyectos.disenadorId, actor.id));
-  else exigir(['jefe_area', 'jefe_edicion', 'lider_creativo', 'soporte_editorial'].includes(actor.rol), 'Rol no autorizado', 403);
+  else exigir(['jefe_area', 'jefe_edicion', 'lider_creativo', 'validador'].includes(actor.rol), 'Rol no autorizado', 403);
   if (actor.rol === 'lider_creativo' || revisiones) condiciones.push(eq(disenos.tipo, 'cubierta_extendida'));
   if (proyectoId && ['especialista', 'disenador'].includes(actor.rol)) {
     const [p] = await db.select().from(proyectos).where(eq(proyectos.id, proyectoId));

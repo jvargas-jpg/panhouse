@@ -17,7 +17,7 @@ import {
   projectAssignments,
   proyectos,
   proyectosAutores,
-  rolEnum,
+  ROLES,
   servicios,
   fichasTrazabilidad,
   workItems,
@@ -469,7 +469,7 @@ describe('Asignaciones y carga: fuente canónica, filtros y proyección', () => 
   });
   it('protege nuevas lecturas para todos los roles ajenos y valida filtros e identificadores', async () => {
     expect((await get('/api/jefatura/asignaciones', '')).statusCode).toBe(401);
-    for (const rol of rolEnum.enumValues.filter((r) => r !== 'jefe_area')) {
+    for (const rol of ROLES.filter((r) => r !== 'jefe_area')) {
       const sesion = `panhouse_sid=${await createSession(await usuario(rol))}`;
       expect((await get('/api/jefatura/asignaciones', sesion)).statusCode).toBe(
         403,

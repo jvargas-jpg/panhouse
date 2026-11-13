@@ -15,6 +15,8 @@ export const disenos = pgTable('disenos', {
   direccionCreativaId: uuid('direccion_creativa_id').notNull().references(() => direccionesCreativas.id),
   tipo: text('tipo').notNull(),
   solicitudKey: uuid('solicitud_key').notNull(),
+  externalProviderName: text('external_provider_name'),
+  externalProviderEmail: text('external_provider_email'),
   fuenteUrl: text('fuente_url').notNull(), // Tripa preparada / complementos, no copia del brief.
   correccionId: uuid('correccion_id').references(() => correcciones.id),
   aprobacionEdicionUrl: text('aprobacion_edicion_url'), // Evidencia de aprobación por correo (Manual §4.2.2).
@@ -34,7 +36,9 @@ export const disenoVersiones = pgTable('diseno_versiones', {
   numero: integer('numero').notNull(),
   entregaKey: uuid('entrega_key').notNull(),
   enlace: text('enlace').notNull(),
-  entregadoPorId: uuid('entregado_por_id').notNull().references(() => users.id),
+  entregadoPorId: uuid('entregado_por_id').references(() => users.id),
+  driveFileId: text('drive_file_id').unique(),
+  driveRevisionId: text('drive_revision_id'),
   entregadoEn: timestamp('entregado_en', { withTimezone: true }).notNull().defaultNow(),
   feedback: text('feedback'),
   feedbackArchivoUrl: text('feedback_archivo_url'),

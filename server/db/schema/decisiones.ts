@@ -30,7 +30,7 @@ import { workItems } from './workItems.js';
 //      (ver server/helpers/correcciones.ts) — esa columna ahora SOLO la
 //      escribe la resolución de una decisión de este tipo.
 //   2. `originCalidadFaseId`: colección inconsistente, escalada por
-//      Soporte Editorial al declarar explícitamente una discrepancia en F1/F3.
+//      el Validador al declarar explícitamente una discrepancia en F1/F3.
 // Un tercer caso del prompt original ("consulta a Jefatura para
 // corrección de portada") NO se implementa: el código ya confirmado de
 // 5B Corrección (asignarCorrector, con comentario explícito "lo decide

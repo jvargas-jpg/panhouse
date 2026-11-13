@@ -5,7 +5,7 @@ import { externalIntegrations, googleOAuthAttempts, type DriveTestResult } from 
 import { registrarEvento } from '../../../helpers/auditLog.js';
 import { hashToken } from '../../../helpers/session.js';
 import type { Tx } from '../../../helpers/tx.js';
-import { googleDriveConfig, DRIVE_FILE_SCOPE, type GoogleDriveConfig } from './config.js';
+import { googleDriveConfig, type GoogleDriveConfig } from './config.js';
 import { encryptGoogleSecret, decryptGoogleSecret } from './encryption.js';
 import { DriveIntegrationError, safeDriveError } from './errors.js';
 import { GoogleDriveOAuth, type DriveOAuthGateway } from './oauth.js';
@@ -84,9 +84,9 @@ export class GoogleDriveService {
       const sameStorage = !!identity.accountId && identity.accountId===row.accountId && config.clientId===row.oauthClientId;
       await tx.update(externalIntegrations).set({ status:'connected',encryptedRefreshToken:encryptGoogleSecret(refresh,config.encryptionKey,'refresh-token'),
         ...(!sameStorage?{storageContextId:randomUUID(),projectsRootFolderId:null,projectsRootFolderUrl:null,projectsRootReady:false,workspaceSharingEnabled:false,workspaceSharingTestedAt:null}:{}),
-        accountEmail:identity.accountEmail,accountId:identity.accountId,oauthClientId:config.clientId,scope:[DRIVE_FILE_SCOPE],connectedAt:now,
+        accountEmail:identity.accountEmail,accountId:identity.accountId,oauthClientId:config.clientId,scope:[config.scope],connectedAt:now,
         connectedByUserId:input.userId,lastValidatedAt:now,lastErrorCode:null,disconnectedAt:null,revision:row.revision+1,updatedAt:now }).where(whereProvider);
-      await registrarEvento(tx,{actorId:input.userId,accion:'GOOGLE_DRIVE_CONECTADO',entityType:'external_integration',entityId:row.id,detalles:{scope:DRIVE_FILE_SCOPE}});
+      await registrarEvento(tx,{actorId:input.userId,accion:'GOOGLE_DRIVE_CONECTADO',entityType:'external_integration',entityId:row.id,detalles:{scope:config.scope}});
     });
   }
 

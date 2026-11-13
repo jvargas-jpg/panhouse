@@ -35,7 +35,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (!body) return;
 
     const user = await db.query.users.findFirst({ where: eq(users.email, body.email) });
-    if (!user || !user.activo || !(await verifyPassword(user.passwordHash, body.password))) {
+    if (!user || !user.activo || ['disenador','corrector'].includes(user.rol) || !(await verifyPassword(user.passwordHash, body.password))) {
       await db.insert(securityEvents).values({action:'LOGIN_FAILURE',targetUserId:user?.id??null,ip:request.ip.slice(0,64),userAgent:request.headers['user-agent']?.slice(0,400)});
       return reply.code(401).send({ error: 'Credenciales inválidas' });
     }

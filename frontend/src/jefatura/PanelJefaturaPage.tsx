@@ -1,5 +1,6 @@
+import { ValidationManagement } from '../validaciones/ValidationManagement';
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMe } from '../auth/useAuth';
 import { CrmSidebarLayout } from '../layout/CrmSidebarLayout';
@@ -40,7 +41,7 @@ export function PanelJefaturaPage() {
   const { data: user } = useMe();
   const [params, setParams] = useSearchParams();
   const vistaParam = params.get('vista');
-  const monthlyGoalsView = vistaParam === 'seguimiento' && params.get('subvista') === 'objetivos';
+  const monthlyGoalsView = vistaParam === 'indicadores' && params.get('subvista') === 'objetivos';
   const vista: VistaJefatura = VISTAS_JEFATURA.includes(
     vistaParam as VistaJefatura,
   )
@@ -118,6 +119,12 @@ export function PanelJefaturaPage() {
       : dashboard.data?.proyectos.find((p) => p.id === proyectoId);
   if (user && user.rol !== 'jefe_area')
     return <p role="alert">No tienes acceso a Jefatura.</p>;
+  if (vistaParam === 'seguimiento') {
+    const target = new URLSearchParams(params);
+    if (params.get('subvista') === 'objetivos') { target.set('vista','indicadores'); return <Navigate to={'/?'+target} replace/>; }
+    if (params.get('proyecto')) return <Navigate to={'/proyectos/'+params.get('proyecto')} replace/>;
+    target.set('vista','proyectos'); return <Navigate to={'/?'+target} replace/>;
+  }
   const titulos: Record<VistaJefatura, string> = {
     inicio: `Hola, ${user?.nombre ?? '…'}`,
     asignaciones: 'Asignaciones y carga',
@@ -180,7 +187,7 @@ export function PanelJefaturaPage() {
         {vista === 'asignaciones' ? (
           <>
             {seleccionadoQuery.isError && seleccionado && <ErrorJefatura texto="No pudimos abrir el proyecto seleccionado." retry={() => { void seleccionadoQuery.refetch(); }} />}
-            <AsignacionesCargaPage onCompare={(p, modo = 'contexto') => {
+            <ValidationManagement/><AsignacionesCargaPage onCompare={(p, modo = 'contexto') => {
               setProyectoAsignacion(p);
               setParams(previous => { const next = new URLSearchParams(previous); next.set('proyecto', p.id); next.set('decision', modo); return next; });
             }} />
@@ -188,13 +195,14 @@ export function PanelJefaturaPage() {
         ) : vista === 'proyectos' ? (
           <ProyectosJefaturaPage />
         ) : vista === 'indicadores' ? (
-          <Suspense fallback={<p className="jf-empty" role="status">Cargando indicadores…</p>}><IndicadoresPage /></Suspense>
+          <><nav className="mg-subnav" aria-label="Vistas de Indicadores"><Link to="/?vista=indicadores">Indicadores</Link><Link to="/?vista=indicadores&subvista=objetivos">Objetivos del mes</Link></nav>{monthlyGoalsView ? <MonthlyGoalsPage team/> : <Suspense fallback={<p role="status">Cargando indicadores...</p>}><IndicadoresPage /></Suspense>}</>
         ) : vista === 'seguimiento' ? (
           monthlyGoalsView ? <MonthlyGoalsPage team/> : <><nav className="mg-subnav mg-overview-nav" aria-label="Vistas de Seguimiento"><Link aria-current="page" to="/?vista=seguimiento">Visión general</Link><Link to="/?vista=seguimiento&subvista=objetivos">Objetivos del mes</Link></nav><SeguimientoPage /></>
         ) : vista === 'decisiones' ? (
           <DecisionesPage />
         ) : (
           <>
+            {(vista === 'inicio' || vista === 'solicitudes') && <ValidationManagement/>}
             {vista === 'inicio' && (
               <JefaturaKpis
                 summary={dashboard.data?.summary}

@@ -19,7 +19,7 @@ const { crearUsuario, crearProyectoDePrueba } = await import('../tests/helpers/f
 const { entregarDiseno, coordinarVersion } = await import('../server/helpers/diseno.js');
 const { iniciarCalidad, resolverCalidad, criteriosDeFase } = await import('../server/helpers/calidad.js');
 if (!(await db.select().from(users).limit(1)).length) {
-  const support = await crearUsuario('soporte_editorial'), specialist = await crearUsuario('especialista'), designer = await crearUsuario('disenador');
+  const support = await crearUsuario('validador'), specialist = await crearUsuario('especialista'), designer = await crearUsuario('disenador');
   await db.update(users).set({ nombre: 'Validador de Calidad · QA', email: 'validador@calidad.qa.test' }).where(eq(users.id, support.id));
   await db.update(users).set({ nombre: 'Especialista · QA' }).where(eq(users.id, specialist.id));
   await db.update(users).set({ nombre: 'Diseñador · QA' }).where(eq(users.id, designer.id));

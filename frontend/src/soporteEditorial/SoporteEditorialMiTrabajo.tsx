@@ -64,7 +64,7 @@ export function SoporteEditorialMiTrabajo() {
   return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="mi-trabajo" />}    contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home editor-shell" >
 
     <div className="se-body">
-      <nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Editorial</span><RrppIcon nombre="flecha" /><strong>Mi trabajo</strong></nav>
+      <nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Validadores</span><RrppIcon nombre="flecha" /><strong>Mi trabajo</strong></nav>
       <header className="se-page-header"><div><h1>Mis validaciones</h1><p>Revisa las rondas de validación de la bandeja de Calidad, consulta los materiales y registra tus observaciones.</p></div></header>
       <section className="mw-page" aria-label="Rondas de validación">
         <div className="mw-controls">

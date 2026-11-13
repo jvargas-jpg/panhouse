@@ -35,7 +35,7 @@ describe('Soporte Editorial · Mi trabajo — bandeja compartida de Calidad', ()
   }
   beforeEach(async () => {
     await limpiarBaseDeDatos(); app = buildApp(); await app.ready();
-    especialista = await crearUsuario('especialista'); disenador = await crearUsuario('disenador'); soporte = await crearUsuario('soporte_editorial');
+    especialista = await crearUsuario('especialista'); disenador = await crearUsuario('disenador'); soporte = await crearUsuario('validador');
     p = await crearProyectoDePrueba({ especialistaId: especialista.id, disenadorId: disenador.id });
     await db.insert(fichasTrazabilidad).values({ proyectoId: p.id });
     const [cw] = await db.insert(workItems).values({ proyectoId: p.id, tipo: 'direccion_creativa', estado: 'completado' }).returning();
@@ -126,15 +126,15 @@ describe('Soporte Editorial · Mi trabajo — bandeja compartida de Calidad', ()
     expect(porEstado.items).toHaveLength(0);
   });
 
-  it('bandeja compartida: cualquier soporte_editorial ve exactamente las mismas rondas, sin asignación individual', async () => {
-    const otro = await crearUsuario('soporte_editorial');
+  it('bandeja compartida: cualquier validador ve exactamente las mismas rondas, sin asignación individual', async () => {
+    const otro = await crearUsuario('validador');
     const propio = await call('GET', '/calidad/mi-trabajo?tab=all');
     const ajeno = await call('GET', '/calidad/mi-trabajo?tab=all', undefined, await login(otro));
     expect(propio.status).toBe(200); expect(ajeno.status).toBe(200);
     expect(ajeno.body).toEqual(propio.body);
   });
 
-  it('RBAC: solo soporte_editorial abre Mi trabajo; sesión anónima y otros roles rechazados', async () => {
+  it('RBAC: solo validador abre Mi trabajo; sesión anónima y otros roles rechazados', async () => {
     expect((await call('GET', '/calidad/mi-trabajo', undefined, '')).status).toBe(401);
     expect((await call('GET', '/calidad/mi-trabajo', undefined, cookies.especialista)).status).toBe(403);
     expect((await call('GET', '/calidad/mi-trabajo', undefined, cookies.disenador)).status).toBe(403);

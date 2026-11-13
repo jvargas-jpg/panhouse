@@ -632,7 +632,7 @@ export async function proyectosRoutes(app: FastifyInstance) {
   // resueltos): el especialista dueño del proyecto, jefe_area, y los
   // roles que hoy tienen algo que escribir en la pantalla de detalle
   // (rrpp, comercial, editor, disenador, lider_creativo,
-  // soporte_editorial, soporte_digital) — necesitan poder abrirla para
+  // validador, soporte_digital) — necesitan poder abrirla para
   // editar su sección y ver que quedó guardada.
   app.get(
     '/:id/riesgo',
@@ -647,7 +647,7 @@ export async function proyectosRoutes(app: FastifyInstance) {
           'editor',
           'disenador',
           'lider_creativo',
-          'soporte_editorial',
+          'validador',
           'soporte_digital',
         ),
       ],

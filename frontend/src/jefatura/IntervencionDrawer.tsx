@@ -167,7 +167,7 @@ function SupervisionForm({
               {d.resultadoSeguimiento
                 ? RESULTADOS_SEGUIMIENTO[d.resultadoSeguimiento]
                 : d.estado === 'entregado'
-                  ? 'Resultado operativo a cargo del Especialista / Soporte Editorial'
+                  ? 'Resultado operativo a cargo del Especialista / Validadores'
                   : 'Disponible después de la entrega'}
             </DatoSeguimiento>
           )}
@@ -449,7 +449,7 @@ export function IntervencionDrawer({
                 <DatoSeguimiento
                   label={
                     d.origen === 'calidad'
-                      ? 'Validación de Soporte Editorial'
+                      ? 'Validación de Validadores'
                       : 'Resultado del Especialista'
                   }
                 >

@@ -1,6 +1,8 @@
 import { boolean, pgTable, text, timestamp, uuid, uniqueIndex } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { autores } from './autores.js';
+import { bindRoleCompatibility } from '../roleCompatibility.js';
+import type { Rol } from '../../../shared/roles.js';
 import { rolEnum } from './enums.js';
 
 export const users = pgTable('usuarios', {
@@ -8,7 +10,7 @@ export const users = pgTable('usuarios', {
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash').notNull(),
   nombre: text('nombre').notNull(),
-  rol: rolEnum('rol').notNull(),
+  rol: rolEnum('rol').$type<Rol>().notNull(),
   activo: boolean('activo').notNull().default(true),
   accountType: text('account_type').$type<'internal' | 'external'>().notNull().default('internal'),
   // Vínculo entre la cuenta de login (rol 'autor') y la entidad autores
@@ -22,3 +24,6 @@ export const users = pgTable('usuarios', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 },t=>({authorAccount:uniqueIndex('usuarios_autor_cuenta_unique').on(t.autorId).where(sql`${t.rol}='autor' AND ${t.autorId} IS NOT NULL`)}));
+
+// Drizzle keeps its enum DDL metadata; only values crossing persistence are mapped.
+bindRoleCompatibility(users.rol);

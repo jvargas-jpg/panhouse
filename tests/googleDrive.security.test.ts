@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { env } from '../server/config/env.js';
-import { DRIVE_FILE_SCOPE, googleDriveConfig } from '../server/modules/integrations/google-drive/config.js';
+import { DRIVE_DELIVERY_SCOPE, DRIVE_FILE_SCOPE, googleDriveConfig } from '../server/modules/integrations/google-drive/config.js';
 import { decodeEncryptionKey, decryptGoogleSecret, encryptGoogleSecret } from '../server/modules/integrations/google-drive/encryption.js';
 import { safeDriveError } from '../server/modules/integrations/google-drive/errors.js';
 import { GoogleDriveOAuth } from '../server/modules/integrations/google-drive/oauth.js';
@@ -28,9 +28,10 @@ describe('Google Drive · seguridad sin Internet',()=>{
   it('config incompleta falla con mensaje seguro sin impedir construir la aplicación',()=>{
     env.GOOGLE_CLIENT_SECRET=undefined;expect(()=>googleDriveConfig()).toThrow('Google Drive integration is not configured.');
   });
-  it('rechaza scope ampliado y redirects inseguros',()=>{
+  it('admite únicamente scopes configurados para app o entregas externas y rechaza redirects inseguros',()=>{
     env.GOOGLE_CLIENT_ID='unit-client';env.GOOGLE_CLIENT_SECRET='unit-secret';env.GOOGLE_TOKEN_ENCRYPTION_KEY=randomBytes(32).toString('base64');
-    env.GOOGLE_DRIVE_SCOPE='https://www.googleapis.com/auth/drive';expect(()=>googleDriveConfig()).toThrow();env.GOOGLE_DRIVE_SCOPE=DRIVE_FILE_SCOPE;
+    env.GOOGLE_REDIRECT_URI='http://localhost:3000/api/auth/google/callback';env.GOOGLE_DRIVE_SCOPE=DRIVE_DELIVERY_SCOPE;expect(googleDriveConfig().scope).toBe(DRIVE_DELIVERY_SCOPE);
+    env.GOOGLE_DRIVE_SCOPE='https://www.googleapis.com/auth/drive.readonly';expect(()=>googleDriveConfig()).toThrow();env.GOOGLE_DRIVE_SCOPE=DRIVE_FILE_SCOPE;
     for(const redirect of ['https://example.test/other','http://example.test/api/auth/google/callback','http://localhost:3000/api/auth/google/callback?next=evil']){
       env.GOOGLE_REDIRECT_URI=redirect;expect(()=>googleDriveConfig()).toThrow();
     }

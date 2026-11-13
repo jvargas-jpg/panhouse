@@ -1,3 +1,6 @@
+import { projectGuideRoutes } from './routes/projectGuide.routes.js';
+import { publicRoleData } from './db/roleCompatibility.js';
+import { validacionesRoutes } from './routes/validaciones.routes.js';
 import { disenoRoutes } from './routes/diseno.routes.js';
 import { financialResponseForRole } from './helpers/financialVisibility.js';
 import { calidadRoutes } from './routes/calidad.routes.js';
@@ -46,8 +49,9 @@ import {enforceSessionContext} from './middleware/auth.middleware.js';
 import {adminRoutes} from './modules/admin/routes.js';
 import {authorPortalRoutes} from './routes/authorPortal.routes.js';
 import {guardLegacyAuthorDecision} from './helpers/authorLegacyGuard.js';
+import type { CorporateDriveOperation } from './modules/integrations/google-drive/corporate.js';
 
-export function buildApp() {
+export function buildApp(options: { validationDrive?: CorporateDriveOperation } = {}) {
   const app = Fastify({
     logger: process.env.NODE_ENV === 'test' ? false : {
       serializers: { req: request => ({ method:request.method, url:safeRequestUrl(request.url), hostname:request.hostname,
@@ -60,7 +64,7 @@ export function buildApp() {
   app.register(authorPortalRoutes,{prefix:'/api/autor'});
   app.addHook('preHandler',enforceSessionContext);
   app.addHook('preHandler',guardLegacyAuthorDecision);
-  app.addHook('preSerialization', (request, _reply, payload, done) => { done(null,financialResponseForRole(request, payload)); });
+  app.addHook('preSerialization', (request, _reply, payload, done) => { done(null,publicRoleData(financialResponseForRole(request, payload))); });
   app.register(adminRoutes,{prefix:'/api/admin'});
   app.register(googleDriveRoutes, { prefix: '/api' });
   app.register(projectWorkspaceRoutes, { prefix: '/api' });
@@ -71,6 +75,7 @@ export function buildApp() {
   app.register(autoresRoutes, { prefix: '/api/autores' });
   app.register(catalogosRoutes, { prefix: '/api/catalogos' });
   app.register(proyectosRoutes, { prefix: '/api/proyectos' });
+  app.register(projectGuideRoutes, { prefix: '/api/proyectos' });
   app.register(projectCommandCenterRoutes, { prefix: '/api/proyectos' });
   app.register(especialistasRoutes, { prefix: '/api/especialistas' });
   app.register(especialistaInicioRoutes, { prefix: '/api/especialistas' });
@@ -81,6 +86,7 @@ export function buildApp() {
   app.register(editoresRoutes, { prefix: '/api/editores' });
   app.register(editorialChiefRoutes, { prefix: '/api/editores' });
   app.register(disenoRoutes, { prefix: '/api/diseno' });
+  app.register(validacionesRoutes, { prefix: '/api/validaciones', drive: options.validationDrive });
   app.register(calidadRoutes, { prefix: '/api/calidad' });
   app.register(soporteDigitalHomeRoutes, { prefix: '/api/soporte-digital' });
   app.register(soporteDigitalWorkRoutes, { prefix: '/api/soporte-digital' });

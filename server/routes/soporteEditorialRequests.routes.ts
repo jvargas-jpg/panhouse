@@ -17,7 +17,7 @@ function read<T extends z.ZodTypeAny>(schema: T, value: unknown, reply: FastifyR
   return r.data;
 }
 export async function soporteEditorialRequestsRoutes(app: FastifyInstance) {
-  const validator = { preHandler: [requireAuth, requireRole('soporte_editorial')] };
+  const validator = { preHandler: [requireAuth, requireRole('validador')] };
   const specialist = { preHandler: [requireAuth, requireRole('especialista')] };
   app.get('/mis-solicitudes', validator, async (req, reply) => {
     const f = read(filters, req.query, reply); if (!f) return;

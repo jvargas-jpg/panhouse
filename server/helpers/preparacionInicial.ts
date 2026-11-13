@@ -1,7 +1,7 @@
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '../db/client.js';
-import { preparacionesProyecto, projectAssignments, proyectos } from '../db/schema/index.js';
+import { preparacionesProyecto, projectAssignments, proyectos, workItems } from '../db/schema/index.js';
 import { verificarAccesoFichaViva, ErrorFichaViva } from './fichaViva.js';
 import { registrarEvento } from './auditLog.js';
 import { crearWorkItemSiNoExiste, transicionarWorkItemPorId } from './workItems.js';
@@ -51,6 +51,8 @@ export async function guardarPreparacionInicial(id: string, input: z.infer<typeo
     if (merged.reunionOperativaRealizada && (!merged.reunionOperativaFecha || merged.reunionOperativaFecha > ahora)) throw new ErrorFichaViva(400, 'La reunión realizada requiere una fecha hasta hoy');
     const cambios = Object.keys(datos).filter(k => JSON.stringify(before?.[k as keyof typeof before] ?? null) !== JSON.stringify(datos[k]));
     if (!cambios.length && before) return before;
+    const downstream = await tx.select({ tipo: workItems.tipo }).from(workItems).where(eq(workItems.proyectoId, id));
+    if (cambios.some(k => k !== 'observaciones') && downstream.some(w => !['intake_rrpp','asignacion_especialista','preparacion_inicial'].includes(w.tipo))) throw new ErrorFichaViva(409, 'Este cambio puede afectar procesos posteriores. La preparación queda de solo lectura hasta contar con una invalidación segura.');
     const [row] = await tx.insert(preparacionesProyecto).values({ proyectoId: id, ...datos }).onConflictDoUpdate({ target: preparacionesProyecto.proyectoId, set: { ...datos, updatedAt: ahora } }).returning();
     const [a] = await tx.select().from(projectAssignments).where(and(eq(projectAssignments.proyectoId, id), eq(projectAssignments.tipo, 'especialista'), isNull(projectAssignments.workItemId), isNull(projectAssignments.finalizadoEn))).orderBy(desc(projectAssignments.asignadoEn)).limit(1);
     const wi = await crearWorkItemSiNoExiste(tx, { proyectoId: id, tipo: 'preparacion_inicial' });

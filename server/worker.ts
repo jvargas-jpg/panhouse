@@ -1,3 +1,4 @@
+import './queue/validations.worker.js';
 import './queue/notificaciones.worker.js';
 import './queue/projectWorkspaces.worker.js';
 import './queue/authorPortal.worker.js';

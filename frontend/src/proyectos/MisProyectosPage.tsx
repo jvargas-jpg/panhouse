@@ -1,3 +1,4 @@
+import { ProjectPortfolio } from './ProjectPortfolio';
 import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
@@ -60,7 +61,7 @@ function Skeleton() {
   return <div className="pc-loading" role="status" aria-label="Cargando cartera"><div className="pc-summary">{Array.from({length:5},(_,i) => <div className="pc-skeleton" key={i}/>)}</div><div className="pc-skeleton pc-skeleton-toolbar"/>{Array.from({length:8},(_,i) => <div className="pc-skeleton pc-skeleton-row" key={i}/>)}</div>;
 }
 
-export function MisProyectosPage() {
+export function LegacyMisProyectosPage() {
   const {data:user}=useMe(), location=useLocation(), [params,setParams]=useSearchParams();
   const [filtersOpen,setFiltersOpen]=useState(false), [search,setSearch]=useState(params.get('search') ?? params.get('q') ?? '');
   const queryParams=new URLSearchParams(params); queryParams.delete('vista'); queryParams.delete('q'); queryParams.set('search',params.get('search') ?? params.get('q') ?? '');
@@ -71,14 +72,14 @@ export function MisProyectosPage() {
   useEffect(() => { const saved=params.get('search') ?? params.get('q') ?? ''; if(search===saved)return; const timer=window.setTimeout(() => update({search:search.trim()}),300);return () => window.clearTimeout(timer); },[search,params]);
   const data=query.data, tab=params.get('tab') ?? 'todos';
   const activeFilters=['servicio','subtipo','estado','proceso','riesgo'].filter(k => params.has(k));
-  const clear=() => { setSearch('');setParams({vista:'mis-proyectos'}); };
+  const clear=() => { setSearch('');setParams({vista:'proyectos'}); };
   const origin=location.pathname+location.search;
   const toProject=(p:ProyectoCartera) => '/proyectos/'+p.id+'?'+new URLSearchParams({volver:origin});
   const toAction=(p:ProyectoCartera) => p.proximaAccion?.href ? p.proximaAccion.href+(p.proximaAccion.href.includes('?') ? '&' : '?')+new URLSearchParams({volver:origin}) : '/proyectos/'+p.id+(p.proximaAccion?.editarContexto ? '' : '/operacion')+'?'+new URLSearchParams({volver:origin,...(p.proximaAccion?.editarContexto ? {modo:'titulos'} : {proceso:p.proximaAccion?.proceso ?? ''})});
   const summary=[{key:'asignados',label:'Proyectos asignados',icon:'proyectos',tab:'todos',tone:'navy'}, {key:'ejecucion',label:'En ejecución',icon:'proceso',tone:'blue'}, {key:'atencion',label:'Requieren atención',icon:'actividad',tab:'accion',tone:'amber'}, {key:'riesgo',label:'En riesgo',icon:'actividad',tab:'riesgo',tone:'red'}, {key:'express',label:'Express',icon:'calendario',tab:'express',tone:'gold'}] as const;
   return <CrmSidebarLayout    nav={<SpecialistSidebarNav/>}   contentMaxWidth="max-w-[1760px]" contentClassName="pc-page">
     {params.get('vista')==='metricas' ? <MetricasEspecialista/> : <>
-      <header className="pc-header"><div><span className="pc-kicker">ESPECIALISTA · OPERACIÓN EDITORIAL</span><h1>Mis proyectos</h1><p>Consulta todos los proyectos que tienes asignados, su situación operativa y próximos hitos.</p></div></header>
+      <header className="pc-header"><div><span className="pc-kicker">ESPECIALISTA · OPERACIÓN EDITORIAL</span><h1>Proyectos</h1><p>Consulta todos los proyectos que tienes asignados, su situación operativa y próximos hitos.</p></div></header>
 
       {query.isPending ? <Skeleton/> : <>
         {data && <section className="pc-summary" aria-label="Resumen de cartera">{summary.map(s => <button key={s.key} className={'pc-summary-item pc-tone-'+s.tone} disabled={!('tab' in s)} onClick={() => 'tab' in s && update({tab:s.tab})}><span className="pc-summary-label">{s.label}</span><div><strong>{data.resumen[s.key]}</strong><span className="pc-summary-icon"><RrppIcon nombre={s.icon} className="h-[18px] w-[18px]"/></span></div></button>)}</section>}
@@ -106,3 +107,5 @@ export function MisProyectosPage() {
     </>}
   </CrmSidebarLayout>;
 }
+
+export function MisProyectosPage() { return <ProjectPortfolio/>; }

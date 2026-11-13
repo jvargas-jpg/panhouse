@@ -274,8 +274,8 @@ export interface DatosEntregaCorreccion {
   informeTecnicoUrl?: string | null;
 }
 
-export async function registrarEntregaCorreccion(correccionId: string, datos: DatosEntregaCorreccion, actorId: string): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function registrarEntregaCorreccion(correccionId: string, datos: DatosEntregaCorreccion, actorId: string | null, client?: Tx): Promise<void> {
+  const save = async (tx: Tx) => {
     const [correccion] = await tx.select().from(correcciones).where(eq(correcciones.id, correccionId)).for('update');
     if (!correccion) throw new Error(`Corrección no encontrada: ${correccionId}`);
     if (correccion.fechaEntrega) return; // Retry no modifica el hecho histórico ni duplica avisos.
@@ -313,7 +313,8 @@ export async function registrarEntregaCorreccion(correccionId: string, datos: Da
         mensaje: 'Corrección entregada — lista para tu revisión de cierre.',
       });
     }
-  });
+  };
+  if (client) await save(client); else await db.transaction(save);
 }
 
 export interface DatosCerrarCorreccion {

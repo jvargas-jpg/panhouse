@@ -1,5 +1,6 @@
 export interface StorageItem {
   size?: number;
+  modifiedAt?: string; contributorEmails?: string[];
   trashed?:boolean;providerFileId:string;name:string;mimeType:string;webViewLink:string|null;parents:string[];appProperties:Record<string,string>;
 }
 export interface DriveStorageProvider {
@@ -12,7 +13,7 @@ export interface DriveStorageProvider {
 export interface ProjectDriveStorageProvider extends DriveStorageProvider {
   pinAuthorRevision?(fileId:string):Promise<{revisionId:string;mimeType:string}>;
   readAuthorRevision?(fileId:string,revisionId:string):Promise<Buffer>;
-  uploadFile?(input:{name:string;mimeType:string;parentFolderId:string;content:Buffer}):Promise<StorageItem>;
+  uploadFile?(input:{name:string;mimeType:string;parentFolderId:string;content:Buffer;appProperties?:Record<string,string>}):Promise<StorageItem>;
   listFiles?(input:{parentFolderId:string;pageToken?:string}):Promise<{items:StorageItem[];nextPageToken:string|null}>;
   allocateFolderIds(count:number):Promise<string[]>;
   createFolder(input:{name:string;parentFolderId?:string;appProperties?:Record<string,string>;providerFileId?:string}):Promise<StorageItem>;

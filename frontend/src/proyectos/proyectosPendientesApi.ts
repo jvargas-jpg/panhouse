@@ -25,7 +25,7 @@ export function fetchProyectosPendientesDiseno() {
   return apiFetch<{ proyectos: ProyectoPendienteSeccion1[] }>('/fichas-trazabilidad/pendientes/diseno');
 }
 
-// "Notificación interna" de soporte_editorial — pantalla de inicio.
+// "Notificación interna" de validador — pantalla de inicio.
 export function fetchProyectosPendientesCalidad() {
   return apiFetch<{ proyectos: ProyectoPendienteSeccion1[] }>('/fichas-trazabilidad/pendientes/calidad');
 }

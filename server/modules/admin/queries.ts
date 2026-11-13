@@ -1,3 +1,4 @@
+import { publicRoleSql } from '../../db/roleCompatibility.js';
 import {pool} from '../../db/client.js';
 import type {AdminAssignment,AdminAudit,AdminPage,AdminRequest,AdminSession,AdminUser} from '../../../shared/admin.js';
 import {ROLES} from '../../db/schema/enums.js';
@@ -18,7 +19,7 @@ const LEGACY_ASSIGNMENTS=`SELECT p.id "projectId",p.codigo||' · '||coalesce(p.t
  p.estado::text "projectState",ref.type,ref.user_id "userId",u.nombre name FROM proyectos p
  CROSS JOIN LATERAL(VALUES('especialista'::text,p.especialista_id),('editor',p.editor_id),('disenador',p.disenador_id))ref(type,user_id)
  JOIN usuarios u ON u.id=ref.user_id WHERE NOT EXISTS(SELECT 1 FROM project_assignments a WHERE a.proyecto_id=p.id AND a.tipo::text=ref.type AND a.work_item_id IS NULL)`;
-const USER_SOURCE=`SELECT u.id,u.nombre name,u.email,u.rol::text role,u.activo active,u.account_type "accountType",u.updated_at version,u.autor_id "authorId",author_record.nombre "authorName",
+const USER_SOURCE=`SELECT u.id,u.nombre name,u.email,${publicRoleSql('u.rol')} role,u.activo active,u.account_type "accountType",u.updated_at version,u.autor_id "authorId",author_record.nombre "authorName",
  s.last_login "lastLogin",s.last_activity "lastActivity",coalesce(s.active,0)::int sessions,coalesce(a.active,0)::int assignments
  FROM usuarios u LEFT JOIN autores author_record ON author_record.id=u.autor_id LEFT JOIN(SELECT user_id,max(created_at) last_login,max(last_activity_at) last_activity,count(*) FILTER(WHERE revoked_at IS NULL AND expires_at>now()) active FROM sesiones GROUP BY user_id)s ON s.user_id=u.id
  LEFT JOIN(SELECT actual.usuario_id,count(*) active FROM(
@@ -29,7 +30,7 @@ export async function adminUsers(f:AdminFilters):Promise<AdminPage<AdminUser>>{c
  if(f.role)where.push(`role=${bind(f.role)}`);if(f.state)where.push(f.state==='active'?'active':'NOT active');if(f.tab==='external')where.push(`"accountType"='external'`);if(f.user)where.push(`id=${bind(f.user)}::uuid`);
  return pageQuery(USER_SOURCE,where.join(' AND '),args,f,'name,id');}
 export async function adminUserById(id:string){const r=await adminUsers({page:1,pageSize:10,search:'',user:id});adminAssert(r.items[0],'Usuario no encontrado',404);return r.items[0];}
-const SESSION_SOURCE=`SELECT s.public_id id,'…'||right(s.public_id::text,8) "maskedId",s.user_id "userId",u.nombre name,u.rol::text role,s.created_at "loginAt",s.last_activity_at "lastActivity",s.ip,s.user_agent "userAgent",s.expires_at "expiresAt",s.revoked_at "revokedAt",s.revoke_reason "revokeReason",v.nombre "viewAs",
+const SESSION_SOURCE=`SELECT s.public_id id,'…'||right(s.public_id::text,8) "maskedId",s.user_id "userId",u.nombre name,${publicRoleSql('u.rol')} role,s.created_at "loginAt",s.last_activity_at "lastActivity",s.ip,s.user_agent "userAgent",s.expires_at "expiresAt",s.revoked_at "revokedAt",s.revoke_reason "revokeReason",v.nombre "viewAs",
  CASE WHEN s.revoked_at IS NOT NULL THEN 'revoked' WHEN s.expires_at<=now() THEN 'expired' ELSE 'valid' END state FROM sesiones s JOIN usuarios u ON u.id=s.user_id LEFT JOIN usuarios v ON v.id=s.view_as_user_id`;
 export async function adminSessions(f:AdminFilters):Promise<AdminPage<AdminSession>>{const {args,where,bind}=clauses(f,"concat_ws(' ',name,role,ip)");if(f.user)where.push(`"userId"=${bind(f.user)}::uuid`);if(f.state)where.push(`state=${bind(f.state)}`);return pageQuery(SESSION_SOURCE,where.join(' AND '),args,f,'"loginAt" DESC,id');}
 export async function adminAssignments(f:AdminFilters){const {args,where,bind}=clauses(f,"concat_ws(' ',name,project,type)");if(f.user)where.push(`"userId"=${bind(f.user)}::uuid`);if(f.project)where.push(`"projectId"=${bind(f.project)}::uuid`);
@@ -54,20 +55,20 @@ export async function adminAudit(f:AdminFilters):Promise<AdminPage<AdminAudit>>{
  if(f.id)where.push(`id=${bind(f.id)}::uuid`);if(f.entityId)where.push(`"entityId"=${bind(f.entityId)}::uuid`);
  if(f.from)where.push(`(at AT TIME ZONE 'America/Caracas')::date>=${bind(f.from)}::date`);if(f.to)where.push(`(at AT TIME ZONE 'America/Caracas')::date<=${bind(f.to)}::date`);
  if(f.tab==='overrides')where.push("action LIKE 'ADMIN\\_%' ESCAPE '\\'");
- const source=security?`SELECT e.id,coalesce(u.nombre,'Acceso no identificado') actor,e.actor_id "actorId",u.rol::text role,e.action,'seguridad' entity,coalesce(e.session_public_id,e.target_user_id,e.id) "entityId",NULL::uuid "projectId",NULL::text project,e.created_at at,jsonb_build_object('ip',e.ip,'userAgent',e.user_agent,'targetUserId',e.target_user_id) details FROM security_events e LEFT JOIN usuarios u ON u.id=e.actor_id`
- :`SELECT a.id,coalesce(u.nombre,'Sistema') actor,a.actor_id "actorId",u.rol::text role,a.accion action,a.entity_type entity,a.entity_id "entityId",a.proyecto_id "projectId",p.codigo project,a.created_at at,a.detalles details FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id LEFT JOIN proyectos p ON p.id=a.proyecto_id`;
+ const source=security?`SELECT e.id,coalesce(u.nombre,'Acceso no identificado') actor,e.actor_id "actorId",${publicRoleSql('u.rol')} role,e.action,'seguridad' entity,coalesce(e.session_public_id,e.target_user_id,e.id) "entityId",NULL::uuid "projectId",NULL::text project,e.created_at at,jsonb_build_object('ip',e.ip,'userAgent',e.user_agent,'targetUserId',e.target_user_id) details FROM security_events e LEFT JOIN usuarios u ON u.id=e.actor_id`
+ :`SELECT a.id,coalesce(u.nombre,'Sistema') actor,a.actor_id "actorId",${publicRoleSql('u.rol')} role,a.accion action,a.entity_type entity,a.entity_id "entityId",a.proyecto_id "projectId",p.codigo project,a.created_at at,a.detalles details FROM audit_logs a LEFT JOIN usuarios u ON u.id=a.actor_id LEFT JOIN proyectos p ON p.id=a.proyecto_id`;
  const page=await pageQuery<AdminAudit>(source,where.join(' AND '),args,f,'at DESC,id');return {...page,items:page.items.map(r=>({...r,details:safeAdminData(r.details)}))};
 }
-const REQUEST_SOURCE=`SELECT r.id,'area' family,r.proyecto_id "projectId",p.codigo||' · '||coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial') project,r.asunto subject,r.descripcion description,r.tipo type,r.estado state,u.nombre requester,r.requested_by_id "requesterId",u.rol::text role,
+const REQUEST_SOURCE=`SELECT r.id,'area' family,r.proyecto_id "projectId",p.codigo||' · '||coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial') project,r.asunto subject,r.descripcion description,r.tipo type,r.estado state,u.nombre requester,r.requested_by_id "requesterId",${publicRoleSql('u.rol')} role,
  coalesce(t.nombre,CASE WHEN r.tipo='editor' THEN 'Jefatura de Edición' WHEN r.tipo IN ('lanzamiento','impresion') THEN 'RRPP' WHEN r.tipo='creativa' THEN 'Dirección creativa' ELSE 'Especialista coordinador' END) target,r.target_user_id "targetId",r.work_item_id "workItemId",
  (b.id IS NOT NULL AND b.resolved_at IS NULL) blocked,r.version,r.requested_at "createdAt",greatest(r.requested_at,coalesce(a.created_at,r.requested_at)) "updatedAt",r.outcome,
  (r.tipo LIKE 'digital_%' OR r.tipo LIKE 'calidad_%' OR r.tipo LIKE 'corrector_%') AND (t.id IS NULL OR NOT t.activo OR t.rol<>'especialista' OR t.id IS DISTINCT FROM p.especialista_id) AND r.estado IN ('pendiente','requiere_informacion') "canRepairTarget"
  FROM solicitudes_area r JOIN proyectos p ON p.id=r.proyecto_id LEFT JOIN usuarios u ON u.id=r.requested_by_id LEFT JOIN usuarios t ON t.id=r.target_user_id LEFT JOIN editorial_blockers b ON b.id=r.blocker_id
  LEFT JOIN LATERAL(SELECT created_at FROM audit_logs WHERE entity_id=r.id AND entity_type='solicitud' ORDER BY created_at DESC LIMIT 1)a ON true
- UNION ALL SELECT d.id,'decision',d.proyecto_id,p.codigo||' · '||coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial'),d.subject,coalesce(d.request_message,''),d.tipo,d.status,u.nombre,d.requested_by_user_id,u.rol::text,coalesce(t.nombre,d.target_role),d.assigned_decision_maker_id,d.origin_work_item_id,
+ UNION ALL SELECT d.id,'decision',d.proyecto_id,p.codigo||' · '||coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial'),d.subject,coalesce(d.request_message,''),d.tipo,d.status,u.nombre,d.requested_by_user_id,${publicRoleSql('u.rol')},coalesce(t.nombre,d.target_role),d.assigned_decision_maker_id,d.origin_work_item_id,
  (w.estado='bloqueado' AND d.status<>'resuelta'),d.version,d.requested_at,d.updated_at,d.resolution_message,false
  FROM decisiones d JOIN proyectos p ON p.id=d.proyecto_id JOIN usuarios u ON u.id=d.requested_by_user_id LEFT JOIN usuarios t ON t.id=d.assigned_decision_maker_id LEFT JOIN work_items w ON w.id=d.origin_work_item_id
- UNION ALL SELECT c.id,'contract',corr.proyecto_id,p.codigo||' · '||coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial'),'Contrato de corrección · '||c.corrector_nombre,coalesce(c.motivo,''),'contrato_correccion',c.estado,u.nombre,c.requested_by_id,u.rol::text,'Talento Humano',NULL::uuid,corr.work_item_id,
+ UNION ALL SELECT c.id,'contract',corr.proyecto_id,p.codigo||' · '||coalesce(p.titulo_definitivo,p.titulo,'Proyecto editorial'),'Contrato de corrección · '||c.corrector_nombre,coalesce(c.motivo,''),'contrato_correccion',c.estado,u.nombre,c.requested_by_id,${publicRoleSql('u.rol')},'Talento Humano',NULL::uuid,corr.work_item_id,
  false,c.ronda,c.requested_at,greatest(c.requested_at,coalesce(c.reviewed_at,c.requested_at),coalesce(c.resolved_at,c.requested_at)),c.motivo,false
  FROM contratos_correccion c JOIN correcciones corr ON corr.id=c.correccion_id JOIN proyectos p ON p.id=corr.proyecto_id JOIN usuarios u ON u.id=c.requested_by_id`;
 export async function adminRequests(f:AdminFilters):Promise<AdminPage<AdminRequest>>{const {args,where,bind}=clauses(f,"concat_ws(' ',project,subject,description,requester,type,target)");

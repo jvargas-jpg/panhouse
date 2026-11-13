@@ -1,3 +1,4 @@
+import { ProjectPortfolio } from '../proyectos/ProjectPortfolio';
 import { useEffect, useRef, useState } from 'react';
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -41,7 +42,7 @@ const vacios: Record<TabProyectosJefatura, string> = {
   express: 'No hay proyectos Express activos.',
   completados: 'No hay proyectos completados para este filtro.',
 };
-export function ProyectosJefaturaPage() {
+export function LegacyProyectosJefaturaPage() {
   const [params, setParams] = useSearchParams();
   const [busqueda, setBusqueda] = useState(params.get('q') ?? '');
   const [menu, setMenu] = useState<string | null>(null);
@@ -500,3 +501,5 @@ export function ProyectosJefaturaPage() {
     </div>
   );
 }
+
+export function ProyectosJefaturaPage() { return <ProjectPortfolio embedded/>; }

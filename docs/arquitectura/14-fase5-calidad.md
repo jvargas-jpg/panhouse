@@ -1,3 +1,5 @@
+> Actualización 12/11/2026: las decisiones históricas de bandeja compartida y cuentas de Diseño/Corrección quedan sustituidas por [Validadores](../auditoria/38-validadores.md). La asignación individual de Jefatura y las entregas externas de Drive son la política vigente.
+
 # Fase 5E Calidad y validación
 
 Fecha: 8 de octubre de 2026. Continuación después de `247c4f7` (5D).

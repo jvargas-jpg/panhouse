@@ -64,7 +64,7 @@ export function SoporteEditorialHomePage() {
   const today = new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
   return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="inicio" />}    contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home" >
 
-    <div className="se-body"><nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Editorial</span><RrppIcon nombre="flecha" /><strong>Inicio</strong></nav>
+    <div className="se-body"><nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Validadores</span><RrppIcon nombre="flecha" /><strong>Inicio</strong></nav>
       <header className="se-page-header"><div><h1>Tu trabajo de hoy</h1>{user?.nombre && <p>Hola, {user.nombre}. Aquí tienes un resumen de la bandeja de Calidad y lo que requiere tu atención.</p>}</div><time>{today}</time></header>
       <HomeContent />
     </div>

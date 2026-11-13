@@ -1,3 +1,4 @@
+import { ValidacionesPage } from './validaciones/ValidacionesPage';
 import { Navigate, useLocation } from 'react-router-dom';
 import { AutoresPage } from './autores/AutoresPage';
 import { useMe } from './auth/useAuth';
@@ -12,18 +13,13 @@ import { JefeEdicionHomePage } from './jefeEdicion/JefeEdicionHomePage';
 import { PanelJefaturaPage } from './jefatura/PanelJefaturaPage';
 import { MisDireccionesCreativasPage } from './liderCreativo/MisDireccionesCreativasPage';
 import { MisProyectosPage } from './proyectos/MisProyectosPage';
-import { MiTrabajoPage } from './especialista/MiTrabajoPage';
 import { SolicitudesPage } from './especialista/SolicitudesPage';
 import { MonthlyGoalsPage } from './objetivos/MonthlyGoalsPage';
-import { lazy, Suspense } from 'react';
-const EspecialistaInicioPage = lazy(() => import('./especialista/EspecialistaInicioPage').then(m => ({default:m.EspecialistaInicioPage})));
+import { ProjectPortfolio } from './proyectos/ProjectPortfolio';
 import { RrppHomePage } from './rrpp/RrppHomePage';
 import { SoporteDigitalHomePage } from './soporteDigital/SoporteDigitalHomePage';
 import { SoporteDigitalMiTrabajo } from './soporteDigital/SoporteDigitalMiTrabajo';
 import { SoporteDigitalMisSolicitudes } from './soporteDigital/SoporteDigitalMisSolicitudes';
-import { SoporteEditorialHomePage } from './soporteEditorial/SoporteEditorialHomePage';
-import { SoporteEditorialMiTrabajo } from './soporteEditorial/SoporteEditorialMiTrabajo';
-import { SoporteEditorialMisSolicitudes } from './soporteEditorial/SoporteEditorialMisSolicitudes';
 
 // Punto de entrada autenticado: qué pantalla ve cada quien depende del
 // rol de la sesión, no de la ruta. RequireAuth ya garantizó que hay
@@ -35,11 +31,11 @@ export function HomePage() {
 
   if (user?.rol === 'especialista') {
     const vista = new URLSearchParams(location.search).get('vista') ?? '';
-    if (['mis-proyectos', 'metricas'].includes(vista)) return <MisProyectosPage />;
-    if (vista === 'mi-trabajo') return <MiTrabajoPage />;
+    if (['mis-proyectos','mi-trabajo','metricas'].includes(vista)) { const p = new URLSearchParams(location.search); p.set('vista','proyectos'); return <Navigate to={'/?'+p} replace/>; }
+    if (vista === 'proyectos') return <MisProyectosPage />;
     if (vista === 'solicitudes') return <SolicitudesPage />;
     if (vista === 'objetivos') return <MonthlyGoalsPage />;
-    return <Suspense fallback={<p role="status">Cargando Inicio…</p>}><EspecialistaInicioPage /></Suspense>;
+    return <ProjectPortfolio home/>;
   }
 
   if (user?.rol === 'jefe_area') {
@@ -93,12 +89,7 @@ export function HomePage() {
     return <MisDireccionesCreativasPage />;
   }
 
-  if (user?.rol === 'soporte_editorial') {
-    const vista = new URLSearchParams(location.search).get('vista');
-    if (vista === 'mi-trabajo') return <SoporteEditorialMiTrabajo />;
-    if (vista === 'mis-solicitudes') return <SoporteEditorialMisSolicitudes />;
-    return <SoporteEditorialHomePage />;
-  }
+  if (user?.rol === 'validador') return <ValidacionesPage />;
 
   if (user?.rol === 'soporte_digital') {
     const vista = new URLSearchParams(location.search).get('vista');

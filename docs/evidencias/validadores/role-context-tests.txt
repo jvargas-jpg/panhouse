@@ -1,0 +1,27 @@
+
+> panhouse-gestor-editorial@0.1.0 test
+> vitest run tests/validaciones.test.ts frontend/src/validaciones/validaciones.test.tsx
+
+
+ RUN  v2.1.9 C:/Users/Jhose/OneDrive/Documentos/panhouse
+
+ ✓ tests/validaciones.test.ts (12 tests) 159099ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > contrato público: un único rol validador con almacenamiento histórico encapsulado 15436ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > una sesión recibe Proyecto A Calidad, Proyecto B cubierta y Proyecto C Revisión Final; cubierta conserva permisos y ciclos 12871ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > QA completo: V0 → V1 con errores → V2 aprobada; repite en Revisión Final sin avanzar proceso global 12866ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > RBAC/IDOR: solo asignado, Jefatura asigna, no Ficha/usuarios/proyectos/rutas legacy ni mutaciones globales 19366ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > reasignación invalida la sesión abierta y el upload anterior; cierre concurrente tiene un único resultado 10218ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > carga valida contenido/tamaño, renombra y conserva extensión, retries no duplican archivos ni sobrescriben 9294ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > Drive ignora metadata, carpetas/archivo ajeno, versión incorrecta, proveedor equivocado y entregas ambiguas 11076ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > notificaciones son dirigidas y solo accionables; SMTP fallido conserva outbox para reintento 11561ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > colección inconsistente conserva la escalación real a Jefatura dentro de la asignación 13964ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > reasignación durante upload descarta el archivo nuevo y no permite registrar comentarios del anterior 24101ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > muestras/cubiertas externas conservan gates creativos e internos y nunca requieren login de Diseño 9611ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > entrega concurrente de Drive genera una sola ronda y aviso; requiere scope para archivos externos 8728ms
+ ✓ frontend/src/validaciones/validaciones.test.tsx (6 tests) 123ms
+
+ Test Files  2 passed (2)
+      Tests  18 passed (18)
+   Start at  22:00:44
+   Duration  207.68s (transform 16.87s, setup 8.90s, collect 23.93s, tests 159.22s, environment 6ms, prepare 1.94s)
+

@@ -9,6 +9,7 @@ export interface VersionDiseno {
 }
 export interface TrabajoDiseno {
   id: string; proyectoId: string; proyectoCodigo: string; autorNombre: string; servicioCodigo: string;
+  externalProviderName?: string | null; externalProviderEmail?: string | null;
   tipo: TipoDiseno; fuenteUrl: string; disenadorId: string | null; disenadorNombre: string | null; diasReferencia: number | null; modalidad: string | null;
   dueAt: string | null; cerradoEn: string | null; estado: string; plazo: string | null;
   tituloDefinitivo: string; subtituloDefinitivo: string; briefEnlace: string; recursoImagenUrl: string; recursoConceptoPdfUrl: string;

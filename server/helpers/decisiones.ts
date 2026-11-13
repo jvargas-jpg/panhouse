@@ -86,7 +86,7 @@ export async function crearDecisionRevisionPrevia(
 }
 
 // Llamada desde el endpoint de escalación de Calidad
-// (server/routes/calidad.routes.ts) cuando Soporte Editorial declara
+// (server/routes/calidad.routes.ts) cuando el Validador declara
 // explícitamente una discrepancia de colección en su fase. Idempotente por
 // `originCalidadFaseId` UNIQUE — doble click no duplica.
 export async function crearDecisionColeccionInconsistente(

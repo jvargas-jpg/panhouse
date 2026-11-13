@@ -7,6 +7,7 @@ import type { Tx } from './tx.js';
 import { especialistaActualSql, obtenerEspecialistaActual } from './carga.js';
 import { diaCaracas } from './atencionEspecialista.js';
 import { requestAuthorFinalReview } from './authorFinalReview.js';
+import { queueExternalDesignNotice } from './designExternalMail.js';
 import { sincronizarCapituloEditorial } from './editorialInterventions.js';
 import { calcularFechaPautadaFeedbackCapitulo, calcularFechaPautadaFeedbackTripa } from './edicionSla.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
@@ -176,7 +177,10 @@ async function applyDomainDecision(tx:Tx,r:typeof approvalRequests.$inferSelect,
       ensure(quality?.aprobado,'La versión requiere validación editorial');
       await requestAuthorFinalReview(tx,quality,v,p.id);
     }
-    if(!approved)await tx.update(disenos).set({cerradoEn:null}).where(eq(disenos.id,v.disenoId));
+    if(!approved){
+      const [design]=await tx.update(disenos).set({cerradoEn:null}).where(eq(disenos.id,v.disenoId)).returning();
+      if(design)await queueExternalDesignNotice(tx,design,v,p.tituloDefinitivo??p.codigo,`Observaciones del Autor: ${feedback??''}`);
+    }
   }else if(r.type==='capitulo'){
     await tx.update(capitulos).set({fechaRespuestaReal:approved?null:today}).where(eq(capitulos.id,r.originId));
     if(!approved)await sincronizarCapituloEditorial(tx,r.originId,'autor',false,true);

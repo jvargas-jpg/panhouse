@@ -2,28 +2,9 @@
 // (no hay monorepo/paquete compartido con el backend todavía). Si el
 // backend cambia una forma de respuesta, este archivo se desactualiza
 // en silencio — mantenerlo a mano hasta que exista algo mejor.
-export const ROLES = [
-  'comercial',
-  'rrpp',
-  'jefe_area',
-  'especialista',
-  'jefe_edicion',
-  'editor',
-  'lider_creativo',
-  'disenador',
-  'corrector',
-  'soporte_editorial',
-  'soporte_digital',
-  'impresion',
-  'distribucion',
-  'cobranzas',
-  'talento_humano',
-  'direccion',
-  'admin',
-  'autor',
-] as const;
-
-export type Rol = (typeof ROLES)[number];
+import { ROLES, type Rol } from '../../../shared/roles.js';
+export { ROLES };
+export type { Rol };
 
 export type EstadoProyecto = 'en_proceso' | 'retrasado' | 'stand_by' | 'pausado' | 'culminado' | 'retirado';
 

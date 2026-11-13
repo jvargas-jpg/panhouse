@@ -10,7 +10,7 @@ export const TIPOS_SOLICITUD: {tipo:TipoSolicitud;nombre:string;rol:string;desti
   {tipo:'editor',nombre:'Asignación de Editor',rol:'jefe_edicion',destino:'Jefatura de Edición'},
   {tipo:'creativa',nombre:'Reunión creativa',rol:'lider_creativo',destino:'Líder Creativo'},
   {tipo:'contrato',nombre:'Contrato de corrección',rol:'talento_humano',destino:'Talento Humano'},
-  {tipo:'calidad',nombre:'Validación de versión',rol:'soporte_editorial',destino:'Soporte Editorial'},
+  {tipo:'calidad',nombre:'Asignación de Validador',rol:'jefe_area',destino:'Jefatura'},
   {tipo:'digital',nombre:'Activación Amazon',rol:'soporte_digital',destino:'Soporte Digital'},
   {tipo:'lanzamiento',nombre:'Planificación de lanzamiento',rol:'rrpp',destino:'RRPP'},
   {tipo:'impresion',nombre:'Coordinación de impresión',rol:'rrpp',destino:'RRPP'},
@@ -43,8 +43,8 @@ const FUENTES = `WITH scope AS MATERIALIZED (
  UNION ALL
  SELECT q.work_item_id,p.id,q.work_item_id,wi.business_key,'calidad','calidad',
  CASE WHEN wi.estado='cancelado' THEN 'cancelada' WHEN q.revisado_en IS NOT NULL THEN 'resuelta' WHEN q.iniciado_en IS NOT NULL THEN 'en_revision' ELSE 'pendiente' END,
- q.solicitado_en,q.revisado_en::text,CASE WHEN q.revisado_en IS NOT NULL THEN CASE WHEN q.aprobado THEN 'Versión aprobada por Calidad' ELSE 'Comentarios entregados a Diseño' END END
- FROM scope p JOIN fichas_trazabilidad f ON f.proyecto_id=p.id JOIN ficha_calidad_fases q ON q.ficha_id=f.id JOIN work_items wi ON wi.id=q.work_item_id WHERE q.solicitado_en IS NOT NULL
+ coalesce(q.validator_requested_at,q.solicitado_en),q.revisado_en::text,CASE WHEN q.revisado_en IS NOT NULL THEN CASE WHEN q.aprobado THEN 'Versión aprobada por Calidad' ELSE 'Comentarios entregados a Diseño' END END
+ FROM scope p JOIN fichas_trazabilidad f ON f.proyecto_id=p.id JOIN ficha_calidad_fases q ON q.ficha_id=f.id JOIN work_items wi ON wi.id=q.work_item_id WHERE q.validator_requested_at IS NOT NULL OR q.revisado_en IS NOT NULL
  UNION ALL
  SELECT wi.id,p.id,wi.id,wi.business_key,'digital','soporte_digital',
  CASE WHEN wi.estado='cancelado' THEN 'cancelada' WHEN f.soporte_digital_fecha_activacion IS NOT NULL THEN 'resuelta' WHEN wi.estado='en_progreso' THEN 'en_revision' ELSE 'pendiente' END,
@@ -114,7 +114,7 @@ export async function detalleSolicitud(id:string,actor:Actor):Promise<DetalleSol
     contexto.push({label:'Fase / ronda',value:`F${q?.numeroFase} · ronda ${q?.ronda}`},{label:'Versión',value:q?.pdfVersion ?? 'Sin etiqueta'},{label:'Comentarios',value:q?.cantidadComentarios?.toString() ?? 'Sin revisión registrada'});
     if(q?.pdfUrl)enlaces.push({label:'Versión enviada a Calidad',url:q.pdfUrl});
     if(q?.comentariosUrl)enlaces.push({label:'PDF con comentarios',url:q.comentariosUrl});
-    eventTypes=['DISENO_HANDOFF_CALIDAD','CALIDAD_INICIADA','CALIDAD_REVISADA','CALIDAD_REVISION_FINAL_SOLICITADA'];
+    eventTypes=['VALIDADOR_SOLICITADO','VALIDADOR_ASIGNADO','VALIDACION_ARCHIVO_CARGADO','VALIDACION_COMENTARIOS_ENVIADOS','VALIDACION_TODOS_APLICADOS','VALIDACION_DISENO_RECIBIDO','DISENO_HANDOFF_CALIDAD','CALIDAD_INICIADA','CALIDAD_REVISADA','CALIDAD_REVISION_FINAL_SOLICITADA'];
   } else if(r.tipo==='editor') {
     const assignments=await pool.query<{id:string}>(`SELECT id FROM project_assignments WHERE proyecto_id=$1 AND tipo='editor' AND work_item_id IS NULL AND asignado_en>=$2 ORDER BY asignado_en,id LIMIT 1`,[r.proyecto_id,r.requested_at]);
     relatedIds.push(...assignments.rows.map(a=>a.id));eventTypes=['EDITOR_SOLICITADO','EDITOR_ASIGNADO','EDITOR_REASIGNADO','EDITOR_SOLICITUD_DEVUELTA','EDITOR_SOLICITUD_REENVIADA'];

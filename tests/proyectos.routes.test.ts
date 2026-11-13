@@ -811,7 +811,7 @@ describe('rutas de proyectos', () => {
       const proyecto = await crearProyectoDePrueba();
       const [especialista, corrector, jefeArea] = await Promise.all([
         crearUsuario('especialista'),
-        crearUsuario('soporte_editorial'),
+        crearUsuario('validador'),
         crearUsuario('jefe_area'),
       ]);
       const cookie = await registrarYLoguear(app, 'jefe_area');
@@ -1342,7 +1342,7 @@ describe('rutas de proyectos', () => {
     // disenador no comparte este .each: a diferencia de esos roles, sí
     // está scoped por verificarAccesoAProyecto (mismo criterio que
     // especialista/editor) — ver los tests dedicados más abajo.
-    it.each(['rrpp', 'comercial', 'lider_creativo', 'soporte_editorial', 'soporte_digital'] as const)(
+    it.each(['rrpp', 'comercial', 'lider_creativo', 'validador', 'soporte_digital'] as const)(
       'aplica acceso de %s al detalle: Líder Creativo requiere asignación',
       async (rol) => {
         const app = crearAppDePrueba();

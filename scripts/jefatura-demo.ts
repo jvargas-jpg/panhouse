@@ -126,7 +126,7 @@ const jefa = actor('jefe_area', 'jefatura.demo@panhouse.test'),
   jefeEdicion = actor('jefe_edicion'),
   creativo = actor('lider_creativo'),
   disenador = actor('disenador'),
-  soporte = actor('soporte_editorial');
+  soporte = actor('validador');
 const especialistas = personas
   .filter((u) => u.rol === 'especialista' && u.activo)
   .sort((a, b) => a.nombre.localeCompare(b.nombre));

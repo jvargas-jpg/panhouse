@@ -32,6 +32,7 @@ export const TIPOS_WORK_ITEM_REPEATABLE = [
   'direccion_creativa',
   'diseno',
   'revision_interna_cubierta',
+  'validacion_cubierta',
   'calidad',
   'soporte_digital',
   'lanzamiento',

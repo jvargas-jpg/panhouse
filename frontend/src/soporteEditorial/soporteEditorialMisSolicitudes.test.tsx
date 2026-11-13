@@ -19,7 +19,7 @@ const listKey = [...qualityRequestsKey, 'support-1', 'list', 'tab=all&search=&pa
 const detailKey = [...qualityRequestsKey, 'support-1', 'detail', row.id];
 function render(seed: (cache: QueryClient) => void, url = '/?vista=mis-solicitudes&request=request-1') {
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false, retryOnMount: false, staleTime: Infinity, gcTime: Infinity } } });
-  cache.setQueryData(['auth', 'me'], { id: 'support-1', rol: 'soporte_editorial', nombre: 'Validador de prueba' });
+  cache.setQueryData(['auth', 'me'], { id: 'support-1', rol: 'validador', nombre: 'Validador de prueba' });
   seed(cache);
   const html = renderToStaticMarkup(<QueryClientProvider client={cache}><StaticRouter location={url}><SoporteEditorialMisSolicitudes /></StaticRouter></QueryClientProvider>);
   cache.clear(); return html;

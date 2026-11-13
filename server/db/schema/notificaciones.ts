@@ -1,3 +1,4 @@
+import { bindRoleCompatibility, notificationMessageFromStorage } from '../roleCompatibility.js';
 import { boolean, index, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { proyectos } from './proyectos.js';
 import { users } from './users.js';
@@ -38,3 +39,6 @@ export const notificaciones = pgTable(
     porDestino: index('notificaciones_rol_usuario_idx').on(table.rolDestino, table.usuarioDestinoId),
   }),
 );
+
+bindRoleCompatibility(notificaciones.rolDestino);
+notificaciones.mensaje.mapFromDriverValue = notificationMessageFromStorage;

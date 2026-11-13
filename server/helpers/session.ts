@@ -1,3 +1,4 @@
+import { roleFromStorage } from '../db/roleCompatibility.js';
 ﻿import { createHash,randomBytes } from 'node:crypto';
 import {eq,isNull,and,sql} from 'drizzle-orm';
 import {db,pool} from '../db/client.js';
@@ -26,10 +27,10 @@ export async function sessionContext(token:string):Promise<{user:AuthenticatedUs
  touched AS(UPDATE sesiones SET last_activity_at=now() WHERE id=(SELECT session_hash FROM valid) AND (last_activity_at IS NULL OR last_activity_at<now()-interval '1 minute') RETURNING public_id)
  SELECT id,email,nombre,rol,autor_id,public_id,view_id,view_email,view_name,view_role,view_author,view_active FROM valid`,[hashToken(token)]);
  if(!r)return null;
- const real:AuthenticatedUser={id:r.id,email:r.email,nombre:r.nombre,rol:r.rol,autorId:r.autor_id};
+ const real:AuthenticatedUser={id:r.id,email:r.email,nombre:r.nombre,rol:roleFromStorage(r.rol) as Rol,autorId:r.autor_id};
  if(r.view_id&&r.rol==='admin'){
   if(!r.view_active||!r.view_role||r.view_role==='admin')await db.update(sessions).set({viewAsUserId:null}).where(eq(sessions.publicId,r.public_id));
-  else return {publicId:r.public_id,realAdmin:real,user:{id:r.view_id,email:r.view_email!,nombre:r.view_name!,rol:r.view_role,autorId:r.view_author,adminView:{active:true,adminName:r.nombre}}};
+  else return {publicId:r.public_id,realAdmin:real,user:{id:r.view_id,email:r.view_email!,nombre:r.view_name!,rol:roleFromStorage(r.view_role) as Rol,autorId:r.view_author,adminView:{active:true,adminName:r.nombre}}};
  }
  return {user:real,publicId:r.public_id};
 }

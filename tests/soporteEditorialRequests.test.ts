@@ -31,7 +31,7 @@ describe('Soporte Editorial · Mis solicitudes · lifecycle canónico', () => {
   }
   beforeEach(async () => {
     await limpiarBaseDeDatos(); app = buildApp(); await app.ready();
-    [support, other, specialist, designer] = await Promise.all([crearUsuario('soporte_editorial'), crearUsuario('soporte_editorial'), crearUsuario('especialista'), crearUsuario('disenador')]);
+    [support, other, specialist, designer] = await Promise.all([crearUsuario('validador'), crearUsuario('validador'), crearUsuario('especialista'), crearUsuario('disenador')]);
     p = await crearProyectoDePrueba({ especialistaId: specialist.id, disenadorId: designer.id });
     const [f] = await db.insert(fichasTrazabilidad).values({ proyectoId: p.id }).returning();
     const [cw] = await db.insert(workItems).values({ proyectoId: p.id, tipo: 'direccion_creativa', estado: 'completado' }).returning();

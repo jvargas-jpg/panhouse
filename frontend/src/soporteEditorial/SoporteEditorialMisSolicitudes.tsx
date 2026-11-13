@@ -72,7 +72,7 @@ export function SoporteEditorialMisSolicitudes() {
   return <CrmSidebarLayout nav={<SoporteEditorialNavigation active="mis-solicitudes" />}    contentMaxWidth="max-w-none" shellClassName="soporte-editorial-layout" contentClassName="soporte-editorial-home editor-shell se-requests" >
 
     <div className="se-body">
-      <nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Soporte Editorial</span><RrppIcon nombre="flecha" /><strong>Mis solicitudes</strong></nav>
+      <nav className="se-breadcrumb" aria-label="Ruta de navegación"><span>Validadores</span><RrppIcon nombre="flecha" /><strong>Mis solicitudes</strong></nav>
       <header className="se-page-header"><div><h1>Mis solicitudes</h1><p>Consulta las solicitudes que has enviado relacionadas con tus validaciones y revisa su estado.</p></div><button type="button" className="ec-primary" onClick={() => change('create', '1')}><RrppIcon nombre="ingreso" />Nueva solicitud</button></header>
       <section className="qr-page" aria-label="Solicitudes enviadas por el Validador">
         <div className="qr-controls"><nav className="mw-views" aria-label="Estado de mis solicitudes">{TABS.map(([id, label]) => <button key={id} type="button" aria-pressed={tab === id} onClick={() => change('tab', id)}>{label}<span>{list.data?.counts[id] ?? '—'}</span></button>)}</nav>

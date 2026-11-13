@@ -1,0 +1,11 @@
+{
+  "result": "PASS",
+  "cycles": [
+    "Calidad V0→V1→V2",
+    "Revisión Final V2→V3→V4"
+  ],
+  "events": 31,
+  "drive": "simulated",
+  "externalMail": "simulated",
+  "transport": "real HTTP and PostgreSQL"
+}

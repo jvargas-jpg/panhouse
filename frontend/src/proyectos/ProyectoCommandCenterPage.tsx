@@ -1,3 +1,5 @@
+import { ProjectGuide } from './ProjectGuide';
+import { ValidationManagement, ValidationTimeline } from '../validaciones/ValidationManagement';
 import { AuthorWorkflowPanel } from '../portalAutor/AuthorWorkflowPanel';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -34,7 +36,7 @@ import '../admin/admin.css';
 
 const tabs = [{ id: '', label: 'Resumen' }, { id: 'operacion', label: 'Operación' }, { id: 'equipo', label: 'Equipo' }, { id: 'ficha', label: 'Ficha' }, { id: 'actividad', label: 'Actividad' }];
 const tabsAdmin = [...tabs, { id: 'archivos', label: 'Archivos' }, { id: 'auditoria', label: 'Auditoría' }];
-const operables = ['preparacion_inicial', 'edicion', 'correccion', 'direccion_creativa', 'diseno', 'revision_interna_cubierta', 'calidad', 'soporte_digital', 'lanzamiento', 'impresion', 'distribucion'];
+const operables = ['preparacion_inicial', 'edicion', 'correccion', 'direccion_creativa', 'diseno', 'revision_interna_cubierta', 'validacion_cubierta', 'calidad', 'soporte_digital', 'lanzamiento', 'impresion', 'distribucion'];
 // Misma fuente para Resumen y Operación: causas de salud.riesgo con regla
 // de umbral real (ver evaluarAtencionJefatura, server/helpers/jefatura.ts),
 // más el gate financiero cuando realmente bloquea — nunca duplicado.
@@ -78,7 +80,7 @@ export function ProyectoCommandCenterPage() {
   const identity = user ? user.id+':'+user.rol : undefined;
   const isAdmin = user?.rol === 'admin';
   const allowed = user && ['especialista', 'jefe_area', 'rrpp', 'admin'].includes(user.rol);
-  const query = useQuery({ queryKey: ['proyecto', id, 'command-center', identity], queryFn: () => apiFetch<ProjectCommandCenter>('/proyectos/'+id+'/command-center'), enabled: !!allowed, staleTime: 15000 });
+  const query = useQuery({ queryKey: ['proyecto', id, 'command-center', identity], queryFn: () => apiFetch<ProjectCommandCenter>('/proyectos/'+id+'/command-center'), enabled: !!allowed, staleTime: 15000, refetchInterval: 15000 });
   useProjectWorkspace(id,query.data?.preparacion.workspace,!!allowed);
   const tab = location.pathname.split('/')[3] ?? '';
   // Admin: igual que sus tabs Equipo/Archivos en /admin, se piden solo al
@@ -114,6 +116,7 @@ export function ProyectoCommandCenterPage() {
   // Una sola vez por render — Resumen, Operación y el modal de un paso
   // (para saber si es "incompleto histórico") leen la misma derivación.
   const linea = data ? derivarLineaPrincipal(data) : null;
+  const guided = !!data?.guide && ['especialista','jefe_area'].includes(user?.rol ?? '');
   const ficha = data?.ficha;
   const fichaEnShell = ficha && { ...ficha, traceability: ficha.traceability.map(a => a.workspace?.href.startsWith('/proyectos/'+id) ? { ...a, workspace: { ...a.workspace, href: to('operacion', {proceso: procesoHash(a.id)}) } } : a) };
   const areaSeleccionada = ficha?.traceability.find(a => a.id === (params.get('area') || location.hash.slice(1) || area))?.id ?? 'proyecto';
@@ -122,9 +125,10 @@ export function ProyectoCommandCenterPage() {
     <div className="cc-body"><nav className="cc-breadcrumb" aria-label="Ubicación"><Link to={back}>← {origenLabel(origen, jefe, isAdmin)}</Link><span>/</span><span>Proyecto editorial</span></nav>
     {query.isPending ? <div className="cc-skeleton" role="status" aria-label="Cargando proyecto"><div/><div/><div/></div> : query.isError ? <Card title="No se pudo abrir el proyecto"><p role="alert">{query.error.message}</p><button className="fv-button" onClick={() => query.refetch()}>Reintentar</button></Card> : ficha && data && <>
       <header className="cc-header"><div><span className="cc-eyebrow">{isAdmin ? 'ADMINISTRACIÓN · CONTEXTO COMPLETO' : jefe ? 'JEFATURA · SUPERVISIÓN EDITORIAL' : user?.rol==='rrpp' ? 'RRPP · COORDINACIÓN EDITORIAL' : 'ESPECIALISTA · COORDINACIÓN EDITORIAL'} <span>#{ficha.project.code}</span></span><h1>{ficha.project.title}</h1><p>{ficha.authors.map(a => a.name).join(' · ')}</p><div className="cc-meta"><span>{ficha.project.service}</span><span>{ficha.project.unit}</span><Estado state={ficha.project.macroState}/>{data.salud?.express.estado === 'confirmado' && <span className="cc-express">⚡ Express</span>}</div></div><div className="cc-header-side"><span>Fecha objetivo</span><strong>{dateFicha(data.salud?.fechaObjetivo ?? null)}</strong><small>Actualizado {dateFicha(ficha.project.updatedAt)}</small></div></header>
-      <nav className="cc-tabs" aria-label="Vistas del proyecto">{(isAdmin ? tabsAdmin : tabs).map(t => <Link key={t.id} to={to(t.id)} aria-current={tab === t.id ? 'page' : undefined}>{t.label}</Link>)}</nav>
+      <nav className="cc-tabs" aria-label="Vistas del proyecto">{(guided ? [{id:'',label:'Gu?a'}, {id:'ficha',label:'Informaci?n del proyecto'}, {id:'equipo',label:'Equipo'}, {id:'actividad',label:'Historial'}] : isAdmin ? tabsAdmin : tabs).map(t => <Link key={t.id} to={to(t.id)} aria-current={tab === t.id ? 'page' : undefined}>{t.label}</Link>)}</nav>
       {ficha.secondaryErrors.length > 0 && <p role="status" className="fv-notice">Consultas pendientes: {ficha.secondaryErrors.join(', ')}. <button onClick={() => query.refetch()}>Reintentar</button></p>}
-      {tab === '' && (() => {
+      {guided && (tab === '' || tab === 'operacion') && <ProjectGuide id={id} data={data}/>}
+      {!guided && tab === '' && (() => {
         // Resumen = qué pasa ahora. El resto de administracion[] (contrato,
         // abonos, presupuesto, alianza, capítulos/páginas) y los campos
         // contractuales de ficha.overview siguen íntegros en Ficha → Proyecto
@@ -158,8 +162,10 @@ export function ProyectoCommandCenterPage() {
           <Card title="Actividad reciente" icon="clock" action={<Link to={to('actividad')}>Ver historial</Link>}><Actividad items={ficha.recentActivity}/></Card>
         </>;
       })()}
-      {(tab === '' || tab === 'operacion') && user && ['especialista','jefe_area'].includes(user.rol) && <AuthorWorkflowPanel projectId={id}/>}
-      {tab === 'operacion' && (() => {
+      {!guided && (tab === '' || tab === 'operacion') && user && ['especialista','jefe_area'].includes(user.rol) && <AuthorWorkflowPanel projectId={id}/>}
+      {!guided && (tab === '' || tab === 'operacion') && user && ['especialista','jefe_area'].includes(user.rol) && <ValidationManagement projectId={id}/>}
+      {tab === 'actividad' && <ValidationTimeline projectId={id}/>}
+      {!guided && tab === 'operacion' && (() => {
         const { causasReales, gateBloqueado } = derivarAtencion(data);
         const { paralelos } = linea!;
         const paralelosActivos = paralelos.filter(p => p.estado !== 'No aplica' && enCurso(p)).length;
@@ -176,8 +182,8 @@ export function ProyectoCommandCenterPage() {
       {tab === 'archivos' && isAdmin && (adminProject.data ? <WorkspacePanel project={adminProject.data}/> : <p role="status">Consultando espacio documental…</p>)}
       {tab === 'auditoria' && isAdmin && <section className="ad-panel"><ActivityList project={id} paginate technical/></section>}
       {tab === 'ficha' && fichaEnShell && <><ProjectWorkspaceCard id={id} editable={false} initial={data.preparacion.workspace} compact/><ExpedienteDocumental id={id} identity={identity} summary={fichaEnShell} selected={areaSeleccionada} onSelect={value => { setArea(value); setParams(prev => { const p = new URLSearchParams(prev); p.set('area', value); return p; }); }}/></>}
-      {tab === 'actividad' && identity && <ActividadProyecto id={id} identity={identity} canWrite={data.capabilities.registrarAvance}/>}
-      {selected && process && (() => {
+      {tab === 'actividad' && identity && <ActividadProyecto id={id} identity={identity} canWrite={!guided && data.capabilities.registrarAvance}/>}
+      {!guided && selected && process && (() => {
         // Mismo criterio que PasoIncompletoPrevio (operacionWorkflow.ts):
         // un paso ANTERIOR al actual en la secuencia, no Completo/Cancelado.
         const idx = linea!.pasos.findIndex(p => p.tipo === process.tipo);

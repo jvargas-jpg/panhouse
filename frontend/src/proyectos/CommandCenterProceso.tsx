@@ -5,6 +5,7 @@ import { CommandCenterEdicion } from './CommandCenterEdicion';
 import type { ProjectCommandCenter, ProcesoProyecto } from '../../../shared/projectCommandCenter';
 import { CommandCenterPreparacion } from './CommandCenterPreparacion';
 import { CommandCenterArea } from './CommandCenterArea';
+import { ValidationManagement } from '../validaciones/ValidationManagement';
 const Edicion = lazy(() => import('./SeccionEdicion').then(m => ({ default: m.SeccionEdicion })));
 const Correccion = lazy(() => import('./SeccionCorreccionOperativa').then(m => ({ default: m.SeccionCorreccionOperativa })));
 const Creativa = lazy(() => import('./SeccionDireccionCreativaOperativa').then(m => ({ default: m.SeccionDireccionCreativaOperativa })));
@@ -27,6 +28,7 @@ export function CommandCenterProceso({ id, tipo, especialista, rrpp, data, proce
     {tipo === 'direccion_creativa' && <Creativa proyectoId={id} puedeOperar={especialista} />}
     {['diseno', 'revision_interna_cubierta'].includes(tipo) && <Diseno proyectoId={id} />}
     {tipo === 'calidad' && <Calidad proyectoId={id} />}
+    {tipo === 'validacion_cubierta' && <ValidationManagement projectId={id} context="SOPORTE_EDITORIAL"/>}
     {tipo === 'soporte_digital' && ficha.data && <Digital proyectoId={id} ficha={ficha.data.ficha} puedeEditar={false} puedeEditarControl={false} />}
     {['lanzamiento','impresion'].includes(tipo) && <CommandCenterArea id={id} proceso={proceso} rrpp={rrpp}/>}
     {tipo === 'impresion' && ficha.data && rrpp && proceso.activacion?.activo && <Impresion proyectoId={id} ficha={ficha.data.ficha} puedeEditar={true} />}

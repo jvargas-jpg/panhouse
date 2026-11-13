@@ -708,6 +708,20 @@
       "when": 1794407692306,
       "tag": "0100_fuzzy_centennial",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1794527050273,
+      "tag": "0101_noisy_raider",
+      "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1794528644349,
+      "tag": "0102_big_dust",
+      "breakpoints": true
     }
   ]
 }

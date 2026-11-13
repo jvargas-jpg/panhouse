@@ -804,8 +804,8 @@ export function DecisionesPage() {
                   {d.requestMessage && <p>{d.requestMessage}</p>}
                   <p className="jd-ask-meta">
                     Solicitado por {d.requestedByNombre} ·{' '}
-                    {d.requestedByRole === 'soporte_editorial'
-                      ? 'Soporte Editorial'
+                    {d.requestedByRole === 'validador'
+                      ? 'Validador'
                       : 'Especialista'}{' '}
                     · {fecha(d.requestedAt)}
                   </p>

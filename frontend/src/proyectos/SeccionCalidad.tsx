@@ -147,7 +147,7 @@ function FaseRow({ proyectoId, fase, puedeEditar }: { proyectoId: string; fase: 
   );
 }
 
-// Sección 5, dueño soporte_editorial. Renombrado a componente privado:
+// Sección 5, dueño validador. Renombrado a componente privado:
 // ver el wrapper SeccionCalidad al final del archivo, que monta esto
 // como vista "Micro" debajo del panel de control agregado (Macro).
 function ContenidoCalidadMicro({

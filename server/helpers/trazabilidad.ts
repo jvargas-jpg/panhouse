@@ -244,7 +244,7 @@ export async function listarProyectosPendientesDiseno(): Promise<ProyectoPendien
 }
 
 // "Proyectos pendientes de calidad" — pantalla de inicio de
-// soporte_editorial. Pendiente = todavía sin ninguna fase registrada.
+// validador. Pendiente = todavía sin ninguna fase registrada.
 export async function listarProyectosPendientesCalidad(): Promise<ProyectoPendienteSeccion1[]> {
   const idsConFases = await idsDeFichaConFasesDeCalidad();
   return listarProyectosPendientesSeccion1(idsConFases.length > 0 ? notInArray(fichasTrazabilidad.id, idsConFases) : undefined);

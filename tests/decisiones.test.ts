@@ -653,7 +653,7 @@ describe('Jefatura · Decisiones', () => {
 
   it('colección inconsistente: Soporte Editorial escala, crea UNA decisión idempotente, no cambia el checklist ni el owner RRPP', async () => {
     const disenador = await crearUsuario('disenador');
-    const soporte = await crearUsuario('soporte_editorial');
+    const soporte = await crearUsuario('validador');
     const cookieDisenador = await login(disenador);
     const cookieSoporte = await login(soporte);
     const pDiseno = await crearProyectoDePrueba({

@@ -23,6 +23,7 @@ export interface ProcesoProyecto {
   motivoNoIniciado?: string;
 }
 export interface ProjectCommandCenter {
+  guide?: import('./projectGuide.js').ProjectGuide;
   preparacion: PreparacionProyecto;
   contextoPrevio: CampoFicha[];
   atencion: { id: string; titulo: string; detalle: string; proceso?: string; href?: string; editarContexto?: boolean }[];

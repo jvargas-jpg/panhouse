@@ -1,7 +1,8 @@
 import { requestAuthorFinalReview } from './authorFinalReview.js';
-import { and, desc, eq, isNotNull } from 'drizzle-orm';
+import { queueExternalDesignNotice } from './designExternalMail.js';
+import { and, desc, eq, isNull, isNotNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { autores, colecciones, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, fichasTrazabilidad, notificaciones, proyectos, users, workItems, type Rol } from '../db/schema/index.js';
+import { autores, colecciones, direccionesCreativas, disenos, disenoVersiones, fichaCalidadFases, fichasTrazabilidad, notificaciones, projectAssignments, proyectos, users, workItems, type Rol } from '../db/schema/index.js';
 import { registrarEvento, type AccionAuditoria } from './auditLog.js';
 import { obtenerEspecialistaActual } from './carga.js';
 import { crearDecisionColeccionInconsistente } from './decisiones.js';
@@ -26,7 +27,9 @@ async function conRonda<T>(id: string, actor: Actor, rol: Rol, fn: (tx: Tx, q: t
     if (rol === 'especialista') exigir(await obtenerEspecialistaActual(p.id,p.especialistaId,tx) === actor.id, 'Proyecto de otro especialista', 403);
     const [q] = await tx.select().from(fichaCalidadFases).where(eq(fichaCalidadFases.id, id));
     exigir(q?.workItemId && q.disenoVersionId, 'Ronda histórica: use la consulta legacy', 400);
-    if (rol === 'soporte_editorial') {
+    if (rol === 'validador') {
+      const [assignment] = await tx.select().from(projectAssignments).where(and(eq(projectAssignments.workItemId,q.workItemId),eq(projectAssignments.tipo,'validador'),isNull(projectAssignments.finalizadoEn)));
+      exigir(assignment?.usuarioId===actor.id,'Validación no encontrada',404);
       exigir(!['pausado', 'retirado', 'culminado'].includes(p.estado), 'El proyecto no admite acciones de validación en su estado actual');
       const [work] = await tx.select().from(workItems).where(eq(workItems.id, q.workItemId));
       exigir(work && !['bloqueado', 'cancelado'].includes(work.estado), 'La ronda está bloqueada o cancelada');
@@ -53,7 +56,7 @@ async function abrirAjustes(tx: Tx, d: typeof disenos.$inferSelect, v: typeof di
   await tx.update(workItems).set({ fechaFinReal: null }).where(eq(workItems.id, d.workItemId));
 }
 export async function iniciarCalidad(id: string, dueAt: string | undefined, actor: Actor) {
-  return conRonda(id, actor, 'soporte_editorial', async (tx, q, _v, _d, p) => {
+  return conRonda(id, actor, 'validador', async (tx, q, _v, _d, p) => {
     if (q.iniciadoEn) { exigir(!dueAt || q.dueAt?.getTime() === new Date(dueAt).getTime(), 'El plazo ya fue registrado'); return { ok: true }; }
     exigir(!q.revisadoEn, 'Revisión ya resuelta');
     await tx.update(fichaCalidadFases).set({ iniciadoEn: new Date(), iniciadoPorId: actor.id, dueAt: dueAt ? new Date(dueAt) : q.dueAt }).where(eq(fichaCalidadFases.id, id));
@@ -72,7 +75,7 @@ export async function iniciarCalidad(id: string, dueAt: string | undefined, acto
 // de la ronda -- es una señal PARALELA a Jefatura, nunca le cambia el
 // campo de RRPP desde acá (RRPP sigue siendo el owner del dato).
 export async function escalarColeccionInconsistente(id: string, motivo: string, actor: Actor) {
-  return conRonda(id, actor, 'soporte_editorial', async (tx, q, _v, _d, p) => {
+  return conRonda(id, actor, 'validador', async (tx, q, _v, _d, p) => {
     exigir(q.numeroFase===1 || q.numeroFase===3,'La colección se revisa en F1 o Revisión final',400);
     exigir(!q.revisadoEn && !['retirado','culminado'].includes(p.estado),'Esta ronda ya no admite una escalación',409);
     const [coleccion] = p.coleccionId ? await tx.select({ nombre: colecciones.nombre }).from(colecciones).where(eq(colecciones.id, p.coleccionId)) : [undefined];
@@ -97,39 +100,7 @@ function listaNormalizada(lista: ResultadoCalidad['checklist']) {
   return JSON.stringify(Object.fromEntries(Object.entries(lista ?? {}).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => [k, { cumple: v.cumple, observaciones: v.observaciones ?? '' }])));
 }
 export async function resolverCalidad(id: string, datos: ResultadoCalidad, actor: Actor) {
-  return conRonda(id, actor, 'soporte_editorial', async (tx, q, v, d, p) => {
-    if (q.revisadoEn) {
-      exigir(q.aprobado === datos.aprobar && q.cantidadComentarios === datos.cantidadComentarios && q.comentariosUrl === (datos.comentariosUrl ?? null)
-        && q.observaciones === (datos.observaciones ?? null) && q.cantidadPaginas === (datos.cantidadPaginas ?? null)
-        && q.cambiosPendientesPorAplicar === (datos.cambiosPendientesPorAplicar ?? null) && q.cambiosNuevosSugeridos === (datos.cambiosNuevosSugeridos ?? null)
-        && listaNormalizada(q.checklist ?? undefined) === listaNormalizada(datos.checklist), 'La ronda ya tiene otro resultado');
-      return { ok: true };
-    }
-    const criterios = criteriosDeFase(q.numeroFase);
-    exigir(criterios.every(c => datos.checklist && Object.hasOwn(datos.checklist, c)), 'Complete los criterios de esta fase o marque No aplica', 400);
-    if (q.numeroFase === 2 || q.numeroFase === 4) {
-      exigir(datos.cambiosPendientesPorAplicar !== undefined && datos.cambiosNuevosSugeridos !== undefined, 'Registre cambios pendientes y nuevos', 400);
-      exigir(datos.cantidadComentarios === datos.cambiosPendientesPorAplicar + datos.cambiosNuevosSugeridos, 'El total debe coincidir con pendientes más nuevos', 400);
-    }
-    if (datos.aprobar) {
-      exigir(datos.cantidadComentarios === 0 && !Object.values(datos.checklist ?? {}).some(c => c.cumple === false), 'No se aprueba una versión con comentarios o criterios pendientes');
-    } else exigir(datos.cantidadComentarios > 0 && datos.comentariosUrl, 'Adjunte el PDF comentado y su cantidad de comentarios', 400);
-    const [persona] = await tx.select({ nombre: users.nombre }).from(users).where(eq(users.id, actor.id));
-    const ahora = new Date();
-    await tx.update(fichaCalidadFases).set({ aprobado: datos.aprobar, iniciadoEn: q.iniciadoEn ?? ahora, iniciadoPorId: q.iniciadoPorId ?? actor.id, revisadoEn: ahora, revisadoPorId: actor.id,
-      nombreQuienRecibe: persona?.nombre, cantidadComentarios: datos.cantidadComentarios, comentariosUrl: datos.comentariosUrl ?? null, observaciones: datos.observaciones ?? null,
-      cantidadPaginas: datos.cantidadPaginas ?? null, cambiosPendientesPorAplicar: datos.cambiosPendientesPorAplicar ?? null, cambiosNuevosSugeridos: datos.cambiosNuevosSugeridos ?? null,
-      checklist: datos.checklist ?? null,
-    }).where(eq(fichaCalidadFases.id, q.id));
-    await transicionarWorkItemPorId(tx, q.workItemId!, 'completado');
-    if (!datos.aprobar) {
-      await abrirAjustes(tx, d, v, `Calidad F${q.numeroFase}.${q.ronda}: ${datos.observaciones ?? 'Aplicar comentarios'}`, datos.cantidadComentarios, datos.comentariosUrl!);
-      await aviso(tx, p.id, 'disenador', p.disenadorId, 'Calidad devolvió la versión con comentarios: aplica los ajustes y entrega una nueva versión.');
-    }
-    await aviso(tx, p.id, 'especialista', p.especialistaId, datos.aprobar ? (q.numeroFase >= 3 ? 'Revisión final de tripa aprobada: revisa el estado de cubierta para solicitar el paquete final.' : 'Versión aprobada por Calidad: registra envío al autor.') : 'Calidad entregó comentarios para Diseño.');
-    await evento(tx, q, p.id, actor.id, 'CALIDAD_REVISADA', { aprobar: datos.aprobar, cantidadComentarios: datos.cantidadComentarios, comentariosUrl: datos.comentariosUrl });
-    return { ok: true };
-  });
+  throw new ErrorDiseno(410, 'Usa las decisiones específicas de Validaciones');
 }
 export interface CoordinacionCalidad {
   accion: 'enviar_autor' | 'feedback_autor' | 'aprobar_autor' | 'revision_final';
@@ -151,6 +122,7 @@ export async function coordinarCalidad(id: string, datos: CoordinacionCalidad, a
       exigir(datos.feedback?.trim() && datos.comentariosUrl && (datos.cantidadComentarios ?? 0) > 0, 'Registre feedback, PDF comentado y total', 400);
       await abrirAjustes(tx, d, v, texto, datos.cantidadComentarios!, datos.comentariosUrl!);
       await aviso(tx, p.id, 'disenador', p.disenadorId, 'Feedback del autor pendiente: aplicar y entregar nueva versión para validación.');
+      await queueExternalDesignNotice(tx, d, v, p.tituloDefinitivo ?? p.codigo, `${datos.feedback}\n${datos.comentariosUrl}`);
     } else if (datos.accion === 'aprobar_autor') {
       if (v.aprobadaAutorEn) return { ok: true };
       exigir(v.enviadaAutorEn && !v.feedbackEn, 'Falta envío al autor o hay feedback pendiente');
@@ -161,12 +133,12 @@ export async function coordinarCalidad(id: string, datos: CoordinacionCalidad, a
       if (retry) { exigir(retry.numerosLegalesUrl === (datos.numerosLegalesUrl ?? null), 'La revisión final ya tiene otra evidencia legal'); return { ok: true }; }
       await requestAuthorFinalReview(tx, q, v, p.id, datos.numerosLegalesUrl);
     }
-    await evento(tx, q, p.id, actor.id, ({ enviar_autor: 'CALIDAD_ENVIADA_AUTOR', feedback_autor: 'CALIDAD_FEEDBACK_AUTOR', aprobar_autor: 'CALIDAD_APROBADA_AUTOR', revision_final: 'CALIDAD_REVISION_FINAL_SOLICITADA' } as const)[datos.accion]);
+    if (datos.accion !== 'revision_final') await evento(tx, q, p.id, actor.id, ({ enviar_autor: 'CALIDAD_ENVIADA_AUTOR', feedback_autor: 'CALIDAD_FEEDBACK_AUTOR', aprobar_autor: 'CALIDAD_APROBADA_AUTOR' } as const)[datos.accion]);
     return { ok: true };
   }, datos.accion === 'revision_final');
 }
 export async function listarCalidad(actor: Actor, proyectoId?: string) {
-  exigir(['soporte_editorial', 'especialista', 'jefe_area', 'disenador'].includes(actor.rol), 'Rol no autorizado', 403);
+  exigir(['validador', 'especialista', 'jefe_area', 'disenador'].includes(actor.rol), 'Rol no autorizado', 403);
   if (proyectoId) {
     const [p] = await db.select().from(proyectos).where(eq(proyectos.id, proyectoId)); exigir(p, 'Proyecto no encontrado', 404);
     if (actor.rol === 'especialista' || actor.rol === 'disenador') exigir((actor.rol === 'especialista' ? p.especialistaId : p.disenadorId) === actor.id, 'Proyecto ajeno', 403);

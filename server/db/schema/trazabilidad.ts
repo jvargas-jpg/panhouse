@@ -509,8 +509,8 @@ export const fichaCalidadFases = pgTable(
     fecha: date('fecha'),
     aprobado: boolean('aprobado'),
     // 5E: runtime de la MISMA fase/ronda; nullable para conservar históricos.
-    // Bandeja compartida del rol soporte_editorial (decisión 8/10/2026).
-    // revisadoPorId registra el hecho de revisión, no una asignación.
+    // Asignación individual: project_assignments tipo validador, scope work item.
+    // revisadoPorId conserva el actor de la decisión; no sustituye la asignación.
     workItemId: uuid('work_item_id').unique().references(() => workItems.id, { onDelete: 'cascade' }),
     disenoVersionId: uuid('diseno_version_id').references((): AnyPgColumn => disenoVersiones.id),
     solicitadoEn: timestamp('solicitado_en', { withTimezone: true }),
@@ -519,24 +519,18 @@ export const fichaCalidadFases = pgTable(
     iniciadoPorId: uuid('iniciado_por_id').references(() => users.id),
     revisadoEn: timestamp('revisado_en', { withTimezone: true }),
     revisadoPorId: uuid('revisado_por_id').references(() => users.id),
+    validatorRequestedAt: timestamp('validator_requested_at', { withTimezone: true }),
+    validatorRequestedById: uuid('validator_requested_by_id').references(() => users.id),
+    commentsUpload: jsonb('comments_upload').$type<{ fileId: string; revisionId: string; name: string; folderKey: string; assignmentId: string; sha256: string }>(),
+    decisionKey: uuid('decision_key'),
     comentariosUrl: text('comentarios_url'),
     cantidadComentarios: integer('cantidad_comentarios'),
     observaciones: text('observaciones'),
     numerosLegalesUrl: text('numeros_legales_url'),
     checklist: jsonb('checklist').$type<Record<string, { cumple: boolean | null; observaciones?: string }>>(),
 
-    // Fase 5 (auditoría diferencial contra fuentes reales — ver
-    // MIREYA JOSEFINA OLIVEROS SEQUERA - FICHA DE TRAZABILIDAD.xlsx,
-    // hoja "CALIDAD EDITORIAL"): cada fase/ronda real registra "Nombre
-    // de quien recibe" (el validador de soporte_editorial que hizo ESA
-    // ronda) y "Cantidad de páginas". Texto libre, no FK a `usuarios` a
-    // propósito — hoy `soporte_editorial` es acceso por rol, no
-    // asignación individual (ver docs/arquitectura/
-    // 11-fase2-modelo-canonico.md §E); forzar una FK inventaría una
-    // asignación formal que el negocio no pidió todavía. Resuelve
-    // parcialmente el PENDIENTE de `validadorId` marcado en esa misma
-    // sección — queda como texto, no como asignación formal, hasta que
-    // el negocio confirme que lo necesita como tal.
+    // Nombre histórico de quien decidió; la asignación actual reside únicamente
+    // en project_assignments. Se conserva el texto de revisiones legacy.
     nombreQuienRecibe: text('nombre_quien_recibe'),
     cantidadPaginas: integer('cantidad_paginas'),
     // "Cambios por verificar" / "Cambios pendientes por aplicar" /

@@ -1,3 +1,4 @@
+import { withCorporateDrive, type CorporateDriveOperation } from '../modules/integrations/google-drive/corporate.js';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { capitulos, editorialBlockers, editorialDeliveries, notificaciones, pausas, projectDriveWorkspaces, workItems } from '../db/schema/index.js';
@@ -27,10 +28,10 @@ async function assertExecution(tx: Tx, item: typeof workItems.$inferSelect, proj
   return null;
 }
 
-export async function registrarEntregaEditorial(workItemId:string, driveUrl:string, actorId:string, observaciones?:string) {
+export async function registrarEntregaEditorial(workItemId:string, driveUrl:string, actorId:string, observaciones?:string, operate:CorporateDriveOperation=withCorporateDrive) {
   await editorWorkProject(workItemId,actorId);
   await db.transaction(async tx=>{const {item,project}=await lockEditorWork(tx,workItemId,actorId);if(item.estado!=='completado')await assertExecution(tx,item,project);});
-  const verified = await validateEditorialDriveFile(workItemId,actorId,driveUrl);
+  const verified = await validateEditorialDriveFile(workItemId,actorId,driveUrl,operate);
   return db.transaction(async tx => {
     const {item,project} = await lockEditorWork(tx,workItemId,actorId);
     const [ws] = await tx.select().from(projectDriveWorkspaces).where(eq(projectDriveWorkspaces.id,verified.workspaceId));

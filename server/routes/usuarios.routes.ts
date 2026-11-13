@@ -14,7 +14,7 @@ export async function usuariosRoutes(app: FastifyInstance) {
     {
       preHandler: [
         requireAuth,
-        requireRole('jefe_area', 'especialista', 'rrpp', 'disenador', 'lider_creativo', 'soporte_editorial', 'soporte_digital'),
+        requireRole('jefe_area', 'especialista', 'rrpp', 'disenador', 'lider_creativo', 'validador', 'soporte_digital'),
       ],
     },
     async (_request, reply) => {

@@ -431,7 +431,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
           'comercial',
           'disenador',
           'lider_creativo',
-          'soporte_editorial',
+          'validador',
           'soporte_digital',
           'impresion',
           'distribucion',
@@ -493,8 +493,8 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
     },
   );
 
-  // "Notificación interna" de soporte_editorial: pantalla de inicio.
-  app.get('/pendientes/calidad', { preHandler: [requireAuth, requireRole('soporte_editorial')] }, async (_request, reply) => {
+  // "Notificación interna" de validador: pantalla de inicio.
+  app.get('/pendientes/calidad', { preHandler: [requireAuth, requireRole('validador')] }, async (_request, reply) => {
     const proyectos = await listarProyectosPendientesCalidad();
     return reply.send({ proyectos });
   });
@@ -791,11 +791,11 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
   // especialista dueño del proyecto O el analista de calidad asignado —
   // usa verificarAccesoControlCalidad (no el verificarAccesoAProyecto
   // compartido, ver el comentario en helpers/proyectos.ts) porque
-  // soporte_editorial mantiene acceso de grupo en el resto de esta
+  // validador mantiene acceso de grupo en el resto de esta
   // sección.
   app.patch(
     '/:proyectoId/calidad-control',
-    { preHandler: [requireAuth, requireRole('especialista', 'soporte_editorial')] },
+    { preHandler: [requireAuth, requireRole('especialista', 'validador')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -818,7 +818,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.post(
     '/:proyectoId/calidad/fases',
-    { preHandler: [requireAuth, requireRole('soporte_editorial')] },
+    { preHandler: [requireAuth, requireRole('validador')] },
     async (request, reply) => {
       const params = parseOrReply(proyectoIdParamSchema, request.params, reply);
       if (!params) return;
@@ -832,7 +832,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.patch(
     '/:proyectoId/calidad/fases/:faseId',
-    { preHandler: [requireAuth, requireRole('soporte_editorial')] },
+    { preHandler: [requireAuth, requireRole('validador')] },
     async (request, reply) => {
       const params = parseOrReply(calidadFaseParamsSchema, request.params, reply);
       if (!params) return;
@@ -849,7 +849,7 @@ export async function trazabilidadRoutes(app: FastifyInstance) {
 
   app.delete(
     '/:proyectoId/calidad/fases/:faseId',
-    { preHandler: [requireAuth, requireRole('soporte_editorial')] },
+    { preHandler: [requireAuth, requireRole('validador')] },
     async (request, reply) => {
       const params = parseOrReply(calidadFaseParamsSchema, request.params, reply);
       if (!params) return;

@@ -1,39 +1,10 @@
 import { pgEnum } from 'drizzle-orm/pg-core';
 
-export const ROLES = [
-  'comercial',
-  'rrpp',
-  'jefe_area',
-  'especialista',
-  'jefe_edicion',
-  'editor',
-  'lider_creativo',
-  'disenador',
-  // Fase 5 (5B Corrección) — rol de login para correctores INTERNOS
-  // (ver comentario de `correcciones.correctorId`/`freelance` en
-  // server/db/schema/correcciones.ts): un corrector freelance real
-  // nunca tiene cuenta, así que este rol solo lo usa el roster corto de
-  // correctores internos (Matriz: Francis/Paola/Carolina/etc.) que sí
-  // necesitan "Mis Correcciones". No existía como rol de login hasta
-  // ahora — ya existía como `proposito` de project_assignments (ver el
-  // comentario ahí), que es un concepto distinto (quién corrigió ESTA
-  // ronda, con o sin cuenta).
-  'corrector',
-  'soporte_editorial',
-  'soporte_digital',
-  'impresion',
-  // Dueño de la sección DISTRIBUCIÓN de la Ficha; RRPP solo deriva oportunidades.
-  'distribucion',
-  'cobranzas',
-  'talento_humano',
-  'direccion',
-  'admin',
-  'autor',
-] as const;
+export { ROLES, type Rol } from '../../../shared/roles.js';
+import { STORAGE_ROLES } from '../roleCompatibility.js';
 
-export type Rol = (typeof ROLES)[number];
-
-export const rolEnum = pgEnum('rol', ROLES);
+// Historical PostgreSQL enum, deliberately unchanged.
+export const rolEnum = pgEnum('rol', STORAGE_ROLES);
 
 export const ESTADOS_PROYECTO = [
   'en_proceso',
@@ -316,14 +287,8 @@ export const DECISIONES_PORTADA = ['pendiente', 'aprobada', 'rechazada'] as cons
 
 // --- Fase 2 (Foundation): project_assignments ---------------------------
 //
-// Deliberadamente NO reutiliza `rolEnum` (roles de login/RBAC): un
-// "corrector" o "validador" acá es un propósito de asignación, no
-// necesariamente alguien con cuenta de sistema con ese rol — hoy
-// `corrector` ni siquiera existe en ROLES, y `soporte_editorial` es el
-// rol de login de quien valida, pero la asignación puntual a una ronda
-// de calidad es un concepto distinto (quién validó ESTA ronda, no quién
-// tiene el rol en general). Mantenerlos separados evita que un cambio
-// futuro en RBAC arrastre sin querer la semántica de asignaciones.
+// Assignment purpose is independent of account role. A Validador is authenticated
+// once and may receive individual work in either confirmed context.
 export const TIPOS_ASIGNACION = [
   'especialista',
   'jefe_area',

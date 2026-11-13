@@ -19,7 +19,7 @@ describe('GET /api/seguimiento', () => {
 
     const proyecto = await crearProyectoDePrueba();
     await db.update(proyectos).set({notificadoJefatura:true}).where(eq(proyectos.id,proyecto.id));
-    const analista = await crearUsuario('soporte_editorial');
+    const analista = await crearUsuario('validador');
     await crearRegistroSeguimiento({ proyectoId: proyecto.id, analistaId: analista.id, estatus: 'Entregado' });
     const cookie = await registrarYLoguear(app, 'jefe_area');
 

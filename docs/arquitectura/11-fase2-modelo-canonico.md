@@ -1,3 +1,5 @@
+> Actualización 12/11/2026: las decisiones históricas de bandeja compartida y cuentas de Diseño/Corrección quedan sustituidas por [Validadores](../auditoria/38-validadores.md). La asignación individual de Jefatura y las entregas externas de Drive son la política vigente.
+
 # Documento 11 — Fase 2: Modelo Canónico y Workflow Foundation
 **Sistema:** PanHouse Gestor Editorial
 **Fecha:** Octubre 2026

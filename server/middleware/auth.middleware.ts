@@ -42,6 +42,11 @@ export async function enforceSessionContext(request:FastifyRequest,reply:Fastify
  const c=await sessionContext(token);request.authChecked=true;if(!c)return;
  request.user=c.user;request.realAdmin=c.realAdmin;request.sessionPublicId=c.publicId;
  const path=request.url.split('?')[0];
+ if(c.user.rol==='validador' && !(path==='/api/validaciones'||path?.startsWith('/api/validaciones/')) && !(path==='/api/notificaciones'||path?.startsWith('/api/notificaciones/')) && !['/api/auth/me','/api/auth/logout','/api/admin/view-as/stop'].includes(path!)) {
+  await reply.code(403).send({error:'Accede a tus asignaciones desde Validaciones'});return;
+ }
+ if(['disenador','corrector'].includes(c.user.rol)) {await reply.code(403).send({error:'Este servicio trabaja externamente mediante Drive'});return;}
+
  if(c.user.rol==='autor'&&!(c.realAdmin&&path==='/api/admin/view-as/stop')&&!path?.startsWith('/api/autor/')&&!['/api/autor','/api/auth/me','/api/auth/logout','/api/auth/login'].includes(path!)){
   await reply.code(403).send({error:'Accede a esta información desde el Portal del Autor'});return;
  }

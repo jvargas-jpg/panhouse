@@ -80,7 +80,7 @@ const [jefe, especialista, corrector, otro, soporte] = await db
       'especialista',
       'corrector',
       'corrector',
-      'soporte_editorial',
+      'validador',
     ].map((rol, i) => ({
       rol: rol as typeof users.$inferInsert.rol,
       email: `seguimiento-qa-${i}@panhouse.test`,

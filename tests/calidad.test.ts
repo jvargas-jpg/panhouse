@@ -35,7 +35,7 @@ describe('5E Calidad — rondas canónicas y bandeja compartida', () => {
   }
   beforeEach(async () => {
     await limpiarBaseDeDatos(); app = buildApp(); await app.ready();
-    especialista = await crearUsuario('especialista'); disenador = await crearUsuario('disenador'); soporte = await crearUsuario('soporte_editorial');
+    especialista = await crearUsuario('especialista'); disenador = await crearUsuario('disenador'); soporte = await crearUsuario('validador');
     p = await crearProyectoDePrueba({ especialistaId: especialista.id, disenadorId: disenador.id });
     await db.insert(fichasTrazabilidad).values({ proyectoId: p.id });
     const [cw] = await db.insert(workItems).values({ proyectoId: p.id, tipo: 'direccion_creativa', estado: 'completado' }).returning();
@@ -47,7 +47,7 @@ describe('5E Calidad — rondas canónicas y bandeja compartida', () => {
   });
   afterEach(async () => { await app.close(); });
   it('handoff consume versión y tripa canónicas; bandeja compartida permite iniciar y revisar por personas distintas', async () => {
-    const otro = await crearUsuario('soporte_editorial'); const cookie = await login(otro);
+    const otro = await crearUsuario('validador'); const cookie = await login(otro);
     const q = await call('GET', '/calidad/bandeja', undefined, cookie);
     expect(q.body.rondas[0]).toMatchObject({ id: faseId, disenoVersionId: versionId, fuenteUrl: 'https://drive.google.com/tripa', numeroFase: 1, ronda: 1, activa: true });
     const body = { dueAt: '2026-12-01T10:00:00-04:00' };

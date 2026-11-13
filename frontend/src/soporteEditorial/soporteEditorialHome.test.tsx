@@ -10,7 +10,7 @@ const item: ValidationItem = { faseId: 'fase-1', workItemId: 'work-1', projectId
 const dashboard: SoporteEditorialDashboard = { today: '2026-10-27', summary: { active: 1, dueSoon: 1, overdue: 0, newRounds: 1 }, attentionItems: [item], upcomingDeadlines: [item], recentActivity: [{ id: 'fase-1', label: 'Nueva ronda disponible', projectTitle: item.title, at: item.requestedAt }] };
 function render({ data = dashboard, error = false, pending = false }: { data?: SoporteEditorialDashboard; error?: boolean; pending?: boolean } = {}) {
   const cache = new QueryClient({ defaultOptions: { queries: { retry: false, retryOnMount: false, staleTime: Infinity, gcTime: Infinity } } });
-  cache.setQueryData(['auth', 'me'], { id: 'soporte-1', rol: 'soporte_editorial', nombre: 'Valentina Cruz', email: 'soporte@qa.test' });
+  cache.setQueryData(['auth', 'me'], { id: 'soporte-1', rol: 'validador', nombre: 'Valentina Cruz', email: 'soporte@qa.test' });
   if (!pending) cache.setQueryData(['soporte-editorial', 'inicio'], data);
   if (error) cache.getQueryCache().build(cache, { queryKey: ['soporte-editorial', 'inicio'] }).setState({ status: 'error', error: Error('QA error'), fetchStatus: 'idle' });
   const html = renderToStaticMarkup(<QueryClientProvider client={cache}><StaticRouter location="/"><SoporteEditorialHomePage /></StaticRouter></QueryClientProvider>); cache.clear(); return html;

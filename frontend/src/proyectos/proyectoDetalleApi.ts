@@ -403,7 +403,7 @@ export function eliminarPropuestaDiseno(proyectoId: string, propuestaId: string)
 
 // Sección 5 (parte 2), dueño doble: el especialista dueño del proyecto
 // o el analista de calidad asignado (ver PATCH /:proyectoId/calidad-control)
-// — a diferencia de las fases de abajo, que son de soporte_editorial
+// — a diferencia de las fases de abajo, que son de validador
 // como grupo (sin chequeo de dueño individual).
 export interface DatosSeccionCalidadControl {
   calidadEstatus?: string | null;
@@ -420,7 +420,7 @@ export function actualizarSeccionCalidadControl(proyectoId: string, datos: Datos
   });
 }
 
-// Sección 5, dueño soporte_editorial.
+// Sección 5, dueño validador.
 export interface DatosFaseCalidad {
   numeroFase: number;
   pdfUrl?: string | null;

@@ -8,6 +8,23 @@ export interface DatosNuevaNotificacion {
   usuarioDestinoId?: string | null;
   mensaje: string;
 }
+function validatorActionable(userId?: string) {
+  if (!userId) return sql`false`;
+  return sql`(exists (select 1 from ficha_calidad_fases q
+    join project_assignments a on a.work_item_id=q.work_item_id and a.tipo='validador' and a.finalizado_en is null
+    join diseno_versiones v on v.id=q.diseno_version_id and v.calidad_fase_id=q.id
+    where a.usuario_id=${userId}::uuid and q.revisado_en is null
+      and ${notificaciones.targetPath}='/?validacion='||q.id::text)
+    or exists (select 1 from work_items w
+      join project_assignments a on a.work_item_id=w.id and a.tipo='validador' and a.finalizado_en is null
+      join diseno_versiones v on v.id::text=w.business_key
+      join proyectos p on p.id=w.proyecto_id
+      where w.tipo='validacion_cubierta' and w.estado in ('pendiente','en_progreso')
+        and a.usuario_id=${userId}::uuid and v.feedback_en is null
+        and p.estado not in ('pausado','stand_by','retirado','culminado')
+        and not exists (select 1 from diseno_versiones newer where newer.diseno_id=v.diseno_id and newer.numero>v.numero)
+        and ${notificaciones.targetPath}='/?validacion='||w.id::text))`;
+}
 
 // No la usa crearProyecto (server/helpers/proyectos.ts) — esa inserta
 // directo con tx.insert(notificaciones) dentro de su propia transacción
@@ -30,8 +47,8 @@ export async function crearNotificacion(datos: DatosNuevaNotificacion) {
 // acotadas a otra persona del mismo rol.
 export async function listarNotificacionesPorRol(rolDestino: string, usuarioId?: string) {
   const filtroRol = eq(notificaciones.rolDestino, rolDestino);
-  const condicion = usuarioId
-    ? and(filtroRol, or(isNull(notificaciones.usuarioDestinoId), eq(notificaciones.usuarioDestinoId, usuarioId)))
+  const condicion = rolDestino === 'validador' ? and(filtroRol, usuarioId ? eq(notificaciones.usuarioDestinoId, usuarioId) : sql`false`, validatorActionable(usuarioId)) : usuarioId
+    ? and(filtroRol, rolDestino === 'validador' ? eq(notificaciones.usuarioDestinoId, usuarioId) : or(isNull(notificaciones.usuarioDestinoId), eq(notificaciones.usuarioDestinoId, usuarioId)))
     : filtroRol;
   if(rolDestino==='jefe_edicion')return db.select({...getTableColumns(notificaciones),editorialRequestId:sql<string|null>`(
     SELECT wi.id FROM work_items wi JOIN proyectos p ON p.id=wi.proyecto_id
@@ -72,8 +89,8 @@ export async function existeNotificacionNoLeida(datos: { proyectoId: string; rol
 // listarNotificacionesPorRol.
 export async function marcarNotificacionLeida(id: string, rolDestino: string, usuarioId?: string) {
   const condicionBase = and(eq(notificaciones.id, id), eq(notificaciones.rolDestino, rolDestino));
-  const condicion = usuarioId
-    ? and(condicionBase, or(isNull(notificaciones.usuarioDestinoId), eq(notificaciones.usuarioDestinoId, usuarioId)))
+  const condicion = rolDestino === 'validador' ? and(condicionBase, usuarioId ? eq(notificaciones.usuarioDestinoId, usuarioId) : sql`false`, validatorActionable(usuarioId)) : usuarioId
+    ? and(condicionBase, rolDestino === 'validador' ? eq(notificaciones.usuarioDestinoId, usuarioId) : or(isNull(notificaciones.usuarioDestinoId), eq(notificaciones.usuarioDestinoId, usuarioId)))
     : condicionBase;
   const [fila] = await db.update(notificaciones).set({ leido: true }).where(condicion).returning();
   return fila;

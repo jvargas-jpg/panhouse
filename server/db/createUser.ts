@@ -34,6 +34,8 @@ async function main() {
     process.exit(1);
   }
 
+  if (['disenador','corrector'].includes(rol)) { console.error('Diseño y Corrección son servicios externos, sin cuenta operativa.'); process.exit(1); }
+
   if (autorId && rol !== 'autor') {
     console.error(`autorId solo aplica con rol 'autor' (se recibió rol "${rol}").`);
     process.exit(1);

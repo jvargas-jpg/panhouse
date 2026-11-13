@@ -35,3 +35,5 @@ export * from './correccionBlockers.js';
 export * from './solicitudArchivos.js';
 export * from './administracion.js';
 export * from './authorPortal.js';
+
+export * from './validationDelivery.js';

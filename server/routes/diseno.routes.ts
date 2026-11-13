@@ -21,7 +21,7 @@ export async function disenoRoutes(app: FastifyInstance) {
   });
   app.get('/mios', { preHandler: [requireAuth, requireRole('disenador')] }, async (req) => ({ trabajos: await listarDisenos(req.user!) }));
   app.get('/revisiones', { preHandler: [requireAuth, requireRole('lider_creativo', 'jefe_edicion')] }, async req => ({ trabajos: await listarDisenos(req.user!, undefined, true) }));
-  app.get('/proyecto/:id', { preHandler: [requireAuth, requireRole('especialista', 'disenador', 'jefe_area', 'soporte_editorial')] }, async (req, reply) => {
+  app.get('/proyecto/:id', { preHandler: [requireAuth, requireRole('especialista', 'disenador', 'jefe_area', 'validador')] }, async (req, reply) => {
     const p = parseOrReply(id, req.params, reply); if (!p) return;
     return { trabajos: await listarDisenos(req.user!, p.id) };
   });

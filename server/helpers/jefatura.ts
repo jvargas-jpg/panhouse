@@ -173,6 +173,7 @@ export const NOMBRES_PROCESO: Record<string, string> = {
   direccion_creativa: 'Dirección Creativa',
   diseno: 'Diseño',
   revision_interna_cubierta: 'Revisión de cubierta',
+  validacion_cubierta: 'Soporte Editorial · Revisión de cubierta',
   calidad: 'Calidad',
   validacion: 'Validación',
   fase_calidad_1: 'Fase de Calidad 1',
@@ -188,7 +189,8 @@ const destinos: Record<string, string> = {
   direccion_creativa: 'Jefatura',
   diseno: 'Especialista',
   revision_interna_cubierta: 'Jefe de Edición',
-  calidad: 'Soporte editorial',
+  calidad: 'Validador',
+  validacion_cubierta: 'Validador',
 };
 
 export async function obtenerDashboardJefatura(

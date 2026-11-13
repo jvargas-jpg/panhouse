@@ -1,10 +1,10 @@
+import { ExternalDesignProvider } from '../validaciones/ValidationManagement';
 import { StatusBadge } from '../design-system/components';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
 import { useMe } from '../auth/useAuth';
-import { fetchDisenadoresCarga } from './proyectoDetalleApi';
 import { fetchCorreccionesDeProyecto } from './correccionesApi';
-import { asignarDiseno, coordinarDiseno, entregarDiseno, fetchDisenos, revisarCubierta, solicitarDiseno, type TrabajoDiseno, type TipoDiseno } from './disenoApi';
+import { coordinarDiseno, entregarDiseno, fetchDisenos, revisarCubierta, solicitarDiseno, type TrabajoDiseno, type TipoDiseno } from './disenoApi';
 const etiquetas = { muestra_diagramacion: 'Muestra de diagramación', diagramacion: 'Diagramación completa', cubierta_extendida: 'Cubierta extendida' };
 const campo = 'min-w-0 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-tinta';
 const boton = 'ph-button ph-button-primary disabled:opacity-50';
@@ -17,12 +17,9 @@ export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: Tra
   const [key, setKey] = useState(() => crypto.randomUUID());
   const [feedback, setFeedback] = useState('');
   const [comentarios, setComentarios] = useState(0);
-  const [disenador, setDisenador] = useState(t.disenadorId ?? '');
-  const [due, setDue] = useState('');
   const [feedbackDue, setFeedbackDue] = useState('');
   const esEspecialista = user?.rol === 'especialista';
   const esDisenador = user?.rol === 'disenador';
-  const carga = useQuery({ queryKey: ['disenadores', 'carga'], queryFn: fetchDisenadoresCarga, enabled: esEspecialista });
   const v = t.versiones[0];
   const accion = useMutation({ mutationFn: (fn: () => Promise<unknown>) => fn(), onSuccess: () => { qc.invalidateQueries({ queryKey: ['diseno'] }); qc.invalidateQueries({ queryKey: ['direcciones-creativas'] }); qc.invalidateQueries({ queryKey: ['calidad'] }); qc.invalidateQueries({ queryKey: ['proyecto', t.proyectoId] }); } });
   const enviar = () => accion.mutate(async () => { await entregarDiseno(t.id, enlace, key); setKey(crypto.randomUUID()); setEnlace(''); });
@@ -32,7 +29,8 @@ export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: Tra
       <StatusBadge tone={t.plazo === 'vencido' && !t.cerradoEn ? 'danger' : undefined}>{t.cerradoEn ? 'Entregado / aprobado' : v?.feedbackEn ? 'Necesita ajustes' : t.estado.replaceAll('_', ' ')}</StatusBadge>
     </header>
     <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3"><div><dt className="text-xs text-gray-500">Vencimiento pautado</dt><dd>{fechaHora(t.dueAt)}</dd></div><div><dt className="text-xs text-gray-500">Referencia del Manual</dt><dd>{t.diasReferencia ? `${t.diasReferencia} días` : 'Requiere definición'} · calendario por confirmar</dd></div><div><dt className="text-xs text-gray-500">Versión activa</dt><dd>{v ? `V${v.numero} · ${fechaHora(v.entregadoEn)}` : 'Pendiente de entrega'}</dd></div></dl>
-    <p className="mt-3 text-sm text-gray-600">Diseñador: {t.disenadorNombre ?? 'Pendiente de asignación'}</p>
+    {esEspecialista && <ExternalDesignProvider designId={t.id} kind={t.tipo} name={t.externalProviderName} email={t.externalProviderEmail}/>}
+    <p className="mt-3 text-sm text-gray-600">Diseño aliado: {t.externalProviderName ?? t.disenadorNombre ?? 'Pendiente de configurar'}</p>
     <nav aria-label="Fuentes del trabajo" className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-tinta underline">
       {[[t.fuenteUrl, 'Archivo fuente'], [t.briefEnlace, 'Brief aprobado'], [t.recursoConceptoPdfUrl, 'Concepto aprobado'], [t.recursoImagenUrl, 'Recursos creativos']].map(([url, texto]) => <a key={texto} href={url} target="_blank" rel="noreferrer">{texto}</a>)}
     </nav>
@@ -43,12 +41,10 @@ export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: Tra
       {v.handoffEn && <p className="mt-2 text-green-700">Entregada a Calidad · {fechaHora(v.handoffEn)}</p>}
     </div>}
     {esDisenador && !t.cerradoEn && (!v || v.feedbackEn) && <div className="mt-4 flex flex-col gap-2 sm:flex-row"><label className="flex-1 text-xs text-gray-600">Enlace de la nueva versión<input type="url" className={campo} value={enlace} onChange={e => setEnlace(e.target.value)} /></label><button className={boton} disabled={!enlace || accion.isPending} onClick={enviar}>Entregar {v ? `V${v.numero + 1}` : 'V1'}</button></div>}
-    {esEspecialista && !t.cerradoEn && <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
-      <div className="grid gap-2 sm:grid-cols-3"><label className="text-xs text-gray-600">Diseñador<select className={campo} value={disenador} onChange={e => setDisenador(e.target.value)}><option value="">Seleccionar</option>{carga.data?.disenadores.map(d => <option key={d.id} value={d.id}>{d.nombre}</option>)}</select></label><label className="text-xs text-gray-600">Pautar vencimiento exacto<input type="datetime-local" className={campo} value={due} onChange={e => setDue(e.target.value)} /></label><button className={boton} disabled={!disenador || accion.isPending} onClick={() => accion.mutate(() => asignarDiseno(t.id, disenador, due ? new Date(due).toISOString() : undefined))}>Asignar / actualizar plazo</button></div>
-      <ErrorAccion error={carga.error} />
+    {esEspecialista && t.tipo !== 'diagramacion' && !t.cerradoEn && <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
       {v && !v.feedbackEn && <><label className="block text-xs text-gray-600">Feedback o correcciones<textarea className={campo} value={feedback} onChange={e => setFeedback(e.target.value)} /></label><label className="block text-xs text-gray-600">Cantidad de comentarios<input type="number" min="0" className={campo} value={comentarios} onChange={e => setComentarios(Number(e.target.value))} /></label>
         <div className="flex flex-wrap gap-2"><button className={boton} disabled={!feedback.trim() || accion.isPending} onClick={() => accion.mutate(() => coordinarDiseno(t.id, v.id, { accion: 'feedback', feedback, cantidadComentarios: comentarios }))}>Enviar ajustes a Diseño</button>
-          {t.tipo === 'diagramacion' ? <button className={boton} disabled={accion.isPending} onClick={() => accion.mutate(() => coordinarDiseno(t.id, v.id, { accion: 'handoff_calidad' }))}>Enviar versión a Calidad</button> : !v.enviadaAutorEn ? <><label className="text-xs text-gray-600">Pautar feedback del autor (referencia: 1 día)<input type="datetime-local" className={campo} value={feedbackDue} onChange={e => setFeedbackDue(e.target.value)} /></label><button className={boton} disabled={accion.isPending || (t.tipo === 'cubierta_extendida' && (!v.aprobadaInternaEn || t.revisionCreativaResultado !== 'aprobado'))} onClick={() => accion.mutate(() => coordinarDiseno(t.id, v.id, { accion: 'enviar_autor', feedbackAutorDueAt: feedbackDue ? new Date(feedbackDue).toISOString() : undefined }))}>Registrar envío al autor</button></> : <button className={boton} disabled={accion.isPending} onClick={() => accion.mutate(() => coordinarDiseno(t.id, v.id, { accion: 'aprobar_autor' }))}>Registrar aprobación del autor</button>}
+          {!v.enviadaAutorEn ? <><label className="text-xs text-gray-600">Pautar feedback del autor (referencia: 1 día)<input type="datetime-local" className={campo} value={feedbackDue} onChange={e => setFeedbackDue(e.target.value)} /></label><button className={boton} disabled={accion.isPending || (t.tipo === 'cubierta_extendida' && (!v.aprobadaInternaEn || t.revisionCreativaResultado !== 'aprobado'))} onClick={() => accion.mutate(() => coordinarDiseno(t.id, v.id, { accion: 'enviar_autor', feedbackAutorDueAt: feedbackDue ? new Date(feedbackDue).toISOString() : undefined }))}>Registrar envío al autor</button></> : <button className={boton} disabled={accion.isPending} onClick={() => accion.mutate(() => coordinarDiseno(t.id, v.id, { accion: 'aprobar_autor' }))}>Registrar aprobación del autor</button>}
         </div>{v.enviadaAutorEn && <p className="text-xs text-gray-500">Enviado: {fechaHora(v.enviadaAutorEn)} · Feedback pautado: {fechaHora(v.feedbackAutorDueAt)}</p>}
       </>}
     </div>}
@@ -73,7 +69,7 @@ function Solicitar({ proyectoId }: { proyectoId: string }) {
   </form>;
 }
 export function SeccionDisenoOperativa({ proyectoId }: { proyectoId: string }) {
-  const { data: user } = useMe(); const roles = ['especialista', 'disenador', 'jefe_area', 'soporte_editorial'];
+  const { data: user } = useMe(); const roles = ['especialista', 'disenador', 'jefe_area', 'validador'];
   const q = useQuery({ queryKey: ['diseno', 'proyecto', proyectoId], queryFn: () => fetchDisenos(proyectoId), enabled: !!user && roles.includes(user.rol) });
   if (!user || !roles.includes(user.rol)) return null;
   return <section className="min-w-0 w-full p-4 sm:p-6"><h2 className="mb-4 text-xl font-bold text-tinta">Diseño y diagramación</h2>{user.rol === 'especialista' && <Solicitar proyectoId={proyectoId} />}{q.isLoading && <p>Cargando trabajos…</p>}<ErrorAccion error={q.error} />{q.data?.trabajos.length === 0 && <p className="text-sm text-gray-500">Todavía no hay trabajos solicitados.</p>}<div className="space-y-4">{q.data?.trabajos.map(t => <TarjetaDiseno key={t.id} trabajo={t} />)}</div></section>;

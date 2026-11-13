@@ -30,7 +30,6 @@ const items = [
   { id: 'inicio', nombre: 'Inicio', icono: 'inicio' },
   { id: 'asignaciones', nombre: 'Asignaciones y carga', icono: 'proceso' },
   { id: 'proyectos', nombre: 'Proyectos', icono: 'proyectos' },
-  { id: 'seguimiento', nombre: 'Seguimiento', icono: 'actividad' },
   { id: 'decisiones', nombre: 'Decisiones', icono: 'ingreso' },
   { id: 'indicadores', nombre: 'Indicadores', icono: 'indicadores' },
 ] as const;
@@ -61,7 +60,7 @@ export function JefaturaSidebar({
             className="h-[18px] w-[18px] shrink-0"
           />
           {item.nombre}
-        </Link>{item.id === 'seguimiento' && vista === 'seguimiento' && !mobile && <><Link className="mg-nav-sub" aria-current={!goals ? 'page' : undefined} to="/?vista=seguimiento">Visión general</Link><Link className="mg-nav-sub" aria-current={goals ? 'page' : undefined} to="/?vista=seguimiento&subvista=objetivos">Objetivos del mes</Link></>}</Fragment>
+        </Link>{item.id === 'indicadores' && vista === 'indicadores' && !mobile && <><Link className="mg-nav-sub" aria-current={!goals ? 'page' : undefined} to="/?vista=indicadores">Visión general</Link><Link className="mg-nav-sub" aria-current={goals ? 'page' : undefined} to="/?vista=indicadores&subvista=objetivos">Objetivos del mes</Link></>}</Fragment>
       ))}
     </nav>
   );

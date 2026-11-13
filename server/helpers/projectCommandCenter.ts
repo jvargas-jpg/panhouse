@@ -1,3 +1,4 @@
+import { projectGuide } from './projectGuide.js';
 import { obtenerColaTrabajoEspecialista } from './especialistaMiTrabajo.js';
 import { getProjectFinancialStatus } from './estadoFinanciero.js';
 import { editorialInterventions } from './editorialChief.js';
@@ -12,6 +13,7 @@ import { ErrorFichaViva, resumenFichaViva, verificarAccesoFichaViva } from './fi
 import { NOMBRES_PROCESO, obtenerDashboardJefatura } from './jefatura.js';
 import { registrarEvento } from './auditLog.js';
 import { evaluarGateTituloAprobado } from './gates.js';
+import { listValidations } from './validaciones.js';
 import type { ActorFicha } from './intakeRrpp.js';
 import type { ProjectCommandCenter, ProcesoProyecto, TrabajoProyecto } from '../../shared/projectCommandCenter.js';
 
@@ -88,6 +90,7 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
   const preparacion = proyectarPreparacion(preparaciones[0], assigned?.asignadoEn ?? null, actor.rol === 'especialista' && activos.includes(p.estado),workspace);
   if (p.especialistaId || assigned) procesos.unshift({ tipo: 'preparacion_inicial', nombre: 'Preparación inicial', estado: preparacion.estado,
     detalle: [preparacion.primerContactoEn ? 'Primer contacto registrado' : 'Primer contacto pendiente', preparacion.reunionOperativaRealizada ? 'Reunión realizada' : preparacion.reunionOperativaFecha ? 'Reunión programada' : 'Reunión por programar', preparacion.driveEstado==='configurado' ? 'Drive configurado' : 'Drive sin configurar'].join(' · '), trabajos: [] });
+  const validations = await listValidations(actor, id);
   for (const proceso of procesos) {
     const owner = PROCESOS_OPERATIVOS[proceso.tipo];
     proceso.nombre = owner?.nombre ?? proceso.nombre;
@@ -96,6 +99,18 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
     proceso.assignee = assignments.filter(a => a.tipo === owner?.ownerRole && (!a.workItemId || proceso.trabajos.some(t => t.id === a.workItemId))).map(a => a.nombre).join(', ') || null;
     if(proceso.tipo === 'impresion')proceso.assignee = control[0]?.impresionResponsable ?? null;
     if(proceso.detalle === 'Sin procesos operativos registrados')proceso.detalle = 'Aún no iniciado';
+    const validation = validations.find(v => v.context === (proceso.tipo === 'validacion_cubierta' ? 'SOPORTE_EDITORIAL' : 'CALIDAD'));
+    if (['calidad', 'validacion_cubierta'].includes(proceso.tipo) && validation) {
+      proceso.assignee = validation.validator;
+      proceso.estado = validation.status === 'Todos los comentarios aplicados' ? 'Completo' : validation.requested ? 'En curso' : 'Pendiente';
+      proceso.detalle = `${validation.status} · ${validation.version} · Ronda ${validation.round}`;
+      proceso.seguimiento = [
+        { key: 'validador', label: 'Validador asignado', value: validation.validator, source: 'project_assignments', editable: false },
+        { key: 'ronda', label: 'Ronda', value: String(validation.round), source: validation.context === 'CALIDAD' ? 'ficha_calidad_fases.ronda' : 'work_items.observaciones.validation.ronda', editable: false },
+        { key: 'version', label: 'Versión actual', value: validation.version, source: 'diseno_versiones.numero', editable: false },
+        { key: 'estado', label: 'Estado', value: validation.status, source: 'Decisiones y entregas de la validación', editable: false },
+      ];
+    }
     const ctx = activaciones.get(id)?.find(c => c.tipo === proceso.tipo);
     if (ctx) {
       if(proceso.tipo==='impresion')proceso.assignee=control[0]?.impresionResponsable ?? ctx.operadoPor ?? null;
@@ -174,7 +189,7 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
   }
   const prioridad=(proceso:ProcesoProyecto)=>proceso.tipo==='preparacion_inicial'?0:proceso.action?.kind==='solicitar'?1:atencion.some(a=>a.proceso===proceso.tipo)?2:['En curso','En planificación','En coordinación'].includes(proceso.estado)?3:proceso.estado==='Requiere información'?4:proceso.estado==='Pendiente RRPP'?5:proceso.estado==='Completo'?8:proceso.estado==='No aplica'?9:6;
   procesos.sort((a,b)=>prioridad(a)-prioridad(b));
-  return { atencion, ficha, salud: salud ? { especialista: salud.especialista, express: salud.express, riesgo: salud.riesgo, fechaObjetivo: salud.fechaObjetivo } : null,
+  const result: ProjectCommandCenter = { atencion, ficha, salud: salud ? { especialista: salud.especialista, express: salud.express, riesgo: salud.riesgo, fechaObjetivo: salud.fechaObjetivo } : null,
     preparacion, contextoPrevio: [
       { key: 'rrpp', label: 'Entrega de RRPP a Jefatura', value: p.notificadoJefatura ? 'Registrada · ver Actividad' : 'Sin entrega registrada', source: 'proyectos.notificadoJefatura', editable: false },
       { key: 'asignacion', label: 'Asignación del Especialista', value: assigned?.asignadoEn.toISOString() ?? (p.especialistaId ? 'Asignación anterior sin fecha auditada' : 'Pendiente'), source: 'project_assignments.asignadoEn', editable: false },
@@ -190,6 +205,9 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       ...ficha.overview.filter(f => ['budget', 'ingresoServicioPresupuesto', 'ingresoServicioAlianza', 'capitulosPactados', 'paginasPactadas'].includes(f.key)).map(f => ({ ...f, editable: false })),
     ],
   };
+  result.guide = await projectGuide(id, result, actor);
+  if (result.guide.paths.find(p => p.id === 'preparacion_inicial')?.historicalReadOnly) result.preparacion.editable = false;
+  return result;
 }
 
 export async function registrarAvanceProyecto(id: string, texto: string, actor: ActorFicha) {
@@ -211,6 +229,8 @@ export async function guardarDatosEditoriales(id: string, datos: { titulo: strin
     const p = await verificarAccesoFichaViva(id,actor,tx);
     if (!activos.includes(p.estado)) throw new ErrorFichaViva(409,'El proyecto está cerrado');
     if (p.tituloDefinitivo === datos.titulo && p.subtituloDefinitivo === datos.subtitulo) return;
+    const downstream = await tx.select({ tipo: workItems.tipo }).from(workItems).where(eq(workItems.proyectoId, id));
+    if (downstream.some(w => ['direccion_creativa','diseno','calidad','validacion_cubierta'].includes(w.tipo))) throw new ErrorFichaViva(409, 'Este cambio puede afectar procesos posteriores. Los títulos quedan de solo lectura una vez iniciada Creativa o Diseño.');
     await tx.update(proyectos).set({tituloDefinitivo:datos.titulo,subtituloDefinitivo:datos.subtitulo}).where(eq(proyectos.id,id));
     await registrarEvento(tx,{actorId:actor.id,accion:'PROYECTO_TITULOS_REGISTRADOS',entityType:'proyecto',entityId:id,proyectoId:id,detalles:{anterior:{titulo:p.tituloDefinitivo,subtitulo:p.subtituloDefinitivo},nuevo:datos}});
   });

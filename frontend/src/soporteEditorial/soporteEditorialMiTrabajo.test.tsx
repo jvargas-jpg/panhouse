@@ -32,7 +32,7 @@ const detailKey = ['soporte-editorial', 'mi-trabajo', 'detalle', 'fase-1'];
 
 function render(seed: (c: QueryClient) => void, url = '/?vista=mi-trabajo&workItem=fase-1') {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, retryOnMount: false, staleTime: Infinity, gcTime: Infinity } } });
-  client.setQueryData(['auth', 'me'], { id: 'soporte-1', rol: 'soporte_editorial', nombre: 'Valentina Cruz', email: 'soporte@qa.test' });
+  client.setQueryData(['auth', 'me'], { id: 'soporte-1', rol: 'validador', nombre: 'Valentina Cruz', email: 'soporte@qa.test' });
   seed(client);
   const html = renderToStaticMarkup(<QueryClientProvider client={client}><StaticRouter location={url}><SoporteEditorialMiTrabajo /></StaticRouter></QueryClientProvider>);
   client.clear(); return html;

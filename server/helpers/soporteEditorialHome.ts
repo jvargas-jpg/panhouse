@@ -1,12 +1,10 @@
+// Legacy shared-inbox adapter. Active Validador assignments use validaciones and shared/validationWork.
 import { pool } from '../db/client.js';
 import { plazoDiseno } from './disenoSla.js';
 import { diaCaracas } from './atencionEspecialista.js';
 import type { SoporteEditorialActivity, SoporteEditorialDashboard, ValidationItem } from '../../shared/soporteEditorialHome.js';
 
-// Mismas cuatro fases que SeccionCalidadOperativa.tsx (`fases`) — Calidad
-// solo valida tripa/diagramación (work_items tipo 'calidad'); revisión de
-// cubierta es un proceso aparte de Dirección Creativa/Jefe de Edición que
-// soporte_editorial no opera, así que no aparece acá.
+// Historical Quality-only projection. Active cover and Quality work is combined by validaciones.
 const FASE_LABELS: Record<number, string> = { 1: 'Validación de textos diagramados', 2: 'Validación de comentarios', 3: 'Revisión final', 4: 'Validación final de comentarios' };
 
 type Row = {
@@ -14,11 +12,7 @@ type Row = {
   proyecto_id: string; codigo: string; project_state: string; title: string; authors: string; cover: string | null; work_item_estado: string; activa: boolean;
 };
 
-// soporte_editorial es acceso por rol, no asignación individual (ver
-// server/db/schema/trazabilidad.ts, comentario de nombreQuienRecibe) —
-// por eso esta bandeja no filtra por usuario: todo validador ve la misma
-// cola compartida de rondas de Calidad.
-//
+// Deprecated shared queue. Session guards block this surface for authenticated validators.
 // Una fila de resultado = una fase/ronda (`ficha_calidad_fases`), nunca
 // un proyecto: un proyecto con dos rondas activas en su historial produce
 // dos filas, y solo la ronda vigente de cada diseño (`activa`) cuenta

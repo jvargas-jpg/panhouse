@@ -1,0 +1,16 @@
+
+> panhouse-gestor-editorial@0.1.0 test
+> vitest run tests/validaciones.test.ts frontend/src/validaciones/validaciones.test.tsx -t una sesi|Bandeja enfocada
+
+
+ RUN  v2.1.9 C:/Users/Jhose/OneDrive/Documentos/panhouse
+
+ ✓ tests/validaciones.test.ts (12 tests | 11 skipped) 23863ms
+   ✓ Validadores: asignaciones individuales y ciclo real de Drive > una sesión recibe Proyecto A Calidad, Proyecto B cubierta y Proyecto C Revisión Final; cubierta conserva permisos y ciclos 23841ms
+ ✓ frontend/src/validaciones/validaciones.test.tsx (6 tests) 188ms
+
+ Test Files  2 passed (2)
+      Tests  7 passed | 11 skipped (18)
+   Start at  22:05:13
+   Duration  93.16s (transform 34.50s, setup 8.89s, collect 41.77s, tests 24.05s, environment 2ms, prepare 2.31s)
+

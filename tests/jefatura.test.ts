@@ -14,7 +14,7 @@ import {
   notificaciones,
   pausas,
   projectAssignments,
-  rolEnum,
+  ROLES,
   proyectos,
   servicios,
   users,
@@ -664,7 +664,7 @@ describe('Asignación transaccional y RBAC de Jefatura', () => {
     expect(
       (await peticion('/api/jefatura/dashboard', undefined, '')).statusCode,
     ).toBe(401);
-    for (const rol of rolEnum.enumValues.filter((r) => r !== 'jefe_area')) {
+    for (const rol of ROLES.filter((r) => r !== 'jefe_area')) {
       const id = await usuario(rol);
       const sesion = `panhouse_sid=${await createSession(id)}`;
       expect(

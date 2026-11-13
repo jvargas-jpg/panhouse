@@ -1,0 +1,8 @@
+﻿git : warning: in the working copy of 'server/db/migrations/meta/_journal.json', LF will be replaced by CRLF the next 
+time Git touches it
+En línea: 15 Carácter: 1
++ git diff --check 2>&1 | Out-File -Encoding utf8 'docs\evidencias\vali ...
++ ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: in the... Git touches it:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

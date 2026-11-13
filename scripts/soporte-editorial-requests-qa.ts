@@ -19,7 +19,7 @@ if (!prior.length) {
   if (!validator || !specialist || !designer) throw Error('Inicia primero soporte-editorial-work-qa-server.ts');
   await db.update(s.users).set({ email: 'especialista@calidad.qa.test' }).where(eq(s.users.id, specialist.id));
   const passwordHash = await hashPassword('password123');
-  const [other] = await db.insert(s.users).values({ email: 'validador-b@calidad.qa.test', nombre: 'Segundo Validador · QA', rol: 'soporte_editorial', passwordHash }).returning();
+  const [other] = await db.insert(s.users).values({ email: 'validador-b@calidad.qa.test', nombre: 'Segundo Validador · QA', rol: 'validador', passwordHash }).returning();
   const [author] = await db.insert(s.autores).values({ nombre: 'Autor de prueba de solicitudes' }).returning();
   const [unit] = await db.insert(s.unidades).values({ nombre: 'Unidad QA Solicitudes de Calidad' }).returning();
   const [budget] = await db.insert(s.presupuestos).values({ nombre: 'Presupuesto QA Solicitudes de Calidad' }).returning();

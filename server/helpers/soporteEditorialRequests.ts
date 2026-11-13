@@ -120,7 +120,7 @@ async function actorRole(tx: Tx, actor: Actor, role: string) {
   const [person] = await tx.select().from(users).where(and(eq(users.id, actor.id), eq(users.activo, true)));
   requireValue(actor.rol === role && person?.rol === role, 'Rol no autorizado', 403);
 }
-async function notify(tx: Tx, projectId: string, target: string, role: 'especialista' | 'soporte_editorial', id: string, message: string) {
+async function notify(tx: Tx, projectId: string, target: string, role: 'especialista' | 'validador', id: string, message: string) {
   await tx.insert(notificaciones).values({ proyectoId: projectId, usuarioDestinoId: target, rolDestino: role,
     targetPath: role === 'especialista' ? '/?vista=solicitudes&qualityRequest=' + id : '/?vista=mis-solicitudes&request=' + id, mensaje: message });
 }
@@ -133,7 +133,7 @@ export async function createQualityRequest(actor: Actor, input: CreateQualityReq
   const subject = input.subject.trim(), description = input.description.trim();
   requireValue(subject.length >= 5 && subject.length <= 160 && description.length >= 10 && description.length <= 4000, 'Revisa el tema y la descripción', 400);
   try { return await db.transaction(async tx => {
-    await actorRole(tx, actor, 'soporte_editorial');
+    await actorRole(tx, actor, 'validador');
     const origin = (await tx.execute<ContextRow>(sql`WITH context AS (${sql.raw(CONTEXT)}) SELECT * FROM context WHERE work_item_id=${input.workItemId}::uuid`)).rows[0];
     requireValue(origin, 'Validación no disponible', 404);
     // Tomar el mismo bloqueo de proyecto que los comandos de Diseño/Calidad.
@@ -150,7 +150,7 @@ export async function createQualityRequest(actor: Actor, input: CreateQualityReq
     const [created] = await tx.insert(solicitudesArea).values({ proyectoId: current.project_id, workItemId: current.work_item_id, tipo: input.type,
       businessKey: input.idempotencyKey, requestedById: actor.id, targetUserId: current.specialist_id!, asunto: subject, descripcion: description }).returning();
     await event(tx, created!.id, current.project_id, actor.id, 'CALIDAD_REQUEST_CREADA', { qualityPhaseId: current.quality_phase_id, workItemId: current.work_item_id, phase: current.phase, round: current.round, versionLabel: current.version_label });
-    await notify(tx, current.project_id, current.specialist_id!, 'especialista', created!.id, `Soporte Editorial reportó ${QUALITY_REQUEST_LABELS[input.type].toLowerCase()}: ${subject}`);
+    await notify(tx, current.project_id, current.specialist_id!, 'especialista', created!.id, `El Validador reportó ${QUALITY_REQUEST_LABELS[input.type].toLowerCase()}: ${subject}`);
     return { ok: true, id: created!.id, reused: false };
   }); } catch (error) {
     if ((error as { code?: string }).code === '23505') throw new ErrorDiseno(409, 'El envío ya fue registrado. Actualiza tus solicitudes.');
@@ -170,13 +170,13 @@ async function lockRequest(tx: Tx, id: string, ownerId?: string) {
 export async function cancelQualityRequest(actor: Actor, id: string, expectedVersion: number, reason?: string) {
   requireValue(!reason || reason.length <= 2000, 'Motivo demasiado largo', 400);
   return db.transaction(async tx => {
-    await actorRole(tx, actor, 'soporte_editorial');
+    await actorRole(tx, actor, 'validador');
     const { request: r, project } = await lockRequest(tx, id, actor.id);
     requireValue(r.version === expectedVersion && OPEN.includes(r.estado as typeof OPEN[number]), 'La solicitud cambió o ya está cerrada. Actualiza el detalle.');
     await tx.update(solicitudesArea).set({ estado: 'cancelada', resolvedAt: new Date(), resolvedById: actor.id, outcome: reason?.trim() || null, version: r.version + 1 }).where(eq(solicitudesArea.id, id));
     await event(tx, id, r.proyectoId, actor.id, 'CALIDAD_REQUEST_CANCELADA', { text: reason?.trim() || null });
     const specialist = await obtenerEspecialistaActual(project.id, project.especialistaId, tx);
-    if (specialist) await notify(tx, project.id, specialist, 'especialista', id, 'Soporte Editorial canceló su solicitud: ' + r.asunto);
+    if (specialist) await notify(tx, project.id, specialist, 'especialista', id, 'El Validador canceló su solicitud: ' + r.asunto);
     return { ok: true };
   });
 }
@@ -184,7 +184,7 @@ export async function cancelQualityRequest(actor: Actor, id: string, expectedVer
 export async function answerQualityRequest(actor: Actor, id: string, expectedVersion: number, questionId: string, text: string) {
   requireValue(text.trim().length >= 5 && text.trim().length <= 2000, 'Escribe una respuesta de entre 5 y 2000 caracteres', 400);
   return db.transaction(async tx => {
-    await actorRole(tx, actor, 'soporte_editorial');
+    await actorRole(tx, actor, 'validador');
     const { request: r, project } = await lockRequest(tx, id, actor.id);
     requireValue(r.version === expectedVersion && r.estado === 'requiere_informacion', 'La solicitud cambió. Actualiza antes de completar la información.');
     const [question] = await tx.select().from(informacionSolicitudArea).where(and(eq(informacionSolicitudArea.solicitudId, id), eq(informacionSolicitudArea.id, questionId))).for('update');
@@ -194,7 +194,7 @@ export async function answerQualityRequest(actor: Actor, id: string, expectedVer
     await tx.update(informacionSolicitudArea).set({ respuesta: text.trim(), answeredById: actor.id, answeredAt: new Date() }).where(eq(informacionSolicitudArea.id, question.id));
     await tx.update(solicitudesArea).set({ estado: 'pendiente', targetUserId: target, version: r.version + 1 }).where(eq(solicitudesArea.id, id));
     await event(tx, id, project.id, actor.id, 'CALIDAD_REQUEST_REENVIADA', { text: text.trim(), questionId });
-    await notify(tx, project.id, target, 'especialista', id, 'Soporte Editorial completó la información: ' + r.asunto);
+    await notify(tx, project.id, target, 'especialista', id, 'El Validador completó la información: ' + r.asunto);
     return { ok: true };
   });
 }
@@ -216,7 +216,7 @@ export async function decideQualityRequest(actor: Actor, id: string, expectedVer
     await tx.update(solicitudesArea).set({ estado, targetUserId: actor.id, version: r.version + 1, ...(action === 'resolve' ? { outcome: text.trim(), resolvedAt: new Date(), resolvedById: actor.id } : {}) }).where(eq(solicitudesArea.id, id));
     if (action === 'return') await tx.insert(informacionSolicitudArea).values({ solicitudId: id, pregunta: text.trim(), askedById: actor.id });
     await event(tx, id, project.id, actor.id, action === 'resolve' ? 'CALIDAD_REQUEST_RESUELTA' : action === 'return' ? 'CALIDAD_REQUEST_DEVUELTA' : 'CALIDAD_REQUEST_EN_REVISION', { text: text.trim(), ...(resultQualityPhaseId ? { resultQualityPhaseId } : {}) });
-    await notify(tx, project.id, r.requestedById!, 'soporte_editorial', id, `Tu solicitud ${action === 'resolve' ? 'fue resuelta' : action === 'return' ? 'requiere información' : 'está en revisión'}: ${r.asunto}`);
+    await notify(tx, project.id, r.requestedById!, 'validador', id, `Tu solicitud ${action === 'resolve' ? 'fue resuelta' : action === 'return' ? 'requiere información' : 'está en revisión'}: ${r.asunto}`);
     return { ok: true };
   });
 }

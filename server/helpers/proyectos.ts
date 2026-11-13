@@ -344,7 +344,7 @@ export async function verificarAccesoAProyecto(
 }
 
 // Chequeo específico de PATCH /:proyectoId/calidad-control (especialista
-// dueño del proyecto, o cualquier soporte_editorial — a pedido explícito
+// dueño del proyecto, o cualquier validador — a pedido explícito
 // del negocio, calidadId (columna de dueño individual) se dio de baja:
 // ya no hace falta ser "el" asignado, alcanza con el rol, mismo acceso
 // de grupo que ya tenían el resto de las rutas de esta sección (ver

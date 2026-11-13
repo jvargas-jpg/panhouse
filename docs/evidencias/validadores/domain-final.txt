@@ -1,0 +1,19 @@
+
+ RUN  v2.1.9 C:/Users/Jhose/OneDrive/Documentos/panhouse
+
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > QA completo: V0 → V1 con errores → V2 aprobada; repite en Revisión Final sin avanzar proceso global 10196ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > RBAC/IDOR: solo asignado, Jefatura asigna, no Ficha/usuarios/proyectos/rutas legacy ni mutaciones globales 6007ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > reasignación invalida la sesión abierta y el upload anterior; cierre concurrente tiene un único resultado 5675ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > carga valida contenido/tamaño, renombra y conserva extensión, retries no duplican archivos ni sobrescriben 6104ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > Drive ignora metadata, carpetas/archivo ajeno, versión incorrecta, proveedor equivocado y entregas ambiguas 5478ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > notificaciones son dirigidas y solo accionables; SMTP fallido conserva outbox para reintento 5685ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > colección inconsistente conserva la escalación real a Jefatura dentro de la asignación 8807ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > reasignación durante upload descarta el archivo nuevo y no permite registrar comentarios del anterior 6778ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > muestras/cubiertas externas conservan gates creativos e internos y nunca requieren login de Diseño 6982ms
+ ✓ tests/validaciones.test.ts > Validadores: asignaciones individuales y ciclo real de Drive > entrega concurrente de Drive genera una sola ronda y aviso; requiere scope para archivos externos 5962ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  20:32:21
+   Duration  92.95s (transform 8.88s, setup 3.32s, collect 15.16s, tests 67.68s, environment 1ms, prepare 1.19s)
+

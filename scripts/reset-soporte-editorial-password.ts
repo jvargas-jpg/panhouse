@@ -1,4 +1,4 @@
-/** Utilidad QA temporal: resetea la contraseña del soporte_editorial demo. */
+/** Utilidad QA temporal: resetea la contraseña del validador demo. */
 import 'dotenv/config';
 import { eq } from 'drizzle-orm';
 import { db, pool } from '../server/db/client.js';

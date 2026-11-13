@@ -39,6 +39,7 @@ async function event(tx:Tx,actor:AdminActor,action:AccionAuditoria,entity:Regist
 const sameVersion=(actual:Date,expected:string)=>actual.toISOString()===new Date(expected).toISOString();
 async function notify(tx:Tx,userId:string,projectId:string|undefined,message:string){const [u]=await tx.select({role:users.rol}).from(users).where(eq(users.id,userId));if(u)await tx.insert(notificaciones).values({proyectoId:projectId??null,usuarioDestinoId:userId,rolDestino:u.role,mensaje:message});}
 export async function createAdminUser(actor:AdminActor,input:Command & {name:string;email:string;role:Rol;accountType:'internal'|'external';password:string;authorId?:string}){
+ adminAssert(!['disenador','corrector'].includes(input.role),'Diseño y Corrección son servicios externos, sin cuenta operativa',400);
  return adminCommand(actor,'create_user',input,async tx=>{
   adminAssert(input.accountType!=='external'||['corrector','autor'].includes(input.role),'Las cuentas externas corresponden a Corrector o Autor',400);
   adminAssert(input.role!=='autor'||!!input.authorId,'Una cuenta de Autor necesita su autor vinculado',400);
@@ -53,6 +54,7 @@ export async function updateAdminUser(actor:AdminActor,id:string,input:Command &
   const [u]=await tx.select({id:users.id,active:users.activo,role:users.rol,version:users.updatedAt,accountType:users.accountType,authorId:users.autorId}).from(users).where(eq(users.id,id)).for('update');
   adminAssert(u,'Usuario no encontrado',404);adminAssert(sameVersion(u.version,input.expectedVersion),'La cuenta cambió; actualiza antes de confirmar');
   const active=input.active??u.active,role=input.role??u.role;
+  adminAssert(!active||!['disenador','corrector'].includes(role),'Los servicios externos no tienen cuenta operativa',400);
   adminAssert(u.accountType!=='external'||['corrector','autor'].includes(role),'No se puede conceder un rol interno a una cuenta externa',400);
   adminAssert(role!=='autor'||u.authorId,'La cuenta no tiene un autor vinculado',400);
   if(u.role==='admin'&&(!active||role!=='admin')){

@@ -387,11 +387,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('rechaza a soporte_editorial (recibe la validación de textos diagramados, no los resultados de corrección)', async () => {
+    it('rechaza a validador (recibe la validación de textos diagramados, no los resultados de corrección)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/correccion`)
@@ -937,11 +937,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('permite a cualquier soporte_editorial editar el control de calidad (acceso de grupo, ya no hay dueño individual)', async () => {
+    it('permite a cualquier validador editar el control de calidad (acceso de grupo, ya no hay dueño individual)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad-control`)
@@ -1015,11 +1015,11 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('POST /api/fichas-trazabilidad/:proyectoId/calidad/fases', () => {
-    it('permite a soporte_editorial registrar una fase de calidad', async () => {
+    it('permite a validador registrar una fase de calidad', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server)
         .post(`/api/fichas-trazabilidad/${proyecto.id}/calidad/fases`)
@@ -1061,12 +1061,12 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('PATCH /api/fichas-trazabilidad/:proyectoId/calidad/fases/:faseId', () => {
-    it('permite a soporte_editorial editar una fase existente', async () => {
+    it('permite a validador editar una fase existente', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
       const fase = await agregarFaseCalidad(proyecto.id, { numeroFase: 1, pdfVersion: 'v1' });
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad/fases/${fase.id}`)
@@ -1085,7 +1085,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       const proyectoAjeno = await crearProyectoConFicha();
       const faseAjena = await agregarFaseCalidad(proyectoAjeno.id, { numeroFase: 1 });
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/calidad/fases/${faseAjena.id}`)
@@ -1144,12 +1144,12 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('DELETE /api/fichas-trazabilidad/:proyectoId/calidad/fases/:faseId', () => {
-    it('permite a soporte_editorial borrar una fase existente', async () => {
+    it('permite a validador borrar una fase existente', async () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
       const fase = await agregarFaseCalidad(proyecto.id, { numeroFase: 1 });
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server)
         .delete(`/api/fichas-trazabilidad/${proyecto.id}/calidad/fases/${fase.id}`)
@@ -1334,7 +1334,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       const app = crearAppDePrueba();
       await app.ready();
       const proyecto = await crearProyectoConFicha();
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server)
         .patch(`/api/fichas-trazabilidad/${proyecto.id}/soporte-digital`)
@@ -2106,7 +2106,7 @@ describe('rutas de la ficha de trazabilidad', () => {
 
     // disenador queda fuera de este .each: a diferencia del resto, desde
     // verificarAccesoAProyecto exige pertenencia (disenadorId), no solo rol.
-    it.each(['rrpp', 'comercial', 'lider_creativo', 'soporte_editorial', 'soporte_digital'] as const)(
+    it.each(['rrpp', 'comercial', 'lider_creativo', 'validador', 'soporte_digital'] as const)(
       'aplica permisos de lectura a %s: Líder Creativo requiere asignación',
       async (rol) => {
         const app = crearAppDePrueba();
@@ -2399,11 +2399,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('rechaza a un rol distinto de disenador/lider_creativo (ej. soporte_editorial)', async () => {
+    it('rechaza a un rol distinto de disenador/lider_creativo (ej. validador)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server).get('/api/fichas-trazabilidad/pendientes/diseno').set('Cookie', cookie);
 
@@ -2414,7 +2414,7 @@ describe('rutas de la ficha de trazabilidad', () => {
   });
 
   describe('GET /api/fichas-trazabilidad/pendientes/calidad', () => {
-    it('permite a soporte_editorial listar los proyectos sin ninguna fase de calidad todavía', async () => {
+    it('permite a validador listar los proyectos sin ninguna fase de calidad todavía', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
@@ -2422,7 +2422,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       const proyectoConFase = await crearProyectoConFicha();
       await agregarFaseCalidad(proyectoConFase.id, { numeroFase: 1 });
 
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server).get('/api/fichas-trazabilidad/pendientes/calidad').set('Cookie', cookie);
 
@@ -2445,7 +2445,7 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('rechaza a un rol distinto de soporte_editorial (ej. disenador)', async () => {
+    it('rechaza a un rol distinto de validador (ej. disenador)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
@@ -2495,11 +2495,11 @@ describe('rutas de la ficha de trazabilidad', () => {
       await app.close();
     });
 
-    it('rechaza a un rol distinto de soporte_digital (ej. soporte_editorial)', async () => {
+    it('rechaza a un rol distinto de soporte_digital (ej. validador)', async () => {
       const app = crearAppDePrueba();
       await app.ready();
 
-      const cookie = await registrarYLoguear(app, 'soporte_editorial');
+      const cookie = await registrarYLoguear(app, 'validador');
 
       const respuesta = await request(app.server).get('/api/fichas-trazabilidad/pendientes/soporte-digital').set('Cookie', cookie);
 
