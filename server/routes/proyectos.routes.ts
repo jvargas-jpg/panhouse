@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { CATEGORIAS_STAND_BY, ESTADOS_PROYECTO } from '../db/schema/index.js';
 import { listarRiesgoProyectosActivos, obtenerProyectoConRiesgo } from '../helpers/alertas.js';
 import { listarCorreccionesDeProyecto, solicitarCorreccion } from '../helpers/correcciones.js';
+import { listarReunionesExtraccion, registrarReunionExtraccion, registrarReunionExtraccionSchema } from '../helpers/extraccion.js';
+import { ErrorFichaViva } from '../helpers/fichaViva.js';
 import { listarDireccionesCreativasDeProyecto, solicitarDireccionCreativa } from '../helpers/direccionCreativa.js';
 import { ALCANCES_CORRECCION } from '../helpers/correccionSla.js';
 import { actualizarDecisionPortada, actualizarManuscrito, listarMisLibros, verificarAccesoLibroAutor } from '../helpers/portalAutor.js';
@@ -492,6 +494,47 @@ export async function proyectosRoutes(app: FastifyInstance) {
 
       const correcciones = await listarCorreccionesDeProyecto(params.id);
       return reply.send({ correcciones });
+    },
+  );
+
+  // Reuniones de extracción (Escritura Fantasma): sub-paso de Preparación
+  // Inicial — mismo criterio de acceso que correcciones/el resto del proyecto.
+  app.get(
+    '/:id/extraccion',
+    { preHandler: [requireAuth, requireRole('jefe_area', 'especialista', 'lider_creativo')] },
+    async (request, reply) => {
+      const params = parseOrReply(idParamSchema, request.params, reply);
+      if (!params) return;
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      const acceso = await verificarAccesoAProyecto(params.id, request.user);
+      if (!acceso.ok) {
+        return reply.code(acceso.status).send({ error: acceso.error });
+      }
+      const reuniones = await listarReunionesExtraccion(params.id);
+      return reply.send({ reuniones });
+    },
+  );
+
+  app.post(
+    '/:id/extraccion',
+    { preHandler: [requireAuth, requireRole('especialista')] },
+    async (request, reply) => {
+      const params = parseOrReply(idParamSchema, request.params, reply);
+      if (!params) return;
+      const body = parseOrReply(registrarReunionExtraccionSchema, request.body, reply);
+      if (!body) return;
+      if (!request.user) {
+        return reply.code(401).send({ error: 'No autenticado' });
+      }
+      try {
+        const row = await registrarReunionExtraccion(params.id, body, request.user);
+        return reply.send(row);
+      } catch (e) {
+        if (e instanceof ErrorFichaViva) return reply.code(e.status).send({ error: e.message });
+        throw e;
+      }
     },
   );
 

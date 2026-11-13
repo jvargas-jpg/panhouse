@@ -30,6 +30,7 @@ const SOURCE = `WITH assignments AS (
  WHERE ($4::boolean OR p.estado IN ('en_proceso','retrasado','stand_by','pausado'))
  AND ($5::uuid IS NULL OR p.editor_id=$5 OR EXISTS(SELECT 1 FROM project_assignments own WHERE own.proyecto_id=p.id AND own.tipo='editor' AND own.usuario_id=$5))
  AND ($1::uuid IS NULL OR p.id=$1)
+ AND ($6::uuid[] IS NULL OR p.id=ANY($6::uuid[]))
 ), interventions AS (
  SELECT coalesce(w.id,c.id) id,w.id work_item_id,p.*,c.numero chapter,c.fecha_inicio_editor start_date,c.fecha_entrega_editor delivered_at,c.fecha_envio_autor sent_at,c.fecha_respuesta_real feedback_at,
  coalesce(w.estado::text,CASE WHEN c.fecha_respuesta_real IS NOT NULL AND (c.fecha_entrega_editor IS NULL OR c.fecha_respuesta_real>=c.fecha_entrega_editor) THEN 'en_progreso' WHEN c.fecha_entrega_editor IS NOT NULL THEN 'completado' ELSE 'pendiente' END) work_state,
@@ -74,8 +75,8 @@ function intervention(r:Raw,today:string): EditorialIntervention {
     requestPending:!r.editor_id&&!r.assigned_before&&!!r.requested_at&&!r.chapter&&['pendiente','en_progreso','bloqueado'].includes(r.work_state)};
 }
 
-export async function editorialInterventions(today=diaCaracas(new Date()),projectId?:string,editorId?:string,id?:string,includeClosed=false,participantId?:string) {
-  const {rows}=await pool.query<Raw>(SOURCE,[projectId??null,editorId??null,id??null,includeClosed,participantId??null]);
+export async function editorialInterventions(today=diaCaracas(new Date()),projectId?:string,editorId?:string,id?:string,includeClosed=false,participantId?:string,projectIds?:string[]) {
+  const {rows}=await pool.query<Raw>(SOURCE,[projectId??null,editorId??null,id??null,includeClosed,participantId??null,projectIds??null]);
   return rows.map(r=>intervention(r,today));
 }
 export async function editorialDashboard(now=new Date()):Promise<EditorialDashboard> {

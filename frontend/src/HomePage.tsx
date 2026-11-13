@@ -15,7 +15,7 @@ import { MisDireccionesCreativasPage } from './liderCreativo/MisDireccionesCreat
 import { MisProyectosPage } from './proyectos/MisProyectosPage';
 import { SolicitudesPage } from './especialista/SolicitudesPage';
 import { MonthlyGoalsPage } from './objetivos/MonthlyGoalsPage';
-import { ProjectPortfolio } from './proyectos/ProjectPortfolio';
+import { OperationHomePage } from './proyectos/OperationHomePage';
 import { RrppHomePage } from './rrpp/RrppHomePage';
 import { SoporteDigitalHomePage } from './soporteDigital/SoporteDigitalHomePage';
 import { SoporteDigitalMiTrabajo } from './soporteDigital/SoporteDigitalMiTrabajo';
@@ -31,11 +31,16 @@ export function HomePage() {
 
   if (user?.rol === 'especialista') {
     const vista = new URLSearchParams(location.search).get('vista') ?? '';
-    if (['mis-proyectos','mi-trabajo','metricas'].includes(vista)) { const p = new URLSearchParams(location.search); p.set('vista','proyectos'); return <Navigate to={'/?'+p} replace/>; }
+    if (['mis-proyectos','mi-trabajo','metricas'].includes(vista)) {
+      const p = new URLSearchParams(location.search), project=p.get('proyectoId')??p.get('proyecto');
+      if(project && /^[a-f\d-]{36}$/i.test(project)) {p.delete('vista');p.delete('proyectoId');p.delete('proyecto');return <Navigate to={'/proyectos/'+project+(p.size?'?'+p:'')} replace/>;}
+      if(p.has('search')) {p.set('q',p.get('search')!);p.delete('search');}
+      p.set('vista','proyectos'); return <Navigate to={'/?'+p} replace/>;
+    }
     if (vista === 'proyectos') return <MisProyectosPage />;
     if (vista === 'solicitudes') return <SolicitudesPage />;
     if (vista === 'objetivos') return <MonthlyGoalsPage />;
-    return <ProjectPortfolio home/>;
+    return <OperationHomePage/>;
   }
 
   if (user?.rol === 'jefe_area') {

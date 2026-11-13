@@ -16,12 +16,15 @@ import {
 } from '../../server/db/schema/index.js';
 import { hashPassword } from '../../server/helpers/password.js';
 import { preparacionesProyecto } from '../../server/db/schema/index.js';
-import { externalIntegrations,projectDriveWorkspaces,projectDriveFolders } from '../../server/db/schema/index.js';
+import { externalIntegrations,projectDriveWorkspaces,projectDriveFolders,reunionesExtraccion } from '../../server/db/schema/index.js';
 import { eq } from 'drizzle-orm';
 // Aísla las pruebas de procesos posteriores de los nuevos pendientes de recepción.
 export async function completarPreparacionDePrueba(proyectoId: string) {
   await db.insert(preparacionesProyecto).values({ proyectoId, recibidoEn:new Date('2026-10-01'),expedienteRevisadoEn:new Date('2026-10-01'),primerContactoEn:new Date('2026-10-01'),reunionOperativaFecha:new Date('2026-10-01'),reunionOperativaRealizada:true,
-    driveCarpetaUrl:'https://drive.google.com/drive/folders/fixture',grabacionUrl:'https://example.test/grabacion',transcripcionUrl:'https://example.test/transcripcion',minutaUrl:'https://example.test/minuta',cronogramaUrl:'https://example.test/cronograma' });
+    driveCarpetaUrl:'https://drive.google.com/drive/folders/fixture',grabacionUrl:'https://example.test/grabacion',transcripcionUrl:'https://example.test/transcripcion',minutaUrl:'https://example.test/minuta',cronogramaUrl:'https://example.test/cronograma',
+    // Solo relevantes si el servicio es 'EF' (Escritura Fantasma); datos inertes para el resto.
+    estructuraPreliminaresUrl:'https://example.test/estructura-preliminares',solicitudInformacionAutorUrl:'https://example.test/sobre-el-autor',extraccionEnlaces:['https://example.test/extraccion-1'] });
+  await db.insert(reunionesExtraccion).values({ proyectoId, numero:1, fecha:'2026-10-01', realizada:true });
   // Other workflow tests start after preparation; model a persisted READY workspace without Google.
   await db.insert(externalIntegrations).values({provider:'google_drive'}).onConflictDoNothing();
   const [integration]=await db.select().from(externalIntegrations).where(eq(externalIntegrations.provider,'google_drive'));

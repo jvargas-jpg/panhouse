@@ -80,6 +80,10 @@ describe('Validadores: asignaciones individuales y ciclo real de Drive', () => {
   expect((await call('ana', 'POST', `/validaciones/${phaseId}/solicitar`)).statusCode).toBe(403);
   // An explicit request for an existing cover is idempotent and never resets it.
   expect((await call('specialist', 'POST', `/validaciones/diseno/${b.design.id}/solicitar-cubierta`)).statusCode).toBe(200);
+  const coverOutbox=await call('specialist','GET',`/especialistas/solicitudes?tipo=cubierta&tab=todas&proyecto=${b.project.id}`);
+  expect(coverOutbox.statusCode,coverOutbox.body).toBe(200);
+  expect(coverOutbox.json().solicitudes[0]).toMatchObject({tipo:'cubierta',proceso:'validacion_cubierta',destino:{rol:'jefe_area'}});
+  expect((await call('specialist','GET',`/especialistas/solicitudes/${coverOutbox.json().solicitudes[0].id}`)).statusCode).toBe(200);
   await assign(); const coverDetail = await detail(); expect(coverDetail.context).toBe('SOPORTE_EDITORIAL'); expect(coverDetail.workType).toBe('REVISION_CUBIERTA'); expect(coverDetail.canApprove).toBe(false);
   expect((await decide('todos_aplicados')).statusCode).toBe(409);
   expect((await call('other', 'GET', `/validaciones/${phaseId}/archivo`)).statusCode).toBe(404);
@@ -237,5 +241,28 @@ describe('Validadores: asignaciones individuales y ciclo real de Drive', () => {
   await upload(); expect((await decide('comentarios')).statusCode).toBe(200);
   fake.context.integration.scope = ['https://www.googleapis.com/auth/drive.file'];
   await expect(detectValidationDeliveries()).rejects.toThrow('Reconecta Google Drive');
+ });
+ it('guía y bandeja reflejan solicitud, asignación, revisión y espera de Diseño desde hechos reales',async()=>{
+  const guide=async(role='specialist')=>(await call(role,'GET',`/proyectos/${p.id}/command-center`)).json().guide.paths.find((p:{id:string})=>p.id==='calidad');
+  expect((await guide()).canOperate).toBe(true);
+  expect((await call('specialist','POST',`/validaciones/${phaseId}/solicitar`)).statusCode).toBe(200);
+  expect(await guide()).toMatchObject({waitingFor:'Jefatura',canContinue:false});
+  expect((await guide('chief')).waitingFor).toBe('Jefatura');
+  const homeBefore=await call('chief','GET','/proyectos/guia-inicio');
+  expect(homeBefore.statusCode,homeBefore.body).toBe(200);
+  expect(homeBefore.json().interventions.some((i:{projectId:string;reason:string})=>i.projectId===p.id&&i.reason==='Asignar Validador · Calidad editorial')).toBe(true);
+  expect((await call('chief','POST',`/validaciones/${phaseId}/asignar`,{validatorId:ana.id})).statusCode).toBe(200);
+  expect((await guide()).waitingFor).toBe('Validador');
+  const homeAfter=await call('chief','GET','/proyectos/guia-inicio');
+  expect(homeAfter.json().interventions.some((i:{projectId:string;reason:string})=>i.projectId===p.id&&i.reason==='Asignar Validador · Calidad editorial')).toBe(false);
+  const specialistHome=await call('specialist','GET','/proyectos/guia-inicio');
+  expect(specialistHome.json().actions.some((i:{process:{id:string}})=>i.process.id==='calidad')).toBe(false);
+  const outbox=await call('specialist','GET',`/especialistas/solicitudes?tipo=calidad&tab=todas&proyecto=${p.id}`);
+  expect(outbox.statusCode,outbox.body).toBe(200);expect(outbox.json().solicitudes[0].outcome).toContain('Validador asignado');
+  await call('ana','POST',`/validaciones/${phaseId}/iniciar`); await upload();
+  expect((await decide('comentarios')).statusCode).toBe(200);
+  expect((await guide()).waitingFor).toBe('Diseño externo');
+  const result=await call('specialist','GET',`/especialistas/solicitudes?tipo=calidad&tab=todas&proyecto=${p.id}`);
+  expect(result.json().solicitudes[0].outcome).toContain('Esperando nueva versión de Diseño');
  });
 });

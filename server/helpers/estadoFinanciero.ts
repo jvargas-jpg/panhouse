@@ -46,6 +46,11 @@ export async function getProjectFinancialStatus(id: string, client: typeof db | 
   const r = await client.execute(sql`${FINANCIAL_CTE} SELECT * FROM financial WHERE id=${id}::uuid`);
   return r.rows[0] as unknown as FinancialProject | undefined;
 }
+export async function getProjectFinancialStatuses(ids: string[]): Promise<Map<string, FinancialProject>> {
+  if (!ids.length) return new Map();
+  const result=await db.execute(sql`${FINANCIAL_CTE} SELECT * FROM financial WHERE id IN (${sql.join(ids.map(id=>sql`${id}::uuid`),sql`, `)})`);
+  return new Map((result.rows as unknown as FinancialProject[]).map(row=>[row.id,row]));
+}
 
 export interface FinancialFilters {
   search?: string; service?: string; paymentStatus?: string; dateFrom?: string; dateTo?: string;

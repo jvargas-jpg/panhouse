@@ -1,0 +1,70 @@
+[
+  {
+    "code": "QAS-BD483A",
+    "service": "EF",
+    "state": "en_proceso",
+    "titlesComplete": false,
+    "creativeMoment": {
+      "desbloqueado": false,
+      "motivo": "El título y subtítulo definitivos todavía no están cerrados"
+    },
+    "creative": [],
+    "correction": 0,
+    "work": [],
+    "requests": [
+      {
+        "type": "creativa",
+        "state": "pendiente"
+      }
+    ]
+  },
+  {
+    "code": "QAS-36FABF",
+    "service": "SE",
+    "state": "en_proceso",
+    "titlesComplete": true,
+    "creativeMoment": {
+      "desbloqueado": true
+    },
+    "creative": [
+      {
+        "type": "concepto_portada",
+        "meetingDone": false,
+        "briefReceived": false,
+        "briefSent": null,
+        "result": null
+      }
+    ],
+    "correction": 0,
+    "work": [
+      {
+        "type": "direccion_creativa",
+        "state": "en_progreso"
+      }
+    ],
+    "requests": [
+      {
+        "type": "creativa",
+        "state": "resuelta"
+      }
+    ]
+  },
+  {
+    "code": "QAS-7AE437",
+    "service": "CR",
+    "state": "en_proceso",
+    "titlesComplete": true,
+    "creativeMoment": {
+      "desbloqueado": true
+    },
+    "creative": [],
+    "correction": 0,
+    "work": [],
+    "requests": [
+      {
+        "type": "creativa",
+        "state": "rechazada"
+      }
+    ]
+  }
+]

@@ -1,0 +1,48 @@
+﻿ M docs/auditoria/39-guia-proyectos.md
+ M frontend/src/App.tsx
+ M frontend/src/HomePage.tsx
+ D frontend/src/especialista/EspecialistaInicioPage.tsx
+ M frontend/src/jefatura/PanelJefaturaPage.tsx
+ M frontend/src/jefatura/ProyectosJefaturaPage.tsx
+ M frontend/src/layout/RoleProjectNavigation.tsx
+ M frontend/src/objetivos/MonthlyGoalsPage.tsx
+ M frontend/src/proyectos/CommandCenterProceso.tsx
+ M frontend/src/proyectos/ContratoCorreccion.tsx
+ M frontend/src/proyectos/MisProyectosPage.tsx
+ M frontend/src/proyectos/ProjectGuide.tsx
+ M frontend/src/proyectos/ProjectPortfolio.tsx
+ M frontend/src/proyectos/ProyectoCommandCenterPage.tsx
+ M frontend/src/proyectos/SeccionCalidadOperativa.tsx
+ M frontend/src/proyectos/SeccionCorreccionOperativa.tsx
+ M frontend/src/proyectos/SeccionDisenoOperativa.tsx
+ M frontend/src/proyectos/operacionQueries.ts
+ M frontend/src/proyectos/projectGuide.css
+ M frontend/src/validaciones/ValidationManagement.tsx
+ M server/helpers/editorDrive.ts
+ M server/helpers/editorialChief.ts
+ M server/helpers/especialistaSolicitudes.ts
+ M server/helpers/estadoFinanciero.ts
+ M server/helpers/fichaViva.ts
+ M server/helpers/finalPackage.ts
+ M server/helpers/projectCommandCenter.ts
+ M server/helpers/projectGuide.ts
+ M server/helpers/validaciones.ts
+ M server/helpers/workflowDrive.ts
+ M server/routes/especialistaSolicitudes.routes.ts
+ M server/routes/projectGuide.routes.ts
+ M shared/especialistaSolicitudes.ts
+ M shared/projectGuide.ts
+ M shared/projectPortfolio.ts
+ M tests/validaciones.test.ts
+?? docs/evidencias/experiencia-operativa/
+?? docs/evidencias/guia-proyectos/
+?? docs/reportes/continuacion-guia-proyectos.md
+?? docs/reportes/refactor-experiencia-operativa.md
+?? frontend/src/proyectos/OperationHomePage.tsx
+?? frontend/src/proyectos/operationExperience.css
+?? frontend/src/proyectos/projectGuide.test.tsx
+?? scripts/project-guide-http-smoke.mjs
+?? scripts/project-guide-qa-server.ts
+?? server/helpers/projectExperiences.ts
+?? shared/operationHome.ts
+?? tests/projectGuide.test.ts

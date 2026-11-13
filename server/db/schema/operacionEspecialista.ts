@@ -1,4 +1,4 @@
-import { boolean, check, index, integer, pgTable, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { boolean, check, index, integer, jsonb, pgTable, text, timestamp, unique, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { proyectos } from './proyectos.js';
 import { users } from './users.js';
@@ -18,6 +18,13 @@ export const preparacionesProyecto = pgTable('preparaciones_proyecto', {
   transcripcionUrl: text('transcripcion_url'),
   minutaUrl: text('minuta_url'),
   cronogramaUrl: text('cronograma_url'),
+  // Escritura fantasma (EF): documentos adicionales al set base de 4 — ver
+  // server/helpers/projectGuide.ts, paso "documentos" condicionado a 'EF'.
+  estructuraPreliminaresUrl: text('estructura_preliminares_url'),
+  solicitudInformacionAutorUrl: text('solicitud_informacion_autor_url'),
+  // Archivos entregados de las reuniones de extracción (EF) — mismo patrón
+  // de lista de enlaces que capitulos.enlaces, no un archivo por campo.
+  extraccionEnlaces: jsonb('extraccion_enlaces').$type<string[]>(),
   driveCarpetaUrl: text('drive_carpeta_url'),
   observaciones: text('observaciones'),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),

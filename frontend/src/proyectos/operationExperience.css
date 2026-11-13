@@ -1,0 +1,24 @@
+/* Usado hoy solo por ProjectGuide.tsx (bloque de supervisión "Intervenciones en
+   este proyecto" y los formularios .pg-form) — Inicio/Proyectos ya migraron a
+   Tailwind + design-system/components. */
+.oh-section { margin: 30px 0; }
+.oh-section h2 { font-size: 18px; font-weight: 650; margin-bottom: 12px; }
+.oh-item { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 17px 0; border-bottom: 1px solid #e1e7ea; }
+.oh-item > div { min-width: 0; }
+.oh-item h3 { font-weight: 600; font-size: 15px; margin: 4px 0 6px; }
+.oh-item p { font-size: 13px; line-height: 1.6; max-width: 740px; }
+.oh-item > a, .oh-item > button { flex-shrink: 0; }
+.pg-facts { display: flex; flex-wrap: wrap; gap: 14px 28px; padding: 14px 0; font-size: 12px; }
+.pg-facts dt { color: #7b8a91; margin-bottom: 4px; }
+.pg-evidence { border-left: 3px solid #78a191; background: #f3f8f5; padding: 14px 18px; font-size: 13px; margin: 14px 0; }
+.pg-evidence p { margin: 6px 0; }
+.pg-evidence a { text-decoration: underline; }
+.pg-form textarea { border: 1px solid #ccd7dc; border-radius: 7px; padding: 10px; min-height: 110px; max-width: 100%; }
+.project-guide, .oh-item { overflow-wrap: anywhere; }
+.project-guide button:focus-visible, .project-guide a:focus-visible, .project-guide input:focus-visible, .project-guide select:focus-visible { outline: 2px solid #638b9a; outline-offset: 4px; }
+@media(max-width:640px) {
+ .oh-item { flex-direction: column; align-items: flex-start; gap: 4px; }
+ .oh-item > a, .oh-item > button { margin-top: 8px; }
+ .pg-form input { min-width: 0; max-width: 100%; }
+ .pg-form { max-width: 100%; }
+}

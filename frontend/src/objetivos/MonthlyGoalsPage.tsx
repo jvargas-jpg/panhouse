@@ -9,6 +9,7 @@ import { SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
 
 
 import { RrppIcon } from '../rrpp/RrppIcons';
+import { Surface, Button } from '../design-system/components';
 import './monthlyGoals.css';
 
 const dateLabel=(s:string)=>new Intl.DateTimeFormat('es',{day:'numeric',month:'short',year:'numeric',timeZone:s.length===10?'UTC':'America/Caracas'}).format(new Date(s.length===10?s+'T12:00:00Z':s));
@@ -135,8 +136,7 @@ export function MonthlyGoalsPage({team=false}:{team?:boolean}) {
   const saved=async()=>{await Promise.all([cache.invalidateQueries({queryKey:['monthly-goals']}),cache.invalidateQueries({queryKey:['notificaciones']})]);setNotice('El compromiso quedó registrado.');};
   const content=<div className="mg-page">
     {!team&&null}
-    <header className="mg-header"><div><span className="mg-kicker">{team?'JEFATURA · SEGUIMIENTO':'ESPECIALISTA · OPERACIÓN EDITORIAL'}</span><h1>Objetivos del mes{team&&<span> · Equipo</span>}</h1><p>{team?'Define y da seguimiento a los compromisos mensuales del equipo editorial.':'Tus compromisos para este mes y el seguimiento de su avance.'}</p></div><div className="mg-header-right"><MonthSelector period={period} onChange={p=>update({periodo:p,goalTab:'',goalStatus:''})}/></div></header>
-    {team&&<nav className="mg-subnav" aria-label="Vistas de Seguimiento"><Link to="/?vista=seguimiento">Visión general</Link><Link aria-current="page" to={'/?'+new URLSearchParams({vista:'seguimiento',subvista:'objetivos',periodo:period})}>Objetivos del mes</Link></nav>}
+    <header className="mg-header"><div><span className="mg-kicker">{team?'JEFATURA · INDICADORES':'ESPECIALISTA · OPERACIÓN EDITORIAL'}</span><h1>Objetivos del mes{team&&<span> · Equipo</span>}</h1><p>{team?'Define y da seguimiento a los compromisos mensuales del equipo editorial.':'Tus compromisos para este mes y el seguimiento de su avance.'}</p></div><div className="mg-header-right"><MonthSelector period={period} onChange={p=>update({periodo:p,goalTab:'',goalStatus:''})}/></div></header>
     {readOnly&&<p className="mg-history-banner"><RrppIcon nombre="actividad" className="h-4 w-4"/>Periodo histórico · Consulta los compromisos y resultados registrados.</p>}
     {(team?teamQuery:ownSummary).isPending?<Skeleton summary/>:(team?teamQuery:ownSummary).isError?<ErrorBlock error={(team?teamQuery:ownSummary).error!} retry={()=>{if(team)void teamQuery.refetch();else void ownSummary.refetch();}}/>:summary&&<Summary data={summary} team={team}/>}
     {summary&&(summary.unmet>0||summary.cancelled>0)&&<p className="mg-other-results">También en este periodo: <button onClick={()=>update({goalStatus:statusFilter==='NO_CUMPLIDO'?'':'NO_CUMPLIDO',goalTab:'all'})}>{summary.unmet} no cumplidos</button><span>·</span><button onClick={()=>update({goalStatus:statusFilter==='CANCELADO'?'':'CANCELADO',goalTab:'all'})}>{summary.cancelled} cancelados</button></p>}
@@ -164,5 +164,15 @@ export function MonthlyGoalsPage({team=false}:{team?:boolean}) {
 
 export function MonthlyGoalsHomeSummary() {
   const {data:user}=useMe(),period=currentPeriod(),query=useQuery({queryKey:['monthly-goals','summary',user?.id,period],queryFn:()=>apiFetch<{summary:GoalSummary}>('/monthly-goals/summary?'+new URLSearchParams({period})),enabled:user?.rol==='especialista',staleTime:15000});
-  return <div className="ei-goals">{query.isPending?<span role="status">Cargando compromisos…</span>:query.isError?<><p role="alert">No pudimos consultar tus objetivos.</p><button onClick={()=>query.refetch()}>Reintentar</button></>:<><span className="ei-goals-icon"><RrppIcon nombre="proceso" className="h-6 w-6"/></span><strong>{query.data.summary.total?`${query.data.summary.completed} cumplidos de ${query.data.summary.total} objetivos`:'Aún no tienes objetivos este mes'}</strong><p>{query.data.summary.total?`${query.data.summary.assigned} asignados por Jefatura · ${query.data.summary.own} propios · ${query.data.summary.risk} en riesgo`:'Define tus compromisos y consulta los que te asigne Jefatura.'}</p></>}<Link className="ei-secondary" to="/?vista=objetivos">Ver objetivos del mes →</Link></div>;
+  return <Surface className="p-4">
+    <h2 className="text-base font-semibold text-gray-900">Objetivos del mes</h2>
+    {query.isPending?<p role="status" className="mt-3 text-sm text-gray-500">Cargando compromisos…</p>:query.isError?<><p role="alert" className="mt-3 text-sm text-red-600">No pudimos consultar tus objetivos.</p><Button variant="secondary" className="mt-2" onClick={()=>query.refetch()}>Reintentar</Button></>:<div className="mt-3 flex items-start gap-3">
+      <span className="ph-metric-icon shrink-0"><RrppIcon nombre="proceso" className="h-4 w-4"/></span>
+      <div className="min-w-0">
+        <strong className="block text-sm font-semibold text-gray-900">{query.data.summary.total?`${query.data.summary.completed} cumplidos de ${query.data.summary.total} objetivos`:'Aún no tienes objetivos este mes'}</strong>
+        <p className="mt-1 text-sm text-gray-600">{query.data.summary.total?`${query.data.summary.assigned} asignados por Jefatura · ${query.data.summary.own} propios · ${query.data.summary.risk} en riesgo`:'Define tus compromisos y consulta los que te asigne Jefatura.'}</p>
+      </div>
+    </div>}
+    <Link className="mt-3 inline-block text-sm font-medium text-gray-700 underline" to="/?vista=objetivos">Ver objetivos del mes →</Link>
+  </Surface>;
 }

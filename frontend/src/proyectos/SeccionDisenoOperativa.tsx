@@ -1,4 +1,5 @@
 import { ExternalDesignProvider } from '../validaciones/ValidationManagement';
+import { invalidarOperacion } from './operacionQueries';
 import { StatusBadge } from '../design-system/components';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState, type FormEvent } from 'react';
@@ -10,7 +11,7 @@ const campo = 'min-w-0 w-full rounded-lg border border-gray-200 bg-white px-3 py
 const boton = 'ph-button ph-button-primary disabled:opacity-50';
 export const fechaHora = (s: string | null) => s ? new Date(s).toLocaleString('es', { dateStyle: 'short', timeStyle: 'short' }) : 'Sin pautar';
 function ErrorAccion({ error }: { error: unknown }) { return error ? <p role="alert" className="text-sm text-red-700">{error instanceof Error ? error.message : 'No se pudo guardar'}</p> : null; }
-export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: TrabajoDiseno; modo?: 'operativo' | 'creativa' | 'interna' }) {
+export function TarjetaDiseno({ trabajo: t, modo = 'operativo', readOnly=false }: { trabajo: TrabajoDiseno; modo?: 'operativo' | 'creativa' | 'interna'; readOnly?:boolean }) {
   const { data: user } = useMe();
   const qc = useQueryClient();
   const [enlace, setEnlace] = useState('');
@@ -18,10 +19,10 @@ export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: Tra
   const [feedback, setFeedback] = useState('');
   const [comentarios, setComentarios] = useState(0);
   const [feedbackDue, setFeedbackDue] = useState('');
-  const esEspecialista = user?.rol === 'especialista';
-  const esDisenador = user?.rol === 'disenador';
+  const esEspecialista = !readOnly&&user?.rol === 'especialista';
+  const esDisenador = !readOnly&&user?.rol === 'disenador';
   const v = t.versiones[0];
-  const accion = useMutation({ mutationFn: (fn: () => Promise<unknown>) => fn(), onSuccess: () => { qc.invalidateQueries({ queryKey: ['diseno'] }); qc.invalidateQueries({ queryKey: ['direcciones-creativas'] }); qc.invalidateQueries({ queryKey: ['calidad'] }); qc.invalidateQueries({ queryKey: ['proyecto', t.proyectoId] }); } });
+  const accion = useMutation({ mutationFn: (fn: () => Promise<unknown>) => fn(), onSuccess: () => { invalidarOperacion(qc,t.proyectoId); qc.invalidateQueries({ queryKey: ['diseno'] }); qc.invalidateQueries({ queryKey: ['direcciones-creativas'] }); qc.invalidateQueries({ queryKey: ['calidad'] }); qc.invalidateQueries({ queryKey: ['proyecto', t.proyectoId] }); } });
   const enviar = () => accion.mutate(async () => { await entregarDiseno(t.id, enlace, key); setKey(crypto.randomUUID()); setEnlace(''); });
   return <article className="min-w-0 rounded-xl border border-tinta/10 bg-white p-4 shadow-sm sm:p-5">
     <header className="flex flex-wrap items-start justify-between gap-3">
@@ -53,13 +54,13 @@ export function TarjetaDiseno({ trabajo: t, modo = 'operativo' }: { trabajo: Tra
     {t.versiones.length > 1 && <details className="mt-4 text-sm"><summary className="cursor-pointer text-gray-500">Historial de versiones ({t.versiones.length})</summary><ul className="mt-2 space-y-2">{t.versiones.map(h => <li key={h.id} className="break-words"><a className="underline" href={h.enlace} target="_blank" rel="noreferrer">V{h.numero}</a> · {fechaHora(h.entregadoEn)}{h.feedback ? ` · ${h.feedback}` : ''}</li>)}</ul></details>}
   </article>;
 }
-function Solicitar({ proyectoId }: { proyectoId: string }) {
-  const [tipo, setTipo] = useState<TipoDiseno>('muestra_diagramacion'); const [fuente, setFuente] = useState('');
+function Solicitar({ proyectoId, initialType='muestra_diagramacion' }: { proyectoId: string; initialType?:TipoDiseno }) {
+  const [tipo, setTipo] = useState<TipoDiseno>(initialType); const [fuente, setFuente] = useState('');
   const [capitulos, setCapitulos] = useState(3); const [correccion, setCorreccion] = useState(''); const [aprobacion, setAprobacion] = useState('');
   const [confirmada, setConfirmada] = useState(false); const [key, setKey] = useState(() => crypto.randomUUID()); const qc = useQueryClient();
   const cs = useQuery({ queryKey: ['correcciones', proyectoId], queryFn: () => fetchCorreccionesDeProyecto(proyectoId), enabled: tipo === 'diagramacion' });
   const mutation = useMutation({ mutationFn: () => solicitarDiseno(proyectoId, { tipo, solicitudKey: key, fuenteUrl: fuente, preparacionConfirmada: confirmada,
-    capitulosMuestra: tipo === 'muestra_diagramacion' ? capitulos : undefined, correccionId: tipo === 'diagramacion' ? correccion : undefined, aprobacionEdicionUrl: tipo === 'diagramacion' ? aprobacion : undefined }), onSuccess: () => { qc.invalidateQueries({ queryKey: ['diseno'] }); setKey(crypto.randomUUID()); setFuente(''); setConfirmada(false); } });
+    capitulosMuestra: tipo === 'muestra_diagramacion' ? capitulos : undefined, correccionId: tipo === 'diagramacion' ? correccion : undefined, aprobacionEdicionUrl: tipo === 'diagramacion' ? aprobacion : undefined }), onSuccess: () => { invalidarOperacion(qc,proyectoId); qc.invalidateQueries({ queryKey: ['diseno'] }); setKey(crypto.randomUUID()); setFuente(''); setConfirmada(false); } });
   return <form onSubmit={(e: FormEvent) => { e.preventDefault(); mutation.mutate(); }} className="mb-5 space-y-3 rounded-xl border border-tinta/10 bg-gray-50 p-4">
     <h3 className="font-semibold text-tinta">Solicitar trabajo de Diseño</h3><div className="grid gap-3 sm:grid-cols-2"><label className="text-xs text-gray-600">Entregable<select className={campo} value={tipo} onChange={e => setTipo(e.target.value as TipoDiseno)}>{Object.entries(etiquetas).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select></label><label className="text-xs text-gray-600">Enlace de archivo preparado / complementos<input required type="url" className={campo} value={fuente} onChange={e => setFuente(e.target.value)} /></label></div>
     {tipo === 'muestra_diagramacion' && <label className="block text-xs text-gray-600">Capítulos incluidos en la muestra<input type="number" min="3" value={capitulos} className={campo} onChange={e => setCapitulos(Number(e.target.value))} /></label>}
@@ -68,11 +69,12 @@ function Solicitar({ proyectoId }: { proyectoId: string }) {
     <button className={boton} disabled={!confirmada || mutation.isPending}>Solicitar Diseño</button><ErrorAccion error={mutation.error || cs.error} />
   </form>;
 }
-export function SeccionDisenoOperativa({ proyectoId }: { proyectoId: string }) {
+export function SeccionDisenoOperativa({ proyectoId, readOnly=false, focus }: { proyectoId: string; readOnly?:boolean; focus?:{targetId?:string;designType?:TipoDiseno} }) {
   const { data: user } = useMe(); const roles = ['especialista', 'disenador', 'jefe_area', 'validador'];
   const q = useQuery({ queryKey: ['diseno', 'proyecto', proyectoId], queryFn: () => fetchDisenos(proyectoId), enabled: !!user && roles.includes(user.rol) });
   if (!user || !roles.includes(user.rol)) return null;
-  return <section className="min-w-0 w-full p-4 sm:p-6"><h2 className="mb-4 text-xl font-bold text-tinta">Diseño y diagramación</h2>{user.rol === 'especialista' && <Solicitar proyectoId={proyectoId} />}{q.isLoading && <p>Cargando trabajos…</p>}<ErrorAccion error={q.error} />{q.data?.trabajos.length === 0 && <p className="text-sm text-gray-500">Todavía no hay trabajos solicitados.</p>}<div className="space-y-4">{q.data?.trabajos.map(t => <TarjetaDiseno key={t.id} trabajo={t} />)}</div></section>;
+  if(focus&&!readOnly)return <section className="pg-form">{!focus.targetId?<Solicitar key={focus.designType} proyectoId={proyectoId} initialType={focus.designType}/>:<>{q.isPending&&<p role="status">Consultando el entregable…</p>}<ErrorAccion error={q.error}/>{q.data?.trabajos.filter(t=>t.id===focus.targetId).map(t=><TarjetaDiseno key={t.id} trabajo={t}/>)}</>}</section>;
+  return <section className="min-w-0 w-full p-4 sm:p-6"><h2 className="mb-4 text-xl font-bold text-tinta">Diseño y diagramación</h2>{!readOnly && user.rol === 'especialista' && <Solicitar proyectoId={proyectoId} />}{q.isLoading && <p>Cargando trabajos…</p>}<ErrorAccion error={q.error} />{q.data?.trabajos.length === 0 && <p className="text-sm text-gray-500">Todavía no hay trabajos solicitados.</p>}<div className="space-y-4">{q.data?.trabajos.map(t => <TarjetaDiseno key={t.id} trabajo={t} readOnly={readOnly} />)}</div></section>;
 }
 export function RevisionesCubiertaPanel({ interna = false }: { interna?: boolean }) {
   const q = useQuery({ queryKey: ['diseno', 'revisiones', interna], queryFn: () => fetchDisenos(undefined, true) });

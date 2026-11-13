@@ -188,7 +188,7 @@ function workspace(area: AreaFicha, p: Base['p'], actor: ActorFicha, launchEnabl
     return { label: 'Abrir ingreso RRPP', href: `/rrpp/ingresos?proyecto=${p.id}` }; if (area === 'lanzamiento' && actor.rol === 'rrpp' && launchEnabled)
     return { label: 'Abrir planificación', href: `/rrpp/lanzamientos?proyecto=${p.id}` }; const owners: Record<AreaFicha, Rol[]> = { proyecto: ['comercial', 'especialista', 'jefe_area'], edicion: ['especialista', 'editor', 'jefe_edicion'], correccion: ['especialista', 'corrector', 'jefe_area'], diseno: ['especialista', 'disenador'], calidad: ['especialista', 'validador'], digital: ['soporte_digital'], lanzamiento: [], impresion: ['rrpp','impresion'], distribucion: ['distribucion'] }; if (!owners[area].includes(actor.rol))
     return; return { label: area === 'proyecto' ? 'Abrir gestión del proyecto' : `Gestionar ${AREAS_FICHA.find(a => a.id === area)?.name.toLowerCase()}`, href: ['editor', 'corrector', 'disenador', 'validador'].includes(actor.rol) ? '/' : `/proyectos/${p.id}#${area}` }; }
-export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<ResumenFichaViva> {
+export async function resumenFichaViva(id: string, actor: ActorFicha, knownSpecialist?: string | null): Promise<ResumenFichaViva> {
     const fichaColumns = {
         ingresoFechaIngreso: fichasTrazabilidad.ingresoFechaIngreso,
         ingresoFechaCierre: fichasTrazabilidad.ingresoFechaCierre,
@@ -227,7 +227,7 @@ export async function resumenFichaViva(id: string, actor: ActorFicha): Promise<R
     if (!base) throw new ErrorFichaViva(404,'Ficha no encontrada');
     const { p, f, service } = base;
     f.ingresoFechaCierre = proyectarIngreso(base.plan, f)?.fechaFinComprometida.toISOString().slice(0, 10) ?? null;
-    p.especialistaId = await obtenerEspecialistaActual(id, p.especialistaId);
+    p.especialistaId = knownSpecialist === undefined ? await obtenerEspecialistaActual(id, p.especialistaId) : knownSpecialist;
     const authorColumns = {id:autores.id,name:autores.nombre,category:autores.categoria};
     let authors = await db.select(authorColumns).from(proyectosAutores).innerJoin(autores,eq(autores.id,proyectosAutores.autorId)).where(eq(proyectosAutores.proyectoId,id)).orderBy(asc(autores.nombre));
     if (!authors.length) authors = await db.select(authorColumns).from(autores).where(eq(autores.id,p.autorId));
@@ -584,7 +584,8 @@ export async function guardarDatosDocumentales(id: string, area: string, input: 
             const { finalPackageGate } = await import('./finalPackage.js');
             const gate = await finalPackageGate(id, tx);
             if (!gate.canPrepare) throw new ErrorFichaViva(409, 'Paquete Final bloqueado: ' + gate.requirements.filter(r => !r.satisfied).map(r => r.label).join('; '));
-            if (input.paqueteFinalEntrega != null) await assertFinancialGate(tx, id);
+            if (input.paqueteFinalEntrega != null && !gate.prepared && input.paqueteFinalCargado !== true) throw new ErrorFichaViva(409, 'Prepara el Paquete Final antes de liberarlo');
+            if (input.paqueteFinalEntrega != null && !gate.financialSatisfied) throw new ErrorFichaViva(409, gate.financialMessage);
         }
         if (area === 'digital' && (input.cargaKdp != null || input.cargaKindle != null)) await assertFinancialGate(tx, id);
         if(area==='impresion'&&actor.rol==='rrpp') {

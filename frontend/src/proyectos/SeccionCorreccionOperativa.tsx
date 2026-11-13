@@ -15,6 +15,8 @@ import { fetchPersonalEquipo } from './proyectoDetalleApi';
 import { ContratoCorreccion } from './ContratoCorreccion';
 import { apiFetch } from '../lib/api';
 import type { SolicitudesEspecialista } from '../../../shared/especialistaSolicitudes';
+import type { GuidePath } from '../../../shared/projectGuide';
+import { invalidarOperacion } from './operacionQueries';
 
 const ALCANCES: { value: AlcanceCorreccion; label: string }[] = [
   { value: 'tripa_completa', label: 'Tripa Completa' },
@@ -135,7 +137,7 @@ function FormularioSolicitar({ proyectoId, onCerrar }: { proyectoId: string; onC
   );
 }
 
-function ModalAsignar({ correccion, proyectoId, onClose }: { correccion: Correccion; proyectoId: string; onClose: () => void }) {
+function ModalAsignar({ correccion, proyectoId, onClose, inline=false }: { correccion: Correccion; proyectoId: string; onClose: () => void; inline?:boolean }) {
   const contracts=useQuery({queryKey:['contratos-correccion',proyectoId],queryFn:()=>apiFetch<SolicitudesEspecialista>('/especialistas/solicitudes?tipo=contrato&tab=todas&pageSize=50&proyecto='+proyectoId)});
   const currentContract=contracts.data?.solicitudes.find(s=>s.workItemId===correccion.workItemId);
   const personalQuery = useQuery({ queryKey: ['usuarios'], queryFn: fetchPersonalEquipo });
@@ -170,8 +172,7 @@ function ModalAsignar({ correccion, proyectoId, onClose }: { correccion: Correcc
 
   const yaTeniaCorrector = Boolean(correccion.correctorId || correccion.correctorNombre);
 
-  return (
-    <Modal titulo={yaTeniaCorrector ? 'Reasignar corrector' : 'Asignar corrector'} subtitulo={ETIQUETA_ALCANCE[correccion.alcance]} onClose={onClose}>
+  const content=(
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 overflow-y-auto p-6">
         {correccion.requiereRevisionPrevia && (
           <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
@@ -254,11 +255,11 @@ function ModalAsignar({ correccion, proyectoId, onClose }: { correccion: Correcc
           )}
         </div>
       </form>
-    </Modal>
   );
+  return inline?content:<Modal titulo={yaTeniaCorrector?'Reasignar corrector':'Asignar corrector'} subtitulo={ETIQUETA_ALCANCE[correccion.alcance]} onClose={onClose}>{content}</Modal>;
 }
 
-function ModalCerrar({ correccion, proyectoId, onClose }: { correccion: Correccion; proyectoId: string; onClose: () => void }) {
+function ModalCerrar({ correccion, proyectoId, onClose, inline=false }: { correccion: Correccion; proyectoId: string; onClose: () => void; inline?:boolean }) {
   const [resultado, setResultado] = useState<ResultadoCorreccion>('buena');
   const [observaciones, setObservaciones] = useState('');
   const queryClient = useQueryClient();
@@ -276,8 +277,7 @@ function ModalCerrar({ correccion, proyectoId, onClose }: { correccion: Correcci
     mutacion.mutate();
   }
 
-  return (
-    <Modal titulo="Cerrar corrección" subtitulo={ETIQUETA_ALCANCE[correccion.alcance]} onClose={onClose}>
+  const content=(
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
         <div>
           <label htmlFor="cierre-resultado" className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">
@@ -321,8 +321,8 @@ function ModalCerrar({ correccion, proyectoId, onClose }: { correccion: Correcci
           )}
         </div>
       </form>
-    </Modal>
   );
+  return inline?content:<Modal titulo="Cerrar corrección" subtitulo={ETIQUETA_ALCANCE[correccion.alcance]} onClose={onClose}>{content}</Modal>;
 }
 
 // Entrega rápida (fecha + enlaces) — el Especialista solo la ve cuando
@@ -541,4 +541,19 @@ export function SeccionCorreccionOperativa({ proyectoId, puedeOperar }: { proyec
       </div>
     </div>
   );
+}
+
+/** Uses the native commands, displaying only the server-selected operation. */
+export function CorrectionGuideStep({id,action}:{id:string;action:NonNullable<GuidePath['action']>}) {
+ const cache=useQueryClient();
+ const query=useQuery({queryKey:['correcciones',id],queryFn:()=>fetchCorreccionesDeProyecto(id),enabled:action.kind!=='correction_start'});
+ const refresh=()=>invalidarOperacion(cache,id);
+ if(action.kind==='correction_start')return <FormularioSolicitar proyectoId={id} onCerrar={refresh}/>;
+ if(query.isPending)return <p role="status">Consultando la intervención…</p>;
+ if(query.error)return <p role="alert">{query.error.message} <button onClick={()=>query.refetch()}>Reintentar</button></p>;
+ const c=query.data.correcciones.find(c=>c.id===action.targetId);
+ if(!c)return <p role="alert">La intervención cambió. Actualiza el proyecto.</p>;
+ if(action.kind==='correction_contract')return <ContratoCorreccion correccionId={c.id} workItemId={c.workItemId} proyectoId={id} asignado={false} bloqueado={c.requiereRevisionPrevia&&!c.revisionPreviaConfirmada}/>;
+ if(action.kind==='correction_assign')return <ModalAsignar key={c.id} correccion={c} proyectoId={id} onClose={refresh} inline/>;
+ return <>{c.informeTecnicoUrl&&<p><a className="underline" href={c.informeTecnicoUrl} target="_blank" rel="noreferrer">Abrir informe técnico ↗</a></p>}<ModalCerrar key={c.id} correccion={c} proyectoId={id} onClose={refresh} inline/></>;
 }

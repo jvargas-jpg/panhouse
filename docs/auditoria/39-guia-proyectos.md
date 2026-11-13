@@ -18,4 +18,4 @@ Paquete Final distinguirá preparación editorial de liberación financiera. Sus
 
 ## Verificación y reporte final
 
-Pendiente al iniciar: consolidación de rutas, DTO de guía, selector, requisitos compartidos, protección de ediciones anteriores, convergencia, Drive, pruebas de permisos y escenario EF, revisión visual y evidencia Git. Este apartado se completará con los resultados observados y las brechas restantes.
+La continuación del 13 de noviembre de 2026 se documenta en [el reporte de implementación](../reportes/continuacion-guia-proyectos.md). Se corrigieron la divergencia entre roles, priorización y lecturas del portafolio, solicitudes de cubierta, operaciones contextuales y gates de Paquete Final. Los builds y la comprobación HTTP pasaron; el pase final de guía/interfaz aprobó 15 pruebas. La suite heredada de trazabilidad mantiene 27 fallos que deben reconciliarse con los permisos vigentes. Computer Use bloqueó el intento de revisión visual por no poder verificar la URL activa de Chrome; el recorrido visual EF completo permanece pendiente. No se declara terminada la definición integral del encargo.

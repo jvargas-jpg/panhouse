@@ -2,6 +2,8 @@ import { pool, db } from '../db/client.js';
 import { and, desc, eq, inArray } from 'drizzle-orm';
 import { auditLogs, contratosCorreccion, informacionContrato, users, direccionesCreativas, fichaCalidadFases, fichasTrazabilidad, correcciones, informacionSolicitudArea, solicitudesArea } from '../db/schema/index.js';
 import { ErrorFichaViva } from './fichaViva.js';
+import { coverRound } from './coverValidation.js';
+import { workItems } from '../db/schema/index.js';
 import { etiquetaEventoFicha } from './fichaViva.js';
 import type { Rol } from '../db/schema/index.js';
 import type { DetalleSolicitud, FiltrosSolicitudes, SolicitudOperativa, SolicitudesEspecialista, TipoSolicitud } from '../../shared/especialistaSolicitudes.js';
@@ -11,6 +13,7 @@ export const TIPOS_SOLICITUD: {tipo:TipoSolicitud;nombre:string;rol:string;desti
   {tipo:'creativa',nombre:'Reunión creativa',rol:'lider_creativo',destino:'Líder Creativo'},
   {tipo:'contrato',nombre:'Contrato de corrección',rol:'talento_humano',destino:'Talento Humano'},
   {tipo:'calidad',nombre:'Asignación de Validador',rol:'jefe_area',destino:'Jefatura'},
+  {tipo:'cubierta',nombre:'Validador de cubierta',rol:'jefe_area',destino:'Jefatura'},
   {tipo:'digital',nombre:'Activación Amazon',rol:'soporte_digital',destino:'Soporte Digital'},
   {tipo:'lanzamiento',nombre:'Planificación de lanzamiento',rol:'rrpp',destino:'RRPP'},
   {tipo:'impresion',nombre:'Coordinación de impresión',rol:'rrpp',destino:'RRPP'},
@@ -43,8 +46,18 @@ const FUENTES = `WITH scope AS MATERIALIZED (
  UNION ALL
  SELECT q.work_item_id,p.id,q.work_item_id,wi.business_key,'calidad','calidad',
  CASE WHEN wi.estado='cancelado' THEN 'cancelada' WHEN q.revisado_en IS NOT NULL THEN 'resuelta' WHEN q.iniciado_en IS NOT NULL THEN 'en_revision' ELSE 'pendiente' END,
- coalesce(q.validator_requested_at,q.solicitado_en),q.revisado_en::text,CASE WHEN q.revisado_en IS NOT NULL THEN CASE WHEN q.aprobado THEN 'Versión aprobada por Calidad' ELSE 'Comentarios entregados a Diseño' END END
- FROM scope p JOIN fichas_trazabilidad f ON f.proyecto_id=p.id JOIN ficha_calidad_fases q ON q.ficha_id=f.id JOIN work_items wi ON wi.id=q.work_item_id WHERE q.validator_requested_at IS NOT NULL OR q.revisado_en IS NOT NULL
+ coalesce(q.validator_requested_at,q.solicitado_en),q.revisado_en::text,CASE WHEN q.revisado_en IS NOT NULL THEN CASE WHEN q.aprobado THEN 'Todos los comentarios aplicados' ELSE 'Comentarios entregados · Esperando nueva versión de Diseño' END WHEN q.iniciado_en IS NOT NULL THEN 'Validador revisando: '||coalesce(qa.nombre,'Responsable registrado') WHEN qa.nombre IS NOT NULL THEN 'Validador asignado: '||qa.nombre ELSE 'Esperando asignación de Jefatura' END
+ FROM scope p JOIN fichas_trazabilidad f ON f.proyecto_id=p.id JOIN ficha_calidad_fases q ON q.ficha_id=f.id JOIN work_items wi ON wi.id=q.work_item_id
+ LEFT JOIN LATERAL (SELECT u.nombre FROM project_assignments a JOIN usuarios u ON u.id=a.usuario_id WHERE a.work_item_id=wi.id AND a.tipo='validador' AND a.finalizado_en IS NULL ORDER BY a.asignado_en DESC,a.id DESC LIMIT 1) qa ON true
+ WHERE q.validator_requested_at IS NOT NULL OR q.revisado_en IS NOT NULL
+ UNION ALL
+ SELECT wi.id,p.id,wi.id,wi.business_key,'cubierta','validacion_cubierta',
+ CASE WHEN wi.estado='cancelado' THEN 'cancelada' WHEN wi.observaciones::jsonb->'validation'->>'revisadoEn' IS NOT NULL THEN 'resuelta' WHEN wi.observaciones::jsonb->'validation'->>'iniciadoEn' IS NOT NULL THEN 'en_revision' ELSE 'pendiente' END,
+ (wi.observaciones::jsonb->'validation'->>'validatorRequestedAt')::timestamptz,wi.observaciones::jsonb->'validation'->>'revisadoEn',
+ CASE WHEN wi.observaciones::jsonb->'validation'->>'aprobado'='true' THEN 'Todos los comentarios aplicados' WHEN wi.observaciones::jsonb->'validation'->>'revisadoEn' IS NOT NULL THEN 'Comentarios entregados · Esperando nueva versión de Diseño' WHEN qa.nombre IS NOT NULL THEN 'Validador asignado: '||qa.nombre ELSE 'Esperando asignación de Jefatura' END
+ FROM scope p JOIN work_items wi ON wi.proyecto_id=p.id AND wi.tipo='validacion_cubierta'
+ LEFT JOIN LATERAL (SELECT u.nombre FROM project_assignments a JOIN usuarios u ON u.id=a.usuario_id WHERE a.work_item_id=wi.id AND a.tipo='validador' AND a.finalizado_en IS NULL ORDER BY a.asignado_en DESC,a.id DESC LIMIT 1) qa ON true
+ WHERE wi.observaciones::jsonb->'validation'->>'validatorRequestedAt' IS NOT NULL
  UNION ALL
  SELECT wi.id,p.id,wi.id,wi.business_key,'digital','soporte_digital',
  CASE WHEN wi.estado='cancelado' THEN 'cancelada' WHEN f.soporte_digital_fecha_activacion IS NOT NULL THEN 'resuelta' WHEN wi.estado='en_progreso' THEN 'en_revision' ELSE 'pendiente' END,
@@ -109,10 +122,11 @@ export async function detalleSolicitud(id:string,actor:Actor):Promise<DetalleSol
     if(c?.enlaceGrabacion)enlaces.push({label:'Grabación de reunión',url:c.enlaceGrabacion});
     if(c?.briefEnlace)enlaces.push({label:'Brief creativo',url:c.briefEnlace});
     eventTypes=['DIRECCION_CREATIVA_SOLICITADA','LIDER_CREATIVO_ASIGNADO','REUNION_CREATIVA_REGISTRADA','SOLICITUD_CREATIVA_ACEPTADA','SOLICITUD_CREATIVA_CONVERTIDA','SOLICITUD_CREATIVA_RECHAZADA'];
-  } else if(r.tipo==='calidad') {
-    const [q]=await db.select().from(fichaCalidadFases).where(eq(fichaCalidadFases.workItemId,id));
+  } else if(r.tipo==='calidad' || r.tipo==='cubierta') {
+    const [work]=r.tipo==='cubierta'?await db.select().from(workItems).where(eq(workItems.id,id)):[];
+    const q=work ? coverRound(work) : (await db.select().from(fichaCalidadFases).where(eq(fichaCalidadFases.workItemId,id)))[0];
     contexto.push({label:'Fase / ronda',value:`F${q?.numeroFase} · ronda ${q?.ronda}`},{label:'Versión',value:q?.pdfVersion ?? 'Sin etiqueta'},{label:'Comentarios',value:q?.cantidadComentarios?.toString() ?? 'Sin revisión registrada'});
-    if(q?.pdfUrl)enlaces.push({label:'Versión enviada a Calidad',url:q.pdfUrl});
+    if(q && 'pdfUrl' in q && typeof q.pdfUrl==='string')enlaces.push({label:'Versión enviada a Calidad',url:q.pdfUrl});
     if(q?.comentariosUrl)enlaces.push({label:'PDF con comentarios',url:q.comentariosUrl});
     eventTypes=['VALIDADOR_SOLICITADO','VALIDADOR_ASIGNADO','VALIDACION_ARCHIVO_CARGADO','VALIDACION_COMENTARIOS_ENVIADOS','VALIDACION_TODOS_APLICADOS','VALIDACION_DISENO_RECIBIDO','DISENO_HANDOFF_CALIDAD','CALIDAD_INICIADA','CALIDAD_REVISADA','CALIDAD_REVISION_FINAL_SOLICITADA'];
   } else if(r.tipo==='editor') {

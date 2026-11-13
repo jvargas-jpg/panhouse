@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "frontendOrigin": "http://127.0.0.1:5177",
+  "apiProxy": true,
+  "session": true,
+  "operationalHome": true,
+  "stylesheetServed": true,
+  "visualQA": false
+}

@@ -22,7 +22,7 @@ export function destinoProyectos(rol?: string) {
 export function SpecialistSidebarNav({ origen, mobile = false }: { origen?: string | null; mobile?: boolean }) {
   const location = useLocation();
   const active = new URLSearchParams(location.pathname === '/' ? location.search : origen?.split('?')[1]).get('vista') ?? 'inicio';
-  const items = [{id:'inicio',label:'Inicio',icon:'inicio'}, {id:'proyectos',label:'Proyectos',icon:'proyectos'}, {id:'solicitudes',label:'Solicitudes',icon:'ingreso'}, {id:'objetivos',label:'Objetivos del mes',icon:'indicadores'}] as const;
+  const items = [{id:'inicio',label:'Inicio',icon:'inicio'}, {id:'proyectos',label:'Proyectos',icon:'proyectos'}, {id:'solicitudes',label:'Solicitudes',icon:'ingreso'}] as const;
   return <nav aria-label={mobile ? 'Navegación del Especialista móvil' : 'Navegación del Especialista'} className={mobile ? 'jf-mobile-nav' : 'jf-nav'}>{items.map(i => <Link key={i.id} to={i.id === 'inicio' ? '/' : '/?vista='+i.id} aria-current={active === i.id ? 'page' : undefined} className={active === i.id ? 'jf-nav-active' : ''}><RrppIcon nombre={i.icon} className="h-[18px] w-[18px] shrink-0"/>{i.label}</Link>)}</nav>;
 }
 export function RoleProjectNavigation({ rol, origen, mobile = false }: { rol?: string; origen?: string | null; mobile?: boolean }) {
@@ -31,7 +31,7 @@ export function RoleProjectNavigation({ rol, origen, mobile = false }: { rol?: s
     const active = VISTAS_JEFATURA.find(v => v === vista) ?? 'proyectos';
     return <JefaturaSidebar vista={active === 'solicitudes' ? 'inicio' : active} />;
   }
-  if (rol === 'especialista') return <SpecialistSidebarNav origen={origen}/>;
+  if (rol === 'especialista') return <SpecialistSidebarNav origen={origen} mobile={mobile}/>;
   if (rol === 'editor') return <EditorNav active="mis-proyectos"/>;
   if (rol === 'jefe_edicion') return <EditorialNav active="proyectos-edicion"/>;
   if (rol === 'corrector') return <CorrectorNavigation active="mi-trabajo"/>;

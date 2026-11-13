@@ -24,6 +24,7 @@ export * from './fichaDocumental.js';
 export * from './decisiones.js';
 export * from './contratosCorreccion.js';
 export * from './operacionEspecialista.js';
+export * from './extraccion.js';
 export * from './monthlyGoals.js';
 export * from './integrations.js';
 export * from './projectDriveWorkspaces.js';

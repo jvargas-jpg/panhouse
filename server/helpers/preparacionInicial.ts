@@ -16,6 +16,8 @@ export const preparacionInicialSchema = z.object({
   recibidoEn: instante, expedienteRevisadoEn: instante, primerContactoEn: instante,
   reunionOperativaFecha: instante, reunionOperativaRealizada: z.boolean().optional(),
   grabacionUrl: link, transcripcionUrl: link, minutaUrl: link, cronogramaUrl: link,
+  estructuraPreliminaresUrl: link, solicitudInformacionAutorUrl: link,
+  extraccionEnlaces: z.array(link.unwrap().unwrap()).max(20).nullable().optional(),
   observaciones: z.string().trim().max(2000).nullable().optional(),
 }).strict().refine(v => Object.keys(v).length > 0, 'Indica un cambio');
 
@@ -25,12 +27,14 @@ export function proyectarPreparacion(row: typeof preparacionesProyecto.$inferSel
   const f = row;
   const documental=workspace.status==='READY'&&!workspace.contextChanged;
   const completo = !!(f?.recibidoEn && f.expedienteRevisadoEn && f.primerContactoEn && f.reunionOperativaRealizada && documental && f.minutaUrl && f.cronogramaUrl && f.grabacionUrl && f.transcripcionUrl);
-  const iniciado = !!(f?.recibidoEn || f?.expedienteRevisadoEn || f?.primerContactoEn || f?.reunionOperativaFecha || f?.reunionOperativaRealizada || f?.driveCarpetaUrl || f?.minutaUrl || f?.cronogramaUrl || f?.grabacionUrl || f?.transcripcionUrl || f?.observaciones?.trim());
+  const iniciado = !!(f?.recibidoEn || f?.expedienteRevisadoEn || f?.primerContactoEn || f?.reunionOperativaFecha || f?.reunionOperativaRealizada || f?.driveCarpetaUrl || f?.minutaUrl || f?.cronogramaUrl || f?.grabacionUrl || f?.transcripcionUrl || f?.estructuraPreliminaresUrl || f?.solicitudInformacionAutorUrl || f?.extraccionEnlaces?.length || f?.observaciones?.trim());
   return {
     recibidoEn: f?.recibidoEn?.toISOString() ?? null, expedienteRevisadoEn: f?.expedienteRevisadoEn?.toISOString() ?? null,
     primerContactoEn: f?.primerContactoEn?.toISOString() ?? null, primerContactoDueAt: calcularPrimerContactoDueAt(asignadoEn),
     reunionOperativaFecha: f?.reunionOperativaFecha?.toISOString() ?? null, reunionOperativaRealizada: f?.reunionOperativaRealizada ?? false,
     grabacionUrl: f?.grabacionUrl ?? null, transcripcionUrl: f?.transcripcionUrl ?? null, minutaUrl: f?.minutaUrl ?? null, cronogramaUrl: f?.cronogramaUrl ?? null,
+    estructuraPreliminaresUrl: f?.estructuraPreliminaresUrl ?? null, solicitudInformacionAutorUrl: f?.solicitudInformacionAutorUrl ?? null,
+    extraccionEnlaces: f?.extraccionEnlaces ?? null,
     driveCarpetaUrl: documental?workspace.rootFolderUrl:f?.driveCarpetaUrl ?? null, driveEstado: documental?'configurado':workspace.status==='ERROR'||workspace.contextChanged?'error':['PENDING','PROVISIONING'].includes(workspace.status)?'pendiente':'no_configurado',
     workspace,observaciones: f?.observaciones ?? null, estado: completo ? 'Completo' : iniciado||workspace.id ? 'En curso' : 'Pendiente', editable,
   };

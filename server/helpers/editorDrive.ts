@@ -1,6 +1,6 @@
-import { and, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { projectDriveFolders, projectDriveWorkspaces } from '../db/schema/index.js';
+import { editorialDeliveries, projectDriveFolders, projectDriveWorkspaces } from '../db/schema/index.js';
 import { withCorporateDrive, type CorporateDriveOperation } from '../modules/integrations/google-drive/corporate.js';
 import { FOLDER_MIME } from '../modules/integrations/google-drive/adapter.js';
 import { editorError, editorWorkProject } from './editorAccess.js';
@@ -80,10 +80,11 @@ export async function uploadEditorialDriveFile(workItemId:string,actorId:string,
   if(input.contentBase64.length>12_000_000||!/^[A-Za-z0-9+/]*={0,2}$/.test(input.contentBase64))throw editorError('El archivo supera el tamaño permitido o es inválido',400);
   const content=Buffer.from(input.contentBase64,'base64');
   if(!content.length||content.length>8*1024*1024)throw editorError('El archivo debe pesar entre 1 byte y 8 MB',400);
+  const [previous]=await db.select({id:editorialDeliveries.id}).from(editorialDeliveries).where(eq(editorialDeliveries.workItemId,workItemId)).orderBy(desc(editorialDeliveries.submittedAt),desc(editorialDeliveries.id)).limit(1);
   return operate(async({integration,storage})=>{
     if(integration.storageContextId!==c.workspace.storageContextId||integration.id!==c.workspace.integrationId)throw editorError('La conexión de Drive cambió');
     if(!storage.uploadFile)throw editorError('La conexión no admite carga de archivos',503);
-    const created=await storage.uploadFile({parentFolderId:folder.driveFolderId,name:input.name,mimeType:({doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pdf:'application/pdf',odt:'application/vnd.oasis.opendocument.text',rtf:'application/rtf',txt:'text/plain'} as Record<string,string>)[input.name.split('.').pop()!.toLowerCase()]!,content,appProperties:{panhouseProjectId:c.item.proyectoId,panhouseWorkItemId:workItemId,panhouseActorId:actorId,panhouseAssignmentId:item.assignmentId??'',panhouseDeliverable:item.interventionType==='feedback'?'feedback_applied':'edited'}});
+    const created=await storage.uploadFile({parentFolderId:folder.driveFolderId,name:input.name,mimeType:({doc:'application/msword',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pdf:'application/pdf',odt:'application/vnd.oasis.opendocument.text',rtf:'application/rtf',txt:'text/plain'} as Record<string,string>)[input.name.split('.').pop()!.toLowerCase()]!,content,appProperties:{panhouseProjectId:c.item.proyectoId,panhouseWorkItemId:workItemId,panhouseActorId:actorId,panhouseAssignmentId:item.assignmentId??'',panhouseCycle:previous?.id??'initial',panhouseDeliverable:item.interventionType==='feedback'?'feedback_applied':'edited'}});
     try{
       await db.transaction(async tx=>{
         const latest=await lockEditorWork(tx,workItemId,actorId);

@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { correcciones, editorialDeliveries, projectAssignments, projectDriveFolders, projectDriveWorkspaces, proyectos, users, workItems } from '../db/schema/index.js';
 import { withCorporateDrive, type CorporateDriveOperation } from '../modules/integrations/google-drive/corporate.js';
@@ -27,19 +27,21 @@ export async function detectWorkflowDeliveries(operate: CorporateDriveOperation 
    if(ws.integrationId!==integration.id || ws.storageContextId!==integration.storageContextId || !integration.scope.includes(DRIVE_DELIVERY_SCOPE) || !storage.listFiles)return;
    const cache=new Map<string,StorageItem[]>();
    const files=async(folder:string)=>{if(cache.has(folder))return cache.get(folder)!;const all:StorageItem[]=[];let pageToken: string|undefined;do{const page=await storage.listFiles!({parentFolderId:folder,pageToken});all.push(...page.items);pageToken=page.nextPageToken??undefined;if(all.length>5000)throw new Error('Demasiados archivos en una carpeta de entregas');}while(pageToken);cache.set(folder,all);return all;};
-   const known=new Set((await db.select({id:editorialDeliveries.driveFileId}).from(editorialDeliveries).where(eq(editorialDeliveries.projectId,id))).map(x=>x.id));
+   const history=await db.select().from(editorialDeliveries).where(eq(editorialDeliveries.projectId,id)).orderBy(desc(editorialDeliveries.submittedAt),desc(editorialDeliveries.id));
+   const known=new Set(history.map(x=>x.driveFileId));
    const works=pending.filter(i=>i.projectId===id);
    for(const i of works) {
+    const previous=history.find(d=>d.workItemId===i.workItemId);
     const [editor]=await db.select().from(users).where(eq(users.id,i.editorId!));
     const [assignment]=await db.select().from(projectAssignments).where(and(eq(projectAssignments.proyectoId,id),eq(projectAssignments.tipo,'editor'),isNull(projectAssignments.workItemId),isNull(projectAssignments.finalizadoEn)));
     if(!editor?.activo || assignment && assignment.usuarioId!==editor.id)continue;
     const keys=i.chapter ? i.interventionType==='feedback'?['EDITING_FEEDBACK_APPLIED']:['EDITING_OUTPUT'] : ['EDITING','FULL_MANUSCRIPT','FULL_MANUSCRIPT_FEEDBACK_APPLIED'];
     const candidates:StorageItem[]=[];
     for(const folder of folders.filter(f=>keys.includes(f.key)))for(const file of await files(folder.driveFolderId)) {
-     if(!valid(file,folder.driveFolderId,assignment?.asignadoEn??new Date(0)) || known.has(file.providerFileId) || !['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword','application/pdf','application/vnd.google-apps.document'].includes(file.mimeType))continue;
+     if(!valid(file,folder.driveFolderId,assignment?.asignadoEn??new Date(0)) || previous && new Date(file.modifiedAt!)<=previous.submittedAt || known.has(file.providerFileId) || !['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword','application/pdf','application/vnd.google-apps.document'].includes(file.mimeType))continue;
      const m=file.appProperties;
-     const bound=m.panhouseProjectId===id && m.panhouseWorkItemId===i.workItemId && m.panhouseActorId===editor.id && (!m.panhouseAssignmentId || m.panhouseAssignmentId===assignment?.id) && m.panhouseDeliverable===(i.interventionType==='feedback'?'feedback_applied':'edited');
-     const unambiguous=!m.panhouseWorkItemId && works.length===1 && file.contributorEmails?.some(e=>e.toLowerCase()===editor.email.toLowerCase());
+     const bound=m.panhouseProjectId===id && m.panhouseWorkItemId===i.workItemId && m.panhouseActorId===editor.id && (!m.panhouseAssignmentId || m.panhouseAssignmentId===assignment?.id) && (previous ? m.panhouseCycle===previous.id : !m.panhouseCycle || m.panhouseCycle==='initial') && m.panhouseDeliverable===(i.interventionType==='feedback'?'feedback_applied':'edited');
+     const unambiguous=!m.panhouseWorkItemId && !m.panhouseProjectId && !m.panhouseActorId && works.length===1 && file.contributorEmails?.some(e=>e.toLowerCase()===editor.email.toLowerCase());
      if(bound||unambiguous)candidates.push(file);
     }
     if(candidates.length===1)captured.push({file:candidates[0]!,workId:i.workItemId!,editorId:editor.id});

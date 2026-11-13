@@ -1,5 +1,5 @@
 export interface ProyectoTrabajo { id:string;codigo:string;titulo:string;autores:string;portadaUrl:string|null;servicio:string;fechaObjetivo:string|null }
-export type TipoSolicitud = 'editor' | 'creativa' | 'contrato' | 'calidad' | 'digital' | 'lanzamiento' | 'impresion';
+export type TipoSolicitud = 'editor' | 'creativa' | 'contrato' | 'calidad' | 'cubierta' | 'digital' | 'lanzamiento' | 'impresion';
 export type EstadoSolicitud = 'pendiente' | 'en_revision' | 'requiere_informacion' | 'resuelta' | 'rechazada' | 'cancelada';
 export interface SolicitudOperativa {
   id: string; tipo: TipoSolicitud; titulo: string; proyecto: ProyectoTrabajo; proceso: string; workItemId: string | null; businessKey: string;

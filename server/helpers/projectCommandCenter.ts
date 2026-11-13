@@ -37,7 +37,7 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
   const p = await accesoCommandCenter(id, actor);
   const financial = await getProjectFinancialStatus(id);
   const [ficha, snapshot, rows, assignments, configuracion, paymentStates, cases, preparaciones, activaciones, control, editorial] = await Promise.all([
-    resumenFichaViva(id, actor),
+    resumenFichaViva(id, actor, actor.rol === 'especialista' ? p.especialistaId : undefined),
     obtenerDashboardJefatura(new Date(), { historico: true, incluirRetirados: true, proyectoId: id }),
     db.select({ item: workItems, paso: pasos.nombre, fase: fases.nombre }).from(workItems)
       .leftJoin(pasos, eq(pasos.id, workItems.pasoId)).leftJoin(fases, eq(fases.id, pasos.faseId))
@@ -90,7 +90,7 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
   const preparacion = proyectarPreparacion(preparaciones[0], assigned?.asignadoEn ?? null, actor.rol === 'especialista' && activos.includes(p.estado),workspace);
   if (p.especialistaId || assigned) procesos.unshift({ tipo: 'preparacion_inicial', nombre: 'Preparación inicial', estado: preparacion.estado,
     detalle: [preparacion.primerContactoEn ? 'Primer contacto registrado' : 'Primer contacto pendiente', preparacion.reunionOperativaRealizada ? 'Reunión realizada' : preparacion.reunionOperativaFecha ? 'Reunión programada' : 'Reunión por programar', preparacion.driveEstado==='configurado' ? 'Drive configurado' : 'Drive sin configurar'].join(' · '), trabajos: [] });
-  const validations = await listValidations(actor, id);
+  const validations = await listValidations(actor, id, p);
   for (const proceso of procesos) {
     const owner = PROCESOS_OPERATIVOS[proceso.tipo];
     proceso.nombre = owner?.nombre ?? proceso.nombre;
@@ -205,7 +205,7 @@ export async function obtenerCommandCenter(id: string, actor: ActorFicha): Promi
       ...ficha.overview.filter(f => ['budget', 'ingresoServicioPresupuesto', 'ingresoServicioAlianza', 'capitulosPactados', 'paginasPactadas'].includes(f.key)).map(f => ({ ...f, editable: false })),
     ],
   };
-  result.guide = await projectGuide(id, result, actor);
+  result.guide = await projectGuide(id, result, actor, { editorial, financial });
   if (result.guide.paths.find(p => p.id === 'preparacion_inicial')?.historicalReadOnly) result.preparacion.editable = false;
   return result;
 }

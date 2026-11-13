@@ -235,12 +235,15 @@ export async function decideValidation(id: string, input: { result: 'comentarios
 }
 
 // DTO deliberately excludes commercial data, audit history, work IDs and Ficha.
-export async function listValidations(actor: Actor, projectId?: string) {
+export async function listValidations(actor: Actor, projectId?: string, authorizedProject?: typeof proyectos.$inferSelect) {
  validationEnsure(['validador', 'jefe_area', 'especialista', 'rrpp', 'admin'].includes(actor.rol), 'Rol no autorizado', 403);
  if (actor.rol === 'especialista') {
   validationEnsure(projectId, 'Indique proyecto', 400);
-  const [p] = await db.select().from(proyectos).where(eq(proyectos.id, projectId));
-  validationEnsure(p && await obtenerEspecialistaActual(p.id, p.especialistaId) === actor.id, 'Proyecto ajeno', 403);
+  if (authorizedProject?.id === projectId) validationEnsure(authorizedProject.especialistaId === actor.id, 'Proyecto ajeno', 403);
+  else {
+   const [p] = await db.select().from(proyectos).where(eq(proyectos.id, projectId));
+   validationEnsure(p && await obtenerEspecialistaActual(p.id, p.especialistaId) === actor.id, 'Proyecto ajeno', 403);
+  }
  }
  const rows = await db.select({ q: fichaCalidadFases, v: disenoVersiones, d: disenos, p: proyectos, author: autores.nombre, a: projectAssignments, validator: users.nombre }).from(fichaCalidadFases)
   .innerJoin(disenoVersiones, eq(fichaCalidadFases.disenoVersionId, disenoVersiones.id)).innerJoin(disenos, eq(disenoVersiones.disenoId, disenos.id)).innerJoin(proyectos, eq(disenos.proyectoId, proyectos.id)).innerJoin(autores, eq(proyectos.autorId, autores.id))

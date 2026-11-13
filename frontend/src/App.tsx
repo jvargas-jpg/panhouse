@@ -21,12 +21,17 @@ import { RrppProyectosPage } from './rrpp/RrppProyectosPage';
 import { RrppLanzamientosPage } from './rrpp/RrppLanzamientosPage';
 import { SolicitudesPage } from './especialista/SolicitudesPage';
 import { GoogleDrivePage } from './integrations/GoogleDrivePage';
+import { useMe } from './auth/useAuth';
 
 // Los gráficos se comparten entre Indicadores Comerciales y RRPP.
 const MetricasPage = lazy(() => import('./comercial/MetricasPage').then((m) => ({ default: m.MetricasPage })));
 const ProyectoCommandCenterPage = lazy(() => import('./proyectos/ProyectoCommandCenterPage').then(m => ({ default: m.ProyectoCommandCenterPage })));
 const RrppMetricasPage = lazy(() => import('./rrpp/RrppMetricasPage').then((m) => ({ default: m.RrppMetricasPage })));
 const AdminApp=lazy(()=>import('./admin/AdminApp').then(m=>({default:m.AdminApp})));
+function ProjectListEntry() {
+  const {data:user}=useMe();
+  return user && ['especialista','jefe_area'].includes(user.rol) ? <Navigate to="/?vista=proyectos" replace/> : <AutoresPage vistaInicial="proyectos"/>;
+}
 
 export function App() {
   return (
@@ -50,7 +55,7 @@ export function App() {
               inicial fijada por prop — dirección sigue entrando por "/"
               exactamente igual que siempre, sin pasar por acá. */}
           <Route path="/autores" element={<AutoresPage vistaInicial="clientes" />} />
-          <Route path="/proyectos" element={<AutoresPage vistaInicial="proyectos" />} />
+          <Route path="/proyectos" element={<ProjectListEntry />} />
           <Route path="/comercial/pagos" element={<RegistrarPagoPage />} />
           <Route
             path="/comercial/metricas"

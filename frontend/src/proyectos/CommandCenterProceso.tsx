@@ -16,6 +16,10 @@ const Impresion = lazy(() => import('./SeccionImpresion').then(m => ({ default: 
 const Distribucion = lazy(() => import('./SeccionDistribucion').then(m => ({ default: m.SeccionDistribucion })));
 
 export function CommandCenterProceso({ id, tipo, especialista, rrpp, data, proceso, historico }: { id: string; tipo: string; especialista: boolean; rrpp: boolean; data: ProjectCommandCenter; proceso: ProcesoProyecto; historico?: { pasoActualNombre: string } }) {
+  const guided=!!data.guide&&(data.guide.mode==='operate'||data.capabilities.supervisar);
+  const readOnly=guided&&!especialista;
+  const selectedAction=data.guide?.paths.find(p=>p.id===tipo)?.action;
+  const focus=guided&&especialista?{targetId:selectedAction?.targetId,designType:selectedAction?.designType}:undefined;
   const requiresFicha = ['edicion', 'soporte_digital', 'lanzamiento', 'impresion', 'distribucion'].includes(tipo);
   const ficha = useQuery({ queryKey: ['ficha', id], queryFn: () => fetchFicha(id), enabled: requiresFicha });
   const proyecto = useQuery({ queryKey: ['proyecto', id], queryFn: () => fetchProyecto(id), enabled: tipo === 'edicion' });
@@ -26,8 +30,8 @@ export function CommandCenterProceso({ id, tipo, especialista, rrpp, data, proce
     {tipo === 'edicion' && ficha.data && proyecto.data && <><CommandCenterEdicion id={id} canEdit={especialista} editorId={proyecto.data.proyecto.editorId}/><details><summary>Control documental y cierre de Edición</summary><Edicion proyectoId={id} ficha={ficha.data.ficha} puedeEditar={especialista} editorId={proyecto.data.proyecto.editorId} fechaFeedbackTripa={proyecto.data.proyecto.fechaFeedbackTripa} /></details></>}
     {tipo === 'correccion' && <Correccion proyectoId={id} puedeOperar={especialista} />}
     {tipo === 'direccion_creativa' && <Creativa proyectoId={id} puedeOperar={especialista} />}
-    {['diseno', 'revision_interna_cubierta'].includes(tipo) && <Diseno proyectoId={id} />}
-    {tipo === 'calidad' && <Calidad proyectoId={id} />}
+    {['diseno', 'revision_interna_cubierta'].includes(tipo) && <Diseno proyectoId={id} readOnly={readOnly} focus={focus}/>}
+    {tipo === 'calidad' && <Calidad proyectoId={id} readOnly={readOnly} focus={focus}/>}
     {tipo === 'validacion_cubierta' && <ValidationManagement projectId={id} context="SOPORTE_EDITORIAL"/>}
     {tipo === 'soporte_digital' && ficha.data && <Digital proyectoId={id} ficha={ficha.data.ficha} puedeEditar={false} puedeEditarControl={false} />}
     {['lanzamiento','impresion'].includes(tipo) && <CommandCenterArea id={id} proceso={proceso} rrpp={rrpp}/>}
