@@ -46,6 +46,11 @@ export const authorMailOutbox = pgTable('author_mail_outbox', {
   id: uuid('id').primaryKey().defaultRandom(), key: text('key').notNull().unique(),
   userId: uuid('user_id').notNull().references(() => users.id,{onDelete:'cascade'}),
   projectId: uuid('project_id').references(() => proyectos.id,{onDelete:'cascade'}),
+  // Override del destinatario — null significa "usar users.email" (caso
+  // normal). Las credenciales se encolan una fila por correo registrado
+  // del autor (puede tener varios), cada una con su propio "to", en vez
+  // de mandar una sola copia a su email de login.
+  to: text('to'),
   subject: text('subject').notNull(), message: text('message').notNull(), path: text('path').notNull(),
   sentAt: timestamp('sent_at',{withTimezone:true}), nextAttemptAt: timestamp('next_attempt_at',{withTimezone:true}).notNull().defaultNow(),
   createdAt: timestamp('created_at',{withTimezone:true}).notNull().defaultNow(),

@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 import { ErrorFichaViva } from '../helpers/fichaViva.js';
-import { guardarPreparacionInicial, preparacionInicialSchema } from '../helpers/preparacionInicial.js';
+import { guardarPreparacionInicial, preparacionInicialSchema, subirDocumentoPreparacion, subirDocumentoPreparacionSchema } from '../helpers/preparacionInicial.js';
 import { solicitarProcesoArea, actuarSolicitudArea } from '../helpers/solicitudesArea.js';
 
 const proyectoParams = z.object({ proyectoId: z.string().uuid() });
@@ -18,6 +18,11 @@ export async function operacionEspecialistaRoutes(app: FastifyInstance) {
   app.patch('/proyectos/:proyectoId/preparacion-inicial', { preHandler: [requireAuth, requireRole('especialista')] }, async req => {
     const { proyectoId } = proyectoParams.parse(req.params);
     return guardarPreparacionInicial(proyectoId, preparacionInicialSchema.parse(req.body), req.user!);
+  });
+  // Subida real (no enlace pegado) a la carpeta raíz del proyecto en Drive.
+  app.post('/proyectos/:proyectoId/preparacion-inicial/documentos', { preHandler: [requireAuth, requireRole('especialista')], bodyLimit: 28_100_000 }, async req => {
+    const { proyectoId } = proyectoParams.parse(req.params);
+    return subirDocumentoPreparacion(proyectoId, subirDocumentoPreparacionSchema.parse(req.body), req.user!);
   });
   for (const tipo of ['lanzamiento', 'impresion'] as const) {
     app.post(`/proyectos/:proyectoId/solicitar-${tipo}`, { preHandler: [requireAuth, requireRole('especialista')] }, async req => {

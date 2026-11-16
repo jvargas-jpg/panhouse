@@ -24,7 +24,7 @@ export async function completarPreparacionDePrueba(proyectoId: string) {
     driveCarpetaUrl:'https://drive.google.com/drive/folders/fixture',grabacionUrl:'https://example.test/grabacion',transcripcionUrl:'https://example.test/transcripcion',minutaUrl:'https://example.test/minuta',cronogramaUrl:'https://example.test/cronograma',
     // Solo relevantes si el servicio es 'EF' (Escritura Fantasma); datos inertes para el resto.
     estructuraPreliminaresUrl:'https://example.test/estructura-preliminares',solicitudInformacionAutorUrl:'https://example.test/sobre-el-autor',extraccionEnlaces:['https://example.test/extraccion-1'] });
-  await db.insert(reunionesExtraccion).values({ proyectoId, numero:1, fecha:'2026-10-01', realizada:true });
+  await db.insert(reunionesExtraccion).values({ proyectoId, numero:1, fechaHora:new Date('2026-10-01T14:00:00Z'), duracionMinutos:90, realizada:true });
   // Other workflow tests start after preparation; model a persisted READY workspace without Google.
   await db.insert(externalIntegrations).values({provider:'google_drive'}).onConflictDoNothing();
   const [integration]=await db.select().from(externalIntegrations).where(eq(externalIntegrations.provider,'google_drive'));

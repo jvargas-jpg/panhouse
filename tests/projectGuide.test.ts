@@ -15,7 +15,7 @@ import type { CorporateDriveOperation } from '../server/modules/integrations/goo
 import type { StorageItem } from '../server/modules/integrations/google-drive/provider.js';
 import type { GuidedPortfolio } from '../shared/projectPortfolio.js';
 import type { OperationHome } from '../shared/operationHome.js';
-import { preparacionesProyecto } from '../server/db/schema/index.js';
+import { preparacionesProyecto, reunionesExtraccion } from '../server/db/schema/index.js';
 import { createCreativeMeetingRequest, decideCreativeRequest } from '../server/helpers/creativeRequests.js';
 import { direccionesCreativas, disenos, disenoVersiones, fichaDisenoPropuestas } from '../server/db/schema/index.js';
 
@@ -52,6 +52,76 @@ beforeEach(async()=>{
 });
 
 describe('Guía del proyecto: hechos y capacidades',()=>{
+ it('edita una reunión programada por ID y conserva las otras sesiones, números y asignación',async()=>{
+  const p=await fixture();
+  const created=await call(specialist,'POST',`/proyectos/${p.id}/extraccion`,{sesiones:[{fechaHora:'2026-11-20T10:00:00-04:00',duracionMinutos:90},{fechaHora:'2026-11-21T11:00:00-04:00',duracionMinutos:60}]});
+  expect(created.statusCode,created.body).toBe(200);
+  const [first,second]=created.json().reuniones;
+  // Reprogramar sigue disponible después de enviar la solicitud y asignar Editor.
+  await call(specialist,'POST',`/proyectos/${p.id}/solicitar-editor`);
+  expect((await call(chiefEditor,'PATCH',`/proyectos/${p.id}/editor`,{editorId:editor})).statusCode).toBe(200);
+  const endpoint=`/proyectos/${p.id}/extraccion/${first.id}`;
+  const update=await call(specialist,'PATCH',endpoint,{fechaHora:'2026-11-23T15:30:00-04:00',duracionMinutos:120});
+  expect(update.statusCode,update.body).toBe(200);
+  expect(update.json().reunion).toMatchObject({id:first.id,numero:1,fechaHora:'2026-11-23T19:30:00.000Z',duracionMinutos:120,realizada:false});
+  const all=(await call(specialist,'GET',`/proyectos/${p.id}/extraccion`)).json().reuniones;
+  expect(all).toHaveLength(2);expect(all[1]).toEqual(second);
+  const [project]=await db.select().from(proyectos).where(eq(proyectos.id,p.id));expect(project!.editorId).toBe(editor);
+  const audit=await db.select().from(auditLogs).where(eq(auditLogs.accion,'REUNION_EXTRACCION_REPROGRAMADA'));
+  expect(audit).toHaveLength(1);expect(audit[0]?.detalles).toMatchObject({reunionId:first.id,numero:1,antes:{fechaHora:first.fechaHora},despues:{fechaHora:'2026-11-23T19:30:00.000Z'}});
+  expect((await call(specialist,'PATCH',endpoint,{fechaHora:'2026-11-23T15:30:00-04:00',duracionMinutos:120})).statusCode).toBe(200);
+  expect(await db.select().from(auditLogs).where(eq(auditLogs.accion,'REUNION_EXTRACCION_REPROGRAMADA'))).toHaveLength(1);
+ });
+ it('reprogramar exige Especialista del proyecto, una sesión propia programada y datos válidos',async()=>{
+  const p=await fixture(),foreign=await fixture();
+  const [session]=await db.insert(reunionesExtraccion).values({proyectoId:p.id,numero:1,fechaHora:new Date('2026-11-20T14:00:00Z'),duracionMinutos:90}).returning();
+  const [foreignSession]=await db.insert(reunionesExtraccion).values({proyectoId:foreign.id,numero:1,fechaHora:new Date('2026-11-20T14:00:00Z'),duracionMinutos:90}).returning();
+  const endpoint=`/proyectos/${p.id}/extraccion/${session!.id}`,payload={fechaHora:'2026-11-23T15:30:00-04:00'};
+  expect((await call(other,'PATCH',endpoint,payload)).statusCode).toBe(403);
+  expect((await call(chief,'PATCH',endpoint,payload)).statusCode).toBe(403);
+  expect((await call(specialist,'PATCH',`/proyectos/${p.id}/extraccion/${foreignSession!.id}`,payload)).statusCode).toBe(404);
+  for(const invalid of [{},{fechaHora:'no-es-fecha'},{duracionMinutos:0},{duracionMinutos:601},{duracionMinutos:1.5},{realizada:true},{numero:3}]) expect((await call(specialist,'PATCH',endpoint,invalid)).statusCode).toBe(400);
+  await db.update(reunionesExtraccion).set({realizada:true}).where(eq(reunionesExtraccion.id,session!.id));
+  expect((await call(specialist,'PATCH',endpoint,payload)).statusCode).toBe(409);
+  await db.update(reunionesExtraccion).set({realizada:false}).where(eq(reunionesExtraccion.id,session!.id));
+  await db.update(proyectos).set({estado:'culminado'}).where(eq(proyectos.id,p.id));
+  expect((await call(specialist,'PATCH',endpoint,payload)).statusCode).toBe(409);
+  const [unchanged]=await db.select().from(reunionesExtraccion).where(eq(reunionesExtraccion.id,session!.id));
+  expect(unchanged!.fechaHora?.toISOString()).toBe('2026-11-20T14:00:00.000Z');
+ });
+ it('las sesiones programadas esperan asignación de Editor y no se vuelven históricas al solicitarlo',async()=>{
+  const p=await fixture(true);
+  await db.update(preparacionesProyecto).set({cronogramaEntrevistasEfUrl:'https://example.test/entrevistas',extraccionEnlaces:null}).where(eq(preparacionesProyecto.proyectoId,p.id));
+  await db.update(reunionesExtraccion).set({realizada:false}).where(eq(reunionesExtraccion.proyectoId,p.id));
+  const preparation = async()=> (await center(p.id)).guide!.paths.find(p=>p.id==='preparacion_inicial')!;
+  let prep=await preparation();
+  expect(prep).toMatchObject({currentStep:'Solicitar Editor',canContinue:false,canOperate:true,historicalReadOnly:false,action:{kind:'request_editor'}});
+  expect(prep.steps.find(s=>s.id==='reuniones_extraccion')?.completed).toBe(true);
+  expect(prep.steps.find(s=>s.id==='editor_extraccion')?.completed).toBe(false);
+  expect((await call(specialist,'POST',`/proyectos/${p.id}/workflow/continue`,{path:'preparacion_inicial'})).statusCode).toBe(409);
+  const requested=await call(specialist,'POST',`/proyectos/${p.id}/solicitar-editor`);
+  expect(requested.statusCode,requested.body).toBe(201);
+  prep=await preparation();
+  expect(prep).toMatchObject({waitingFor:'Jefatura de Edición',canContinue:false,canOperate:false,historicalReadOnly:false});
+  expect(prep.steps.find(s=>s.id==='reuniones_extraccion')?.completed).toBe(true);
+  expect(prep.steps.find(s=>s.id==='editor_extraccion')?.completed).toBe(false);
+  expect((await center(p.id,chief)).guide!.paths.find(p=>p.id==='preparacion_inicial')?.waitingFor).toBe('Jefatura de Edición');
+  expect((await call(specialist,'POST',`/proyectos/${p.id}/workflow/continue`,{path:'preparacion_inicial'})).statusCode).toBe(409);
+  const assigned=await call(chiefEditor,'PATCH',`/proyectos/${p.id}/editor`,{editorId:editor});
+  expect(assigned.statusCode,assigned.body).toBe(200);
+  prep=await preparation();
+  expect(prep).toMatchObject({waitingFor:null,currentStep:'Subir archivos de la extracción',historicalReadOnly:false});
+  expect(prep.steps.find(s=>s.id==='reuniones_extraccion')?.completed).toBe(true);
+  expect(prep.steps.find(s=>s.id==='editor_extraccion')?.completed).toBe(true);
+  const files=await call(specialist,'PATCH',`/proyectos/${p.id}/preparacion-inicial`,{extraccionEnlaces:['https://example.test/extraccion-nueva']});
+  expect(files.statusCode,files.body).toBe(200);
+  expect(await preparation()).toMatchObject({state:'Completado',canContinue:true});
+  expect((await call(specialist,'POST',`/proyectos/${p.id}/workflow/continue`,{path:'preparacion_inicial'})).statusCode).toBe(200);
+  await crearCapitulo(p.id,1,editor);
+  expect((await preparation()).historicalReadOnly).toBe(true);
+  expect((await preparation()).steps.some(s=>s.id==='reuniones_extraccion')).toBe(true);
+  expect((await call(specialist,'PATCH',`/proyectos/${p.id}/preparacion-inicial`,{extraccionEnlaces:['https://example.test/cambio-posterior']})).statusCode).toBe(409);
+ });
  it('comienza en preparación y el servidor bloquea Continuar mientras faltan requisitos',async()=>{
   const p=await fixture();
   const data=await center(p.id);

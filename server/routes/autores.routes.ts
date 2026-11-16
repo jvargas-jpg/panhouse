@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '../db/client.js';
 import { autores, CATEGORIAS_CLIENTE } from '../db/schema/index.js';
 import { actualizarAutor, eliminarAutor, listarAutoresSinProyecto } from '../helpers/autores.js';
+import { reenviarAccesoAutor } from '../helpers/authorAccounts.js';
 import { parseOrReply } from '../helpers/validate.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
 
@@ -133,6 +134,9 @@ export async function autoresRoutes(app: FastifyInstance) {
       if (!body) return;
 
       const [autor] = await db.insert(autores).values(body).returning();
+      // El envío del enlace de acceso ya no es automático: Comercial decide
+      // si lo manda (popup de confirmación en el formulario, ver
+      // POST /:id/invitar más abajo).
       return reply.code(201).send({ autor });
     },
   );
@@ -152,6 +156,22 @@ export async function autoresRoutes(app: FastifyInstance) {
       if (!autor) return reply.code(404).send({ message: 'Autor no encontrado' });
 
       return reply.send({ autor });
+    },
+  );
+
+  // Enviar (o reenviar) al autor su enlace de acceso al Portal del Autor,
+  // a todos los correos que tenga registrados — acción explícita desde el
+  // formulario de Comercial (popup de confirmación al crear con correo, o
+  // al editar y cambiar el correo), nunca automática.
+  app.post(
+    '/:id/invitar',
+    { preHandler: [requireAuth, requireRole(...ROLES_ESCRITURA_AUTORES)] },
+    async (request, reply) => {
+      const params = parseOrReply(autorIdParamSchema, request.params, reply);
+      if (!params) return;
+
+      const resultado = await reenviarAccesoAutor(params.id, request.user!);
+      return reply.send(resultado);
     },
   );
 

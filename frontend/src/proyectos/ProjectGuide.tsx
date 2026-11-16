@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { ProjectCommandCenter } from '../../../shared/projectCommandCenter';
@@ -8,6 +8,8 @@ import { apiFetch } from '../lib/api';
 import { CommandCenterProceso } from './CommandCenterProceso';
 import { ValidationManagement } from '../validaciones/ValidationManagement';
 import { ProjectWorkspaceCard } from './ProjectWorkspaceCard';
+import { useProjectWorkspace } from './useProjectWorkspace';
+import type { ProjectWorkspaceSummary } from '../../../shared/projectWorkspace';
 import { invalidarOperacion } from './operacionQueries';
 import { AuthorWorkflowPanel } from '../portalAutor/AuthorWorkflowPanel';
 import './projectGuide.css';
@@ -19,22 +21,6 @@ import { fetchDecision, responderInfoDecision } from '../jefatura/decisionesApi'
 
 export function Requirements({ items }: { items: GuideRequirement[] }) {
  return <ul className="pg-requirements">{items.map(r => <li key={r.id} className={r.satisfied ? 'pg-done' : ''}><span aria-hidden="true">{r.satisfied ? '✓' : '○'}</span>{r.label}</li>)}</ul>;
-}
-// Reuniones de extracción (Escritura Fantasma) — tabla propia, distinta de
-// preparaciones_proyecto, con su propia mutation (ver server/helpers/extraccion.ts).
-function ReunionesExtraccionPanel({ id }: { id: string }) {
- const cache = useQueryClient(), [fecha, setFecha] = useState('');
- const query = useQuery({ queryKey: ['extraccion', id], queryFn: () => apiFetch<{ reuniones: ReunionExtraccion[] }>('/proyectos/'+id+'/extraccion') });
- const siguienteNumero = (query.data?.reuniones.length ?? 0) + 1;
- const registrar = useMutation({ mutationFn: () => apiFetch('/proyectos/'+id+'/extraccion', { method: 'POST', body: JSON.stringify({ numero: siguienteNumero, fecha, realizada: true }) }),
-  onSuccess: () => { setFecha(''); void cache.invalidateQueries({ queryKey: ['extraccion', id] }); invalidarOperacion(cache,id); void cache.invalidateQueries({ queryKey: ['proyecto',id] }); } });
- return <div className="pg-form">
-  <p>Registra la fecha de cada reunión de extracción realizada con el Autor. Puedes registrar varias.</p>
-  {!!query.data?.reuniones.length && <ul className="pg-requirements">{query.data.reuniones.map(r => <li key={r.id} className={r.realizada ? 'pg-done' : ''}><span aria-hidden="true">{r.realizada ? '✓' : '○'}</span>Reunión {r.numero}{r.fecha ? ' · '+r.fecha : ''}</li>)}</ul>}
-  <label>Fecha de la reunión<input type="date" required value={fecha} max={new Date().toISOString().slice(0,10)} onChange={e=>setFecha(e.target.value)}/></label>
-  <button type="button" className="pg-primary" disabled={!fecha || registrar.isPending} onClick={()=>registrar.mutate()}>{registrar.isPending ? 'Registrando…' : 'Registrar reunión realizada'}</button>
-  {registrar.error && <p role="alert">{registrar.error.message}</p>}
- </div>;
 }
 // Mismo patrón de lista repetible que ConceptsForm (CreativeWorkDialog.tsx):
 // N enlaces, "Añadir otro" — no un único campo, puede haber varios archivos.
@@ -60,9 +46,8 @@ function PreparationStep({ id, data, step }: { id: string; data: ProjectCommandC
   {step.id==='documentos' && <><ProjectWorkspaceCard id={id} editable initial={p.workspace}/>{(['minutaUrl','cronogramaUrl','grabacionUrl','transcripcionUrl'] as const).map((key,i)=><label key={key}>{['Minuta operativa','Cronograma','Grabación','Transcripción'][i]}<input type="url" placeholder="https://…" value={String(values[key] ?? p[key] ?? '')} onChange={e=>setValues(v=>({...v,[key]:e.target.value || null}))}/></label>)}
    {requiereExtraccion && (['estructuraPreliminaresUrl','solicitudInformacionAutorUrl'] as const).map((key,i)=><label key={key}>{['Estructura de preliminares','Solicitud de información para "Sobre el autor"'][i]}<input type="url" placeholder="https://…" value={String(values[key] ?? p[key] ?? '')} onChange={e=>setValues(v=>({...v,[key]:e.target.value || null}))}/></label>)}
   </>}
-  {step.id==='reuniones_extraccion' && <ReunionesExtraccionPanel id={id}/>}
   {step.id==='archivos_extraccion' && <ExtraccionArchivosForm initial={p.extraccionEnlaces} onChange={enlaces=>setValues(v=>({...v,extraccionEnlaces:enlaces}))}/>}
-  {step.id!=='reuniones_extraccion' && <button className="pg-primary" disabled={save.isPending || !Object.keys(values).length}>{save.isPending ? 'Guardando…' : 'Guardar y seguir'}</button>}
+  <button className="pg-primary" disabled={save.isPending || !Object.keys(values).length}>{save.isPending ? 'Guardando…' : 'Guardar y seguir'}</button>
   {save.error && <p role="alert">{save.error.message}</p>}
  </form>;
 }
@@ -84,15 +69,277 @@ function DecisionResponse({id,onSaved}:{id:string;onSaved:()=>void}) {
  const save=useMutation({mutationFn:()=>responderInfoDecision(id,message.trim(),query.data?.version),onSuccess:onSaved});
  return <form className="pg-form" onSubmit={e=>{e.preventDefault();save.mutate();}}><label>Información para Jefatura<textarea required maxLength={2000} value={message} onChange={e=>setMessage(e.target.value)}/></label><button className="pg-primary" disabled={!message.trim()||!query.data||save.isPending}>Guardar y reenviar a Jefatura</button>{(query.error||save.error)&&<p role="alert">{query.error?.message??save.error?.message}</p>}</form>;
 }
+// Pantalla completa, un paso a la vez — bienvenida, crear carpetas, primer
+// contacto (24h) y subir archivos. El resto de Preparación Inicial (reuniones
+// de extracción, etc.) sigue con la vista habitual una vez estos terminan.
+function WizardCarpetas({ id, onContinue }: { id: string; onContinue: () => void }) {
+ // "requested" exige el clic real del Especialista: aunque el espacio ya
+ // esté listo (p. ej. creación automática previa), no se salta directo a
+ // "Carpetas creadas" sin que la persona haya presionado el botón.
+ const [requested, setRequested] = useState(false);
+ const cache = useQueryClient();
+ const workspace = useProjectWorkspace(id);
+ const recovery = useMutation({
+  mutationFn: () => apiFetch<ProjectWorkspaceSummary>('/proyectos/'+id+'/workspace/retry', { method: 'POST', body: '{}' }),
+  onSuccess: result => { cache.setQueryData(workspace.queryKey, result); invalidarOperacion(cache, id); },
+  onError: () => { void cache.invalidateQueries({ queryKey: workspace.queryKey }); invalidarOperacion(cache, id); },
+ });
+ const w = workspace.data;
+ const pending = requested && (recovery.isPending || !!w && ['PENDING','PROVISIONING'].includes(w.status));
+ const ready = requested && !!w && w.status === 'READY' && !w.contextChanged;
+ const falló = requested && !pending && !ready && (recovery.isError || w?.status === 'ERROR');
+ return <div className="pg-wizard">
+  <div className="pg-wizard-card">
+   <p className="pg-eyebrow">Paso 1</p>
+   <h2>{ready ? 'Carpetas creadas' : 'Creemos las carpetas primero'}</h2>
+   {ready
+    ? <>
+       <p className="pg-wizard-status"><span aria-hidden="true">✓</span>Tus carpetas se crearon correctamente.</p>
+       {w.rootFolderUrl && <p>Las encuentras en el siguiente enlace: <a href={w.rootFolderUrl} target="_blank" rel="noopener noreferrer">Abrir carpetas en Drive ↗</a></p>}
+      </>
+    : <p>Vamos a crear la estructura de carpetas en Google Drive para este proyecto.</p>}
+   {!ready && <button type="button" className="pg-primary pg-wizard-cta" disabled={pending} onClick={()=>{setRequested(true);recovery.mutate();}}>{pending ? 'Creando carpetas…' : falló ? 'Reintentar crear carpetas' : 'Crear carpetas'}</button>}
+   {ready && <button type="button" className="pg-primary pg-wizard-cta pg-wizard-done" onClick={onContinue}>Continuar →</button>}
+   {(recovery.isError || falló) && <p role="alert">{recovery.error?.message ?? 'No se pudieron crear las carpetas. Intenta de nuevo.'}</p>}
+  </div>
+ </div>;
+}
+function cuentaRegresiva(ms: number) {
+ const total = Math.max(0, Math.floor(ms / 1000));
+ const h = Math.floor(total / 3600), m = Math.floor((total % 3600) / 60), s = total % 60;
+ return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
+}
+// Datos de contacto registrados por Comercial al alta del autor (autores.email/telefono) —
+// ya expuestos al Especialista vía ResumenFichaViva.authors, no se inventa un campo nuevo.
+function WizardContacto({ id, data, onContinue }: { id: string; data: ProjectCommandCenter; onContinue: () => void }) {
+ const cache = useQueryClient();
+ const p = data.preparacion;
+ const [now, setNow] = useState(() => Date.now());
+ useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+ const stop = useMutation({
+  mutationFn: () => apiFetch('/proyectos/'+id+'/preparacion-inicial', { method: 'PATCH', body: JSON.stringify({ primerContactoEn: new Date().toISOString() }) }),
+  onSuccess: () => { invalidarOperacion(cache, id); void cache.invalidateQueries({ queryKey: ['proyecto', id] }); },
+ });
+ const parado = !!p.primerContactoEn;
+ const due = p.primerContactoDueAt ? new Date(p.primerContactoDueAt).getTime() : null;
+ const vencido = !parado && due !== null && due - now <= 0;
+ return <div className="pg-wizard">
+  <div className="pg-wizard-card">
+   <p className="pg-eyebrow">Paso 2</p>
+   <h2>Tienes 24 horas para contactar al Autor</h2>
+   {!parado && due !== null && <p className={'pg-wizard-timer'+(vencido?' pg-wizard-timer-late':'')}>{vencido ? 'Plazo vencido' : cuentaRegresiva(due-now)}</p>}
+   {data.ficha.authors.length>0 && <div className="pg-wizard-contact">
+    {data.ficha.authors.map(a => <p key={a.id}><strong>{a.name}</strong>{a.telefono ? ' · Tel: '+a.telefono : ''}{a.email?.length ? ' · '+a.email.join(', ') : ''}{!a.telefono && !a.email?.length ? ' · Comercial no registró teléfono ni correo' : ''}</p>)}
+   </div>}
+   {!parado
+    ? <button type="button" className="pg-primary pg-wizard-cta" disabled={stop.isPending} onClick={()=>stop.mutate()}>{stop.isPending ? 'Guardando…' : 'Parar'}</button>
+    : <>
+       <p className="pg-wizard-status"><span aria-hidden="true">✓</span>Contacto registrado.</p>
+       <button type="button" className="pg-primary pg-wizard-cta pg-wizard-done" onClick={onContinue}>Continuar →</button>
+      </>}
+   {stop.error && <p role="alert">{stop.error.message}</p>}
+  </div>
+ </div>;
+}
+type DocCampo = 'minuta'|'cronograma'|'cronogramaEntrevistasEf'|'estructuraPreliminares'|'solicitudInformacionAutor';
+function DocumentoUploadSlot({ id, campo, label, url, onUploaded }: { id: string; campo: DocCampo; label: string; url: string | null; onUploaded: () => void }) {
+ const [busy, setBusy] = useState(false), [error, setError] = useState('');
+ async function receive(file?: File) {
+  if (!file || busy) return;
+  setError('');
+  const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
+  if (!['pdf','doc','docx','xlsx'].includes(ext) || file.size === 0 || file.size > 20*1024*1024) { setError('Selecciona un PDF, Word o Excel de hasta 20 MB.'); return; }
+  setBusy(true);
+  try {
+   const contentBase64 = await new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result).split(',')[1]!); reader.onerror = () => reject(new Error('No se pudo leer el archivo')); reader.readAsDataURL(file); });
+   await apiFetch('/proyectos/'+id+'/preparacion-inicial/documentos', { method: 'POST', body: JSON.stringify({ campo, name: file.name, contentBase64 }) });
+   onUploaded();
+  } catch (e) { setError((e as Error).message); } finally { setBusy(false); }
+ }
+ return <div className="pg-upload-slot">
+  <p className="pg-upload-label">{label}</p>
+  {url
+   ? <p className="pg-wizard-status"><span aria-hidden="true">✓</span>Subido · <a href={url} target="_blank" rel="noopener noreferrer">Abrir en Drive ↗</a></p>
+   : <label className={'pg-dropzone'+(busy?' pg-dropzone-busy':'')} onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();void receive(e.dataTransfer.files[0]);}}>
+      <span>{busy ? 'Subiendo…' : 'Arrastra el archivo aquí o'}</span><span className="pg-dropzone-button">Seleccionar archivo</span>
+      <input aria-label={'Subir '+label} type="file" accept=".pdf,.doc,.docx,.xlsx" disabled={busy} onChange={e=>void receive(e.target.files?.[0])}/>
+     </label>}
+  {error && <p role="alert">{error}</p>}
+ </div>;
+}
+function WizardDocumentos({ id, data, requiereExtraccion, onContinue }: { id: string; data: ProjectCommandCenter; requiereExtraccion: boolean; onContinue: () => void }) {
+ const cache = useQueryClient();
+ const p = data.preparacion;
+ const refresh = () => { invalidarOperacion(cache, id); void cache.invalidateQueries({ queryKey: ['proyecto', id] }); };
+ const campos: { campo: DocCampo; label: string; url: string | null }[] = [
+  { campo: 'minuta', label: 'Minuta operativa', url: p.minutaUrl },
+  { campo: 'cronograma', label: 'Cronograma general', url: p.cronogramaUrl },
+  ...(requiereExtraccion ? [
+   { campo: 'cronogramaEntrevistasEf' as const, label: 'Cronograma de entrevistas para EF', url: p.cronogramaEntrevistasEfUrl },
+   { campo: 'estructuraPreliminares' as const, label: 'Estructura de preliminares', url: p.estructuraPreliminaresUrl },
+   { campo: 'solicitudInformacionAutor' as const, label: 'Solicitud de información para "Sobre el autor"', url: p.solicitudInformacionAutorUrl },
+  ] : []),
+ ];
+ const todoListo = campos.every(c => c.url);
+ return <div className="pg-wizard">
+  <div className="pg-wizard-card pg-wizard-card-wide">
+   <p className="pg-eyebrow">Paso 3</p>
+   <h2>Subir archivos</h2>
+   <p>Sube estos documentos a la carpeta del proyecto.</p>
+   <div className="pg-upload-list">{campos.map(c => <DocumentoUploadSlot key={c.campo} id={id} campo={c.campo} label={c.label} url={c.url} onUploaded={refresh}/>)}</div>
+   <button type="button" className={'pg-primary pg-wizard-cta'+(todoListo?' pg-wizard-done':'')} disabled={!todoListo} onClick={onContinue}>Continuar →</button>
+  </div>
+ </div>;
+}
+function formatFechaHora(iso: string) {
+ const d = new Date(iso);
+ return {
+  fecha: new Intl.DateTimeFormat('es-VE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Caracas' }).format(d),
+  hora: new Intl.DateTimeFormat('es-VE', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Caracas' }).format(d),
+ };
+}
+// El Editor NO se guarda por sesión — se deriva de quien esté asignado al
+// proyecto en Edición (path 'edicion'.assignee), un único editor por
+// proyecto. Antes de esa asignación, todas las sesiones dicen "Sin asignar".
+function fechaHoraCaracasInput(fecha: string | null) {
+ return fecha ? new Date(new Date(fecha).getTime()-4*3600000).toISOString().slice(0,16) : '';
+}
+function ScheduledExtractionSession({id, sesion, editor}:{id:string;sesion:ReunionExtraccion;editor:string|null}) {
+ const cache=useQueryClient();
+ const [editando,setEditando]=useState(false);
+ const [fechaHora,setFechaHora]=useState(()=>fechaHoraCaracasInput(sesion.fechaHora));
+ const [duracion,setDuracion]=useState(()=>String(sesion.duracionMinutos??90));
+ const guardar=useMutation({
+  mutationFn:()=>apiFetch<{reunion:ReunionExtraccion}>('/proyectos/'+id+'/extraccion/'+sesion.id,{method:'PATCH',body:JSON.stringify({fechaHora:new Date(fechaHora+'-04:00').toISOString(),duracionMinutos:Number(duracion)})}),
+  onSuccess:result=>{
+   cache.setQueryData<{reuniones:ReunionExtraccion[]}>(['extraccion',id],prev=>prev?{reuniones:prev.reuniones.map(s=>s.id===result.reunion.id?result.reunion:s)}:prev);
+   setEditando(false);void cache.invalidateQueries({queryKey:['extraccion',id]});invalidarOperacion(cache,id);
+  },
+ });
+ return <li className="pg-schedule-item">
+  <strong>Extracción {sesion.numero}</strong>
+  {editando ? <form className="pg-form" onSubmit={e=>{e.preventDefault();guardar.mutate();}}>
+   <label>Fecha y hora · Caracas<input type="datetime-local" required value={fechaHora} onChange={e=>setFechaHora(e.target.value)}/></label>
+   <label>Duración (minutos)<input type="number" required min="1" max="600" value={duracion} onChange={e=>setDuracion(e.target.value)}/></label>
+   <div className="pg-wizard-actions"><button type="submit" className="pg-primary" disabled={guardar.isPending}>{guardar.isPending?'Guardando…':'Guardar cambios'}</button><button type="button" className="pg-secondary" disabled={guardar.isPending} onClick={()=>setEditando(false)}>Cancelar</button></div>
+   {guardar.error&&<p role="alert">{guardar.error.message}</p>}
+  </form> : <>
+   <span>Fecha: {sesion.fechaHora ? formatFechaHora(sesion.fechaHora).fecha : '—'} · Hora: {sesion.fechaHora ? formatFechaHora(sesion.fechaHora).hora : '—'}{sesion.duracionMinutos ? ' · Duración: '+sesion.duracionMinutos+' min' : ''}</span>
+   <span>Editor: {editor ?? 'Sin asignar aún'} · Estado: {sesion.realizada ? 'Realizada' : 'Programada'}</span>
+   {!sesion.realizada&&<button type="button" className="pg-secondary" aria-label={'Editar reunión '+sesion.numero} onClick={()=>{setFechaHora(fechaHoraCaracasInput(sesion.fechaHora));setDuracion(String(sesion.duracionMinutos??90));guardar.reset();setEditando(true);}}>Editar fecha y hora</button>}
+  </>}
+ </li>;
+}
+export function WizardCronograma({ id, data, onContinue }: { id: string; data: ProjectCommandCenter; onContinue: () => void }) {
+ const cache = useQueryClient();
+ const query = useQuery({ queryKey: ['extraccion', id], queryFn: () => apiFetch<{ reuniones: ReunionExtraccion[] }>('/proyectos/'+id+'/extraccion') });
+ const edicion = data.guide?.paths.find(p => p.id === 'edicion');
+ const editor = edicion?.assignee ?? null;
+ const [filas, setFilas] = useState<{ fechaHora: string; duracion: string }[]>([{ fechaHora: '', duracion: '90' }]);
+ const programar = useMutation({
+  mutationFn: () => apiFetch('/proyectos/'+id+'/extraccion', { method: 'POST', body: JSON.stringify({ sesiones: filas.filter(f => f.fechaHora).map(f => ({ fechaHora: new Date(f.fechaHora+'-04:00').toISOString(), duracionMinutos: Number(f.duracion) })) }) }),
+  onSuccess: () => { setFilas([{ fechaHora: '', duracion: '90' }]); void cache.invalidateQueries({ queryKey: ['extraccion', id] }); invalidarOperacion(cache, id); void cache.invalidateQueries({ queryKey: ['proyecto', id] }); },
+ });
+ const sesiones = query.data?.reuniones ?? [];
+ return <div className="pg-wizard">
+  <div className="pg-wizard-card pg-wizard-card-wide">
+   <p className="pg-eyebrow">Paso 4</p>
+   <h2>Cronograma de extracciones</h2>
+   <p>Registra las sesiones según la disponibilidad que te dio el Autor.</p>
+   {query.isPending&&<p role="status">Cargando sesiones…</p>}
+   {query.error&&<p role="alert">{query.error.message}</p>}
+   {sesiones.length > 0 && <ul className="pg-schedule-list">{sesiones.map(s => <ScheduledExtractionSession key={s.id} id={id} sesion={s} editor={editor}/>)}</ul>}
+   <form className="pg-schedule-form" onSubmit={e=>{e.preventDefault();programar.mutate();}}>
+   <div className="pg-upload-list">{filas.map((f, i) => <div key={i} className="pg-upload-slot">
+    <p className="pg-upload-label">Sesión {sesiones.length+i+1}</p>
+    <label>Fecha y hora · Caracas<input type="datetime-local" value={f.fechaHora} onChange={e=>setFilas(v=>v.map((x,j)=>j===i?{...x,fechaHora:e.target.value}:x))}/></label>
+    <label>Duración (minutos)<input type="number" required min="1" max="600" value={f.duracion} onChange={e=>setFilas(v=>v.map((x,j)=>j===i?{...x,duracion:e.target.value}:x))}/></label>
+   </div>)}</div>
+   <div className="pg-wizard-actions">
+    <button type="button" className="pg-secondary" onClick={()=>setFilas(v=>[...v,{fechaHora:'',duracion:'90'}])}>Añadir otra sesión</button>
+    <button type="submit" className="pg-primary" disabled={programar.isPending || !filas.some(f=>f.fechaHora)}>{programar.isPending ? 'Guardando…' : 'Programar sesiones'}</button>
+   </div>
+   </form>
+   {programar.error && <p role="alert">{programar.error.message}</p>}
+   {sesiones.length > 0 && <button type="button" className="pg-primary pg-wizard-cta pg-wizard-done" disabled={programar.isPending} onClick={onContinue}>Continuar →</button>}
+  </div>
+ </div>;
+}
+export function WizardSolicitarEditor({id,data,onContinue,onBack}:{id:string;data:ProjectCommandCenter;onContinue:()=>void;onBack:()=>void}) {
+ const cache=useQueryClient();
+ const edicion=data.guide?.paths.find(p=>p.id==='edicion');
+ const asignado=edicion?.requirements.some(r=>r.id==='editor'&&r.satisfied)??false;
+ const reenviar=edicion?.action?.label==='Reenviar solicitud de Editor';
+ const solicitar=useMutation({mutationFn:()=>apiFetch('/proyectos/'+id+'/solicitar-editor',{method:'POST'}),onSuccess:()=>{invalidarOperacion(cache,id);void cache.invalidateQueries({queryKey:['notificaciones']});}});
+ const enviado=!asignado&&(edicion?.waitingFor==='Jefatura de Edición'||solicitar.isSuccess&&!reenviar);
+ return <div className="pg-wizard"><div className="pg-wizard-card">
+  <button type="button" className="pg-back" onClick={onBack}>← Volver al cronograma</button>
+  <p className="pg-eyebrow">Paso 5</p>
+  <h2>{asignado?'Editor asignado':enviado?'Solicitud enviada':'Solicitar Editor'}</h2>
+  {asignado ? <p className="pg-editor-name" role="status">{edicion?.assignee??'Editor asignado al proyecto'}</p>
+   : enviado ? <p role="status">Esperando a que Jefatura de Edición asigne un Editor.</p>
+   : <><p>Las reuniones están programadas. Solicita un Editor para continuar.</p>{reenviar&&<p>{edicion?.instruction}</p>}<button type="button" className="pg-primary pg-wizard-cta" disabled={solicitar.isPending} onClick={()=>solicitar.mutate()}>{solicitar.isPending?'Enviando solicitud…':reenviar?'Reenviar solicitud de Editor':'Solicitar Editor'}</button></>}
+  {solicitar.error&&<p role="alert">{solicitar.error.message}</p>}
+  <button type="button" className="pg-primary pg-wizard-cta pg-wizard-done" disabled={!asignado} onClick={()=>{if(asignado)onContinue();}}>Continuar →</button>
+ </div></div>;
+}
+function PreparacionWizard({ id, data, path, title, onContinue }: { id: string; data: ProjectCommandCenter; path: GuidePath; title: string; onContinue: () => void }) {
+ const retomarEditor=!!path.steps.find(s=>s.id==='editor_extraccion'&&!s.completed)&&!!path.steps.find(s=>s.id==='reuniones_extraccion'&&s.completed)&&!!path.steps.find(s=>s.id==='documentos'&&s.completed)&&data.preparacion.workspace?.status==='READY'&&!data.preparacion.workspace.contextChanged;
+ const [started, setStarted] = useState(retomarEditor);
+ const [carpetasListas, setCarpetasListas] = useState(retomarEditor);
+ // Cada pantalla avanza SOLO cuando la persona pulsa su propio "Continuar" —
+ // nunca porque el dato real ya cambió de fondo (si no, el refetch tras
+ // "Parar" saltaría la confirmación directo a la siguiente pantalla antes
+ // de que la persona alcance a verla).
+ const [contactoListo, setContactoListo] = useState(() => !!data.preparacion.primerContactoEn);
+ const [documentosListos, setDocumentosListos] = useState(() => path.steps.find(s=>s.id==='documentos')?.completed ?? true);
+ const [cronogramaListo, setCronogramaListo] = useState(() => path.steps.find(s=>s.id==='reuniones_extraccion')?.completed ?? true);
+ const [editorListo,setEditorListo]=useState(()=>path.steps.find(s=>s.id==='editor_extraccion')?.completed??!path.steps.some(s=>s.id==='reuniones_extraccion'));
+ useEffect(() => {
+  // Nada gamificado queda pendiente (ya estaba todo hecho antes de entrar,
+  // o la persona ya pasó por las cuatro pantallas) — cede el control a la
+  // vista habitual en vez de quedarse sin pantalla que mostrar.
+  if (started && carpetasListas && contactoListo && documentosListos && cronogramaListo && editorListo) onContinue();
+ }, [started, carpetasListas, contactoListo, documentosListos, cronogramaListo, editorListo, onContinue]);
+ if (!started) return <div className="pg-wizard">
+  <div className="pg-wizard-card">
+   <p className="pg-eyebrow">Nuevo proyecto</p>
+   <h2>Bienvenido al proyecto {title}</h2>
+   <p>Vamos a preparar todo lo necesario para comenzar, un paso a la vez.</p>
+   <button type="button" className="pg-primary pg-wizard-cta" onClick={()=>setStarted(true)}>Comencemos →</button>
+  </div>
+ </div>;
+ if (!carpetasListas) return <WizardCarpetas id={id} onContinue={()=>setCarpetasListas(true)}/>;
+ if (!contactoListo) return <WizardContacto id={id} data={data} onContinue={()=>setContactoListo(true)}/>;
+ if (!documentosListos) return <WizardDocumentos id={id} data={data} requiereExtraccion={path.steps.some(s=>s.id==='reuniones_extraccion')} onContinue={()=>setDocumentosListos(true)}/>;
+ if (!cronogramaListo) return <WizardCronograma id={id} data={data} onContinue={()=>setCronogramaListo(true)}/>;
+ if (!editorListo) return <WizardSolicitarEditor id={id} data={data} onBack={()=>setCronogramaListo(false)} onContinue={()=>setEditorListo(true)}/>;
+ return null;
+}
 function PathDetail({ id, data, path, onSelect }: { id: string; data: ProjectCommandCenter; path: GuidePath; onSelect: (id?: string) => void }) {
  const cache = useQueryClient(), [past,setPast] = useState<string | null>(null);
+ const [wizardDone, setWizardDone] = useState(() => {
+  const ws = data.preparacion.workspace;
+  const carpetasListas = !!ws && ws.status === 'READY' && !ws.contextChanged;
+  const contactoListo = !!data.preparacion.primerContactoEn;
+  const documentosListos = path.steps.find(s=>s.id==='documentos')?.completed ?? true;
+  const cronogramaListo = path.steps.find(s=>s.id==='reuniones_extraccion')?.completed ?? true;
+  const editorListo = path.steps.find(s=>s.id==='editor_extraccion')?.completed ?? true;
+  return carpetasListas && contactoListo && documentosListos && cronogramaListo && editorListo;
+ });
  const guide = data.guide!;
  const refresh = () => { invalidarOperacion(cache,id); void cache.invalidateQueries({ queryKey: ['proyecto',id] }); void cache.invalidateQueries({ queryKey: ['solicitudes'] }); };
  const request = useMutation({ mutationFn: () => apiFetch('/proyectos/'+id+'/solicitar-editor',{method:'POST'}), onSuccess: refresh });
  const creativeRequest=useMutation({mutationFn:()=>solicitarDireccionCreativa(id),onSuccess:refresh});
  const next = useMutation({ mutationFn: () => apiFetch<{nextProcess:string}>('/proyectos/'+id+'/workflow/continue',{method:'POST',body:JSON.stringify({path:path.id})}), onSuccess: result=>{refresh();onSelect(result.nextProcess);} });
  const selectedStep = path.steps.find(s=>s.id===past) ?? path.steps.find(s=>!s.completed) ?? path.steps.at(-1)!;
+ const editorExtraccionPendiente = path.id==='preparacion_inicial' && path.steps.some(s=>s.requirements.some(r=>r.id==='extraction-editor'&&!r.satisfied));
  const currentProcess = data.procesos.find(p=>p.tipo===path.id) ?? {tipo:path.id,nombre:path.label,estado:path.state,detalle:path.instruction,trabajos:[]};
+ if (path.id==='preparacion_inicial' && guide.editable && !path.historicalReadOnly && (path.state!=='Completado'||path.steps.some(s=>s.id==='editor_extraccion')) && !wizardDone)
+  return <section className="pg-detail" aria-label={path.label}>
+   <button className="pg-back" onClick={()=>onSelect()}>← Volver a procesos disponibles</button>
+   <PreparacionWizard id={id} data={data} path={path} title={data.ficha.project.title} onContinue={()=>setWizardDone(true)}/>
+  </section>;
  return <section className="pg-detail" aria-label={path.label}>
   <button className="pg-back" onClick={()=>onSelect()}>← Volver a procesos disponibles</button>
   <p className="pg-eyebrow">{guide.mode==='supervise' ? 'Supervisión del proceso' : 'Estás aquí'} · {path.label}</p>
@@ -103,8 +350,11 @@ function PathDetail({ id, data, path, onSelect }: { id: string; data: ProjectCom
   {path.requirements.length>0 && <><h3>Para continuar necesitas</h3><Requirements items={past ? selectedStep.requirements : path.requirements}/></>}
   {path.editWarning && <p className="pg-warning" role="status">{path.editWarning}</p>}
   {path.waitingFor && <div className="pg-wait"><strong>{guide.mode==='supervise' ? 'La respuesta depende de '+path.waitingFor+'.' : 'No necesitas hacer nada aquí por ahora.'}</strong><p>Esperando desde: {operationalDate(path.waitingSince)}{path.dueAt?' · Plazo: '+operationalDate(path.dueAt):' · Sin plazo confirmado'}</p><p>{guide.availableProcesses?.filter(p=>p!==path.id).length??0} procesos disponibles mientras esperas.</p><button className="pg-secondary" onClick={()=>onSelect()}>{guide.mode==='supervise'?'Consultar otros procesos':'Trabajar en otro proceso'}</button></div>}
-  {path.id==='preparacion_inicial' && !path.historicalReadOnly && guide.editable && <PreparationStep key={selectedStep.id} id={id} data={data} step={selectedStep}/>}
-  {path.action?.kind==='request_editor' && !path.waitingFor && <button className="pg-primary" disabled={request.isPending} onClick={()=>request.mutate()}>{path.action.label}</button>}
+  {path.id==='preparacion_inicial' && guide.editable && selectedStep.id==='reuniones_extraccion' && <WizardCronograma id={id} data={data} onContinue={()=>setPast(path.steps.some(s=>s.id==='editor_extraccion')?'editor_extraccion':null)}/>}
+  {path.id==='preparacion_inicial' && !path.historicalReadOnly && guide.editable && selectedStep.id!=='reuniones_extraccion' && (selectedStep.id==='editor_extraccion'
+   ? <WizardSolicitarEditor id={id} data={data} onBack={()=>setPast('reuniones_extraccion')} onContinue={()=>setPast(null)}/>
+   : <PreparationStep key={selectedStep.id} id={id} data={data} step={selectedStep}/>)}
+  {path.id!=='preparacion_inicial' && path.action?.kind==='request_editor' && !path.waitingFor && <button className="pg-primary" disabled={request.isPending} onClick={()=>request.mutate()}>{path.action.label}</button>}
   {path.action?.kind==='creative_request' && path.canOperate && <button className="pg-primary" disabled={creativeRequest.isPending} onClick={()=>creativeRequest.mutate()}>{path.action.label}</button>}
   {path.action?.kind.startsWith('correction_')&&path.canOperate&&<CorrectionGuideStep key={path.action.kind+path.action.targetId} id={id} action={path.action}/>}
   {path.action?.kind==='decision_response'&&path.canOperate&&<DecisionResponse id={path.action.targetId!} onSaved={refresh}/>}
@@ -117,7 +367,7 @@ function PathDetail({ id, data, path, onSelect }: { id: string; data: ProjectCom
   {guide.editable && ['edicion','direccion_creativa','diseno','calidad'].includes(path.id) && <details className="pg-native"><summary>Documentos y aprobaciones del Autor</summary><AuthorWorkflowPanel projectId={id}/></details>}
   {path.id==='preparacion_inicial' && path.historicalReadOnly && <details><summary>Consultar preparación registrada</summary><Requirements items={path.steps.flatMap(s=>s.requirements)}/><p>Los documentos y fechas originales permanecen disponibles en Información del proyecto.</p></details>}
   {path.steps.length>1 && <nav className="pg-step-history" aria-label="Pasos anteriores">{path.steps.map(s=><button key={s.id} disabled={!s.completed && s.id!==selectedStep.id} onClick={()=>setPast(s.id)}>{s.completed?'✓':'○'} {s.label}</button>)}{past && <button onClick={()=>setPast(null)}>Volver al paso actual</button>}</nav>}
-  {guide.editable && (path.state==='Completado'||path.waitingFor) && <button className="pg-secondary" disabled={!path.canContinue || next.isPending} onClick={()=>next.mutate()}>Continuar</button>}
+  {guide.editable && !editorExtraccionPendiente && (path.state==='Completado'||path.waitingFor) && <button className="pg-secondary" disabled={!path.canContinue || next.isPending} onClick={()=>next.mutate()}>Continuar</button>}
   {(request.error || next.error || creativeRequest.error) && <p role="alert">{request.error?.message ?? next.error?.message ?? creativeRequest.error?.message}</p>}
  </section>;
 }

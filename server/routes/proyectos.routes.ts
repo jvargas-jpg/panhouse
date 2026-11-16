@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { CATEGORIAS_STAND_BY, ESTADOS_PROYECTO } from '../db/schema/index.js';
 import { listarRiesgoProyectosActivos, obtenerProyectoConRiesgo } from '../helpers/alertas.js';
 import { listarCorreccionesDeProyecto, solicitarCorreccion } from '../helpers/correcciones.js';
-import { listarReunionesExtraccion, registrarReunionExtraccion, registrarReunionExtraccionSchema } from '../helpers/extraccion.js';
+import { listarReunionesExtraccion, programarSesionesExtraccion, programarSesionesExtraccionSchema, editarSesionExtraccion, editarSesionExtraccionSchema } from '../helpers/extraccion.js';
 import { ErrorFichaViva } from '../helpers/fichaViva.js';
 import { listarDireccionesCreativasDeProyecto, solicitarDireccionCreativa } from '../helpers/direccionCreativa.js';
 import { ALCANCES_CORRECCION } from '../helpers/correccionSla.js';
@@ -523,20 +523,29 @@ export async function proyectosRoutes(app: FastifyInstance) {
     async (request, reply) => {
       const params = parseOrReply(idParamSchema, request.params, reply);
       if (!params) return;
-      const body = parseOrReply(registrarReunionExtraccionSchema, request.body, reply);
+      const body = parseOrReply(programarSesionesExtraccionSchema, request.body, reply);
       if (!body) return;
       if (!request.user) {
         return reply.code(401).send({ error: 'No autenticado' });
       }
       try {
-        const row = await registrarReunionExtraccion(params.id, body, request.user);
-        return reply.send(row);
+        const rows = await programarSesionesExtraccion(params.id, body, request.user);
+        return reply.send({ reuniones: rows });
       } catch (e) {
         if (e instanceof ErrorFichaViva) return reply.code(e.status).send({ error: e.message });
         throw e;
       }
     },
   );
+
+  app.patch('/:id/extraccion/:reunionId', { preHandler: [requireAuth, requireRole('especialista')] }, async (request, reply) => {
+    const params = parseOrReply(z.object({id:z.string().uuid(),reunionId:z.string().uuid()}), request.params, reply);
+    if (!params) return;
+    const body = parseOrReply(editarSesionExtraccionSchema, request.body, reply);
+    if (!body || !request.user) return;
+    try { return reply.send({reunion:await editarSesionExtraccion(params.id, params.reunionId, body, request.user)}); }
+    catch (e) { if (e instanceof ErrorFichaViva) return reply.code(e.status).send({error:e.message}); throw e; }
+  });
 
   // Fase 5 (5C Dirección Creativa) — el Especialista solicita (GATE-07:
   // título + momento según servicio, reutiliza GATE-04 adentro).

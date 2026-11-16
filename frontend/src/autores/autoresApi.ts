@@ -58,6 +58,15 @@ export function editarAutor(id: string, datos: DatosEditarAutor) {
   });
 }
 
+// Envía (o reenvía) al autor su enlace de acceso al Portal del Autor, a
+// todos los correos que tenga registrados — acción explícita (popup de
+// confirmación en CrearAutorForm.tsx), nunca automática.
+export function invitarAutor(id: string) {
+  return apiFetch<{ invited?: true; alreadyActive?: true }>(`/autores/${id}/invitar`, {
+    method: 'POST',
+  });
+}
+
 // El backend responde 400 (no 500) si el autor tiene proyectos
 // asociados — ApiError.message ya trae ese texto listo para mostrar en
 // el toast de error, no hace falta traducirlo del lado del cliente.

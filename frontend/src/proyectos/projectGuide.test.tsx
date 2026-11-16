@@ -8,15 +8,16 @@ import { JefaturaSidebar } from '../jefatura/JefaturaSidebar';
 import { ProjectPortfolioRow } from './ProjectPortfolio';
 import { OperationHomeContent } from './OperationHomePage';
 import type { OperationHome } from '../../../shared/operationHome';
-import { ProjectGuide } from './ProjectGuide';
+import { ProjectGuide, WizardCronograma, WizardSolicitarEditor } from './ProjectGuide';
 import type { ProjectCommandCenter } from '../../../shared/projectCommandCenter';
 import type { GuidedProjectSummary } from '../../../shared/projectPortfolio';
 vi.stubGlobal('React',React);
 vi.mock('../auth/useAuth',()=>({useMe:()=>({data:{id:'spec',rol:'especialista'}})}));
 vi.mock('./CommandCenterProceso',()=>({CommandCenterProceso:({especialista}:{especialista:boolean})=><p>{especialista?'Operación autorizada':'Consulta del proceso'}</p>}));
 vi.mock('../portalAutor/AuthorWorkflowPanel',()=>({AuthorWorkflowPanel:()=>null}));
-function render(component: React.ReactElement, location='/') {
+function render(component: React.ReactElement, location='/', prepare?: (client:QueryClient)=>void) {
  const client=new QueryClient();
+ prepare?.(client);
  const html=renderToStaticMarkup(<QueryClientProvider client={client}><StaticRouter location={location}>{component}</StaticRouter></QueryClientProvider>);
  client.clear();return html;
 }
@@ -30,6 +31,44 @@ function data(supervise=false):ProjectCommandCenter {
  } as unknown as ProjectCommandCenter;
 }
 describe('Navegación y guía editorial',()=>{
+ const cronograma = (center:ProjectCommandCenter, sesiones=true) => render(<WizardCronograma id="qa" data={center} onContinue={()=>{}}/>,'/',client=>{
+  client.setQueryData(['extraccion','qa'],{reuniones:sesiones?[{id:'sesion',numero:1,fechaHora:'2026-11-20T14:00:00Z',duracionMinutos:90,realizada:false}]:[]});
+ });
+ it('antes de guardar sesiones no permite solicitar Editor ni continuar',()=>{
+  const html=cronograma(data(),false);
+  expect(html).toContain('Programar sesiones');expect(html).not.toContain('>Solicitar Editor</button>');expect(html).not.toContain('Continuar →');
+ });
+ it('el cronograma permite editar reuniones y continuar hacia una pantalla separada',()=>{
+  const center=data();center.guide!.paths[0]={...center.guide!.paths[0],waitingFor:null,requestedAt:null,action:{kind:'request_editor',label:'Solicitar Editor'}};
+  const html=cronograma(center);
+  expect(html).toContain('aria-label="Editar reunión 1"');expect(html).toContain('Continuar →');expect(html).not.toContain('>Solicitar Editor</button>');
+ });
+ const solicitudEditor=(center:ProjectCommandCenter)=>render(<WizardSolicitarEditor id="qa" data={center} onBack={()=>{}} onContinue={()=>{}}/>);
+ it('la pantalla de Editor muestra Solicitar Editor y Continuar bloqueado antes del envío',()=>{
+  const center=data();center.guide!.paths[0]={...center.guide!.paths[0],waitingFor:null,requestedAt:null,action:{kind:'request_editor',label:'Solicitar Editor'}};
+  const html=solicitudEditor(center);
+  expect(html).toContain('>Solicitar Editor</button>');expect(html).toMatch(/disabled="">Continuar →/);expect(html).not.toContain('Programar sesiones');
+ });
+ it('una solicitud pendiente conserva la espera sin permitir Continuar ni duplicar el envío',()=>{
+  const html=solicitudEditor(data());
+  expect(html).toContain('<h2>Solicitud enviada</h2>');expect(html).toContain('Esperando a que Jefatura de Edición asigne un Editor');
+  expect(html).not.toContain('>Solicitar Editor</button>');expect(html).toMatch(/disabled="">Continuar →/);
+ });
+ it('Continúa únicamente con asignación confirmada, aunque el Editor esté trabajando',()=>{
+  const center=data();center.guide!.paths[0]={...center.guide!.paths[0],waitingFor:'Editor',assignee:'Editor asignado',requirements:[{id:'editor',label:'Editor asignado por Jefatura de Edición',satisfied:true,source:'project_assignments'}]};
+  const html=solicitudEditor(center);
+  expect(html).toMatch(/<h2>Editor asignado<\/h2><p[^>]*>Editor asignado<\/p><button[^>]*>Continuar →/);
+  expect(html).not.toMatch(/disabled="">Continuar →/);expect(html).not.toContain('>Solicitar Editor</button>');
+ });
+ it('un nombre de Editor sin asignación confirmada no desbloquea el cronograma',()=>{
+  const center=data();center.guide!.paths[0].assignee='Editor anterior';
+  expect(solicitudEditor(center)).toMatch(/disabled="">Continuar →/);
+ });
+ it('muestra acciones independientes para editar cada sesión programada y ninguna para las realizadas',()=>{
+  const html=render(<WizardCronograma id="qa" data={data()} onContinue={()=>{}}/>,'/',client=>client.setQueryData(['extraccion','qa'],{reuniones:[1,2,3].map(numero=>({id:'sesion-'+numero,numero,fechaHora:'2026-11-20T14:00:00Z',duracionMinutos:90,realizada:numero===3}))}));
+  expect(html).toContain('aria-label="Editar reunión 1"');expect(html).toContain('aria-label="Editar reunión 2"');expect(html).not.toContain('aria-label="Editar reunión 3"');
+  expect(html).toContain('Hora: 10:00');expect(html).toContain('Fecha y hora · Caracas');
+ });
  it('Especialista ofrece una única sección Proyectos y Solicitudes como seguimiento',()=>{
   const html=render(<SpecialistSidebarNav/>,'/?vista=proyectos');
   expect(html).toContain('Proyectos');expect(html).toContain('Solicitudes');

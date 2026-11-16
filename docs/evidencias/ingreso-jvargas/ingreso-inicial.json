@@ -1,0 +1,25 @@
+{
+  "tipo": "Ingreso inicial provisional",
+  "fecha": "2026-11-16",
+  "proyectoId": "780af42e-f864-4938-9a63-2117055698f8",
+  "codigo": "12E469",
+  "autor": {
+    "id": "860c8738-fe6c-43e3-b0c5-5ffe0b71f4aa",
+    "nombre": "Jhosep Vargas",
+    "email": "jvargas@editorialpanhouse.com"
+  },
+  "servicio": "Escritura fantasma",
+  "unidad": "PanHouse",
+  "presupuesto": "Plata",
+  "ejecucion": "Normal",
+  "alianza": false,
+  "alcanceProvisional": {
+    "capitulos": "6 a 10",
+    "paginas": "100"
+  },
+  "especialistaPrevista": {
+    "id": "8fc4a874-a4f7-4c47-a571-cdc636055b10",
+    "nombre": "Lisa Demo"
+  },
+  "observaciones": "Alta y avance solicitados por el usuario el 16/11/2026. Ficha inicial provisional para revisión de Lisa: unidad PanHouse, presupuesto Plata, ejecución Normal, sin alianza, 6 a 10 capítulos y 100 páginas como valores de trabajo; alcance y presupuesto pendientes de confirmar con el autor. No se acreditan contrato firmado, pagos, reuniones ni contacto realizados. Diagnóstico e ingreso iniciales generados localmente en docs/evidencias/ingreso-jvargas. Datos personales no proporcionados pendientes de completar."
+}

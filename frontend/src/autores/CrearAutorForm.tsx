@@ -7,7 +7,7 @@ import { ContactSection } from './ContactSection';
 import { PersonalInfoSection } from './PersonalInfoSection';
 import { SocialNetworksSection } from './SocialNetworksSection';
 import type { SeccionAutorForm } from './authorFormSecciones';
-import { crearAutor, editarAutor } from './autoresApi';
+import { crearAutor, editarAutor, invitarAutor } from './autoresApi';
 import { CODIGOS_UNICOS } from './codigosTelefonicos';
 import { filasDesdeRedesSociales, redesSocialesDesdeFilas, type FilaRedSocial } from './redesSocialesForm';
 
@@ -151,12 +151,24 @@ export function CrearAutorForm({
         personalidad: form.personalidad.length > 0 ? form.personalidad : undefined,
         ocupacion: form.ocupacion || undefined,
       }),
-    onSuccess: () => {
+    onSuccess: async ({ autor }) => {
       queryClient.invalidateQueries({ queryKey: ['autores'] });
       queryClient.invalidateQueries({ queryKey: ['rrpp'] });
       setForm(ESTADO_VACIO);
       setSeccionActiva('personal');
-      onGuardado('Autor creado exitosamente');
+      let mensaje = 'Autor creado exitosamente';
+      if (
+        form.email.length > 0 &&
+        window.confirm('¿Deseas enviarle ahora su enlace de acceso al Portal del Autor?')
+      ) {
+        try {
+          await invitarAutor(autor.id);
+          mensaje += '. Se envió su enlace de acceso.';
+        } catch {
+          mensaje += ', pero no se pudo enviar el enlace de acceso. Puedes reenviarlo luego editando el autor.';
+        }
+      }
+      onGuardado(mensaje);
     },
   });
 
@@ -175,10 +187,26 @@ export function CrearAutorForm({
         personalidad: form.personalidad.length > 0 ? form.personalidad : null,
         ocupacion: form.ocupacion || null,
       }),
-    onSuccess: () => {
+    onSuccess: async ({ autor }) => {
       queryClient.invalidateQueries({ queryKey: ['autores'] });
       queryClient.invalidateQueries({ queryKey: ['rrpp'] });
-      onGuardado('Autor editado exitosamente');
+      let mensaje = 'Autor editado exitosamente';
+      const correosPrevios = [...(autorEnEdicion?.email ?? [])].sort();
+      const correosNuevos = [...form.email].sort();
+      const correoCambio = JSON.stringify(correosPrevios) !== JSON.stringify(correosNuevos);
+      if (
+        correoCambio &&
+        form.email.length > 0 &&
+        window.confirm('El correo cambió. ¿Deseas reenviar el enlace de acceso a los correos actualizados?')
+      ) {
+        try {
+          await invitarAutor(autor.id);
+          mensaje += '. Se reenvió su enlace de acceso.';
+        } catch {
+          mensaje += ', pero no se pudo reenviar el enlace de acceso. Puedes intentarlo de nuevo luego.';
+        }
+      }
+      onGuardado(mensaje);
     },
   });
 

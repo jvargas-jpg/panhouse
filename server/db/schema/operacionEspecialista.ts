@@ -18,8 +18,9 @@ export const preparacionesProyecto = pgTable('preparaciones_proyecto', {
   transcripcionUrl: text('transcripcion_url'),
   minutaUrl: text('minuta_url'),
   cronogramaUrl: text('cronograma_url'),
-  // Escritura fantasma (EF): documentos adicionales al set base de 4 — ver
+  // Escritura fantasma (EF): documentos adicionales al set base — ver
   // server/helpers/projectGuide.ts, paso "documentos" condicionado a 'EF'.
+  cronogramaEntrevistasEfUrl: text('cronograma_entrevistas_ef_url'),
   estructuraPreliminaresUrl: text('estructura_preliminares_url'),
   solicitudInformacionAutorUrl: text('solicitud_informacion_autor_url'),
   // Archivos entregados de las reuniones de extracción (EF) — mismo patrón

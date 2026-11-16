@@ -1,0 +1,1 @@
+ALTER TABLE "author_mail_outbox" ADD COLUMN "to" text;

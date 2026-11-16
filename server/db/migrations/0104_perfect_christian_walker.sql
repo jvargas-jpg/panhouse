@@ -1,0 +1,1 @@
+ALTER TABLE "preparaciones_proyecto" ADD COLUMN "cronograma_entrevistas_ef_url" text;

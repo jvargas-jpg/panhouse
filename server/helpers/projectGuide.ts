@@ -8,6 +8,7 @@ import { creativeReady, currentDesignVersion, finalPackageGate, projectWorkflowF
 import type { getProjectFinancialStatus } from './estadoFinanciero.js';
 import { editorialInterventions, EDITORIAL_RESPONSIBLE } from './editorialChief.js';
 import { evaluarGateMomentoReunionCreativa } from './gates.js';
+import { requiereEditorParaExtracciones, tieneProcesosPosterioresALaPreparacion } from './preparacionWorkflow.js';
 
 // Escritura Fantasma (EF): reuniones de extracción, sub-paso de Preparación
 // Inicial antes de poder solicitar Editor. Otros servicios (EEC, etc.) no
@@ -49,25 +50,32 @@ export async function projectGuide(id: string, data: Context, actor: { id: strin
  const p = data.preparacion;
  const step = (id: string, label: string, requirements: GuideRequirement[]): GuideStep => ({ id, label, requirements, completed: requirements.every(r => r.satisfied) });
  const extraccion = facts.extraction;
- const downstream = facts.works.some(w=>!['intake_rrpp','asignacion_especialista','preparacion_inicial'].includes(w.tipo));
+ const downstream = tieneProcesosPosterioresALaPreparacion(facts);
+ const requiereEditorExtraccion = requiereEditorParaExtracciones(facts) && !downstream;
+ const editorAsignado = !!facts.editorId;
+ const solicitudEditor = requests.find(r => r.tipo === 'editor' && ['pendiente','en_revision','requiere_informacion'].includes(r.estado));
  // No retroactivo: un proyecto que ya tiene trabajo posterior (Corrección,
  // Edición, etc.) ya pasó Preparación bajo las reglas vigentes entonces.
  // Exigir estos pasos nuevos ahí reabriría preparaciones ya cerradas y las
  // marcaría como inconsistencia histórica de solo lectura — solo aplica a
  // proyectos que todavía no avanzaron más allá de Preparación Inicial.
  const requiereExtraccion = SERVICIOS_CON_EXTRACCION.includes(facts.serviceCode ?? '') && !downstream;
+ // "Recibir y revisar expediente" y "Reunión operativa" quedaron fuera del
+ // recorrido guiado por decisión explícita (ver guía tipo wizard en
+ // ProjectGuide.tsx): ya no gatean completedPreparation. Las columnas
+ // siguen existiendo (no se borran datos), solo dejaron de exigirse aquí.
  const preparation = [
-  step('recepcion', 'Recibir y revisar expediente', [req('received','Proyecto recibido',p.recibidoEn,'preparaciones_proyecto'),req('reviewed','Expediente revisado',p.expedienteRevisadoEn,'preparaciones_proyecto')]),
   step('contacto', 'Primer contacto', [req('contact','Primer contacto realizado',p.primerContactoEn,'preparaciones_proyecto')]),
-  step('reunion', 'Reunión operativa', [req('meeting','Reunión realizada',p.reunionOperativaRealizada,'preparaciones_proyecto')]),
-  step('documentos', 'Organizar documentos', [req('drive','Drive del proyecto disponible',p.driveEstado === 'configurado','project_drive_workspaces'),...(['minutaUrl','cronogramaUrl','grabacionUrl','transcripcionUrl'] as const).map((key,i)=>req(key,['Minuta','Cronograma','Grabación','Transcripción'][i]!,p[key],'preparaciones_proyecto')),
-   ...(requiereExtraccion ? [req('estructuraPreliminaresUrl','Estructura de preliminares',p.estructuraPreliminaresUrl,'preparaciones_proyecto'),req('solicitudInformacionAutorUrl','Solicitud de información para "Sobre el autor"',p.solicitudInformacionAutorUrl,'preparaciones_proyecto')] : [])]),
-  ...(requiereExtraccion ? [
-   step('reuniones_extraccion', 'Registrar reuniones de extracción', [req('extraction-meetings','Al menos una reunión de extracción registrada',extraccion.some(r=>r.realizada),'reuniones_extraccion')]),
-   step('archivos_extraccion', 'Subir archivos de la extracción', [req('extraction-files','Archivos de la extracción recibidos',!!p.extraccionEnlaces?.length,'preparaciones_proyecto')]),
+  step('documentos', 'Organizar documentos', [req('minutaUrl','Minuta operativa',p.minutaUrl,'preparaciones_proyecto'),req('cronogramaUrl','Cronograma general',p.cronogramaUrl,'preparaciones_proyecto'),
+   ...(requiereExtraccion ? [req('cronogramaEntrevistasEfUrl','Cronograma de entrevistas para EF',p.cronogramaEntrevistasEfUrl,'preparaciones_proyecto'),req('estructuraPreliminaresUrl','Estructura de preliminares',p.estructuraPreliminaresUrl,'preparaciones_proyecto'),req('solicitudInformacionAutorUrl','Solicitud de información para "Sobre el autor"',p.solicitudInformacionAutorUrl,'preparaciones_proyecto')] : [])]),
+  ...(requiereExtraccion || facts.serviceCode==='EF' && extraccion.length>0 ? [
+   step('reuniones_extraccion', 'Cronograma de extracciones', [req('extraction-meetings','Al menos una sesión de extracción programada',extraccion.length>0,'reuniones_extraccion')]),
+   ...(requiereEditorExtraccion ? [step('editor_extraccion', 'Solicitar Editor', [req('extraction-editor','Editor asignado por Jefatura de Edición',editorAsignado,'project_assignments / proyectos')])] : []),
+   ...(requiereExtraccion ? [step('archivos_extraccion', 'Subir archivos de la extracción', [req('extraction-files','Archivos de la extracción recibidos',!!p.extraccionEnlaces?.length,'preparaciones_proyecto')])] : []),
   ] : []),
  ];
  const completedPreparation = preparation.every(s => s.completed);
+ const puedeSolicitarEditorEnPreparacion = requiereEditorExtraccion && preparation.filter(s=>['contacto','documentos'].includes(s.id)).every(s=>s.completed);
  const paths: GuidePath[] = [];
  // Viewer-specific attention ordering must not change the project's position.
  const order = ['preparacion_inicial','edicion','correccion','direccion_creativa','diseno','calidad','validacion_cubierta','soporte_digital','lanzamiento','impresion','distribucion'];
@@ -87,6 +95,15 @@ export async function projectGuide(id: string, data: Context, actor: { id: strin
    instruction = complete ? 'Preparación completada. Elige un proceso disponible.' : 'Completa los requisitos de este paso. Los datos se guardan también en el expediente.';
    canAct = !complete;
    dueAt = current.id==='contacto' ? p.primerContactoDueAt : null;
+   if (current.id==='editor_extraccion' && !editorAsignado) {
+    const needsResponse = solicitudEditor?.estado === 'requiere_informacion';
+    requestedAt = solicitudEditor?.requestedAt.toISOString() ?? null;
+    waiting = solicitudEditor && !needsResponse ? 'Jefatura de Edición' : null;
+    waitingSince = requestedAt; canAct = !waiting;
+    currentStep = waiting ? 'Esperando asignación de Jefatura de Edición' : needsResponse ? 'Reenviar solicitud de Editor' : 'Solicitar Editor';
+    instruction = waiting ? 'Las sesiones están programadas. Podrás continuar cuando Jefatura de Edición asigne un Editor.' : 'Las sesiones están programadas. Solicita un Editor para continuar.';
+    action = {kind:'request_editor',label:needsResponse?'Reenviar solicitud de Editor':'Solicitar Editor'};
+   }
   } else if (process.tipo === 'edicion') {
    const editor = assignments.find(a => a.a.tipo === 'editor' && !a.a.workItemId);
    const assigned = !!editor || !!facts.editorId;
@@ -234,7 +251,7 @@ export async function projectGuide(id: string, data: Context, actor: { id: strin
    }
   }
   const unsafeHistory = process.tipo === 'preparacion_inicial' && downstream;
-  if(process.tipo !== 'preparacion_inicial' && !completedPreparation && !downstream) {
+  if(process.tipo !== 'preparacion_inicial' && !completedPreparation && !downstream && !(process.tipo==='edicion' && puedeSolicitarEditorEnPreparacion)) {
    requirements.unshift(req('preparation','Completar Preparación inicial',false,'preparaciones_proyecto / project_drive_workspaces'));
    canAct=false; waiting=null;
   }

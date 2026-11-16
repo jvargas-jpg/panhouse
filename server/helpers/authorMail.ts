@@ -21,7 +21,7 @@ export async function deliverAuthorMail(){
     if(!u.activo&&!mail.key.startsWith('credential:')){await tx.update(authorMailOutbox).set({nextAttemptAt:new Date(Date.now()+3600000)}).where(eq(authorMailOutbox.id,mail.id));return;}
     try{
       const url=new URL(mail.path,env.APP_FRONTEND_URL).href;
-      await transport.sendMail({from:process.env.MAIL_FROM,to:u.email,subject:mail.subject,text:mail.message+'\n\n'+url,html:authorMailTemplate(mail.message,url),messageId:`<${mail.id}@panhouse.local>`});
+      await transport.sendMail({from:process.env.MAIL_FROM,to:mail.to??u.email,subject:mail.subject,text:mail.message+'\n\n'+url,html:authorMailTemplate(mail.message,url),messageId:`<${mail.id}@panhouse.local>`});
       await tx.update(authorMailOutbox).set({sentAt:new Date(),path:mail.key.startsWith('credential:')?'/login':mail.path}).where(eq(authorMailOutbox.id,mail.id));
       await portalAudit(tx,null,mail.projectId,'AUTOR_CORREO_ENVIADO',mail.id);sent++;
     }catch{await tx.update(authorMailOutbox).set({nextAttemptAt:new Date(Date.now()+15*60000)}).where(eq(authorMailOutbox.id,mail.id));}

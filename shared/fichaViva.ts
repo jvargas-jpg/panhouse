@@ -56,6 +56,10 @@ export interface ResumenFichaViva {
         id: string;
         name: string;
         category: string;
+        // Registrado por Comercial en el alta del autor; null cuando el rol
+        // del actor no tiene permitido ver datos de contacto (ver fichaViva.ts).
+        email: string[] | null;
+        telefono: string | null;
     }[];
     overview: CampoFicha[];
     summary: {

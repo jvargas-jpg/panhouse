@@ -5,7 +5,7 @@ export interface PreparacionProyecto {
   primerContactoDueAt: string | null; reunionOperativaFecha: string | null; reunionOperativaRealizada: boolean;
   grabacionUrl: string | null; transcripcionUrl: string | null; minutaUrl: string | null; cronogramaUrl: string | null;
   // Escritura fantasma (EF): documentos adicionales, requeridos solo para ese servicio (ver projectGuide.ts).
-  estructuraPreliminaresUrl: string | null; solicitudInformacionAutorUrl: string | null; extraccionEnlaces: string[] | null;
+  cronogramaEntrevistasEfUrl: string | null; estructuraPreliminaresUrl: string | null; solicitudInformacionAutorUrl: string | null; extraccionEnlaces: string[] | null;
   driveCarpetaUrl: string | null; driveEstado: 'no_configurado' | 'pendiente' | 'configurado' | 'error';
   observaciones: string | null; estado: 'Pendiente' | 'En curso' | 'Completo'; editable: boolean;
 }
