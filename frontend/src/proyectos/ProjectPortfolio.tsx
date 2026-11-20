@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
+import type { GuidePath } from '../../../shared/projectGuide';
 import type { GuidedPortfolio, GuidedProjectSummary } from '../../../shared/projectPortfolio';
 import { apiFetch } from '../lib/api';
 import { useMe } from '../auth/useAuth';
@@ -9,27 +10,45 @@ import { SpecialistSidebarNav } from '../layout/RoleProjectNavigation';
 import { JefaturaSidebar } from '../jefatura/JefaturaSidebar';
 import { operationalDate } from './OperationHomePage';
 import { PageHeader, Surface, FilterBar, SearchInput, StatusBadge, Button, Skeleton, EmptyState, Pagination } from '../design-system/components';
+import { RrppIcon } from '../rrpp/RrppIcons';
 
 const STATE_OPTIONS: [string,string][] = [
  ['all','Proyectos activos'],['risk','Requieren atención por riesgo'],['actionable','Con acciones disponibles'],
  ['waiting','Con esperas'],['blocked','Con bloqueos'],['closed','Históricos y cerrados'],
 ];
 
+// El recorrido de "Solicitar Editor" es el que más confunde al verlo solo
+// desde el portafolio: una vez asignado, currentStep salta directo a texto
+// de coordinación profunda ("Coordinar estructura…") y deja de mencionar al
+// Editor. Esta línea, en cambio, se mantiene fija en las tres fases que
+// importan desde aquí: por solicitar → esperando a Jefatura → asignado.
+function estadoEditor(path: GuidePath): string | null {
+ if (path.id !== 'edicion') return null;
+ if (path.assignee) return 'Editor asignado: ' + path.assignee;
+ if (path.waitingFor) return 'Solicitaste Editor · esperando respuesta de Jefatura de Edición';
+ return 'Editor: aún sin solicitar';
+}
+
 export function ProjectPortfolioRow({ project: p, chief = false }: { project: GuidedProjectSummary; chief?: boolean }) {
  const target='/proyectos/'+p.id;
  const mainLabel=p.mainProcess?.label??(p.specialist||['culminado','retirado'].includes(p.macroState)?'Procesos editoriales completados':'Asignación pendiente');
  const due=p.dueAt ? new Intl.DateTimeFormat('es-VE',{day:'numeric',month:'short',year:'numeric',timeZone:p.dueAt.length===10?'UTC':'America/Caracas'}).format(new Date(p.dueAt.length===10?p.dueAt+'T12:00:00Z':p.dueAt)) : null;
- return <Surface className="p-5">
+ const editorPrincipal=p.mainProcess?estadoEditor(p.mainProcess):null;
+ return <Surface className={'p-5 border-l-[3px] '+(p.overdue?'border-l-red-300':p.risks.length?'border-l-amber-300':'border-l-transparent')}>
   <header className="flex flex-wrap items-start justify-between gap-3">
-   <div className="min-w-0"><Link to={target} className="text-lg font-semibold text-gray-900 hover:underline">{p.title}</Link><p className="mt-1 text-sm text-gray-500">{p.authors} · #{p.code}</p></div>
+   <div className="flex min-w-0 items-start gap-3">
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-50 text-gray-400"><RrppIcon nombre="libro"/></span>
+    <div className="min-w-0"><Link to={target} className="text-lg font-semibold text-gray-900 hover:underline">{p.title}</Link><p className="mt-1 text-sm text-gray-500">{p.authors} · #{p.code}</p></div>
+   </div>
    <StatusBadge tone={p.overdue?'danger':undefined}>{p.overdue?'Plazo vencido':p.macroState.replaceAll('_',' ')}</StatusBadge>
   </header>
   <div className="mt-4 flex flex-wrap items-baseline gap-2 text-sm">
-   <span className="text-xs uppercase tracking-wide text-gray-400">Proceso principal</span>
+   <span className="flex items-center gap-1 text-xs uppercase tracking-wide text-gray-400"><RrppIcon nombre="rapido" className="h-3.5 w-3.5"/>Proceso principal</span>
    <strong className="text-gray-900">{mainLabel}</strong>
    {p.mainProcess&&<Link to={target+'?proceso='+p.mainProcess.id} className="text-gray-600 underline underline-offset-2">{p.mainProcess.currentStep}</Link>}
    {p.mainProcess?.waitingFor&&<StatusBadge tone="warning">{'Esperando a '+p.mainProcess.waitingFor}</StatusBadge>}
   </div>
+  {editorPrincipal&&<p className="mt-1 text-xs text-gray-500">{editorPrincipal}</p>}
   {p.parallelProcesses.length>0&&<ul className="mt-3 flex flex-col gap-2 border-l-2 border-gray-100 pl-3" aria-label="Procesos paralelos">
    {p.parallelProcesses.map(path=><li key={path.id} className="text-sm">
     <Link to={target+'?proceso='+path.id} className="flex flex-wrap items-center gap-2">
@@ -37,10 +56,11 @@ export function ProjectPortfolioRow({ project: p, chief = false }: { project: Gu
      <StatusBadge tone={path.waitingFor?'warning':path.state==='Bloqueado'?'danger':path.requiresAction?'info':undefined}>{path.waitingFor?'Esperando a '+path.waitingFor:path.state==='Bloqueado'?'Bloqueado':path.requiresAction?'Acción disponible':path.state}</StatusBadge>
     </Link>
     <small className="block text-xs text-gray-500">{path.state==='Bloqueado'?path.blockingReasons.join(' · '):path.currentStep}</small>
+    {estadoEditor(path)&&<small className="block text-xs text-gray-500">{estadoEditor(path)}</small>}
    </li>)}
   </ul>}
-  {p.nextMilestones.length>0&&<p className="mt-3 text-xs text-gray-500">Próximos hitos: {p.nextMilestones.slice(0,2).map(m=>m.label+(m.dueAt?' · '+operationalDate(m.dueAt):'')).join(' / ')}</p>}
-  {p.risks.map((risk,i)=><p key={i} className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800">{risk.message}</p>)}
+  {p.nextMilestones.length>0&&<p className="mt-3 flex items-center gap-1.5 text-xs text-gray-500"><RrppIcon nombre="calendario" className="h-3.5 w-3.5 shrink-0"/>Próximos hitos: {p.nextMilestones.slice(0,2).map(m=>m.label+(m.dueAt?' · '+operationalDate(m.dueAt):'')).join(' / ')}</p>}
+  {p.risks.map((risk,i)=><p key={i} className="mt-2 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"><RrppIcon nombre="riesgo" className="h-4 w-4 shrink-0 translate-y-0.5"/>{risk.message}</p>)}
   <footer className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-100 pt-4">
    <span className="text-xs text-gray-500">{p.service}{chief?` · Especialista: ${p.specialist??'Pendiente de asignación'}`:''}{due?` · Objetivo: ${due}`:''}</span>
    <Link className="ph-button ph-button-secondary" to={target}>{chief?'Supervisar proyecto':p.actionable?'Continuar proyecto':'Consultar proyecto'} →</Link>

@@ -2,7 +2,7 @@ import './editor.css';
 import './misProyectos.css';
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { EditorialCover } from '../jefeEdicion/EditorialParts';
 import { EditorEmpty, editorialDate } from './EditorParts';
@@ -13,7 +13,7 @@ import type { EditorProjectRow, EditorProjectWork } from '../../../shared/editor
 
 const TABS = [['summary', 'Resumen'], ['interventions', 'Intervenciones'], ['material', 'Material'], ['deliveries', 'Entregas'], ['feedback', 'Feedback']] as const;
 const FILTERS = ['state', 'service', 'specialist', 'participation'];
-const workUrl = (projectId: string, workItemId: string) => '/?' + new URLSearchParams({ vista: 'mi-trabajo', project: projectId, workItem: workItemId });
+const workUrl = (projectId: string, workItemId: string) => '/?' + new URLSearchParams({ vista: 'mi-trabajo', guideProject: projectId, workItem: workItemId });
 const date = (value: string | null) => value ? new Intl.DateTimeFormat('es-VE', { timeZone: 'America/Caracas', day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(value.length === 10 ? value + 'T12:00:00Z' : value)) : 'Sin fecha límite';
 function ProjectStatus({ project }: { project: EditorProjectRow }) {
   const label = project.stateLabel ?? project.editorialState;
@@ -27,13 +27,13 @@ function WorkStatus({ item }: { item: EditorProjectWork }) {
 }
 export function EditorMisProyectos() {
   const { params, setParams, search, setSearch } = useEditorFilters();
-  const selected = params.get('project'), desktop = useEditorDesktop();
+  const selected = params.get('project'), navigate=useNavigate();
   const pageSize = ['10', '25', '50'].includes(params.get('pageSize') ?? '') ? params.get('pageSize')! : '25';
   const queryParams = new URLSearchParams({ search: params.get('search') ?? '', page: params.get('page') ?? '1', pageSize, sort: params.get('sort') ?? 'priority' });
   for (const key of FILTERS) if (params.get(key)) queryParams.set(key, params.get(key)!);
   const q = useQuery({ queryKey: [...editorKey, 'mis-proyectos', queryParams.toString()], queryFn: () => fetchMisProyectos(queryParams), placeholderData: p => p });
   const items = q.data?.items ?? [];
-  const detailId = selected ?? (desktop && params.get('projectClosed') !== '1' ? items[0]?.projectId : undefined);
+  const detailId = selected;
   const filterActive = !!search || FILTERS.some(k => params.has(k));
   const change = (key: string, value: string) => setParams(current => {
     const next = new URLSearchParams(current);
@@ -46,6 +46,7 @@ export function EditorMisProyectos() {
   });
   const close = () => setParams(current => { const next = new URLSearchParams(current); next.delete('project'); next.delete('detailTab'); next.set('projectClosed', '1'); return next; });
   const clear = () => { setSearch(''); setParams({ vista: 'mis-proyectos' }); };
+  const openProject=(project:EditorProjectRow)=>project.participation==='history'?change('project',project.projectId):navigate('/?'+new URLSearchParams({vista:'mi-trabajo',guideProject:project.projectId}));
   return <section className="mp-page" aria-label="Portafolio editorial personal">
     <div className="mp-toolbar">
       <EditorSearch value={search} onChange={setSearch} placeholder="Buscar proyecto, autor o código…" />
@@ -55,17 +56,17 @@ export function EditorMisProyectos() {
       {((q.data?.options.specialists.length ?? 0) > 1 || params.has('specialist')) && <EditorSelect label="Especialista" value={params.get('specialist') ?? ''} onChange={v => change('specialist', v)} options={q.data?.options.specialists ?? []} />}
       {filterActive && <button className="eo-text-button mp-clear" onClick={clear}>Limpiar filtros</button>}
     </div>
-    <div className="mp-workspace"><section className="mp-list" aria-label="Proyectos en los que participas" aria-busy={q.isFetching}>
+    <div className={'mp-workspace'+(!detailId?' mp-list-only':'')}><section className="mp-list" aria-label="Proyectos en los que participas" aria-busy={q.isFetching}>
       <header className="mp-list-heading"><h2>Tus proyectos editoriales</h2><label>Ordenar por <select aria-label="Ordenar proyectos" value={params.get('sort') ?? 'priority'} onChange={e => change('sort', e.target.value)}><option value="priority">Trabajo activo primero</option><option value="activity">Última actividad</option><option value="title">Título</option><option value="delivery">Próxima entrega</option><option value="state">Estado editorial</option></select></label></header>
-      {q.isError ? <EditorEmpty><span role="alert">No se pudieron cargar tus proyectos.</span> <button onClick={() => q.refetch()}>Reintentar</button></EditorEmpty> : q.isPending ? <EditorSkeleton label="Cargando proyectos editoriales" /> : items.length ? <table className="mp-project-table"><caption className="sr-only">Una fila por proyecto. Selecciona uno para consultar tu participación editorial.</caption><thead><tr>{['Proyecto / Autor', 'Estado editorial', 'Mis intervenciones', 'Última actividad', ''].map(label => <th key={label} scope="col">{label || <span className="sr-only">Abrir proyecto</span>}</th>)}</tr></thead><tbody>{items.map(p => <tr key={p.projectId} className={detailId === p.projectId ? 'is-selected' : ''} aria-selected={detailId === p.projectId} tabIndex={0} onClick={() => change('project', p.projectId)} onKeyDown={e => { if (e.target === e.currentTarget && ['Enter', ' '].includes(e.key)) { e.preventDefault(); change('project', p.projectId); } }}>
+      {q.isError ? <EditorEmpty><span role="alert">No se pudieron cargar tus proyectos.</span> <button onClick={() => q.refetch()}>Reintentar</button></EditorEmpty> : q.isPending ? <EditorSkeleton label="Cargando proyectos editoriales" /> : items.length ? <table className="mp-project-table"><caption className="sr-only">Una fila por proyecto. Selecciona uno para consultar tu participación editorial.</caption><thead><tr>{['Proyecto / Autor', 'Estado editorial', 'Mis intervenciones', 'Última actividad', ''].map(label => <th key={label} scope="col">{label || <span className="sr-only">Abrir proyecto</span>}</th>)}</tr></thead><tbody>{items.map(p => <tr key={p.projectId} className={detailId === p.projectId ? 'is-selected' : ''} aria-selected={detailId === p.projectId} tabIndex={0} onClick={() => openProject(p)} onKeyDown={e => { if (e.target === e.currentTarget && ['Enter', ' '].includes(e.key)) { e.preventDefault(); openProject(p); } }}>
         <td><div className="mp-project-identity"><EditorialCover url={p.coverUrl} /><div><strong title={p.title}>{p.title}</strong><span title={p.authors}>{p.authors}</span><small>{p.code}</small></div></div><span className="mp-mobile-service">{p.service}</span></td>
         <td data-label="Estado editorial"><ProjectStatus project={p} />{p.overdue && p.participation !== 'history' && <small className="ec-deadline-overdue">Con entrega vencida</small>}</td>
         <td data-label="Mis intervenciones"><strong>{p.currentIntervention ?? (p.participation === 'history' ? 'Participación finalizada' : 'Sin trabajo activo')}</strong><small>{p.interventionSummary}</small><span className="mp-mobile-deadline">Próxima entrega: {p.nextDelivery ? date(p.nextDelivery.date) : 'Sin fecha límite'}</span></td>
         <td data-label="Última actividad">{p.lastActivity ? <><strong title={editorialDate(p.lastActivity.at, true)}>{fechaActividad(p.lastActivity.at)}</strong><small>{p.lastActivity.label}</small></> : <span className="eo-muted">Sin actividad registrada</span>}</td>
-        <td><button type="button" className="mp-open-project" aria-label={'Ver participación en ' + p.title} onClick={e => { e.stopPropagation(); change('project', p.projectId); }}><span>Ver proyecto</span><RrppIcon nombre="flecha" /></button></td>
+        <td><button type="button" className="mp-open-project" aria-label={'Ver participación en ' + p.title} onClick={e => { e.stopPropagation(); openProject(p); }}><span>{p.participation==='history'?'Ver historial':'Abrir guía'}</span><RrppIcon nombre="flecha" /></button></td>
       </tr>)}</tbody></table> : <div className="mp-empty"><RrppIcon nombre="proyectos" /><EditorEmpty>{filterActive ? 'No hay proyectos que coincidan con estos filtros.' : 'No tienes proyectos editoriales activos.'}</EditorEmpty>{filterActive && <button className="ec-secondary" onClick={clear}>Limpiar filtros</button>}</div>}
       {q.data && <footer className="mp-pagination"><span aria-live="polite">{q.data.total ? `${(q.data.page - 1) * Number(pageSize) + 1}–${Math.min(q.data.page * Number(pageSize), q.data.total)} de ${q.data.total}` : '0'} proyectos</span><div><button aria-label="Página anterior" disabled={q.data.page <= 1 || q.isFetching} onClick={() => change('page', String(q.data!.page - 1))}>‹</button><span>{q.data.page} / {q.data.pages}</span><button aria-label="Página siguiente" disabled={q.data.page >= q.data.pages || q.isFetching} onClick={() => change('page', String(q.data!.page + 1))}>›</button><select aria-label="Proyectos por página" value={pageSize} onChange={e => change('pageSize', e.target.value)}>{[10, 25, 50].map(n => <option value={n} key={n}>Mostrar {n}</option>)}</select></div></footer>}
-    </section>{detailId ? <ProyectoDetail key={detailId} id={detailId} tab={params.get('detailTab') ?? 'summary'} onTab={value => change('detailTab', value)} onClose={close} /> : <div className="mp-placeholder"><RrppIcon nombre="libro" /><p>Tu participación, en contexto</p><span>Selecciona un proyecto para consultar sus intervenciones, material y entregas.</span></div>}</div>
+    </section>{detailId&&<ProyectoDetail key={detailId} id={detailId} tab={params.get('detailTab') ?? 'summary'} onTab={value => change('detailTab', value)} onClose={close} />}</div>
   </section>;
 }
 function WorkLine({ item, projectId }: { item: EditorProjectWork; projectId: string }) {

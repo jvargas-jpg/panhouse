@@ -1,0 +1,41 @@
+{
+  "checks": [
+    {
+      "name": "No automatic right panel",
+      "passed": true
+    },
+    {
+      "name": "Chapter upload transitions to waiting",
+      "passed": true
+    },
+    {
+      "name": "Author sends feedback file without mandatory text",
+      "passed": true
+    },
+    {
+      "name": "Mobile editor has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "Full manuscript includes proposed titles",
+      "passed": true
+    },
+    {
+      "name": "Titles can be rejected without comment",
+      "passed": true
+    },
+    {
+      "name": "Mobile author has no horizontal overflow",
+      "passed": true
+    },
+    {
+      "name": "Author selects the proposed title",
+      "passed": true
+    },
+    {
+      "name": "No browser runtime errors",
+      "passed": true
+    }
+  ],
+  "errors": []
+}

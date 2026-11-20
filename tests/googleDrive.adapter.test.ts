@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OAuth2Client } from 'google-auth-library';
-const sdk=vi.hoisted(()=>({files:{create:vi.fn(),list:vi.fn(),get:vi.fn(),delete:vi.fn(),generateIds:vi.fn()},about:{get:vi.fn()},permissions:{create:vi.fn(),list:vi.fn()}}));
+const sdk=vi.hoisted(()=>({files:{copy:vi.fn(),create:vi.fn(),list:vi.fn(),get:vi.fn(),delete:vi.fn(),generateIds:vi.fn()},about:{get:vi.fn()},permissions:{create:vi.fn(),list:vi.fn()}}));
 vi.mock('@googleapis/drive',()=>({drive:vi.fn(()=>sdk)}));
 import { GoogleDriveAdapter, FOLDER_MIME } from '../server/modules/integrations/google-drive/adapter.js';
 
@@ -66,5 +66,41 @@ describe('Google Drive · adapter oficial mockeado',()=>{
   it('consulta permisos mínimos para una validación posterior de sharing',async()=>{
     sdk.permissions.list.mockResolvedValue({data:{permissions:[{id:'unit-permission',emailAddress:'fixture@example.test',role:'writer'}]}});
     expect(await adapter.listFolderPermissions('unit-root')).toEqual([{permissionId:'unit-permission',email:'fixture@example.test',role:'writer'}]);
+  });
+  it('copia dentro de Drive conservando la clave de recurso del enlace',async()=>{
+    sdk.files.copy.mockResolvedValue({data:{...file,mimeType:'video/mp4'}});
+    await adapter.copyFile({fileId:'unit-file',name:'Grabación',parentFolderId:'unit-parent',resourceKey:'key'});
+    expect(sdk.files.copy).toHaveBeenCalledWith(expect.objectContaining({fileId:'unit-file',requestBody:{name:'Grabación',parents:['unit-parent']}}),{headers:{'X-Goog-Drive-Resource-Keys':'unit-file/key'}});
+  });
+  it('importa video público por streaming y conserva el destino, MIME y extensión',async()=>{
+    const fetchMock=vi.fn().mockResolvedValue(new Response('video-bytes',{headers:{'content-type':'video/mp4'}}));
+    vi.stubGlobal('fetch',fetchMock);
+    try {
+      let received='';
+      sdk.files.create.mockImplementation(async(input)=>{
+        for await(const chunk of input.media.body)received+=chunk.toString();
+        return {data:{...file,mimeType:'video/mp4'}};
+      });
+      await adapter.importPublicVideo({fileId:'public-video-id',name:'Grabación',parentFolderId:'chapter-folder',resourceKey:'resource-key'});
+      expect(received).toBe('video-bytes');
+      const url=new URL(fetchMock.mock.calls[0]![0]);
+      expect(url.hostname).toBe('drive.usercontent.google.com');expect(url.searchParams.get('resourcekey')).toBe('resource-key');
+      expect(sdk.files.create).toHaveBeenCalledWith(expect.objectContaining({requestBody:{name:'Grabación.mp4',mimeType:'video/mp4',parents:['chapter-folder']}}),expect.objectContaining({timeout:1800000,retry:false}));
+    }finally{vi.unstubAllGlobals();}
+  });
+  it.each([200,403,404])('no guarda una página HTML ni un error HTTP %s como video',async(status)=>{
+    vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response('<html>Sign in</html>',{status,headers:{'content-type':'text/html'}})));
+    try {
+      await expect(adapter.importPublicVideo({fileId:'public-video-id',name:'Grabación',parentFolderId:'chapter-folder'})).rejects.toMatchObject({code:'PUBLIC_VIDEO_UNAVAILABLE'});
+      expect(sdk.files.create).not.toHaveBeenCalled();
+    }finally{vi.unstubAllGlobals();}
+  });
+  it('no sigue redirecciones de descarga a destinos ajenos a Google',async()=>{
+    const fetchMock=vi.fn().mockResolvedValue(new Response(null,{status:302,headers:{location:'http://127.0.0.1/private'}}));
+    vi.stubGlobal('fetch',fetchMock);
+    try {
+      await expect(adapter.importPublicVideo({fileId:'public-video-id',name:'Grabación',parentFolderId:'chapter-folder'})).rejects.toMatchObject({code:'PUBLIC_VIDEO_UNAVAILABLE'});
+      expect(fetchMock).toHaveBeenCalledTimes(1);expect(sdk.files.create).not.toHaveBeenCalled();
+    }finally{vi.unstubAllGlobals();}
   });
 });

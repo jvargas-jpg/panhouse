@@ -10,9 +10,28 @@ import { reportarBloqueoEditorial, resolverBloqueoEditorial } from '../helpers/e
 import { cancelarRequestEditor, crearRequestEditor, listarRequestsEditor, obtenerRequestEditorDetalle, responderRequestEditor, decidirRequestEditor, listarAclaracionesRecibidas } from '../helpers/editorOwnRequests.js';
 import { listarMisProyectos, obtenerMiProyecto } from '../helpers/editorProjects.js';
 import { EDITOR_REQUEST_TYPES } from '../../shared/editorOwn.js';
+import { getEditorialReviewGuide, submitEditorialReview, submitEditorialReviewSchema, editorialReviewContent } from '../helpers/editorialReview.js';
+import { AuthorPortalError } from '../helpers/authorPortal.js';
+import { DriveIntegrationError } from '../modules/integrations/google-drive/errors.js';
 const idSchema=z.object({id:z.string().uuid()});
 export async function editorRoutes(app: FastifyInstance) {
   const self={preHandler:[requireAuth,requireRole('editor')]};
+  const reviewParams=z.object({id:z.string().uuid(),reviewId:z.string().uuid(),kind:z.enum(['archivo','feedback'])});
+  const reviewCommand=async<T,>(reply:import('fastify').FastifyReply,work:()=>Promise<T>)=>{
+    try{return await work();}catch(e){
+      if(e instanceof AuthorPortalError)return reply.code(e.status).send({error:e.message});
+      if(e instanceof DriveIntegrationError)return reply.code(e.statusCode).send({error:e.message});
+      if(e instanceof z.ZodError)return reply.code(400).send({error:'Revisa el documento, el número de capítulo y las propuestas de títulos.',details:e.flatten()});
+      throw e;
+    }
+  };
+  app.get('/proyectos/:id/guia',self,async(req,reply)=>reviewCommand(reply,()=>getEditorialReviewGuide(idSchema.parse(req.params).id,req.user!)));
+  app.post('/proyectos/:id/revisiones',{...self,bodyLimit:28_100_000},async(req,reply)=>reviewCommand(reply,()=>submitEditorialReview(idSchema.parse(req.params).id,submitEditorialReviewSchema.parse(req.body),req.user!)));
+  app.get('/proyectos/:id/revisiones/:reviewId/:kind',self,async(req,reply)=>reviewCommand(reply,async()=>{
+    const p=reviewParams.parse(req.params),file=await editorialReviewContent(p.id,p.reviewId,p.kind==='feedback',req.user!);
+    reply.header('Cache-Control','no-store').header('X-Content-Type-Options','nosniff').header('Content-Disposition',`attachment; filename*=UTF-8''${encodeURIComponent(file.name)}`);
+    return reply.type(file.mimeType).send(file.content);
+  }));
   const miTrabajoFilters=z.object({tab:z.enum(['all','today','pending','blocked','inProgress','feedback','waiting','completed']).default('all'),search:z.string().max(150).default(''),status:z.string().max(80).optional(),risk:z.enum(['dueSoon','overdue']).optional(),service:z.string().uuid().optional(),interventionType:z.string().max(200).optional(),project:z.string().uuid().optional(),date:z.string().date().optional(),sort:z.enum(['priority','due','project']).default('priority'),page:z.coerce.number().int().min(1).max(10000).default(1),pageSize:z.coerce.number().int().refine(n=>[10,25,50].includes(n)).default(10)});
   app.get('/mi-inicio',self,async(req)=>getEditorDashboard(req.user!.id));
   app.get('/mi-trabajo',self,async(req,reply)=>{const f=parseOrReply(miTrabajoFilters,req.query,reply);if(!f)return;return listarMiTrabajo(req.user!.id,{...f,tab:f.tab??'all',search:f.search??'',page:f.page??1,pageSize:f.pageSize??10});});

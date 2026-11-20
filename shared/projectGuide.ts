@@ -9,7 +9,7 @@ export interface GuidePath {
   steps: GuideStep[]; canContinue: boolean; canOperate: boolean;
   /** Editorial action required, independent of the viewer's permissions. */
   requiresAction: boolean;
-  action: { kind: 'native' | 'request_editor' | 'validation' | 'package' | 'chapter_author' | 'brief_author' | 'concept_author' | 'creative_request' | 'correction_start' | 'correction_contract' | 'correction_assign' | 'correction_review' | 'decision_response'; label: string; targetId?: string; chapter?: number; designType?: 'muestra_diagramacion'|'cubierta_extendida'|'diagramacion' } | null;
+  action: { kind: 'native' | 'request_editor' | 'validation' | 'package' | 'chapter_author' | 'brief_author' | 'concept_author' | 'creative_request' | 'correction_start' | 'correction_contract' | 'correction_assign' | 'correction_review' | 'decision_response' | 'extraction_files'; label: string; targetId?: string; chapter?: number; designType?: 'muestra_diagramacion'|'cubierta_extendida'|'diagramacion' } | null;
   historicalReadOnly: boolean; editWarning: string | null;
   /** Unknown legacy timestamps stay null, without invented receipt times. */
   requestedAt: string | null; assignedAt: string | null; assignee: string | null;

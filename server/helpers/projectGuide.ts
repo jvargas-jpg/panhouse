@@ -71,7 +71,10 @@ export async function projectGuide(id: string, data: Context, actor: { id: strin
   ...(requiereExtraccion || facts.serviceCode==='EF' && extraccion.length>0 ? [
    step('reuniones_extraccion', 'Cronograma de extracciones', [req('extraction-meetings','Al menos una sesión de extracción programada',extraccion.length>0,'reuniones_extraccion')]),
    ...(requiereEditorExtraccion ? [step('editor_extraccion', 'Solicitar Editor', [req('extraction-editor','Editor asignado por Jefatura de Edición',editorAsignado,'project_assignments / proyectos')])] : []),
-   ...(requiereExtraccion ? [step('archivos_extraccion', 'Subir archivos de la extracción', [req('extraction-files','Archivos de la extracción recibidos',!!p.extraccionEnlaces?.length,'preparaciones_proyecto')])] : []),
+   // "Subir archivos de la extracción" (grabación/transcripción) NO va
+   // aquí: quien conduce la entrevista y produce esos archivos es el
+   // Editor, no el Especialista — ver el requisito 'extraction-files'
+   // dentro de process.tipo==='edicion' más abajo.
   ] : []),
  ];
  const completedPreparation = preparation.every(s => s.completed);
@@ -109,7 +112,13 @@ export async function projectGuide(id: string, data: Context, actor: { id: strin
    const assigned = !!editor || !!facts.editorId;
    const requested = requests.find(r => r.tipo === 'editor' && ['pendiente','en_revision','requiere_informacion'].includes(r.estado));
    requestedAt=iso(requested?.requestedAt); assignedAt=iso(editor?.a.asignadoEn); assignee=editor?.name??null;
-   requirements = [req('editor','Editor asignado por Jefatura de Edición',assigned,'project_assignments'),req('manuscript','Material editorial disponible',facts.p.manuscritoUrl || facts.chapters.length,'proyectos / capitulos')];
+   // La grabación y las notas de Gemini de cada sesión las sube quien
+   // conduce la entrevista: el Editor, no el Especialista. Bloquea el
+   // avance de Edición mientras alguna sesión ya realizada no tenga su
+   // material — las sesiones futuras (aún no realizadas) no bloquean nada.
+   const extraccionPendiente = facts.serviceCode==='EF' && extraccion.some(r=>r.realizada&&(!r.videoUrl||!r.notasGeminiUrl));
+   requirements = [req('editor','Editor asignado por Jefatura de Edición',assigned,'project_assignments'),req('manuscript','Material editorial disponible',facts.p.manuscritoUrl || facts.chapters.length,'proyectos / capitulos'),
+    ...(extraccionPendiente ? [req('extraction-files','Archivos de la extracción recibidos',false,'preparaciones_proyecto')] : [])];
    if (!assigned) {
     const needsResponse = requested?.estado === 'requiere_informacion';
     waiting = requested && !needsResponse ? 'Jefatura de Edición' : null; canAct = !requested || needsResponse;
@@ -118,6 +127,11 @@ export async function projectGuide(id: string, data: Context, actor: { id: strin
     if(needsResponse) instruction = requested.motivo ?? 'Jefatura de Edición necesita información adicional. Revisa la solicitud y reenvíala desde este paso.';
     action = { kind: 'request_editor', label: needsResponse ? 'Reenviar solicitud de Editor' : 'Solicitar Editor' };
     waitingSince=requestedAt;
+   } else if (extraccionPendiente) {
+    canAct = true; waiting = null;
+    currentStep = 'Subir archivos de la extracción';
+    instruction = 'Sube los enlaces de Drive de la grabación y transcripción de las sesiones de extracción antes de continuar con la coordinación editorial.';
+    action = { kind: 'extraction_files', label: 'Subir archivos de la extracción' };
    } else {
     const current = editorial.find(i => i.state === 'Esperando Especialista') ?? editorial.find(i => i.state !== 'Completadas');
     const chapter = facts.chapters.find(c => c.fechaEntregaEditor && !c.fechaEnvioAutor);

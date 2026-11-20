@@ -89,15 +89,20 @@ describe('Guía del proyecto: hechos y capacidades',()=>{
   const [unchanged]=await db.select().from(reunionesExtraccion).where(eq(reunionesExtraccion.id,session!.id));
   expect(unchanged!.fechaHora?.toISOString()).toBe('2026-11-20T14:00:00.000Z');
  });
- it('las sesiones programadas esperan asignación de Editor y no se vuelven históricas al solicitarlo',async()=>{
+ it('las sesiones programadas esperan asignación de Editor; la grabación y las notas de cada sesión las sube el Editor, no el Especialista',async()=>{
   const p=await fixture(true);
-  await db.update(preparacionesProyecto).set({cronogramaEntrevistasEfUrl:'https://example.test/entrevistas',extraccionEnlaces:null}).where(eq(preparacionesProyecto.proyectoId,p.id));
-  await db.update(reunionesExtraccion).set({realizada:false}).where(eq(reunionesExtraccion.proyectoId,p.id));
+  await db.update(preparacionesProyecto).set({cronogramaEntrevistasEfUrl:'https://example.test/entrevistas'}).where(eq(preparacionesProyecto.proyectoId,p.id));
+  await db.update(reunionesExtraccion).set({realizada:false,videoUrl:null,notasGeminiUrl:null}).where(eq(reunionesExtraccion.proyectoId,p.id));
+  const [sesion]=await db.select().from(reunionesExtraccion).where(eq(reunionesExtraccion.proyectoId,p.id));
   const preparation = async()=> (await center(p.id)).guide!.paths.find(p=>p.id==='preparacion_inicial')!;
+  const edicion = async(as=specialist)=> (await center(p.id,as)).guide!.paths.find(p=>p.id==='edicion')!;
   let prep=await preparation();
   expect(prep).toMatchObject({currentStep:'Solicitar Editor',canContinue:false,canOperate:true,historicalReadOnly:false,action:{kind:'request_editor'}});
   expect(prep.steps.find(s=>s.id==='reuniones_extraccion')?.completed).toBe(true);
   expect(prep.steps.find(s=>s.id==='editor_extraccion')?.completed).toBe(false);
+  // "Subir archivos de la extracción" ya no vive en Preparación Inicial:
+  // quien conduce la entrevista es el Editor, no el Especialista.
+  expect(prep.steps.some(s=>s.id==='archivos_extraccion')).toBe(false);
   expect((await call(specialist,'POST',`/proyectos/${p.id}/workflow/continue`,{path:'preparacion_inicial'})).statusCode).toBe(409);
   const requested=await call(specialist,'POST',`/proyectos/${p.id}/solicitar-editor`);
   expect(requested.statusCode,requested.body).toBe(201);
@@ -109,18 +114,42 @@ describe('Guía del proyecto: hechos y capacidades',()=>{
   expect((await call(specialist,'POST',`/proyectos/${p.id}/workflow/continue`,{path:'preparacion_inicial'})).statusCode).toBe(409);
   const assigned=await call(chiefEditor,'PATCH',`/proyectos/${p.id}/editor`,{editorId:editor});
   expect(assigned.statusCode,assigned.body).toBe(200);
+  // Asignado el Editor, Preparación Inicial ya no tiene nada pendiente.
   prep=await preparation();
-  expect(prep).toMatchObject({waitingFor:null,currentStep:'Subir archivos de la extracción',historicalReadOnly:false});
+  expect(prep).toMatchObject({waitingFor:null,state:'Completado',canContinue:true,historicalReadOnly:false});
   expect(prep.steps.find(s=>s.id==='reuniones_extraccion')?.completed).toBe(true);
   expect(prep.steps.find(s=>s.id==='editor_extraccion')?.completed).toBe(true);
-  const files=await call(specialist,'PATCH',`/proyectos/${p.id}/preparacion-inicial`,{extraccionEnlaces:['https://example.test/extraccion-nueva']});
-  expect(files.statusCode,files.body).toBe(200);
-  expect(await preparation()).toMatchObject({state:'Completado',canContinue:true});
   expect((await call(specialist,'POST',`/proyectos/${p.id}/workflow/continue`,{path:'preparacion_inicial'})).statusCode).toBe(200);
+  // La entrevista todavía no pasó (realizada=false): Edición no bloquea
+  // nada por archivos todavía.
+  let edic=await edicion();
+  expect(edic.requirements.find(r=>r.id==='extraction-files')).toBeUndefined();
+  expect(edic.currentStep).not.toBe('Subir archivos de la extracción');
+  // Solo el Editor marca la sesión y sube lo que produjo — nunca el Especialista.
+  expect((await call(specialist,'POST',`/proyectos/${p.id}/extraccion/${sesion!.id}/completada`)).statusCode).toBe(403);
+  const completada=await call(editor,'POST',`/proyectos/${p.id}/extraccion/${sesion!.id}/completada`);
+  expect(completada.statusCode,completada.body).toBe(200);
+  edic=await edicion();
+  expect(edic).toMatchObject({currentStep:'Subir archivos de la extracción',waitingFor:null,action:{kind:'extraction_files'}});
+  expect(edic.requirements.find(r=>r.id==='extraction-files')?.satisfied).toBe(false);
+  expect((await call(specialist,'PATCH',`/proyectos/${p.id}/extraccion/${sesion!.id}/video`,{videoUrl:'https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456/view'})).statusCode).toBe(403);
+  // La copia real del video a Drive (ver registrarVideoSesion) requiere que
+  // Google pueda leer el archivo origen; sin esa integración real acá, se
+  // fija el resultado esperado directamente, igual que las notas de abajo.
+  await db.update(reunionesExtraccion).set({videoUrl:'https://example.test/video-nuevo'}).where(eq(reunionesExtraccion.id,sesion!.id));
+  // Falta todavía las notas de Gemini.
+  edic=await edicion();
+  expect(edic.requirements.find(r=>r.id==='extraction-files')?.satisfied).toBe(false);
+  // La subida real de las notas pasa por Drive (ver subirNotasSesion); acá
+  // se fija el resultado esperado directamente, igual que el resto de este
+  // archivo simula entregas ya recibidas sin depender de Drive real.
+  await db.update(reunionesExtraccion).set({notasGeminiUrl:'https://example.test/notas-gemini-nuevo'}).where(eq(reunionesExtraccion.id,sesion!.id));
+  edic=await edicion();
+  expect(edic.requirements.find(r=>r.id==='extraction-files')).toBeUndefined();
+  expect(edic.currentStep).not.toBe('Subir archivos de la extracción');
   await crearCapitulo(p.id,1,editor);
   expect((await preparation()).historicalReadOnly).toBe(true);
   expect((await preparation()).steps.some(s=>s.id==='reuniones_extraccion')).toBe(true);
-  expect((await call(specialist,'PATCH',`/proyectos/${p.id}/preparacion-inicial`,{extraccionEnlaces:['https://example.test/cambio-posterior']})).statusCode).toBe(409);
  });
  it('comienza en preparación y el servidor bloquea Continuar mientras faltan requisitos',async()=>{
   const p=await fixture();

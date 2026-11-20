@@ -3,6 +3,7 @@ import { Readable } from 'node:stream';
 import type { OAuth2Client } from 'google-auth-library';
 import { DriveIntegrationError, safeDriveError } from './errors.js';
 import type { ProjectDriveStorageProvider, StorageItem } from './provider.js';
+import { downloadPublicVideo, VIDEO_TRANSFER_TIMEOUT } from './publicVideo.js';
 
 export const FOLDER_MIME='application/vnd.google-apps.folder';
 export const SMOKE_PURPOSE='panhouse_connection_smoke_v1';
@@ -70,6 +71,24 @@ export class GoogleDriveAdapter implements ProjectDriveStorageProvider {
         media:{mimeType:input.mimeType,body:Readable.from(input.content)}});
       return item(response.data);
     }catch(e){throw safeDriveError(e);}
+  }
+  async copyFile(input:{fileId:string;name:string;parentFolderId:string;resourceKey?:string}) {
+    try {
+      const r=await this.client.files.copy({fileId:input.fileId,supportsAllDrives:true,fields,requestBody:{name:input.name,parents:[input.parentFolderId]}},
+        input.resourceKey ? {headers:{'X-Goog-Drive-Resource-Keys':`${input.fileId}/${input.resourceKey}`}} : {});
+      return item(r.data);
+    }catch(e){throw safeDriveError(e);}
+  }
+  async importPublicVideo(input:{fileId:string;name:string;parentFolderId:string;resourceKey?:string}) {
+    let download:Awaited<ReturnType<typeof downloadPublicVideo>>|undefined;
+    try {
+      download=await downloadPublicVideo(input.fileId,input.resourceKey);
+      const response=await this.client.files.create({supportsAllDrives:true,fields,
+        requestBody:{name:input.name+(download.extension?'.'+download.extension:''),mimeType:download.mimeType,parents:[input.parentFolderId]},
+        media:{mimeType:download.mimeType,body:download.content}}, {timeout:VIDEO_TRANSFER_TIMEOUT,retry:false});
+      return item(response.data);
+    }catch(e){throw safeDriveError(e);}
+    finally{download?.content.destroy();}
   }
   async deleteFileOrFolder(id:string) {try{await this.client.files.delete({fileId:id,supportsAllDrives:true});}catch(e){throw safeDriveError(e);}}
   async shareFolder(id:string,email:string) {

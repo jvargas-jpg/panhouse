@@ -24,6 +24,18 @@ export interface EditorWorkDetail {
   deliveries: { id: string; driveUrl: string; observaciones: string | null; submittedAt: string }[];
   blocker: { id: string; reason: string; createdAt: string; resolvedAt: string | null; resolution: string | null } | null;
   history: { id: string; label: string; actor: string; at: string }[];
+  // Escritura Fantasma: sesiones de extracción que el Especialista programó
+  // y lo que produce quien las conduce — el Editor, no el Especialista.
+  // Solo presente en la intervención "Inicio de edición" (antes de que
+  // existan capítulos) de un proyecto EF.
+  extraction?: { sesiones: {
+    id: string; numero: number; fechaHora: string | null; duracionMinutos: number | null; realizada: boolean;
+    meetUrl: string | null; videoUrl: string | null; notasGeminiUrl: string | null;
+    // Propuesta del Autor esperando que el Editor la acepte o la rechace.
+    solicitudCambio: { id: string; fechaHoraPropuesta: string; motivo: string | null } | null;
+    // Propuesta del propio Editor, esperando que el Autor la acepte o la rechace.
+    solicitudCambioPropia: { id: string; fechaHoraPropuesta: string } | null;
+  }[] };
 }
 
 export const EDITOR_REQUEST_TYPES = ['editor_apoyo', 'editor_reasignacion', 'editor_aclaracion'] as const;

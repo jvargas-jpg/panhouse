@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { CATEGORIAS_STAND_BY, ESTADOS_PROYECTO } from '../db/schema/index.js';
 import { listarRiesgoProyectosActivos, obtenerProyectoConRiesgo } from '../helpers/alertas.js';
 import { listarCorreccionesDeProyecto, solicitarCorreccion } from '../helpers/correcciones.js';
-import { listarReunionesExtraccion, programarSesionesExtraccion, programarSesionesExtraccionSchema, editarSesionExtraccion, editarSesionExtraccionSchema } from '../helpers/extraccion.js';
+import { listarReunionesExtraccion, programarSesionesExtraccion, programarSesionesExtraccionSchema, editarSesionExtraccion, editarSesionExtraccionSchema, marcarSesionExtraccionCompletada, registrarMeetSesion, registrarMeetSesionSchema, registrarVideoSesion, registrarVideoSesionSchema, subirNotasSesion, subirNotasSesionSchema, editorSolicitaCambioSesion, editorRespondeCambioSesion, solicitarCambioSesionSchema, responderCambioSesionSchema, listarSolicitudesCambioSesion } from '../helpers/extraccion.js';
 import { ErrorFichaViva } from '../helpers/fichaViva.js';
 import { listarDireccionesCreativasDeProyecto, solicitarDireccionCreativa } from '../helpers/direccionCreativa.js';
 import { ALCANCES_CORRECCION } from '../helpers/correccionSla.js';
@@ -501,7 +501,7 @@ export async function proyectosRoutes(app: FastifyInstance) {
   // Inicial — mismo criterio de acceso que correcciones/el resto del proyecto.
   app.get(
     '/:id/extraccion',
-    { preHandler: [requireAuth, requireRole('jefe_area', 'especialista', 'lider_creativo')] },
+    { preHandler: [requireAuth, requireRole('jefe_area', 'especialista', 'editor', 'lider_creativo')] },
     async (request, reply) => {
       const params = parseOrReply(idParamSchema, request.params, reply);
       if (!params) return;
@@ -512,8 +512,8 @@ export async function proyectosRoutes(app: FastifyInstance) {
       if (!acceso.ok) {
         return reply.code(acceso.status).send({ error: acceso.error });
       }
-      const reuniones = await listarReunionesExtraccion(params.id);
-      return reply.send({ reuniones });
+      const [reuniones, solicitudesCambio] = await Promise.all([listarReunionesExtraccion(params.id), listarSolicitudesCambioSesion(params.id)]);
+      return reply.send({ reuniones, solicitudesCambio });
     },
   );
 
@@ -545,6 +545,52 @@ export async function proyectosRoutes(app: FastifyInstance) {
     if (!body || !request.user) return;
     try { return reply.send({reunion:await editarSesionExtraccion(params.id, params.reunionId, body, request.user)}); }
     catch (e) { if (e instanceof ErrorFichaViva) return reply.code(e.status).send({error:e.message}); throw e; }
+  });
+
+  // Las sesiones de extracción, desde acá en adelante, son del Editor: él
+  // conduce la entrevista, él marca cuándo se realizó, él sube lo que
+  // produjo y él negocia un cambio de horario con el Autor.
+  const reunionParams = z.object({ id: z.string().uuid(), reunionId: z.string().uuid() });
+  app.post('/:id/extraccion/:reunionId/completada', { preHandler: [requireAuth, requireRole('editor')] }, async (request, reply) => {
+    const params = parseOrReply(reunionParams, request.params, reply);
+    if (!params || !request.user) return;
+    try { return reply.send({ reunion: await marcarSesionExtraccionCompletada(params.id, params.reunionId, request.user) }); }
+    catch (e) { if (e instanceof ErrorFichaViva) return reply.code(e.status).send({ error: e.message }); throw e; }
+  });
+  app.patch('/:id/extraccion/:reunionId/meet', { preHandler: [requireAuth, requireRole('editor')] }, async (request, reply) => {
+    const params = parseOrReply(reunionParams, request.params, reply);
+    const body = parseOrReply(registrarMeetSesionSchema, request.body, reply);
+    if (!params || !body || !request.user) return;
+    try { return reply.send({ reunion: await registrarMeetSesion(params.id, params.reunionId, body, request.user) }); }
+    catch (e) { if (e instanceof ErrorFichaViva) return reply.code(e.status).send({ error: e.message }); throw e; }
+  });
+  app.patch('/:id/extraccion/:reunionId/video', { preHandler: [requireAuth, requireRole('editor')] }, async (request, reply) => {
+    const params = parseOrReply(reunionParams, request.params, reply);
+    const body = parseOrReply(registrarVideoSesionSchema, request.body, reply);
+    if (!params || !body || !request.user) return;
+    try { return reply.send({ reunion: await registrarVideoSesion(params.id, params.reunionId, body, request.user) }); }
+    catch (e) { if (e instanceof ErrorFichaViva) return reply.code(e.status).send({ error: e.message }); throw e; }
+  });
+  app.post('/:id/extraccion/:reunionId/notas', { preHandler: [requireAuth, requireRole('editor')], bodyLimit: 28_100_000 }, async (request, reply) => {
+    const params = parseOrReply(reunionParams, request.params, reply);
+    const body = parseOrReply(subirNotasSesionSchema, request.body, reply);
+    if (!params || !body || !request.user) return;
+    try { return reply.send({ reunion: await subirNotasSesion(params.id, params.reunionId, body, request.user) }); }
+    catch (e) { if (e instanceof ErrorFichaViva) return reply.code(e.status).send({ error: e.message }); throw e; }
+  });
+  app.post('/:id/extraccion/:reunionId/cambio', { preHandler: [requireAuth, requireRole('editor')] }, async (request, reply) => {
+    const params = parseOrReply(reunionParams, request.params, reply);
+    const body = parseOrReply(solicitarCambioSesionSchema, request.body, reply);
+    if (!params || !body || !request.user) return;
+    try { return reply.send({ solicitud: await editorSolicitaCambioSesion(params.id, params.reunionId, body, request.user) }); }
+    catch (e) { if (e instanceof ErrorFichaViva) return reply.code(e.status).send({ error: e.message }); throw e; }
+  });
+  app.post('/:id/extraccion/cambio/:solicitudId/responder', { preHandler: [requireAuth, requireRole('editor')] }, async (request, reply) => {
+    const params = parseOrReply(z.object({ id: z.string().uuid(), solicitudId: z.string().uuid() }), request.params, reply);
+    const body = parseOrReply(responderCambioSesionSchema, request.body, reply);
+    if (!params || !body || !request.user) return;
+    try { return reply.send({ solicitud: await editorRespondeCambioSesion(params.id, params.solicitudId, body, request.user) }); }
+    catch (e) { if (e instanceof ErrorFichaViva) return reply.code(e.status).send({ error: e.message }); throw e; }
   });
 
   // Fase 5 (5C Dirección Creativa) — el Especialista solicita (GATE-07:

@@ -1,0 +1,1 @@
+ALTER TABLE "reuniones_extraccion" ADD COLUMN "meet_url" text;

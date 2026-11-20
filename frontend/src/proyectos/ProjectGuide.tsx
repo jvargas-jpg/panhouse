@@ -22,17 +22,6 @@ import { fetchDecision, responderInfoDecision } from '../jefatura/decisionesApi'
 export function Requirements({ items }: { items: GuideRequirement[] }) {
  return <ul className="pg-requirements">{items.map(r => <li key={r.id} className={r.satisfied ? 'pg-done' : ''}><span aria-hidden="true">{r.satisfied ? '✓' : '○'}</span>{r.label}</li>)}</ul>;
 }
-// Mismo patrón de lista repetible que ConceptsForm (CreativeWorkDialog.tsx):
-// N enlaces, "Añadir otro" — no un único campo, puede haber varios archivos.
-function ExtraccionArchivosForm({ initial, onChange }: { initial: string[] | null; onChange: (enlaces: string[]) => void }) {
- const [enlaces, setEnlaces] = useState<string[]>(initial?.length ? initial : ['']);
- const commit = (next: string[]) => { setEnlaces(next); onChange(next.filter(u => u.trim())); };
- return <>
-  <p>Sube los enlaces de Drive de los documentos producidos en las reuniones de extracción.</p>
-  {enlaces.map((url, i) => <label key={i}>{'Archivo '+(i+1)}<input type="url" placeholder="https://…" value={url} onChange={e=>commit(enlaces.map((u,j)=>j===i?e.target.value:u))}/></label>)}
-  <button type="button" className="pg-secondary" onClick={()=>commit([...enlaces,''])}>Añadir otro archivo</button>
- </>;
-}
 function PreparationStep({ id, data, step }: { id: string; data: ProjectCommandCenter; step: GuideStep }) {
  const p = data.preparacion, cache = useQueryClient();
  const [values, setValues] = useState<Record<string, string | boolean | null | string[]>>({});
@@ -46,7 +35,6 @@ function PreparationStep({ id, data, step }: { id: string; data: ProjectCommandC
   {step.id==='documentos' && <><ProjectWorkspaceCard id={id} editable initial={p.workspace}/>{(['minutaUrl','cronogramaUrl','grabacionUrl','transcripcionUrl'] as const).map((key,i)=><label key={key}>{['Minuta operativa','Cronograma','Grabación','Transcripción'][i]}<input type="url" placeholder="https://…" value={String(values[key] ?? p[key] ?? '')} onChange={e=>setValues(v=>({...v,[key]:e.target.value || null}))}/></label>)}
    {requiereExtraccion && (['estructuraPreliminaresUrl','solicitudInformacionAutorUrl'] as const).map((key,i)=><label key={key}>{['Estructura de preliminares','Solicitud de información para "Sobre el autor"'][i]}<input type="url" placeholder="https://…" value={String(values[key] ?? p[key] ?? '')} onChange={e=>setValues(v=>({...v,[key]:e.target.value || null}))}/></label>)}
   </>}
-  {step.id==='archivos_extraccion' && <ExtraccionArchivosForm initial={p.extraccionEnlaces} onChange={enlaces=>setValues(v=>({...v,extraccionEnlaces:enlaces}))}/>}
   <button className="pg-primary" disabled={save.isPending || !Object.keys(values).length}>{save.isPending ? 'Guardando…' : 'Guardar y seguir'}</button>
   {save.error && <p role="alert">{save.error.message}</p>}
  </form>;
@@ -72,11 +60,14 @@ function DecisionResponse({id,onSaved}:{id:string;onSaved:()=>void}) {
 // Pantalla completa, un paso a la vez — bienvenida, crear carpetas, primer
 // contacto (24h) y subir archivos. El resto de Preparación Inicial (reuniones
 // de extracción, etc.) sigue con la vista habitual una vez estos terminan.
-function WizardCarpetas({ id, onContinue }: { id: string; onContinue: () => void }) {
+function WizardCarpetas({ id, initialRequested, onContinue }: { id: string; initialRequested: boolean; onContinue: () => void }) {
  // "requested" exige el clic real del Especialista: aunque el espacio ya
  // esté listo (p. ej. creación automática previa), no se salta directo a
- // "Carpetas creadas" sin que la persona haya presionado el botón.
- const [requested, setRequested] = useState(false);
+ // "Carpetas creadas" sin que la persona haya presionado el botón. Al
+ // volver a entrar con una solicitud ya en curso (PENDING/PROVISIONING/
+ // ERROR), initialRequested llega en true para reflejar ese estado real
+ // en vez de mostrar "Crear carpetas" como si nada hubiera pasado.
+ const [requested, setRequested] = useState(initialRequested);
  const cache = useQueryClient();
  const workspace = useProjectWorkspace(id);
  const recovery = useMutation({
@@ -285,13 +276,27 @@ export function WizardSolicitarEditor({id,data,onContinue,onBack}:{id:string;dat
 }
 function PreparacionWizard({ id, data, path, title, onContinue }: { id: string; data: ProjectCommandCenter; path: GuidePath; title: string; onContinue: () => void }) {
  const retomarEditor=!!path.steps.find(s=>s.id==='editor_extraccion'&&!s.completed)&&!!path.steps.find(s=>s.id==='reuniones_extraccion'&&s.completed)&&!!path.steps.find(s=>s.id==='documentos'&&s.completed)&&data.preparacion.workspace?.status==='READY'&&!data.preparacion.workspace.contextChanged;
- const [started, setStarted] = useState(retomarEditor);
- const [carpetasListas, setCarpetasListas] = useState(retomarEditor);
+ const ws=data.preparacion.workspace;
+ // "Crear carpetas" siempre nace de un clic real (ver WizardCarpetas): el
+ // workspace solo deja NOT_CONFIGURED cuando alguien ya pidió crearlo, así
+ // que ese estado es una señal confiable de avance real, no de
+ // aprovisionamiento silencioso.
+ const carpetasYaListas=retomarEditor||(!!ws&&ws.status==='READY'&&!ws.contextChanged);
+ const carpetasYaIniciadas=carpetasYaListas||(!!ws&&ws.status!=='NOT_CONFIGURED');
+ const contactoYaListo=!!data.preparacion.primerContactoEn;
+ const documentosYaListos=path.steps.find(s=>s.id==='documentos')?.completed??false;
+ const cronogramaYaListo=path.steps.find(s=>s.id==='reuniones_extraccion')?.completed??false;
+ const editorYaListo=path.steps.find(s=>s.id==='editor_extraccion')?.completed??false;
+ // Retomar donde quedó: si hay cualquier señal real de avance, no repetir
+ // la Bienvenida al volver a entrar — ir directo a la pantalla del
+ // siguiente paso pendiente.
+ const [started, setStarted] = useState(carpetasYaIniciadas||contactoYaListo||documentosYaListos||cronogramaYaListo||editorYaListo);
+ const [carpetasListas, setCarpetasListas] = useState(carpetasYaListas);
  // Cada pantalla avanza SOLO cuando la persona pulsa su propio "Continuar" —
  // nunca porque el dato real ya cambió de fondo (si no, el refetch tras
  // "Parar" saltaría la confirmación directo a la siguiente pantalla antes
  // de que la persona alcance a verla).
- const [contactoListo, setContactoListo] = useState(() => !!data.preparacion.primerContactoEn);
+ const [contactoListo, setContactoListo] = useState(contactoYaListo);
  const [documentosListos, setDocumentosListos] = useState(() => path.steps.find(s=>s.id==='documentos')?.completed ?? true);
  const [cronogramaListo, setCronogramaListo] = useState(() => path.steps.find(s=>s.id==='reuniones_extraccion')?.completed ?? true);
  const [editorListo,setEditorListo]=useState(()=>path.steps.find(s=>s.id==='editor_extraccion')?.completed??!path.steps.some(s=>s.id==='reuniones_extraccion'));
@@ -309,7 +314,7 @@ function PreparacionWizard({ id, data, path, title, onContinue }: { id: string; 
    <button type="button" className="pg-primary pg-wizard-cta" onClick={()=>setStarted(true)}>Comencemos →</button>
   </div>
  </div>;
- if (!carpetasListas) return <WizardCarpetas id={id} onContinue={()=>setCarpetasListas(true)}/>;
+ if (!carpetasListas) return <WizardCarpetas id={id} initialRequested={carpetasYaIniciadas} onContinue={()=>setCarpetasListas(true)}/>;
  if (!contactoListo) return <WizardContacto id={id} data={data} onContinue={()=>setContactoListo(true)}/>;
  if (!documentosListos) return <WizardDocumentos id={id} data={data} requiereExtraccion={path.steps.some(s=>s.id==='reuniones_extraccion')} onContinue={()=>setDocumentosListos(true)}/>;
  if (!cronogramaListo) return <WizardCronograma id={id} data={data} onContinue={()=>setCronogramaListo(true)}/>;

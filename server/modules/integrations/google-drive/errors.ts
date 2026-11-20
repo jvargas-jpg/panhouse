@@ -1,8 +1,9 @@
 export type DriveErrorCode = 'NOT_CONFIGURED' | 'NOT_CONNECTED' | 'INVALID_STATE' | 'OAUTH_DENIED' | 'OAUTH_FAILED' |
   'REAUTH_REQUIRED' | 'INVALID_CLIENT' | 'REDIRECT_MISMATCH' | 'SCOPE_MISMATCH' | 'REFRESH_TOKEN_REQUIRED' |
   'DRIVE_ACCESS_DENIED' | 'NOT_FOUND' | 'GOOGLE_UNAVAILABLE' | 'RATE_LIMITED' | 'BUSY' | 'STALE_ATTEMPT' |
-  'TOKEN_ENCRYPTION_ERROR' | 'INVALID_RESPONSE' | 'CLEANUP_FAILED';
+  'TOKEN_ENCRYPTION_ERROR' | 'INVALID_RESPONSE' | 'CLEANUP_FAILED' | 'PUBLIC_VIDEO_UNAVAILABLE';
 const messages: Record<DriveErrorCode, string> = {
+  PUBLIC_VIDEO_UNAVAILABLE: 'Google no permitió descargar el video. Comprueba que el enlace abra sin iniciar sesión y que el propietario permita descargar y copiar el archivo.',
   NOT_CONFIGURED: 'Google Drive integration is not configured.',
   NOT_CONNECTED: 'Google Drive no está conectado.',
   INVALID_STATE: 'El intento de conexión no es válido, expiró o ya se utilizó. Inicia la conexión otra vez.',

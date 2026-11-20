@@ -65,21 +65,21 @@ describe('Editor · Mi trabajo',()=>{
   const html=render(<EditorMiTrabajo/>,c=>c.setQueryData(['editor','mi-trabajo','tab=all&search=&page=1&pageSize=10'],{...miTrabajoList,items:[],total:0}));
   expect(html).toContain('No tienes intervenciones asignadas con estos filtros.');
  });
- it('el resumen distingue responsable actual, pausa y acciones de una espera real',()=>{
+ it('entra a una guia completa al abrir una intervencion y explica la espera del Autor',()=>{
   const waiting={...item,state:'Esperando autor',waitingOn:'author',actionable:false,overdue:false,dueDate:null};
+  const review={id:'review-1',status:'pending',metadata:{kind:'chapter',version:1,chapterNumber:4,requestKey:'request-key'},response:null,feedback:null,requestedAt:'2026-11-01T12:00:00Z',decidedAt:null,file:{name:'Chapter v1.pdf',url:'/download'}};
   const html=render(<EditorMiTrabajo/>,c=>{
-   c.setQueryData(['editor','mi-trabajo','tab=all&search=&page=1&pageSize=10'],{...miTrabajoList,items:[{...waiting,lastActivity:null}]});
-   c.setQueryData(['editor','mi-trabajo-detalle','work-qa'],{item:waiting,folders:[],deliveries:[],blocker:null,history:[],slaLabel:'3 días hábiles desde el inicio'});
-  });
-  expect(html).toContain('Responsable actual');expect(html).toContain('SLA en pausa');expect(html).toContain('Resumen');
-  expect(html).toContain('Esperando la respuesta del autor');expect(html).not.toContain('Registrar entrega');expect(html).not.toContain('Reportar bloqueo');
+   c.setQueryData(['editor','mi-trabajo-detalle','work-qa'],{item:waiting,folders:[],deliveries:[],blocker:null,history:[]});
+   c.setQueryData(['editor','project-guide','project-qa'],{projectId:'project-qa',title:item.title,authors:item.authors,serviceCode:'EF',currentStep:'chapters',blockedReason:null,authorHasAccount:true,chapters:[{number:4,latest:review,history:[review]}],manuscript:null,titles:null,history:[review],selectedTitle:null});
+  },'/?vista=mi-trabajo&workItem=work-qa&guideProject=project-qa');
+  expect(html).toContain('aria-label="Guía de edición del proyecto"');expect(html).toContain('Esperando al Autor');
+  expect(html).toContain('Volver a Mi trabajo');expect(html).not.toContain('mw-detail-tabs');expect(html).not.toContain('Registrar entrega');
  });
- it('un detalle fallido permite reintentar y conserva las filas cargadas',()=>{
+ it('un error al abrir la guia ofrece volver y reintentar sin mostrar un panel lateral',()=>{
   const html=render(<EditorMiTrabajo/>,c=>{
-   c.setQueryData(['editor','mi-trabajo','tab=all&search=&page=1&pageSize=10'],miTrabajoList);
-   c.getQueryCache().build(c,{queryKey:['editor','mi-trabajo-detalle','work-qa']}).setState({status:'error',error:new Error('Fallo de detalle'),fetchStatus:'idle'});
-  });
-  expect(html).toContain('No se pudo cargar la intervención.');expect(html).toContain('Capítulo 4');expect(html).toContain('Reintentar');
+   c.getQueryCache().build(c,{queryKey:['editor','project-guide','project-qa']}).setState({status:'error',error:new Error('Fallo de guia'),fetchStatus:'idle'});
+  },'/?vista=mi-trabajo&guideProject=project-qa');
+  expect(html).toContain('Reintentar');expect(html).toContain('Volver a Mi trabajo');expect(html).not.toContain('eo-detail-placeholder');
  });
 });
 

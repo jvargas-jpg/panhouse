@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { and, desc, eq, inArray, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { approvalArtifacts, approvalRequests, authorDocuments, authorMailOutbox, auditLogs, capitulos, direccionesCreativas, disenos, disenoVersiones, editorialDeliveries, fichaCalidadFases, fichaDisenoPropuestas, fichasTrazabilidad, notificaciones, pausas, projectAssignments, proyectos, proyectosAutores, servicios, solicitudesArea, users, workItems } from '../db/schema/index.js';
+import { approvalArtifacts, approvalRequests, authorDocuments, authorMailOutbox, auditLogs, capitulos, direccionesCreativas, disenos, disenoVersiones, editorialDeliveries, fichaCalidadFases, fichaDisenoPropuestas, fichasTrazabilidad, notificaciones, pausas, projectAssignments, proyectos, proyectosAutores, reunionesExtraccion, servicios, solicitudesArea, users, workItems } from '../db/schema/index.js';
 import type { AuthenticatedUser } from './session.js';
 import type { Tx } from './tx.js';
 import { especialistaActualSql, obtenerEspecialistaActual } from './carga.js';
@@ -11,6 +11,7 @@ import { queueExternalDesignNotice } from './designExternalMail.js';
 import { sincronizarCapituloEditorial } from './editorialInterventions.js';
 import { calcularFechaPautadaFeedbackCapitulo, calcularFechaPautadaFeedbackTripa } from './edicionSla.js';
 import { habilitarPlanificacionRrpp } from './rrppLanzamientoGate.js';
+import type { EditorialReviewResponse } from '../../shared/editorialReview.js';
 
 export const APPROVAL_TYPES = ['estructura','capitulo','tripa_completa','kit_editorial','brief_creativo','concepto_portada','muestra_diagramacion','cubierta_extendida','version_validada','aprobacion_final','otro_entregable'] as const;
 export type ApprovalType = typeof APPROVAL_TYPES[number];
@@ -48,7 +49,7 @@ async function specialistNotice(tx:Tx,p:typeof proyectos.$inferSelect,message:st
 export const PORTAL_STAGES=['Ingreso','Producción de contenido','Corrección','Diseño','Validación editorial','Preparación final','Publicación'];
 export async function authorProjects(actor:AuthenticatedUser){
   ensure(actor.rol==='autor'&&actor.autorId,'Acceso no autorizado',403);
-  const rows=await db.select({id:proyectos.id,title:proyectos.titulo,service:servicios.nombre,serviceCode:servicios.codigo,
+  const rows=await db.select({id:proyectos.id,title:sql<string|null>`coalesce(${proyectos.tituloDefinitivo},${proyectos.titulo})`,service:servicios.nombre,serviceCode:servicios.codigo,
     startDate:proyectos.fechaRealInicio,plannedStart:proyectos.fechaProgramadaInicio,estimatedDate:proyectos.fechaFinProyectada,
     state:proyectos.estado,specialist:users.nombre,activePause:sql<boolean>`EXISTS (SELECT 1 FROM pausas pa WHERE pa.proyecto_id=${proyectos.id} AND pa.fecha_fin IS NULL AND pa.fecha_inicio<=now())`,edicion:fichasTrazabilidad.edicionEstatus,correccion:fichasTrazabilidad.correccionEstatus,diseno:fichasTrazabilidad.disenoEstatus,calidad:fichasTrazabilidad.calidadEstatus,
     workStage:sql<string|null>`(SELECT CASE WHEN wi.tipo='calidad' AND EXISTS(SELECT 1 FROM ficha_calidad_fases q WHERE q.work_item_id=wi.id AND q.numero_fase>=3) THEN 'preparacion_final' ELSE wi.tipo END FROM work_items wi WHERE wi.proyecto_id=${proyectos.id} AND wi.tipo IN ('edicion','correccion','diseno','calidad','lanzamiento','impresion','distribucion') AND wi.estado IN ('en_progreso','bloqueado','pendiente') ORDER BY CASE wi.tipo WHEN 'edicion' THEN 1 WHEN 'correccion' THEN 2 WHEN 'diseno' THEN 3 WHEN 'calidad' THEN 4 ELSE 5 END, wi.created_at LIMIT 1)`})
@@ -57,6 +58,21 @@ export async function authorProjects(actor:AuthenticatedUser){
     const stage=state==='culminado'?6:workStage?({edicion:1,correccion:2,diseno:3,calidad:4,preparacion_final:5,lanzamiento:6,impresion:5,distribucion:6}[workStage]??0):calidad?4:diseno?3:correccion?2:edicion?1:0;
     return {...p,estimatedDate:state==='pausado'||activePause?null:p.estimatedDate,stage,stageLabel:PORTAL_STAGES[stage],status:state==='pausado'||activePause?'En pausa':state==='stand_by'?'En espera':state==='retirado'?'Cerrado':state==='culminado'?'Publicado':'En curso',nextMilestone:PORTAL_STAGES[Math.min(stage+1,6)]};
   });
+}
+// "Tienes las siguientes reuniones": sesiones de extracción (Escritura
+// Fantasma) que el Especialista programó y aún no se realizan — mismo
+// criterio de ownership (authorScope) que el resto del portal.
+export async function authorUpcomingMeetings(actor:AuthenticatedUser){
+  ensure(actor.rol==='autor'&&actor.autorId,'Acceso no autorizado',403);
+  return db.select({id:reunionesExtraccion.id,projectId:reunionesExtraccion.proyectoId,projectTitle:proyectos.titulo,fechaHora:reunionesExtraccion.fechaHora,duracionMinutos:reunionesExtraccion.duracionMinutos,meetUrl:reunionesExtraccion.meetUrl,
+    // Propuesta del Editor para cambiar esta sesión, esperando que el Autor
+    // la acepte o la rechace (ver autorRespondeCambioSesion).
+    solicitudCambioId:sql<string|null>`(SELECT id FROM reunion_extraccion_solicitudes s WHERE s.reunion_id=${reunionesExtraccion.id} AND s.estado='pendiente' AND s.solicitado_por='editor' LIMIT 1)`,
+    solicitudCambioFechaHora:sql<string|null>`(SELECT fecha_hora_propuesta FROM reunion_extraccion_solicitudes s WHERE s.reunion_id=${reunionesExtraccion.id} AND s.estado='pendiente' AND s.solicitado_por='editor' LIMIT 1)`,
+    solicitudCambioMotivo:sql<string|null>`(SELECT motivo FROM reunion_extraccion_solicitudes s WHERE s.reunion_id=${reunionesExtraccion.id} AND s.estado='pendiente' AND s.solicitado_por='editor' LIMIT 1)`})
+    .from(reunionesExtraccion).innerJoin(proyectos,eq(proyectos.id,reunionesExtraccion.proyectoId))
+    .where(and(authorScope(actor.autorId!),eq(reunionesExtraccion.realizada,false),gt(reunionesExtraccion.fechaHora,new Date())))
+    .orderBy(asc(reunionesExtraccion.fechaHora));
 }
 export async function portalDocuments(actor:AuthenticatedUser,projectId?:string){
   ensure(actor.autorId&&actor.rol==='autor','Acceso no autorizado',403);
@@ -67,7 +83,7 @@ export async function portalDocuments(actor:AuthenticatedUser,projectId?:string)
 export async function portalApprovals(actor:AuthenticatedUser,projectId?:string){
   if(projectId)await portalProject(projectId,actor);
   else ensure(actor.rol==='autor'&&actor.autorId,'Acceso no autorizado',403);
-  const rows=await db.select({id:approvalRequests.id,projectId:approvalRequests.projectId,projectTitle:proyectos.titulo,type:approvalRequests.type,title:approvalRequests.title,instructions:approvalRequests.instructions,requestedAt:approvalRequests.requestedAt,dueAt:approvalRequests.dueAt,status:approvalRequests.status,feedback:approvalRequests.feedback,decidedAt:approvalRequests.decidedAt,previousId:approvalRequests.previousId,sentBy:users.nombre,external:sql<boolean>`${approvalRequests.externalEvidence} IS NOT NULL`})
+  const rows=await db.select({id:approvalRequests.id,projectId:approvalRequests.projectId,projectTitle:sql<string>`coalesce(${proyectos.tituloDefinitivo},${proyectos.titulo},'Tu proyecto editorial')`,type:approvalRequests.type,title:approvalRequests.title,instructions:approvalRequests.instructions,requestedAt:approvalRequests.requestedAt,dueAt:approvalRequests.dueAt,status:approvalRequests.status,feedback:approvalRequests.feedback,decidedAt:approvalRequests.decidedAt,previousId:approvalRequests.previousId,sentBy:users.nombre,editorialReview:approvalRequests.editorialReview,editorialResponse:approvalRequests.editorialResponse,external:sql<boolean>`${approvalRequests.externalEvidence} IS NOT NULL`})
     .from(approvalRequests).innerJoin(proyectos,eq(proyectos.id,approvalRequests.projectId)).innerJoin(users,eq(users.id,approvalRequests.requestedBy))
     .where(and(projectId?eq(approvalRequests.projectId,projectId):undefined,actor.rol==='autor'?and(eq(approvalRequests.authorId,actor.autorId!),authorScope(actor.autorId!)):undefined)).orderBy(desc(approvalRequests.requestedAt));
   return Promise.all(rows.map(async r=>({...r,overdueDays:r.status==='pending'&&r.dueAt?Math.max(0,Math.ceil((Date.now()-r.dueAt.getTime())/86400000)):0,
@@ -189,6 +205,7 @@ async function applyDomainDecision(tx:Tx,r:typeof approvalRequests.$inferSelect,
     await tx.update(proyectos).set({fechaFeedbackTripa:today}).where(eq(proyectos.id,p.id));
     await habilitarPlanificacionRrpp(tx,p.id,r.recordedBy??r.requestedBy);
   }
+  if(r.editorialReview)return;
   const targets=r.type==='brief_creativo'||r.type==='concepto_portada'?['lider_creativo']:['muestra_diagramacion','cubierta_extendida','version_validada','aprobacion_final'].includes(r.type)?['disenador']:['editor'];
   const assignments=await tx.select({userId:projectAssignments.usuarioId,role:projectAssignments.tipo}).from(projectAssignments).where(and(eq(projectAssignments.proyectoId,p.id),isNull(projectAssignments.finalizadoEn),or(eq(projectAssignments.workItemId,r.originWorkItemId),isNull(projectAssignments.workItemId))));
   if(!approved||targets[0]==='lider_creativo')for(const a of assignments.filter(a=>targets.includes(a.role)))await tx.insert(notificaciones).values({proyectoId:p.id,rolDestino:a.role,usuarioDestinoId:a.userId,mensaje:approved?'El Autor aprobó el entregable. Continúa con el siguiente paso.':'Hay observaciones del Autor para aplicar. Coordina con el Especialista.',targetPath:`/proyectos/${p.id}`});
@@ -198,30 +215,37 @@ async function applyDomainDecision(tx:Tx,r:typeof approvalRequests.$inferSelect,
     if(!history)await tx.insert(notificaciones).values({proyectoId:p.id,rolDestino:'editor',usuarioDestinoId:p.editorId,mensaje:'Hay observaciones del Autor para aplicar. Coordina con el Especialista.'});
   }
 }
-export async function decideApproval(id:string,input:{decision:'approved'|'changes_requested';feedback?:string;external?:{channel:string;receivedAt:string;evidence:string;reason:string}},actor:AuthenticatedUser){
+export async function decideApproval(id:string,input:{decision:'approved'|'changes_requested';feedback?:string;editorialResponse?:EditorialReviewResponse;external?:{channel:string;receivedAt:string;evidence:string;reason:string}},actor:AuthenticatedUser,transaction?:Tx){
   ensure(input.decision==='approved'||input.decision==='changes_requested','Decisión inválida',400);
-  ensure(input.decision!=='changes_requested'||input.feedback?.trim(),'Explica los cambios solicitados',400);
-  return db.transaction(async tx=>{
+  const decide=async(tx:Tx)=>{
     const [initial]=await tx.select().from(approvalRequests).where(eq(approvalRequests.id,id));ensure(initial,'Aprobación no encontrada',404);
     const p=await portalProject(initial.projectId,actor,tx,true);
     const [r]=await tx.select().from(approvalRequests).where(eq(approvalRequests.id,id));ensure(r,'Aprobación no encontrada',404);
     if(actor.rol==='autor')ensure(r.authorId===actor.autorId&&!input.external,'Aprobación no encontrada',404);
     else ensure(input.external&&['especialista','jefe_area'].includes(actor.rol),'La decisión externa requiere evidencia',400);
     ensure(r.status==='pending','Esta decisión ya está registrada');
+    ensure(input.decision!=='changes_requested'||input.feedback?.trim()||r.editorialReview?.kind==='titles'||input.editorialResponse?.feedbackFile,'Explica los cambios solicitados',400);
+    if(r.editorialReview){
+      ensure(!['culminado','retirado','pausado','stand_by'].includes(p.estado),'El proyecto está cerrado o en pausa');
+      if(input.decision==='changes_requested'&&r.editorialReview.kind!=='titles')ensure(input.editorialResponse?.feedbackFile,'Sube el documento con tus comentarios',400);
+      if(input.decision==='approved'&&r.editorialReview.kind==='titles')ensure(input.editorialResponse?.selectedTitle&&r.editorialReview.proposedTitles?.includes(input.editorialResponse.selectedTitle),'Elige uno de los títulos propuestos',400);
+    }else ensure(!input.editorialResponse,'Esta aprobación no pertenece a la guía editorial',400);
     const [revoked]=await tx.select({id:authorDocuments.id}).from(approvalArtifacts).innerJoin(authorDocuments,eq(authorDocuments.id,approvalArtifacts.documentId)).where(and(eq(approvalArtifacts.approvalId,id),sql`${authorDocuments.revokedAt} IS NOT NULL`));
     ensure(!revoked,'Un documento fue retirado. Contacta a tu Especialista.');
     await resolveOriginForDecision(tx,r,p);
     const now=new Date(),effectiveAt=input.external?new Date(input.external.receivedAt):now,approved=input.decision==='approved',feedback=input.feedback?.trim()||null;
-    await tx.update(approvalRequests).set({status:input.decision,feedback,decidedAt:effectiveAt,recordedBy:actor.id,externalEvidence:input.external??null}).where(eq(approvalRequests.id,id));
+    const [decided]=await tx.update(approvalRequests).set({status:input.decision,feedback,decidedAt:effectiveAt,recordedBy:actor.id,externalEvidence:input.external??null,editorialResponse:input.editorialResponse??null}).where(eq(approvalRequests.id,id)).returning();
     await applyDomainDecision(tx,{...r,recordedBy:actor.id},p,approved,feedback,effectiveAt);
     await tx.update(workItems).set({estado:'completado',gateBloqueante:null,fechaFinReal:diaCaracas(now)}).where(eq(workItems.id,r.waitWorkItemId));
     const [pending]=await tx.select({id:approvalRequests.id}).from(approvalRequests).where(and(eq(approvalRequests.originWorkItemId,r.originWorkItemId),eq(approvalRequests.status,'pending')));
     if(!pending)await tx.update(workItems).set({estado:approved&&['capitulo','tripa_completa','muestra_diagramacion','cubierta_extendida'].includes(r.type)?'completado':'en_progreso',gateBloqueante:null,...(!approved?{fechaFinReal:null}:{} )}).where(and(eq(workItems.id,r.originWorkItemId),eq(workItems.gateBloqueante,'ESPERANDO_AUTOR')));
+    if(r.editorialReview){const {applyEditorialReviewDecision}=await import('./editorialReview.js');await applyEditorialReviewDecision(tx,decided!,p);}
     await specialistNotice(tx,p,approved?`El Autor aprobó: ${r.title}.`:`El Autor solicitó cambios: ${r.title}.`);
     await authorNotice(tx,r.authorId,p.id,approved?'Tu aprobación fue registrada.':'Tu feedback fue recibido.',`/autor/aprobaciones/${id}`,`decision:${id}`);
     await portalAudit(tx,actor.id,p.id,input.external?'DECISION_AUTOR_EXTERNA_REGISTRADA':approved?'APROBACION_AUTOR_EMITIDA':'AUTOR_CAMBIOS_SOLICITADOS',id,{decision:input.decision,feedback,external:input.external??null,waitingSeconds:Math.max(0,(effectiveAt.getTime()-r.requestedAt.getTime())/1000),lateSeconds:r.dueAt?Math.max(0,(effectiveAt.getTime()-r.dueAt.getTime())/1000):0,recordingDelaySeconds:Math.max(0,(now.getTime()-effectiveAt.getTime())/1000)});
     return {ok:true};
-  });
+  };
+  return transaction?decide(transaction):db.transaction(decide);
 }
 export async function cancelApprovalInTransaction(tx:Tx,r:typeof approvalRequests.$inferSelect,reason:string,actor:AuthenticatedUser){
   ensure(['especialista','jefe_area'].includes(actor.rol),'Acceso no autorizado',403);ensure(r.status==='pending','La solicitud ya está resuelta');ensure(reason.trim().length>=5,'Explica por qué retiras la solicitud',400);

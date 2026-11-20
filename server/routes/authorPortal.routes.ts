@@ -2,15 +2,17 @@ import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
-import { approvalRequests, authorDocuments, autores, capitulos, direccionesCreativas, disenos, disenoVersiones, fichaDisenoPropuestas, notificaciones, proyectosAutores, workItems } from '../db/schema/index.js';
+import { approvalRequests, authorDocuments, autores, capitulos, direccionesCreativas, disenos, disenoVersiones, fichaDisenoPropuestas, notificaciones, proyectosAutores, reunionesExtraccion, reunionExtraccionSolicitudes, workItems } from '../db/schema/index.js';
 import { env } from '../config/env.js';
 import { requireAuth, requireRole } from '../middleware/auth.middleware.js';
-import { APPROVAL_TYPES, AuthorPortalError, authorPauseRequest, authorProjects, createApproval, decideApproval, ensure, portalApprovals, portalAudit, portalDocuments, portalProject, portalRequests, resolvePauseRequest } from '../helpers/authorPortal.js';
+import { APPROVAL_TYPES, AuthorPortalError, authorPauseRequest, authorProjects, authorUpcomingMeetings, createApproval, decideApproval, ensure, portalApprovals, portalAudit, portalDocuments, portalProject, portalRequests, resolvePauseRequest } from '../helpers/authorPortal.js';
+import { autorSolicitaCambioSesion, autorRespondeCambioSesion, solicitarCambioSesionSchema, responderCambioSesionSchema } from '../helpers/extraccion.js';
 import { authorDocument, revokeAuthorDocument, shareAuthorDocument } from '../helpers/authorDocuments.js';
 import { consumeAuthorToken, inviteAuthor, requestAuthorReset } from '../helpers/authorAccounts.js';
 import { withCorporateDrive } from '../modules/integrations/google-drive/corporate.js';
 import { manualAuthorReminder } from '../helpers/authorMail.js';
 import { cancelApproval } from '../helpers/authorPortal.js';
+import { decideEditorialReview, editorialDecisionSchema } from '../helpers/editorialReview.js';
 const id=z.string().uuid(),text=z.string().trim().min(1).max(5000);
 const decision=z.object({decision:z.enum(['approved','changes_requested']),feedback:z.string().trim().max(20000).optional()}).strict();
 const external=decision.extend({external:z.object({channel:z.enum(['correo','whatsapp','otro']),receivedAt:z.string().datetime({offset:true}),evidence:text,reason:z.string().trim().min(10).max(5000)}).strict()}).strict();
@@ -37,9 +39,34 @@ export async function authorPortalRoutes(app:FastifyInstance){
     const [approvals,documents,requests,projects]=await Promise.all([portalApprovals(req.user!,projectId),portalDocuments(req.user!,projectId),portalRequests(req.user!,projectId),authorProjects(req.user!)]);
     return {project:projects.find(p=>p.id===projectId),approvals,documents,requests};
   });
+  app.get('/meetings',{preHandler:author},async req=>({meetings:await authorUpcomingMeetings(req.user!)}));
+  app.post('/meetings/:reunionId/cambio',{preHandler:author},async req=>{
+    const reunionId=id.parse((req.params as {reunionId:string}).reunionId);
+    const body=solicitarCambioSesionSchema.parse(req.body);
+    const [reunion]=await db.select({proyectoId:reunionesExtraccion.proyectoId}).from(reunionesExtraccion).where(eq(reunionesExtraccion.id,reunionId));
+    ensure(reunion,'Sesión no encontrada',404);
+    return {solicitud:await autorSolicitaCambioSesion(reunion.proyectoId,reunionId,body,req.user!)};
+  });
+  app.post('/meetings/cambio/:solicitudId/responder',{preHandler:author},async req=>{
+    const solicitudId=id.parse((req.params as {solicitudId:string}).solicitudId);
+    const body=responderCambioSesionSchema.parse(req.body);
+    const [solicitud]=await db.select({proyectoId:reunionExtraccionSolicitudes.proyectoId}).from(reunionExtraccionSolicitudes).where(eq(reunionExtraccionSolicitudes.id,solicitudId));
+    ensure(solicitud,'Solicitud no encontrada',404);
+    return {solicitud:await autorRespondeCambioSesion(solicitud.proyectoId,solicitudId,body,req.user!)};
+  });
   app.get('/approvals',{preHandler:author},async req=>({approvals:await portalApprovals(req.user!)}));
-  app.get('/approvals/:id',{preHandler:author},async req=>{const requestId=id.parse((req.params as {id:string}).id);const approvals=await portalApprovals(req.user!);const approval=approvals.find(a=>a.id===requestId);ensure(approval,'Aprobación no encontrada',404);return {approval,history:approvals.filter(a=>a.projectId===approval.projectId&&a.type===approval.type&&a.id!==approval.id&&a.id===approval.previousId)};});
+  app.get('/approvals/:id',{preHandler:author},async req=>{
+    const requestId=id.parse((req.params as {id:string}).id),approvals=await portalApprovals(req.user!);
+    const approval=approvals.find(a=>a.id===requestId);ensure(approval,'Aprobación no encontrada',404);
+    const history:typeof approvals=[],seen=new Set([approval.id]);let previousId=approval.previousId;
+    while(previousId&&!seen.has(previousId)){
+      const previous=approvals.find(a=>a.id===previousId&&a.projectId===approval.projectId&&a.type===approval.type);
+      if(!previous)break;history.push(previous);seen.add(previous.id);previousId=previous.previousId;
+    }
+    return {approval,history};
+  });
   app.post('/approvals/:id/decision',{preHandler:author},async req=>decideApproval(id.parse((req.params as {id:string}).id),decision.parse(req.body),req.user!));
+  app.post('/approvals/:id/editorial-decision',{preHandler:author,bodyLimit:28_100_000},async req=>decideEditorialReview(id.parse((req.params as {id:string}).id),editorialDecisionSchema.parse(req.body),req.user!));
   app.get('/documents',{preHandler:author},async req=>({documents:await portalDocuments(req.user!)}));
   app.get('/documents/:id/content',{preHandler:author},async(req,reply)=>{
     const d=await authorDocument(id.parse((req.params as {id:string}).id),req.user!);
@@ -47,7 +74,7 @@ export async function authorPortalRoutes(app:FastifyInstance){
     // Recheck after remote IO so a revoked release cannot slip through.
     await authorDocument(d.id,req.user!);
     await db.transaction(tx=>portalAudit(tx,req.user!.id,d.projectId,'AUTOR_DOCUMENTO_CONSULTADO',d.id,{revisionId:d.revisionId}));
-    reply.header('X-Content-Type-Options','nosniff').header('Content-Security-Policy',"sandbox; default-src 'none'").header('Content-Disposition',`inline; filename*=UTF-8''${encodeURIComponent(d.title+(d.mimeType==='application/pdf'?'.pdf':''))}`);
+    reply.header('X-Content-Type-Options','nosniff').header('Content-Security-Policy',"sandbox; default-src 'none'").header('Content-Disposition',`inline; filename*=UTF-8''${encodeURIComponent(d.title+(d.mimeType==='application/pdf'&&!/\.pdf$/i.test(d.title)?'.pdf':''))}`);
     return reply.type(d.mimeType).send(content);
   });
   app.get('/requests',{preHandler:author},async req=>({requests:await portalRequests(req.user!)}));

@@ -1,8 +1,11 @@
 import { apiFetch } from '../lib/api';
+import type { EditorialReviewGuide, SubmitEditorialReview } from '../../../shared/editorialReview';
 import type { EditorProjectDetail, EditorProjectList } from '../../../shared/editorProjects';
 import type { EditorDashboard, EditorRequestDetail, EditorRequestList, EditorRequestType, EditorWorkDetail, EditorWorkRow } from '../../../shared/editorOwn';
 
 export const editorKey = ['editor'];
+export const fetchEditorGuide=(projectId:string)=>apiFetch<EditorialReviewGuide>('/editores/proyectos/'+projectId+'/guia');
+export const submitEditorReview=(projectId:string,input:SubmitEditorialReview)=>apiFetch<{id:string;version:number}>('/editores/proyectos/'+projectId+'/revisiones',{method:'POST',body:JSON.stringify(input)});
 export const fetchEditorDashboard = () => apiFetch<EditorDashboard>('/editores/mi-inicio');
 
 export const fetchMiTrabajo = (params: URLSearchParams) =>
@@ -27,6 +30,22 @@ export const cancelarSolicitud = (id: string, expectedVersion: number) =>
   apiFetch<{ ok: true }>('/editores/mis-solicitudes/' + id + '/cancelar', { method: 'POST', body: JSON.stringify({ expectedVersion }) });
 
 export const registrarAvance = (id:string,note:string)=>apiFetch('/editores/mi-trabajo/'+id+'/avance',{method:'POST',body:JSON.stringify({note})});
+
+export const marcarSesionExtraccionCompletada = (projectId:string,reunionId:string) =>
+  apiFetch('/proyectos/'+projectId+'/extraccion/'+reunionId+'/completada',{method:'POST',body:'{}'});
+export const registrarMeetSesion = (projectId:string,reunionId:string,meetUrl:string) =>
+  apiFetch('/proyectos/'+projectId+'/extraccion/'+reunionId+'/meet',{method:'PATCH',body:JSON.stringify({meetUrl})});
+export const registrarVideoSesion = (projectId:string,reunionId:string,videoUrl:string) =>
+  apiFetch('/proyectos/'+projectId+'/extraccion/'+reunionId+'/video',{method:'PATCH',body:JSON.stringify({videoUrl})});
+export async function subirNotasSesion(projectId:string,reunionId:string,file:File){
+ if(file.size>20*1024*1024||!file.size)throw new Error('Selecciona un documento de hasta 20 MB.');
+ const contentBase64=await new Promise<string>((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(new Error('No se pudo leer el archivo.'));reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.readAsDataURL(file);});
+ return apiFetch('/proyectos/'+projectId+'/extraccion/'+reunionId+'/notas',{method:'POST',body:JSON.stringify({name:file.name,contentBase64})});
+}
+export const solicitarCambioSesion = (projectId:string,reunionId:string,input:{fechaHora:string;duracionMinutos?:number;motivo?:string}) =>
+  apiFetch('/proyectos/'+projectId+'/extraccion/'+reunionId+'/cambio',{method:'POST',body:JSON.stringify(input)});
+export const responderCambioSesion = (projectId:string,solicitudId:string,decision:'aceptada'|'rechazada',respuesta?:string) =>
+  apiFetch('/proyectos/'+projectId+'/extraccion/cambio/'+solicitudId+'/responder',{method:'POST',body:JSON.stringify({decision,respuesta})});
 export const fetchArchivosEntrega=(id:string,folderKey:string,pageToken?:string)=>apiFetch<{items:{id:string;name:string;url:string}[];nextPageToken:string|null}>('/editores/mi-trabajo/'+id+'/archivos?'+new URLSearchParams({folderKey,...(pageToken?{pageToken}:{})}));
 export const responderSolicitud=(id:string,expectedVersion:number,text:string)=>apiFetch('/editores/mis-solicitudes/'+id+'/responder',{method:'POST',body:JSON.stringify({expectedVersion,text})});
 

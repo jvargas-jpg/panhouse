@@ -30,7 +30,7 @@ export function EditorInicio(){
       <td data-label="Intervención">{i.label}</td>
       <td data-label="Situación"><EditorStatus state={i.situation??i.state}/></td>
       <td data-label="Fecha" className={i.overdue?'ec-deadline-overdue':''}>{i.dueDate?editorialDate(i.dueDate):'Sin fecha límite'}</td>
-      <td data-label="Acción"><Link className="eo-attention-action" to={'/?vista=mi-trabajo&workItem='+i.id}>{i.state==='Bloqueadas'?'Ver bloqueo':'Continuar trabajo'}<RrppIcon nombre="flecha"/></Link></td>
+      <td data-label="Acción"><Link className="eo-attention-action" to={'/?vista=mi-trabajo&guideProject='+i.projectId+'&workItem='+i.id}>{i.state==='Bloqueadas'?'Ver bloqueo':'Continuar trabajo'}<RrppIcon nombre="flecha"/></Link></td>
      </tr>)}</tbody>
     </table></div>:<EditorEmpty>No tienes trabajo que requiera atención inmediata.</EditorEmpty>}
    </EditorPanel>

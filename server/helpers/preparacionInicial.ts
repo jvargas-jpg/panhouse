@@ -20,7 +20,9 @@ export const preparacionInicialSchema = z.object({
   reunionOperativaFecha: instante, reunionOperativaRealizada: z.boolean().optional(),
   grabacionUrl: link, transcripcionUrl: link, minutaUrl: link, cronogramaUrl: link,
   cronogramaEntrevistasEfUrl: link, estructuraPreliminaresUrl: link, solicitudInformacionAutorUrl: link,
-  extraccionEnlaces: z.array(link.unwrap().unwrap()).max(20).nullable().optional(),
+  // extraccionEnlaces NO va aquí: lo sube el Editor que condujo la
+  // entrevista, vía PATCH /proyectos/:id/extraccion-archivos (ver
+  // registrarArchivosExtraccion más abajo), no el Especialista.
   observaciones: z.string().trim().max(2000).nullable().optional(),
 }).strict().refine(v => Object.keys(v).length > 0, 'Indica un cambio');
 
@@ -75,6 +77,11 @@ export async function guardarPreparacionInicial(id: string, input: z.infer<typeo
     return row;
   });
 }
+
+// La grabación y las notas de Gemini de cada sesión de extracción ahora
+// viven por sesión (reunionesExtraccion.videoUrl/notasGeminiUrl) — ver
+// registrarVideoSesion/subirNotasSesion en server/helpers/extraccion.ts.
+// extraccionEnlaces (arriba) queda como dato histórico, sin un escritor activo.
 
 // Subida real del archivo (no pegar un enlace) a la carpeta RAÍZ del
 // proyecto (no la raíz de Drive) — mismo patrón base64→Buffer→uploadFile

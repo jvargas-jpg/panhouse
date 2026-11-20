@@ -1,17 +1,20 @@
 import { Dialog } from '../design-system/Dialog';
 import './editor.css';
 import './miTrabajo.css';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useQuery, useQueryClient, type UseQueryResult } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { RrppIcon } from '../rrpp/RrppIcons';
 import { EditorialCover } from '../jefeEdicion/EditorialParts';
 import { EditorEmpty, editorialDate } from './EditorParts';
 import { EditorDetail, EditorSearch, EditorSelect, EditorSkeleton, currentOwner, interventionType, useEditorFilters, useEditorDesktop } from './EditorUi';
 import { fechaActividad } from '../rrpp/RrppDashboardCards';
-import { editorKey, fetchMiTrabajo, fetchMiTrabajoDetalle, iniciarTrabajo, registrarAvance, registrarEntrega, reportarBloqueo, resolverBloqueo, fetchArchivosEntrega, cargarArchivoEditorial } from './editorApi';
+import { editorKey, fetchMiTrabajo, fetchMiTrabajoDetalle, iniciarTrabajo, registrarAvance, registrarEntrega, reportarBloqueo, resolverBloqueo, fetchArchivosEntrega, cargarArchivoEditorial, marcarSesionExtraccionCompletada, registrarMeetSesion, registrarVideoSesion, subirNotasSesion, solicitarCambioSesion, responderCambioSesion } from './editorApi';
 import { NuevaSolicitudForm } from './EditorSolicitudForm';
 import type { EditorialIntervention } from '../../../shared/editorialChief';
+import type { EditorWorkDetail } from '../../../shared/editorOwn';
+import { fetchEditorGuide } from './editorApi';
+import { EditorGuidedProject } from './EditorGuidedProject';
 
 const TABS = [['all', 'Todos'], ['pending', 'Pendientes'], ['inProgress', 'En edición'], ['feedback', 'Feedback por aplicar'], ['blocked', 'Bloqueadas'], ['waiting', 'En espera'], ['completed', 'Completadas']] as const;
 const FILTERS = ['status', 'service', 'interventionType', 'project', 'date', 'risk'];
@@ -36,8 +39,13 @@ export function EditorMiTrabajo() {
   for (const key of [...FILTERS, 'sort']) if (params.get(key)) queryParams.set(key, params.get(key)!);
   const q = useQuery({ queryKey: [...editorKey, 'mi-trabajo', queryParams.toString()], queryFn: () => fetchMiTrabajo(queryParams), placeholderData: p => p });
   const rows = q.data?.items ?? [], options = q.data?.options;
-  const desktop = useEditorDesktop();
-  const detailId = selected ?? (desktop && params.get('detailClosed') !== '1' ? rows[0]?.id : undefined);
+  const detailId = selected;
+  const detailQuery = useQuery({ queryKey: [...editorKey, 'mi-trabajo-detalle', detailId], queryFn: () => fetchMiTrabajoDetalle(detailId!), enabled: !!detailId });
+  const backToList = () => update({ workItem: '', guideProject: '', action: '', detailClosed: '1' });
+  const guideProject=params.get('guideProject')??detailQuery.data?.item.projectId;
+  const guideQuery=useQuery({queryKey:[...editorKey,'project-guide',guideProject],queryFn:()=>fetchEditorGuide(guideProject!),enabled:!!guideProject,refetchInterval:15000,retry:false});
+  const cache=useQueryClient();
+  const refreshGuide=async()=>{await cache.invalidateQueries({predicate:q=>['editor','notificaciones','proyectos','author-portal'].includes(String(q.queryKey[0]))});};
   const filterCount = FILTERS.filter(k => params.has(k)).length;
   const hasFilters = filterCount > 0 || !!search;
   const clear = () => { setSearch(''); setParams({ vista: 'mi-trabajo' }); };
@@ -56,6 +64,11 @@ export function EditorMiTrabajo() {
     document.addEventListener('keydown', escape, true);
     return () => { document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', escape, true); };
   }, []);
+  // La selección entra al proyecto y mantiene la guía en todas sus etapas.
+  if(selected||params.get('guideProject')){
+    if(guideQuery.data)return <EditorGuidedProject key={guideQuery.data.projectId} guide={guideQuery.data} onBack={backToList} onRefetch={refreshGuide}/>;
+    return <section className="mw-page mw-wizard-page"><button className="mw-wizard-back" onClick={backToList}>← Volver a Mi trabajo</button>{guideQuery.isError||detailQuery.isError?<EditorEmpty><p role="alert">No se pudo cargar la guía de este proyecto.</p><button onClick={()=>{void guideQuery.refetch();void detailQuery.refetch();}}>Reintentar</button></EditorEmpty>:<EditorSkeleton label="Cargando guía de edición"/>}</section>;
+  }
   return <section className="mw-page" aria-label="Bandeja de trabajo editorial">
     <div className="mw-controls">
       <nav className="mw-views" aria-label="Filtrar intervenciones por estado">{tabs.map(([id, label]) => <button key={id} type="button" aria-pressed={tab === id} onClick={() => changeView('tab', id)}>{label}<span>{q.data?.counts[id] ?? '—'}</span></button>)}</nav>
@@ -74,28 +87,142 @@ export function EditorMiTrabajo() {
       </div>
     </div>
     {hasFilters && <div className="mw-active-filters"><span>{q.data?.total ?? '—'} intervenciones encontradas</span><button className="eo-text-button" onClick={clear}>Limpiar filtros</button></div>}
-    <div className="eo-workspace mw-workspace"><div className="eo-main">
+    <div className="eo-workspace mw-workspace mw-list-only"><div className="eo-main">
       <section className="mw-list" aria-label="Intervenciones asignadas" aria-busy={q.isFetching}>
         <div className="mw-list-heading"><h2>Intervenciones asignadas</h2><label>Ordenar por <select aria-label="Ordenar intervenciones" value={params.get('sort') ?? 'priority'} onChange={e => changeView('sort', e.target.value)}><option value="priority">Atención primero</option><option value="due">Vencimiento</option><option value="project">Proyecto</option></select></label></div>
-        {q.isError ? <EditorEmpty><span role="alert">No se pudieron cargar tus intervenciones.</span> <button onClick={() => q.refetch()}>Reintentar</button></EditorEmpty> : q.isPending ? <EditorSkeleton label="Cargando intervenciones" /> : rows.length ? <div className="eo-table-wrap"><table className="eo-table eo-work-table"><caption className="sr-only">Una fila por intervención editorial. Selecciona una para consultar su detalle.</caption><thead><tr>{['Proyecto / Autor', 'Intervención', 'Estado', 'Vencimiento', 'Última actividad', ''].map(c => <th scope="col" key={c}>{c || <span className="sr-only">Abrir detalle</span>}</th>)}</tr></thead><tbody>{rows.map(i => <tr key={i.id} aria-selected={detailId === i.id} className={detailId === i.id ? 'is-selected' : ''} tabIndex={0} onClick={() => update('workItem', i.id)} onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); update('workItem', i.id); } }}>
+        {q.isError ? <EditorEmpty><span role="alert">No se pudieron cargar tus intervenciones.</span> <button onClick={() => q.refetch()}>Reintentar</button></EditorEmpty> : q.isPending ? <EditorSkeleton label="Cargando intervenciones" /> : rows.length ? <div className="eo-table-wrap"><table className="eo-table eo-work-table"><caption className="sr-only">Una fila por intervención editorial. Selecciona una para consultar su detalle.</caption><thead><tr>{['Proyecto / Autor', 'Intervención', 'Estado', 'Vencimiento', 'Última actividad', ''].map(c => <th scope="col" key={c}>{c || <span className="sr-only">Abrir detalle</span>}</th>)}</tr></thead><tbody>{rows.map(i => <tr key={i.id} aria-selected={detailId === i.id} className={detailId === i.id ? 'is-selected' : ''} tabIndex={0} onClick={() => update({workItem:i.id,guideProject:i.projectId})} onKeyDown={e => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); update({workItem:i.id,guideProject:i.projectId}); } }}>
           <td data-label="Proyecto / Autor"><div className="ec-project"><EditorialCover url={i.coverUrl} /><span><strong>{i.title}</strong><small>{i.authors}</small></span></div></td>
           <td data-label="Intervención"><strong>{i.label}</strong>{interventionType(i) !== i.label && <small>{interventionType(i)}</small>}</td>
           <td data-label="Estado"><WorkStatus item={i} />{i.waitingOn && <small>{currentOwner(i)} tiene el siguiente paso</small>}</td>
           <td data-label="Vencimiento"><Deadline item={i} /></td>
           <td data-label="Última actividad">{i.lastActivity ? <><strong>{fechaActividad(i.lastActivity.at)}</strong><small>{i.lastActivity.label}</small></> : <span className="eo-muted">Sin actividad</span>}</td>
-          <td className="eo-chevron-cell"><button type="button" className="eo-row-action" aria-label={'Abrir ' + i.label + ' de ' + i.title} onClick={e => { e.stopPropagation(); update('workItem', i.id); }}><span className="mw-mobile-open">Ver detalle</span><RrppIcon nombre="flecha" className="eo-row-chevron" /></button></td>
+          <td className="eo-chevron-cell"><button type="button" className="eo-row-action" aria-label={'Abrir ' + i.label + ' de ' + i.title} onClick={e => { e.stopPropagation(); update({workItem:i.id,guideProject:i.projectId}); }}><span className="mw-mobile-open">Ver detalle</span><RrppIcon nombre="flecha" className="eo-row-chevron" /></button></td>
         </tr>)}</tbody></table></div> : <div className="mw-empty"><RrppIcon nombre={tab === 'blocked' ? 'check' : 'libro'} /><EditorEmpty>{EMPTY[tab] ?? 'No tienes intervenciones asignadas con estos filtros.'}</EditorEmpty>{hasFilters && <button className="ec-secondary" onClick={clear}>Limpiar filtros</button>}</div>}
         {q.data && <footer className="mw-pagination"><span aria-live="polite">{q.data.total ? `${(q.data.page - 1) * Number(pageSize) + 1}–${Math.min(q.data.page * Number(pageSize), q.data.total)} de ${q.data.total}` : '0'} intervenciones</span><div><button aria-label="Página anterior" disabled={q.data.page <= 1 || q.isFetching} onClick={() => changeView('page', String(q.data!.page - 1))}>‹</button><span>{q.data.page} / {q.data.pages}</span><button aria-label="Página siguiente" disabled={q.data.page >= q.data.pages || q.isFetching} onClick={() => changeView('page', String(q.data!.page + 1))}>›</button><select aria-label="Intervenciones por página" value={pageSize} onChange={e => changeView('pageSize', e.target.value)}>{[10, 25, 50].map(n => <option key={n} value={n}>Mostrar {n}</option>)}</select></div></footer>}
       </section>
-    </div>{detailId ? <MiTrabajoDetail key={detailId} id={detailId} open={!!selected} initialAction={selected ? params.get('action') : null} onClose={() => update({ workItem: '', action: '', detailClosed: '1' })} /> : <div className="eo-detail-placeholder"><RrppIcon nombre="libro" /><p>Elige una intervención</p><small>Consulta el siguiente paso, el material y las entregas de tu trabajo.</small></div>}</div>
+    </div></div>
+  </section>;
+}
+// Ruta guiada de coordinación de extracción — toma toda la pantalla, un
+// paso a la vez (Bienvenida → una sesión enfocada), igual que la guía del
+// Especialista en Preparación Inicial. Nada de panel angosto a la derecha.
+const sesionResuelta = (s: SesionExtraccion) => s.realizada && !!s.videoUrl && !!s.notasGeminiUrl;
+export function EdicionExtraccionWizard({ item, extraction, onBack, onRefetch, onContinue }: { item: Pick<EditorialIntervention,'title'|'authors'|'projectId'>; extraction: NonNullable<EditorWorkDetail['extraction']>; onBack: () => void; onRefetch: () => void; onContinue?:()=>void }) {
+  const sesiones = extraction.sesiones;
+  const [activo, setActivo] = useState(() => { const i = sesiones.findIndex(s => !sesionResuelta(s)); return i >= 0 ? i : 0; });
+  const [started, setStarted] = useState(() => sesiones.some(s => !!s.meetUrl || s.realizada));
+  const sesion = sesiones[Math.min(activo, sesiones.length - 1)]!;
+  const siguientePendiente = sesiones.findIndex((s, i) => i > activo && !sesionResuelta(s));
+  return <section className="mw-page mw-wizard-page" aria-label="Coordinación de extracción">
+    <button type="button" className="mw-wizard-back" onClick={onBack}><RrppIcon nombre="flecha" className="mw-wizard-back-icon" />Volver a Mi trabajo</button>
+    <header className="mw-wizard-header"><span className="ap-eyebrow">COORDINACIÓN DE EXTRACCIÓN</span><h1>{item.title}</h1><p>{item.authors}</p></header>
+    {!started
+     ? <div className="mw-wizard-card mw-wizard-welcome">
+        <h2>Bienvenido a la coordinación de extracción</h2>
+        <p>Vas a conducir {sesiones.length === 1 ? 'una entrevista' : `${sesiones.length} entrevistas`} con el Autor para este libro. Un paso a la vez: comparte el enlace de la reunión, márcala como realizada, y sube la grabación y las notas de Gemini.</p>
+        <button type="button" className="ec-primary" onClick={() => setStarted(true)}>Comencemos →</button>
+       </div>
+     : <>
+        <nav className="mw-wizard-steps" aria-label="Sesiones de extracción">{sesiones.map((s, i) => <button key={s.id} type="button" className={'mw-wizard-step' + (i === activo ? ' is-active' : '') + (sesionResuelta(s) ? ' is-done' : '')} onClick={() => setActivo(i)}><span aria-hidden="true">{sesionResuelta(s) ? '✓' : i + 1}</span>Capítulo {s.numero}</button>)}</nav>
+        <div className="mw-wizard-focus">
+         <SesionExtraccionCard projectId={item.projectId} sesion={sesion} onDone={onRefetch} />
+         {sesionResuelta(sesion) && (siguientePendiente >= 0
+          ? <button type="button" className="ec-primary mw-wizard-continue" onClick={() => setActivo(siguientePendiente)}>Continuar a Capítulo {sesiones[siguientePendiente]!.numero} →</button>
+          : <><p className="eo-notice">✓ Completaste todas las sesiones de extracción.</p>{onContinue&&<button type="button" className="ec-primary mw-wizard-continue" onClick={onContinue}>Continuar a subir los capítulos →</button>}</>)}
+        </div>
+       </>}
   </section>;
 }
 
 function WorkDialog({title,onClose,children}:{title:string;onClose:()=>void;children:ReactNode}){return <Dialog title={title} onClose={onClose} className="mw-dialog">{children}</Dialog>;}
-function MiTrabajoDetail({ id, open, onClose, initialAction }: { id: string; open: boolean; onClose: () => void; initialAction: string | null }) {
+function sesionFechaHora(iso: string | null) {
+  return iso ? new Intl.DateTimeFormat('es-VE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Caracas' }).format(new Date(iso)) : 'Sin fecha registrada';
+}
+type SesionExtraccion = NonNullable<EditorWorkDetail['extraction']>['sesiones'][number];
+// La sesión siempre es por Meet — el Editor la crea y comparte el enlace
+// aquí; el Autor lo ve en su panel para poder unirse.
+function MeetSesionForm({ projectId, reunionId, onDone }: { projectId: string; reunionId: string; onDone: () => void }) {
+  const [url, setUrl] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  async function submit(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setError('');
+    try { await registrarMeetSesion(projectId, reunionId, url.trim()); onDone(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'No se pudo guardar.'); }
+    finally { setBusy(false); }
+  }
+  return <form className="ep-form" onSubmit={submit}><label>Enlace de Google Meet<input type="url" required placeholder="https://meet.google.com/…" value={url} onChange={e => setUrl(e.target.value)} /></label>{error && <p role="alert" className="eo-error">{error}</p>}<button className="ec-primary" disabled={busy}>{busy ? 'Compartiendo…' : 'Compartir con el Autor'}</button></form>;
+}
+// El Editor pega el enlace; el servidor copia o importa el video a Drive.
+function VideoSesionForm({ projectId, reunionId, onDone }: { projectId: string; reunionId: string; onDone: () => void }) {
+  const [url, setUrl] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  async function submit(e: FormEvent) {
+    e.preventDefault(); setBusy(true); setError('');
+    try { await registrarVideoSesion(projectId, reunionId, url.trim()); onDone(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'No se pudo guardar.'); }
+    finally { setBusy(false); }
+  }
+  return <form className="ep-form" onSubmit={submit}><label>Enlace del video en Drive<input type="url" required placeholder="https://drive.google.com/…" value={url} onChange={e => setUrl(e.target.value)} /></label><p className="mw-caption">Comparte el video como &quot;Cualquiera con el enlace puede ver&quot; y permite descargar y copiar. Lo guardamos en la carpeta del capítulo; los videos grandes pueden tardar varios minutos.</p>{error && <p role="alert" className="eo-error">{error}</p>}<button className="ec-secondary" disabled={busy}>{busy ? 'Guardando video en Drive…' : 'Copiar a la carpeta del proyecto'}</button></form>;
+}
+// Notas de Gemini: archivo real, chico — mismo patrón de subida que el
+// resto de documentos del proyecto, pero a Entrevistas/Capítulo N.
+function NotasSesionUpload({ projectId, reunionId, onDone }: { projectId: string; reunionId: string; onDone: () => void }) {
+  const [busy, setBusy] = useState(false), [error, setError] = useState('');
+  async function receive(file?: File) {
+    if (!file || busy) return;
+    setBusy(true); setError('');
+    try { await subirNotasSesion(projectId, reunionId, file); onDone(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'No se pudo subir el archivo.'); }
+    finally { setBusy(false); }
+  }
+  return <label className="eo-upload-label">{busy ? 'Subiendo…' : 'Subir notas de Gemini'}<input type="file" accept=".pdf,.doc,.docx,.txt" disabled={busy} onChange={e => { void receive(e.target.files?.[0]); e.target.value = ''; }} />{error && <p role="alert" className="eo-error">{error}</p>}</label>;
+}
+function SolicitarCambioForm({ onSubmit, onCancel, busy, error }: { onSubmit: (fechaHora: string, motivo: string) => void; onCancel: () => void; busy: boolean; error: string }) {
+  const [fechaHora, setFechaHora] = useState(''), [motivo, setMotivo] = useState('');
+  return <form className="ep-form" onSubmit={e => { e.preventDefault(); onSubmit(new Date(fechaHora + ':00-04:00').toISOString(), motivo); }}>
+    <label>Nueva fecha y hora propuesta<input type="datetime-local" required value={fechaHora} onChange={e => setFechaHora(e.target.value)} /></label>
+    <label>Motivo (opcional)<textarea maxLength={1000} value={motivo} onChange={e => setMotivo(e.target.value)} /></label>
+    {error && <p role="alert" className="eo-error">{error}</p>}
+    <div className="eo-actions"><button className="ec-primary" disabled={busy}>{busy ? 'Enviando…' : 'Enviar propuesta'}</button><button type="button" disabled={busy} onClick={onCancel}>Cancelar</button></div>
+  </form>;
+}
+function SesionExtraccionCard({ projectId, sesion, onDone }: { projectId: string; sesion: SesionExtraccion; onDone: () => void }) {
+  const [modo, setModo] = useState<'' | 'cambio'>(''), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const yaOcurrio = !!sesion.fechaHora && new Date(sesion.fechaHora) <= new Date();
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true); setError('');
+    try { await action(); setModo(''); onDone(); }
+    catch (err) { setError(err instanceof Error ? err.message : 'No se pudo completar la acción.'); }
+    finally { setBusy(false); }
+  }
+  return <article className="mw-current">
+    <h4><RrppIcon nombre="calendario" />{'Capítulo ' + sesion.numero}</h4>
+    <div className="mw-intervention"><div><strong>{sesionFechaHora(sesion.fechaHora)}</strong><small>{sesion.duracionMinutos ? sesion.duracionMinutos + ' min' : ''}</small></div><span className={'ec-status ' + (sesion.realizada ? 'ec-green' : 'ec-neutral')}><i aria-hidden="true" />{sesion.realizada ? 'Realizada' : 'Programada'}</span></div>
+    {!sesion.realizada && (sesion.meetUrl
+      ? <p className="eo-notice"><span aria-hidden="true">✓</span> Compartiste el enlace de Meet · <a href={sesion.meetUrl} target="_blank" rel="noreferrer">Unirse ↗</a></p>
+      : <MeetSesionForm projectId={projectId} reunionId={sesion.id} onDone={onDone} />)}
+    {sesion.solicitudCambio && <div className="eo-blocker"><RrppIcon nombre="calendario" /><div><strong>El Autor propuso otra fecha</strong><p>{sesionFechaHora(sesion.solicitudCambio.fechaHoraPropuesta)}{sesion.solicitudCambio.motivo ? ' · ' + sesion.solicitudCambio.motivo : ''}</p><div className="eo-actions"><button className="ec-primary" disabled={busy} onClick={() => run(() => responderCambioSesion(projectId, sesion.solicitudCambio!.id, 'aceptada'))}>Aceptar</button><button className="ec-secondary" disabled={busy} onClick={() => run(() => responderCambioSesion(projectId, sesion.solicitudCambio!.id, 'rechazada'))}>Rechazar</button></div></div></div>}
+    {sesion.solicitudCambioPropia && <p className="eo-notice">Propusiste cambiar esta sesión al {sesionFechaHora(sesion.solicitudCambioPropia.fechaHoraPropuesta)} · esperando respuesta del Autor.</p>}
+    {error && <p role="alert" className="eo-error">{error}</p>}
+    {!sesion.realizada && !sesion.solicitudCambio && !sesion.solicitudCambioPropia && modo !== 'cambio' && <div className="eo-actions">
+      <button className="ec-secondary" disabled={busy} onClick={() => setModo('cambio')}>Solicitar cambio de fecha y hora</button>
+      <button className="ec-primary" disabled={busy || !yaOcurrio} onClick={() => run(() => marcarSesionExtraccionCompletada(projectId, sesion.id))}>Marcar reunión completada</button>
+    </div>}
+    {modo === 'cambio' && <SolicitarCambioForm busy={busy} error={error} onCancel={() => setModo('')} onSubmit={(fechaHora, motivo) => run(() => solicitarCambioSesion(projectId, sesion.id, { fechaHora, motivo: motivo || undefined }))} />}
+    {sesion.realizada && <div className="mw-work-actions">
+      {sesion.videoUrl ? <p className="eo-notice"><span aria-hidden="true">✓</span> Video copiado a la carpeta del proyecto · <a href={sesion.videoUrl} target="_blank" rel="noreferrer">Abrir ↗</a></p> : <VideoSesionForm projectId={projectId} reunionId={sesion.id} onDone={onDone} />}
+      {sesion.notasGeminiUrl ? <p className="eo-notice"><span aria-hidden="true">✓</span> Notas de Gemini subidas · <a href={sesion.notasGeminiUrl} target="_blank" rel="noreferrer">Abrir ↗</a></p> : <NotasSesionUpload projectId={projectId} reunionId={sesion.id} onDone={onDone} />}
+    </div>}
+  </article>;
+}
+function ExtraccionSesiones({ projectId, extraction, onDone }: { projectId: string; extraction: NonNullable<EditorWorkDetail['extraction']>; onDone: () => void }) {
+  const ningunaRealizada = extraction.sesiones.every(s => !s.realizada);
+  return <>
+   {ningunaRealizada && <p className="mw-caption">Bienvenido a la coordinación de extracción de este proyecto. Estas son tus próximas sesiones con el Autor.</p>}
+   {extraction.sesiones.map(s => <SesionExtraccionCard key={s.id} projectId={projectId} sesion={s} onDone={onDone} />)}
+  </>;
+}
+export function MiTrabajoDetail({ id, query: q, open, onClose, initialAction }: { id: string; query: UseQueryResult<EditorWorkDetail>; open: boolean; onClose: () => void; initialAction: string | null }) {
   const cache = useQueryClient();
   const desktop = useEditorDesktop();
-  const q = useQuery({ queryKey: [...editorKey, 'mi-trabajo-detalle', id], queryFn: () => fetchMiTrabajoDetalle(id) });
   const [mode, setMode] = useState(initialAction === 'entrega' ? 'entrega' : ''), [busy, setBusy] = useState(false), [error, setError] = useState(''), [success, setSuccess] = useState('');
   const [form, setForm] = useState({ driveUrl: '', observaciones: '', reason: '', note: '', resolution: '' });
   const [tab, setTab] = useState('resumen');
@@ -119,6 +246,7 @@ function MiTrabajoDetail({ id, open, onClose, initialAction }: { id: string; ope
       <div className="mw-detail-content">
         {tab === 'resumen' && <>
           <section className="mw-current"><h4><RrppIcon nombre="libro" />Intervención actual</h4><div className="mw-intervention"><div><strong>{item.label}</strong>{interventionType(item) !== item.label && <small>{interventionType(item)}</small>}</div><WorkStatus item={item} /></div><dl className="mw-key-facts"><div><dt>Vencimiento</dt><dd><Deadline item={item} /></dd></div><div><dt>Responsable actual</dt><dd>{currentOwner(item) === 'Tú' ? 'A tu cargo' : currentOwner(item)}</dd></div></dl></section>
+          {d.extraction && <ExtraccionSesiones projectId={item.projectId} extraction={d.extraction} onDone={() => { void invalidate(); }} />}
           <section className="mw-next-step"><span>Siguiente paso</span><p>{nextStep}</p></section>
           {item.notes && <section className="mw-description"><h4>Descripción</h4><p>{item.notes}</p></section>}
 

@@ -4,6 +4,7 @@ import { autores } from './autores.js';
 import { proyectos } from './proyectos.js';
 import { users } from './users.js';
 import { workItems } from './workItems.js';
+import type { EditorialReviewMetadata, EditorialReviewResponse } from '../../../shared/editorialReview.js';
 export const authorDocuments = pgTable('author_documents', {
   id: uuid('id').primaryKey().defaultRandom(),
   projectId: uuid('project_id').notNull().references(() => proyectos.id, { onDelete: 'cascade' }),
@@ -28,10 +29,13 @@ export const approvalRequests = pgTable('approval_requests', {
   feedback: text('feedback'), decidedAt: timestamp('decided_at', { withTimezone: true }),
   recordedBy: uuid('recorded_by').references(() => users.id),
   externalEvidence: jsonb('external_evidence').$type<{channel:string;receivedAt:string;evidence:string;reason:string}>(),
+  editorialReview: jsonb('editorial_review').$type<EditorialReviewMetadata>(),
+  editorialResponse: jsonb('editorial_response').$type<EditorialReviewResponse>(),
 }, t => ({
   inbox: index('approval_requests_author_idx').on(t.authorId,t.status,t.requestedAt),
   active: uniqueIndex('approval_requests_active_unique').on(t.projectId,t.authorId,t.type,t.originId).where(sql`${t.status}='pending'`),
-  state: check('approval_requests_decision_check',sql`(${t.status}='pending' AND ${t.decidedAt} IS NULL AND ${t.recordedBy} IS NULL) OR (${t.status} IN ('approved','changes_requested','cancelled') AND ${t.decidedAt} IS NOT NULL AND ${t.recordedBy} IS NOT NULL AND (${t.status}='approved' OR (${t.feedback} IS NOT NULL AND length(trim(${t.feedback}))>0)))`),
+  reviewKey: uniqueIndex('approval_requests_review_key_unique').on(t.projectId,sql`(${t.editorialReview}->>'requestKey')`).where(sql`${t.editorialReview} IS NOT NULL`),
+  state: check('approval_requests_decision_check',sql`(${t.status}='pending' AND ${t.decidedAt} IS NULL AND ${t.recordedBy} IS NULL) OR (${t.status} IN ('approved','changes_requested','cancelled') AND ${t.decidedAt} IS NOT NULL AND ${t.recordedBy} IS NOT NULL AND (${t.status}='approved' OR (${t.feedback} IS NOT NULL AND length(trim(${t.feedback}))>0) OR (${t.status}='changes_requested' AND (coalesce(${t.editorialReview}->>'kind'='titles',false) OR ${t.editorialResponse}->'feedbackFile'->>'id' IS NOT NULL))))`),
 }));
 export const approvalArtifacts = pgTable('approval_artifacts', {
   approvalId: uuid('approval_id').notNull().references(() => approvalRequests.id,{onDelete:'cascade'}),

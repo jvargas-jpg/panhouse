@@ -1,9 +1,11 @@
 import { apiFetch } from '../lib/api';
+import type { EditorialReviewMetadata, EditorialReviewResponse } from '../../../shared/editorialReview';
 export interface AuthorProject {id:string;title:string|null;service:string;serviceCode:string;startDate:string|null;plannedStart:string;estimatedDate:string|null;specialist:string|null;stage:number;stageLabel:string;status:string;nextMilestone:string}
 export interface AuthorDocument {id:string;projectId?:string;title:string;version:string;category?:string;sharedAt?:string;available?:boolean;approved?:boolean}
-export interface Approval {id:string;projectId:string;projectTitle:string|null;type:string;title:string;instructions:string;requestedAt:string;dueAt:string|null;status:'pending'|'approved'|'changes_requested'|'cancelled';feedback:string|null;decidedAt:string|null;previousId:string|null;sentBy:string;external:boolean;overdueDays:number;documents:AuthorDocument[]}
+export interface Approval {id:string;projectId:string;projectTitle:string|null;type:string;title:string;instructions:string;requestedAt:string;dueAt:string|null;status:'pending'|'approved'|'changes_requested'|'cancelled';feedback:string|null;decidedAt:string|null;previousId:string|null;sentBy:string;external:boolean;overdueDays:number;documents:AuthorDocument[];editorialReview?:EditorialReviewMetadata|null;editorialResponse?:EditorialReviewResponse|null}
 export interface AuthorRequest {id:string;projectId:string;reason:string;comment:string|null;status:string;requestedAt:string;start:string;returnDate:string|null;response:string|null;resolvedAt:string|null;pausedAt:string|null;resumedAt:string|null}
 export interface AuthorNotification {id:string;message:string;path:string|null;read:boolean;createdAt:string}
+export interface AuthorMeeting {id:string;projectId:string;projectTitle:string|null;fechaHora:string|null;duracionMinutos:number|null;meetUrl:string|null;solicitudCambioId:string|null;solicitudCambioFechaHora:string|null;solicitudCambioMotivo:string|null}
 export const authorGet=<T,>(path:string)=>apiFetch<T>('/autor'+path);
 export const authorPost=<T=unknown,>(path:string,body:unknown={})=>apiFetch<T>('/autor'+path,{method:'POST',body:JSON.stringify(body)});
 export const dateLabel=(date:string|null|undefined)=>date?new Date(date.length===10?date+'T12:00:00-04:00':date).toLocaleDateString('es-VE',{day:'numeric',month:'short',year:'numeric',timeZone:'America/Caracas'}):'Por confirmar';

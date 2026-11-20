@@ -4,6 +4,7 @@ import { db, pool } from '../db/client.js';
 import { capitulos, editorialBlockers, editorialDeliveries } from '../db/schema/index.js';
 import { editorialInterventions, EDITORIAL_EVENTS } from './editorialChief.js';
 import { getProjectWorkspaceFolders } from '../modules/project-workspaces/service.js';
+import { listarReunionesExtraccion, listarSolicitudesCambioSesion } from './extraccion.js';
 import { DIAS_HABILES_EDICION_CAPITULO } from './edicionSla.js';
 import { diaCaracas } from './atencionEspecialista.js';
 import type { EditorialIntervention } from '../../shared/editorialChief.js';
@@ -144,6 +145,23 @@ export async function obtenerDetalleMiTrabajo(id: string, editorId: string, ahor
   const folders = allFolders.folders.filter(f => wanted.has(f.key)).map(f => ({ key: f.key, label: folderLabels[f.key] ?? f.displayName, driveUrl: f.driveUrl }));
   const specialists = await specialistsFor([item.projectId]);
   const assignment = item.assignmentId ? await pool.query<{at:Date}>('SELECT asignado_en at FROM project_assignments WHERE id=$1',[item.assignmentId]) : null;
+  // Sesiones de extracción (EF): solo en la intervención "Inicio de
+  // edición" (sin capítulo, business_key 'default') — es ahí donde el
+  // Especialista las programó y donde el Editor sube lo que produjo.
+  let extraction: EditorWorkDetail['extraction'];
+  if (item.serviceCode === 'EF' && !item.chapter && item.interventionType === 'default') {
+    const [sesiones, solicitudes] = await Promise.all([listarReunionesExtraccion(item.projectId), listarSolicitudesCambioSesion(item.projectId)]);
+    if (sesiones.length) {
+      extraction = { sesiones: sesiones.map(s => {
+        const solicitud = solicitudes.find(r => r.reunionId === s.id);
+        return { id: s.id, numero: s.numero, fechaHora: s.fechaHora?.toISOString() ?? null, duracionMinutos: s.duracionMinutos, realizada: s.realizada,
+          meetUrl: s.meetUrl, videoUrl: s.videoUrl, notasGeminiUrl: s.notasGeminiUrl,
+          // Pendiente de respuesta del Editor solo cuando la propuso el Autor; si la propuso el propio Editor, está esperando al Autor.
+          solicitudCambio: solicitud && solicitud.solicitadoPor === 'autor' ? { id: solicitud.id, fechaHoraPropuesta: solicitud.fechaHoraPropuesta.toISOString(), motivo: solicitud.motivo } : null,
+          solicitudCambioPropia: solicitud && solicitud.solicitadoPor === 'editor' ? { id: solicitud.id, fechaHoraPropuesta: solicitud.fechaHoraPropuesta.toISOString() } : null };
+      }) };
+    }
+  }
   return {
     specialist:specialists.get(item.projectId)?.nombre??null,assignedAt:assignment?.rows[0]?.at.toISOString()??null,
     item,
@@ -152,5 +170,6 @@ export async function obtenerDetalleMiTrabajo(id: string, editorId: string, ahor
     deliveries: deliveries.map(d => ({ id: d.id, driveUrl: d.driveUrl, observaciones: d.observaciones, submittedAt: d.submittedAt.toISOString() })),
     blocker: blocker ? { id: blocker.id, reason: blocker.reason, createdAt: blocker.createdAt.toISOString(), resolvedAt: null, resolution: null } : null,
     history: history.rows.map(h => ({ id: h.id, label: (EDITORIAL_EVENTS[h.accion] ?? h.accion) + (h.detalles?.motivo ? ' · ' + h.detalles.motivo : ''), actor: h.actor, at: h.created_at.toISOString() })),
+    extraction,
   };
 }

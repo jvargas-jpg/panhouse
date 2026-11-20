@@ -164,8 +164,8 @@ export function CrearAutorForm({
         try {
           await invitarAutor(autor.id);
           mensaje += '. Se envió su enlace de acceso.';
-        } catch {
-          mensaje += ', pero no se pudo enviar el enlace de acceso. Puedes reenviarlo luego editando el autor.';
+        } catch (e) {
+          mensaje += `, pero no se pudo enviar el enlace de acceso: ${e instanceof Error ? e.message : 'intenta de nuevo luego.'}`;
         }
       }
       onGuardado(mensaje);
@@ -202,8 +202,8 @@ export function CrearAutorForm({
         try {
           await invitarAutor(autor.id);
           mensaje += '. Se reenvió su enlace de acceso.';
-        } catch {
-          mensaje += ', pero no se pudo reenviar el enlace de acceso. Puedes intentarlo de nuevo luego.';
+        } catch (e) {
+          mensaje += `, pero no se pudo reenviar el enlace de acceso: ${e instanceof Error ? e.message : 'intenta de nuevo luego.'}`;
         }
       }
       onGuardado(mensaje);
